@@ -5,55 +5,29 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{E59944F3-3F7E-4B5E-BE6A-504A6A0B4815}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpinningCube", "Samples\SpinningCube\SpinningCube.vcxproj", "{6521EF62-F333-452D-A186-391C048C850A}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Toolkit3DLibrary", "Toolkit3DLibrary\Toolkit3DLibrary.vcxproj", "{A0825565-5F9A-433A-AC6B-666D7C4E292F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpinningCube", "Samples\SpinningCube\SpinningCube.vcxproj", "{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|ARM = Debug|ARM
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
-		Release|ARM = Release|ARM
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|ARM.ActiveCfg = Debug|ARM
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|ARM.Build.0 = Debug|ARM
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|ARM.Deploy.0 = Debug|ARM
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|x64.ActiveCfg = Debug|x64
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|x64.Build.0 = Debug|x64
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|x64.Deploy.0 = Debug|x64
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|x86.ActiveCfg = Debug|Win32
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|x86.Build.0 = Debug|Win32
-		{6521EF62-F333-452D-A186-391C048C850A}.Debug|x86.Deploy.0 = Debug|Win32
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|ARM.ActiveCfg = Release|ARM
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|ARM.Build.0 = Release|ARM
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|ARM.Deploy.0 = Release|ARM
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|x64.ActiveCfg = Release|x64
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|x64.Build.0 = Release|x64
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|x64.Deploy.0 = Release|x64
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|x86.ActiveCfg = Release|Win32
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|x86.Build.0 = Release|Win32
-		{6521EF62-F333-452D-A186-391C048C850A}.Release|x86.Deploy.0 = Release|Win32
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Debug|ARM.ActiveCfg = Debug|ARM
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Debug|ARM.Build.0 = Debug|ARM
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Debug|x64.ActiveCfg = Debug|x64
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Debug|x64.Build.0 = Debug|x64
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Debug|x86.ActiveCfg = Debug|Win32
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Debug|x86.Build.0 = Debug|Win32
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Release|ARM.ActiveCfg = Release|ARM
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Release|ARM.Build.0 = Release|ARM
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Release|x64.ActiveCfg = Release|x64
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Release|x64.Build.0 = Release|x64
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Release|x86.ActiveCfg = Release|Win32
-		{A0825565-5F9A-433A-AC6B-666D7C4E292F}.Release|x86.Build.0 = Release|Win32
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Debug|x64.ActiveCfg = Debug|x64
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Debug|x64.Build.0 = Debug|x64
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Debug|x86.ActiveCfg = Debug|Win32
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Debug|x86.Build.0 = Debug|Win32
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x64.ActiveCfg = Release|x64
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x64.Build.0 = Release|x64
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x86.ActiveCfg = Release|Win32
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{6521EF62-F333-452D-A186-391C048C850A} = {E59944F3-3F7E-4B5E-BE6A-504A6A0B4815}
+		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA} = {E59944F3-3F7E-4B5E-BE6A-504A6A0B4815}
 	EndGlobalSection
 EndGlobal

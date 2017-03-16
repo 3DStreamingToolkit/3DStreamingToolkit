@@ -2,10 +2,10 @@
 #include "CubeRenderer.h"
 #include "DirectXHelper.h"
 
-using namespace Windows::UI::Core;
+using namespace DX;
 using namespace Toolkit3DSample;
 
-CubeRenderer::CubeRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources) : 
+CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	m_deviceResources(deviceResources)
 {
 	InitGraphics();
@@ -30,32 +30,59 @@ void CubeRenderer::InitGraphics()
 
 void CubeRenderer::InitPipeline()
 {
-	auto loadVertexShaderTask = DX::ReadDataAsync(L"VertexShader.cso");
-	loadVertexShaderTask.then([this](std::vector<byte> file)
+	// Creates the vertex shader.
+	FILE* vertexShaderFile = nullptr;
+	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+	fseek(vertexShaderFile, 0, SEEK_END);
+	int vertexShaderFileSize = ftell(vertexShaderFile);
+	char* vertexShaderFileData = new char[vertexShaderFileSize];
+	fseek(vertexShaderFile, 0, SEEK_SET);
+	fread(vertexShaderFileData, 1, vertexShaderFileSize, vertexShaderFile);
+	fclose(vertexShaderFile);
+	m_deviceResources->GetD3DDevice()->CreateVertexShader(
+		vertexShaderFileData,
+		vertexShaderFileSize,
+		nullptr, 
+		&m_vertexShader);
+
+	// Creates the input layout.
+	D3D11_INPUT_ELEMENT_DESC elementDesc[] =
 	{
-		m_deviceResources->GetD3DDevice()->CreateVertexShader(file.data(), file.size(), nullptr, &m_vertexShader);
-		D3D11_INPUT_ELEMENT_DESC elementDesc[] = 
-		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-		};
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
 
-		m_deviceResources->GetD3DDevice()->CreateInputLayout(
-			elementDesc,
-			ARRAYSIZE(elementDesc),
-			file.data(),
-			file.size(),
-			&m_inputLayout);
+	m_deviceResources->GetD3DDevice()->CreateInputLayout(
+		elementDesc,
+		ARRAYSIZE(elementDesc),
+		vertexShaderFileData,
+		vertexShaderFileSize,
+		&m_inputLayout);
 
-		m_deviceResources->GetD3DDeviceContext()->IASetInputLayout(m_inputLayout.Get());
-		m_deviceResources->GetD3DDeviceContext()->VSSetShader(m_vertexShader.Get(), nullptr, 0);
-	});
+	// Sets the input layout and vertex shader.
+	m_deviceResources->GetD3DDeviceContext()->IASetInputLayout(m_inputLayout);
+	m_deviceResources->GetD3DDeviceContext()->VSSetShader(m_vertexShader, nullptr, 0);
 
-	auto loadPixelShaderTask = DX::ReadDataAsync(L"PixelShader.cso");
-	loadPixelShaderTask.then([this](std::vector<byte> file)
-	{
-		m_deviceResources->GetD3DDevice()->CreatePixelShader(file.data(), file.size(), nullptr, &m_pixelShader);
-		m_deviceResources->GetD3DDeviceContext()->PSSetShader(m_pixelShader.Get(), nullptr, 0);
-	});
+	// Creates the pixel shader.
+	FILE* pixelShaderFile = nullptr;
+	error = fopen_s(&pixelShaderFile, "PixelShader.cso", "rb");
+	fseek(pixelShaderFile, 0, SEEK_END);
+	int pixelShaderFileSize = ftell(pixelShaderFile);
+	char* pixelShaderFileData = new char[pixelShaderFileSize];
+	fseek(pixelShaderFile, 0, SEEK_SET);
+	fread(pixelShaderFileData, 1, pixelShaderFileSize, pixelShaderFile);
+	fclose(pixelShaderFile);
+	m_deviceResources->GetD3DDevice()->CreatePixelShader(
+		pixelShaderFileData,
+		pixelShaderFileSize,
+		nullptr,
+		&m_pixelShader);
+	
+	// Sets the pixel shader.
+	m_deviceResources->GetD3DDeviceContext()->PSSetShader(m_pixelShader, nullptr, 0);
+
+	// Cleanup.
+	delete[]vertexShaderFileData;
+	delete[]pixelShaderFileData;
 }
 
 void CubeRenderer::Update()
@@ -71,7 +98,7 @@ void CubeRenderer::Render()
 
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
-	context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
+	context->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	context->Draw(3, 0);
 }
