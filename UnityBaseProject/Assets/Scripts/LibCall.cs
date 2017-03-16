@@ -2,12 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
-#if UNITY_EDITOR
-using NETTestLib;
-#else
-using UWPTestLib;
-#endif 
+using TestLib;
 
 public class LibCall : MonoBehaviour
 {
@@ -15,7 +10,7 @@ public class LibCall : MonoBehaviour
 
     public void Call()
     {
-        var testClass = new TestClass();
-        statusText.text = testClass.Call("Hello!");
+        var testClass = new TestClass1();
+        statusText.text = testClass.Echo("Hello!");
     }
 }
