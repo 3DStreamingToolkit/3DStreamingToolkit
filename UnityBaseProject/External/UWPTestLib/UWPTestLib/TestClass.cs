@@ -8,9 +8,9 @@ namespace UWPTestLib
 {
     public class TestClass
     {
-        public string Echo(string msg)
+        public string Call(string msg)
         {
-            return "Echo: " + msg;
+            return "Echo UWP: " + msg;
         }
     }
 }
