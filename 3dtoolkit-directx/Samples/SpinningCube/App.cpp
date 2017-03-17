@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
+#include "VideoHelper.h"
 
 using namespace DX;
+using namespace Toolkit3DLibrary;
 using namespace Toolkit3DSample;
 
 //--------------------------------------------------------------------------------------
@@ -11,6 +13,7 @@ using namespace Toolkit3DSample;
 HWND				g_hWnd = nullptr;
 DeviceResources*	g_deviceResources = nullptr;
 CubeRenderer*		g_cubeRenderer = nullptr;
+VideoHelper*		g_videoHelper = nullptr;
 
 //--------------------------------------------------------------------------------------
 // Called every time the application receives a message
@@ -122,8 +125,13 @@ int WINAPI wWinMain(
 	g_deviceResources = new DeviceResources();
 	g_deviceResources->SetWindow(g_hWnd);
 
-	// Initizies the cube renderer.
+	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
+
+	// Initializes the video helper library.
+	g_videoHelper = new VideoHelper(
+		g_deviceResources->GetD3DDevice(),
+		g_deviceResources->GetD3DDeviceContext());
 
 	// Main message loop.
 	MSG msg = { 0 };

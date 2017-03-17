@@ -6,6 +6,11 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{E59944F3-3F7E-4B5E-BE6A-504A6A0B4815}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpinningCube", "Samples\SpinningCube\SpinningCube.vcxproj", "{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6} = {6BC9C817-FD14-4540-A9C0-63CF16F770A6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Toolkit3DLibrary", "Toolkit3DLibrary\Toolkit3DLibrary.vcxproj", "{6BC9C817-FD14-4540-A9C0-63CF16F770A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +28,14 @@ Global
 		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x64.Build.0 = Release|x64
 		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x86.ActiveCfg = Release|Win32
 		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA}.Release|x86.Build.0 = Release|Win32
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Debug|x64.ActiveCfg = Debug|x64
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Debug|x64.Build.0 = Debug|x64
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Debug|x86.ActiveCfg = Debug|Win32
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Debug|x86.Build.0 = Debug|Win32
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x64.ActiveCfg = Release|x64
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x64.Build.0 = Release|x64
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x86.ActiveCfg = Release|Win32
+		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
