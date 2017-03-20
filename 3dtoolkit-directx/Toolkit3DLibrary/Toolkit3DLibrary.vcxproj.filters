@@ -6,20 +6,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NvEncoder\NvEncoderCudaInterop\NvEncoderCudaInterop.cpp">
-      <Filter>NvEncoder</Filter>
-    </ClCompile>
-    <ClCompile Include="NvEncoder\common\src\cudaModuleMgr.cpp">
-      <Filter>NvEncoder</Filter>
-    </ClCompile>
-    <ClCompile Include="NvEncoder\common\src\dynlink_cuda.cpp">
-      <Filter>NvEncoder</Filter>
-    </ClCompile>
     <ClCompile Include="NvEncoder\common\src\NvHWEncoder.cpp">
       <Filter>NvEncoder</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="VideoHelper.cpp" />
+    <ClCompile Include="NvEncoder\NvEncoderD3DInterop\NvEncoderD3DInterop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

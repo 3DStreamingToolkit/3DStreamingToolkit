@@ -10,12 +10,23 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+#pragma once
 
+#include <windows.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <d3d9.h>
+#include <Dxva2api.h>
+#include "../common/inc/nvEncodeAPI.h"
+#include "../common/inc/nvCPUOPSys.h"
 #include "../common/inc/NvHWEncoder.h"
+#pragma warning(disable : 4996)
 
 #define MAX_ENCODE_QUEUE 32
 
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
+#define NVENCAPI __stdcall
 
 template<class T>
 class CNvQueue {
@@ -25,8 +36,8 @@ class CNvQueue {
     unsigned int m_uAvailableIdx;
     unsigned int m_uPendingndex;
 public:
-    CNvQueue(): m_pBuffer(NULL), m_uSize(0), m_uPendingCount(0), m_uAvailableIdx(0),
-                m_uPendingndex(0)
+    CNvQueue(): m_uSize(0), m_uPendingCount(0), m_uAvailableIdx(0),
+                m_uPendingndex(0), m_pBuffer(NULL)
     {
     }
 
@@ -48,6 +59,7 @@ public:
         }
         return true;
     }
+
 
     T * GetAvailable()
     {
@@ -76,60 +88,45 @@ public:
     }
 };
 
-class CCudaAutoLock
-{
-private:
-    CUcontext m_pCtx;
-public:
-    CCudaAutoLock(CUcontext pCtx) :m_pCtx(pCtx) { cuCtxPushCurrent(m_pCtx); };
-    ~CCudaAutoLock()  { CUcontext cuLast = NULL; cuCtxPopCurrent(&cuLast); };
-};
-
-typedef enum
-{
-    NV_ENC_DX9 = 0,
-    NV_ENC_DX11 = 1,
-    NV_ENC_CUDA = 2,
-    NV_ENC_DX10 = 3,
-} NvEncodeDeviceType;
-
 typedef struct _EncodeFrameConfig
 {
-    uint8_t  *yuv[3];
-    uint32_t stride[3];
+    IDirect3DTexture9 *pRGBTexture;
     uint32_t width;
     uint32_t height;
 }EncodeFrameConfig;
 
-class CNvEncoderCudaInterop
+class CNvEncoderD3DInterop
 {
 public:
-    CNvEncoderCudaInterop();
-    virtual ~CNvEncoderCudaInterop();
+    CNvEncoderD3DInterop();
+    virtual ~CNvEncoderD3DInterop();
+    int                                                  EncodeMain(int argc, char **argv);
 
 protected:
     CNvHWEncoder                                        *m_pNvHWEncoder;
     uint32_t                                             m_uEncodeBufferCount;
-    CUcontext                                            m_cuContext;
-    CUmodule                                             m_cuModule;
-    CUfunction                                           m_cuInterleaveUVFunction;
-    CUdeviceptr                                          m_ChromaDevPtr[2];
-    EncodeConfig                                         m_stEncoderInput;
+    EncodeOutputBuffer                                   m_stEOSOutputBfr;
+    IDirect3D9Ex                                        *m_pD3DEx;
+    IDirect3DDevice9                                    *m_pD3D9Device;
+    IDirectXVideoProcessorService                       *m_pDXVA2VideoProcessServices;
+    IDirectXVideoProcessor                              *m_pDXVA2VideoProcessor;
+    DXVA2_ValueRange                                     m_Brightness;
+    DXVA2_ValueRange                                     m_Contrast;
+    DXVA2_ValueRange                                     m_Hue;
+    DXVA2_ValueRange                                     m_Saturation;
+
     EncodeBuffer                                         m_stEncodeBuffer[MAX_ENCODE_QUEUE];
     CNvQueue<EncodeBuffer>                               m_EncodeBufferQueue;
-    EncodeOutputBuffer                                   m_stEOSOutputBfr; 
+
     uint8_t                                             *m_yuv[3];
 
 protected:
     NVENCSTATUS                                          Deinitialize();
-    NVENCSTATUS                                          InitCuda(uint32_t deviceID, const char *exec_path);
+    NVENCSTATUS                                          InitD3D9(unsigned int deviceID=0);
     NVENCSTATUS                                          AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight);
     NVENCSTATUS                                          ReleaseIOBuffers();
     NVENCSTATUS                                          FlushEncoder();
-    NVENCSTATUS                                          ConvertYUVToNV12(EncodeBuffer *pEncodeBuffer, unsigned char *yuv[3], int width, int height);
-
-public:
-    int                                                  EncodeMain(int argc, char **argv);
+    NVENCSTATUS                                          ConvertRGBToNV12(IDirect3DSurface9 *pSrcRGB, IDirect3DSurface9 *pNV12Dst, uint32_t uWidth, uint32_t uHeight);
 };
 
 // NVEncodeAPI entry point
