@@ -81,8 +81,8 @@ void CubeRenderer::InitPipeline()
 	m_deviceResources->GetD3DDeviceContext()->PSSetShader(m_pixelShader, nullptr, 0);
 
 	// Cleanup.
-	delete[]vertexShaderFileData;
-	delete[]pixelShaderFileData;
+	delete []vertexShaderFileData;
+	delete []pixelShaderFileData;
 }
 
 void CubeRenderer::Update()

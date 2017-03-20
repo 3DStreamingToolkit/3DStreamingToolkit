@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "DeviceResources.h"
+#include "macros.h"
 
 using namespace DX;
 
@@ -17,25 +18,10 @@ DeviceResources::~DeviceResources()
 
 void DeviceResources::CleanupResources()
 {
-	if (m_d3dContext)
-	{
-		m_d3dContext->ClearState();
-	}
-
-	if (m_d3dRenderTargetView)
-	{
-		m_d3dRenderTargetView->Release();
-	}
-
-	if (m_swapChain)
-	{
-		m_swapChain->Release();
-	}
-
-	if (m_d3dDevice)
-	{
-		m_d3dDevice->Release();
-	}
+	SAFE_RELEASE(m_d3dContext);
+	SAFE_RELEASE(m_d3dRenderTargetView);
+	SAFE_RELEASE(m_swapChain);
+	SAFE_RELEASE(m_d3dDevice);
 }
 
 ID3D11Device1* DeviceResources::GetD3DDevice() const
@@ -98,8 +84,8 @@ HRESULT DeviceResources::CreateDeviceResources()
 	}
 
 	// Cleanup.
-	device->Release();
-	context->Release();
+	SAFE_RELEASE(context);
+	SAFE_RELEASE(device);
 
 	return hr;
 }
@@ -160,10 +146,10 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	}
 
 	// Cleanup.
-	dxgiFactory->Release();
+	SAFE_RELEASE(dxgiFactory);
 
 	// Creates the render target view.
-	ID3D11Texture2D* frameBuffer;
+	ID3D11Texture2D* frameBuffer = nullptr;
 	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
 	if (FAILED(hr))
 	{
@@ -171,7 +157,7 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	}
 
 	hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
-	frameBuffer->Release();
+	SAFE_RELEASE(frameBuffer);
 	if (FAILED(hr))
 	{
 		return hr;
