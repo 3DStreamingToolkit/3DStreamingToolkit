@@ -1,6 +1,7 @@
-## Setup Azure NSeries Host VM Host/Server Setup
+### Setup Azure NSeries Host VM Host/Server Setup
 
 N-Series VM's are currently only avialable in South Central DataCenter with HDD VM Drives selector
+N-Series VM is deployed with SSD
 
 1. Use/Create "3DToolkitResourceGroup"
 2. Create VM
@@ -10,9 +11,9 @@ N-Series VM's are currently only avialable in South Central DataCenter with HDD 
   * Name = N3DToolkitVM
   * VM Disk Type = HDD (Needed to enable N-Series Selection, servers are SSD equipped)
   * User name = operator
-  * Password = 'default team password'
+  * Password = *default team password*
   * Confirm Password =
-  * Subsctription = 'default team subscription'
+  * Subsctription = *default team subscription*
   * Resource Group = Use Existing / 3DToolkitResourceGroup
   * Location = South Central US
 4. VM Size
@@ -30,7 +31,7 @@ N-Series VM's are currently only avialable in South Central DataCenter with HDD 
   * Guest OS Diagnostics = disabled
   * Diagnostics storage account = Use/Create 3dtoolkitdata
 
-## Configure Server with WebRTC Client
+### Configure Server with WebRTC Client
 
 1. Prepare WebRTC Binaries
 * ZIP distribution files
@@ -38,7 +39,7 @@ N-Series VM's are currently only avialable in South Central DataCenter with HDD 
 
 2. Remote Desktop to Server using VM Connection Settings or Direct using Public IP listed on VM
 * Update/Edit Remote Desktop Local Resources Settings
-* Click "More" buttong on "Local devices and resources" on lowest section of tab
+* Click "More" button on "Local devices and resources" on lowest section of tab
 * Expand the "Drives" List and checkbox the Drive that contains the ZIP distribution files
 
 3. Connect to VM using Remote Desktop
@@ -58,7 +59,7 @@ N-Series VM's are currently only avialable in South Central DataCenter with HDD 
 * Select Inboud Rules
 * Create Entry for TCP Port Number used by "peerconnection_server.exe"
 
-## Configure Azure VM Settings for WebRTC Port
+### Configure Azure VM Settings for WebRTC Port
 
 1. Select VM
 2. On the Settings Section, Click "Network Interfaces"
@@ -66,11 +67,11 @@ N-Series VM's are currently only avialable in South Central DataCenter with HDD 
 4. On the Network Security Group Settings Entry, Click "Inbound Security Rules"
 5. Add and Inbound Security Rule
 * Name = WebRTC-peerconnection-server
-* Priority = 'use default generated value'
+* Priority = *use default generated value*
 * Source = Any
 * Service = Custom
 * Protocol = TCP
-* Port Range = 'use peerconnection_exe port'
+* Port Range = *use peerconnection_exe port*
 * Action = Allow
 
 
