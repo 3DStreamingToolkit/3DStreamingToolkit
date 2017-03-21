@@ -509,7 +509,7 @@ NVENCSTATUS CNvHWEncoder::NvEncRegisterResource(NV_ENC_INPUT_RESOURCE_TYPE resou
     registerResParams.width = width;
     registerResParams.height = height;
     registerResParams.pitch = pitch;
-    registerResParams.bufferFormat = NV_ENC_BUFFER_FORMAT_NV12_PL;
+    registerResParams.bufferFormat = NV_ENC_BUFFER_FORMAT_ARGB;
 
     nvStatus = m_pEncodeAPI->nvEncRegisterResource(m_hEncoder, &registerResParams);
     if (nvStatus != NV_ENC_SUCCESS)

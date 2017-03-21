@@ -21,7 +21,7 @@
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
 
 #if defined (NV_WINDOWS)
-    #include "d3d9.h"
+    #include "d3d11_1.h"
     #define NVENCAPI __stdcall
     #pragma warning(disable : 4996)
 #elif defined (NV_UNIX)
@@ -83,12 +83,12 @@ typedef struct _EncodeInputBuffer
     unsigned int      dwWidth;
     unsigned int      dwHeight;
 #if defined (NV_WINDOWS)
-    IDirect3DSurface9 *pNV12Surface;
+	ID3D11Texture2D	  *pARGBSurface;
 #endif
-    CUdeviceptr       pNV12devPtr;
-    uint32_t          uNV12Stride;
-    CUdeviceptr       pNV12TempdevPtr;
-    uint32_t          uNV12TempStride;
+    CUdeviceptr       pARGBdevPtr;
+    uint32_t          uARGBStride;
+    CUdeviceptr       pARGBTempdevPtr;
+    uint32_t          uARGBTempStride;
     void*             nvRegisteredResource;
     NV_ENC_INPUT_PTR  hInputSurface;
     NV_ENC_BUFFER_FORMAT bufferFmt;

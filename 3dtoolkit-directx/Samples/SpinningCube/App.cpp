@@ -121,7 +121,7 @@ int WINAPI wWinMain(
 		return 0;
 	}
 
-	// Initializes device resources.
+	// Initializes the device resources.
 	g_deviceResources = new DeviceResources();
 	g_deviceResources->SetWindow(g_hWnd);
 
@@ -132,6 +132,11 @@ int WINAPI wWinMain(
 	g_videoHelper = new VideoHelper(
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext());
+
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
+
+	// Starts capturing.
+	g_videoHelper->StartCapture();
 
 	// Main message loop.
 	MSG msg = { 0 };
@@ -145,8 +150,12 @@ int WINAPI wWinMain(
 		else
 		{
 			Render();
+			g_videoHelper->Capture();
 		}
 	}
+
+	// Ends capturing.
+	g_videoHelper->EndCapture();
 
 	// Cleanup.
 	delete g_cubeRenderer;

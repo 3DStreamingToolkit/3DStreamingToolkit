@@ -3,6 +3,10 @@
 #include "pch.h"
 
 #include "VideoHelper.h"
+#include "nvFileIO.h"
+#include "nvUtils.h"
+
+#define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
 
 using namespace Toolkit3DLibrary;
 
@@ -11,11 +15,20 @@ VideoHelper::VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context) :
 	m_d3dDevice(device),
 	m_d3dContext(context)
 {
+	m_pNvHWEncoder = new CNvHWEncoder();
 }
 
 // Destructor for VideoHelper.
 VideoHelper::~VideoHelper()
 {
+	FlushEncoder();
+	Deinitialize();
+
+	if (m_pNvHWEncoder)
+	{
+		delete m_pNvHWEncoder;
+		m_pNvHWEncoder = NULL;
+	}
 }
 
 // Caches pointer to the swap chain.
@@ -24,28 +37,283 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain)
 	m_swapChain = swapChain;
 }
 
+// Cleanup resources.
+NVENCSTATUS VideoHelper::Deinitialize()
+{
+	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	ReleaseIOBuffers();
+	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
+	return nvStatus;
+}
+
 // Starts capturing the video stream.
 void VideoHelper::StartCapture()
 {
+	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
+
+	// TODO: Moves to params
+	m_encodeConfig.outputFileName = "output.mpeg";
+	m_encodeConfig.width = 480;
+	m_encodeConfig.height = 320;
+
+	m_encodeConfig.endFrameIdx = INT_MAX;
+	m_encodeConfig.bitrate = 5000000;
+	m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
+	m_encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
+	m_encodeConfig.deviceType = 0;
+	m_encodeConfig.codec = NV_ENC_H264;
+	m_encodeConfig.fps = 30;
+	m_encodeConfig.qp = 28;
+	m_encodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
+	m_encodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
+	m_encodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
+	m_encodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
+	m_encodeConfig.presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
+	m_encodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
+	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
+	if (m_encodeConfig.fOutput == NULL)
+	{
+		PRINTERR("Failed to create \"%s\"\n", m_encodeConfig.outputFileName);
+	}
+
+	nvStatus = m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
+	if (nvStatus != NV_ENC_SUCCESS)
+	{
+		return;
+	}
+
+	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
+	
+	// Prints config info to console.
+	PrintConfig(m_encodeConfig);
+
+	// Creates the encoder.
+	nvStatus = m_pNvHWEncoder->CreateEncoder(&m_encodeConfig);
+	if (nvStatus != NV_ENC_SUCCESS)
+	{
+		return;
+	}
+
+	m_uEncodeBufferCount = m_encodeConfig.numB + 4;
+
+	nvStatus = AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height);
+	if (nvStatus != NV_ENC_SUCCESS)
+	{
+		return;
+	}
 }
 
 // Captures frame buffer from the swap chain.
 void VideoHelper::Capture()
 {
+	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	EncodeBuffer* pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
+	if (!pEncodeBuffer)
+	{
+		pEncodeBuffer = m_EncodeBufferQueue.GetPending();
+		m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
+
+		// UnMap the input buffer after frame done
+		if (pEncodeBuffer->stInputBfr.hInputSurface)
+		{
+			nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+			pEncodeBuffer->stInputBfr.hInputSurface = NULL;
+		}
+
+		pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
+	}
+
 	ID3D11DeviceContext* context = m_d3dContext;
 	IDXGISwapChain* swapChain = m_swapChain;
-	ID3D11Texture2D* frameBuffer;
-	HRESULT hr = m_swapChain->GetBuffer(0, 
-		__uuidof(ID3D11Texture2D), 
-		reinterpret_cast< void** >(&frameBuffer));
+	HRESULT hr = m_swapChain->GetBuffer(0,
+		__uuidof(ID3D11Texture2D),
+		reinterpret_cast< void** >(&pEncodeBuffer->stInputBfr.pARGBSurface));
+
+	nvStatus = m_pNvHWEncoder->NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource, &pEncodeBuffer->stInputBfr.hInputSurface);
+	if (nvStatus != NV_ENC_SUCCESS)
+	{
+		PRINTERR("Failed to Map input buffer %p\n", pEncodeBuffer->stInputBfr.hInputSurface);
+		return;
+	}
 
 	if (SUCCEEDED(hr))
 	{
-		// Captures video stream.			
+		nvStatus = m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, m_encodeConfig.width, m_encodeConfig.height);
+		if (nvStatus != NV_ENC_SUCCESS  && nvStatus != NV_ENC_ERR_NEED_MORE_INPUT)
+		{
+			return;
+		}
 	}
 }
 
 // Saves video output file.
 void VideoHelper::EndCapture()
 {
+}
+
+NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight)
+{
+	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	ID3D11Texture2D* pVPSurfaces[16];
+
+	// Initializes the encode buffer queue.
+	m_EncodeBufferQueue.Initialize(m_stEncodeBuffer, m_uEncodeBufferCount);
+
+	for (uint32_t i = 0; i < m_uEncodeBufferCount; i++)
+	{
+		// Initializes the input buffer, backed by ID3D11Texture2D*.
+		D3D11_TEXTURE2D_DESC desc = { 0 };
+		desc.ArraySize = 1;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Width = uInputWidth;
+		desc.Height = uInputHeight;
+		desc.MipLevels = 1;
+		desc.SampleDesc.Count = 1;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		m_d3dDevice->CreateTexture2D(&desc, nullptr, &pVPSurfaces[i]);
+
+		// Registers the input buffer with NvEnc.
+		nvStatus = m_pNvHWEncoder->NvEncRegisterResource(
+			NV_ENC_INPUT_RESOURCE_TYPE_DIRECTX,
+			(void*)pVPSurfaces[i],
+			uInputWidth,
+			uInputHeight,
+			m_stEncodeBuffer[i].stInputBfr.uARGBStride,
+			&m_stEncodeBuffer[i].stInputBfr.nvRegisteredResource);
+		
+		// Fails to register the input buffer with NvEnc.
+		if (nvStatus != NV_ENC_SUCCESS)
+		{
+			return nvStatus;
+		}
+
+		m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_ARGB;
+		m_stEncodeBuffer[i].stInputBfr.dwWidth = uInputWidth;
+		m_stEncodeBuffer[i].stInputBfr.dwHeight = uInputHeight;
+		m_stEncodeBuffer[i].stInputBfr.pARGBSurface = pVPSurfaces[i];
+
+		// Initializes the output buffer.
+		nvStatus = m_pNvHWEncoder->NvEncCreateBitstreamBuffer(BITSTREAM_BUFFER_SIZE, &m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer);
+		if (nvStatus != NV_ENC_SUCCESS)
+		{
+			return nvStatus;
+		}
+
+		m_stEncodeBuffer[i].stOutputBfr.dwBitstreamBufferSize = BITSTREAM_BUFFER_SIZE;
+
+		// Registers for the output event.
+		nvStatus = m_pNvHWEncoder->NvEncRegisterAsyncEvent(&m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
+		if (nvStatus != NV_ENC_SUCCESS)
+		{
+			return nvStatus;
+		}
+
+		m_stEncodeBuffer[i].stOutputBfr.bWaitOnEvent = true;
+	}
+
+	m_stEOSOutputBfr.bEOSFlag = TRUE;
+
+	// Registers for the output event.
+	nvStatus = m_pNvHWEncoder->NvEncRegisterAsyncEvent(&m_stEOSOutputBfr.hOutputEvent);
+	if (nvStatus != NV_ENC_SUCCESS)
+	{
+		return nvStatus;
+	}
+
+	return NV_ENC_SUCCESS;
+}
+
+NVENCSTATUS VideoHelper::ReleaseIOBuffers()
+{
+	for (uint32_t i = 0; i < m_uEncodeBufferCount; i++)
+	{
+		SAFE_RELEASE(m_stEncodeBuffer[i].stInputBfr.pARGBSurface);
+
+		m_pNvHWEncoder->NvEncDestroyBitstreamBuffer(m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer);
+		m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer = NULL;
+
+		m_pNvHWEncoder->NvEncUnregisterAsyncEvent(m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
+		CloseHandle(m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
+		m_stEncodeBuffer[i].stOutputBfr.hOutputEvent = NULL;
+	}
+
+	if (m_stEOSOutputBfr.hOutputEvent)
+	{
+		m_pNvHWEncoder->NvEncUnregisterAsyncEvent(m_stEOSOutputBfr.hOutputEvent);
+		CloseHandle(m_stEOSOutputBfr.hOutputEvent);
+		m_stEOSOutputBfr.hOutputEvent = NULL;
+	}
+
+	return NV_ENC_SUCCESS;
+}
+
+NVENCSTATUS VideoHelper::FlushEncoder()
+{
+	NVENCSTATUS nvStatus = m_pNvHWEncoder->NvEncFlushEncoderQueue(m_stEOSOutputBfr.hOutputEvent);
+	if (nvStatus != NV_ENC_SUCCESS)
+	{
+		assert(0);
+		return nvStatus;
+	}
+
+	EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetPending();
+	while (pEncodeBuffer)
+	{
+		m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
+		pEncodeBuffer = m_EncodeBufferQueue.GetPending();
+
+		// UnMap the input buffer after frame is done.
+		if (pEncodeBuffer && pEncodeBuffer->stInputBfr.hInputSurface)
+		{
+			nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+			pEncodeBuffer->stInputBfr.hInputSurface = NULL;
+		}
+	}
+
+	if (WaitForSingleObject(m_stEOSOutputBfr.hOutputEvent, 500) != WAIT_OBJECT_0)
+	{
+		assert(0);
+		nvStatus = NV_ENC_ERR_GENERIC;
+	}
+
+	return nvStatus;
+}
+
+void VideoHelper::PrintConfig(EncodeConfig encodeConfig)
+{
+	printf("         output          : \"%s\"\n", encodeConfig.outputFileName);
+	printf("         codec           : \"%s\"\n", encodeConfig.codec == NV_ENC_HEVC ? "HEVC" : "H264");
+	printf("         size            : %dx%d\n", encodeConfig.width, encodeConfig.height);
+	printf("         bitrate         : %d bits/sec\n", encodeConfig.bitrate);
+	printf("         vbvMaxBitrate   : %d bits/sec\n", encodeConfig.vbvMaxBitrate);
+	printf("         vbvSize         : %d bits\n", encodeConfig.vbvSize);
+	printf("         fps             : %d frames/sec\n", encodeConfig.fps);
+	printf("         rcMode          : %s\n", encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP ? "CONSTQP" :
+		encodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR ? "VBR" :
+		encodeConfig.rcMode == NV_ENC_PARAMS_RC_CBR ? "CBR" :
+		encodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_MINQP ? "VBR MINQP" :
+		encodeConfig.rcMode == NV_ENC_PARAMS_RC_2_PASS_QUALITY ? "TWO_PASS_QUALITY" :
+		encodeConfig.rcMode == NV_ENC_PARAMS_RC_2_PASS_FRAMESIZE_CAP ? "TWO_PASS_FRAMESIZE_CAP" :
+		encodeConfig.rcMode == NV_ENC_PARAMS_RC_2_PASS_VBR ? "TWO_PASS_VBR" : "UNKNOWN");
+
+	if (encodeConfig.gopLength == NVENC_INFINITE_GOPLENGTH)
+	{
+		printf("         goplength       : INFINITE GOP \n");
+	}
+	else
+	{
+		printf("         goplength       : %d \n", encodeConfig.gopLength);
+	}
+
+	printf("         B frames        : %d \n", encodeConfig.numB);
+	printf("         QP              : %d \n", encodeConfig.qp);
+	printf("         preset          : %s\n", (encodeConfig.presetGUID == NV_ENC_PRESET_LOW_LATENCY_HQ_GUID) ? "LOW_LATENCY_HQ" :
+		(encodeConfig.presetGUID == NV_ENC_PRESET_LOW_LATENCY_HP_GUID) ? "LOW_LATENCY_HP" :
+		(encodeConfig.presetGUID == NV_ENC_PRESET_HQ_GUID) ? "HQ_PRESET" :
+		(encodeConfig.presetGUID == NV_ENC_PRESET_HP_GUID) ? "HP_PRESET" :
+		(encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) ? "LOSSLESS_HP" :
+		(encodeConfig.presetGUID == NV_ENC_PRESET_LOW_LATENCY_DEFAULT_GUID) ? "LOW_LATENCY_DEFAULT" : "DEFAULT");
+	
+	printf("\n");
 }
