@@ -2,10 +2,13 @@
 #include "CubeRenderer.h"
 #include "DirectXHelper.h"
 
+using namespace DirectX;
 using namespace DX;
 using namespace Toolkit3DSample;
 
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
+	m_degreesPerSecond(45),
+	m_indexCount(0),
 	m_deviceResources(deviceResources)
 {
 	InitGraphics();
@@ -14,18 +17,54 @@ CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 
 void CubeRenderer::InitGraphics()
 {
-	VERTEX vertices[] =
+	// Load mesh vertices. Each vertex has a position and a color.
+	static const VertexPositionColor cubeVertices[] =
 	{
-		{ 0.0f, 0.5f, 0.0f },
-		{ 0.45f, -0.5f, 0.0f },
-		{ -0.45f, -0.5f, 0.0f },
+		{ XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
 
-	D3D11_BUFFER_DESC bufferDesc = { 0 };
-	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bufferDesc.ByteWidth = sizeof(VERTEX) * ARRAYSIZE(vertices);
-	D3D11_SUBRESOURCE_DATA subresourceData = { vertices , 0, 0 };
-	m_deviceResources->GetD3DDevice()->CreateBuffer(&bufferDesc, &subresourceData, &m_vertexBuffer);
+	CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
+	D3D11_SUBRESOURCE_DATA vertexBufferData = { cubeVertices , 0, 0 };
+	m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer);
+
+	// Load mesh indices. Each trio of indices represents
+	// a triangle to be rendered on the screen.
+	// For example: 0,2,1 means that the vertices with indexes
+	// 0, 2 and 1 from the vertex buffer compose the 
+	// first triangle of this mesh.
+	static const unsigned short cubeIndices[] =
+	{
+		0,2,1, // -x
+		1,2,3,
+
+		4,5,6, // +x
+		5,7,6,
+
+		0,1,5, // -y
+		0,5,4,
+
+		2,6,7, // +y
+		2,7,3,
+
+		0,4,6, // -z
+		0,6,2,
+
+		1,3,7, // +z
+		1,7,5,
+	};
+
+	m_indexCount = ARRAYSIZE(cubeIndices);
+
+	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
+	D3D11_SUBRESOURCE_DATA indexBufferData = { cubeIndices , 0, 0 };
+	m_deviceResources->GetD3DDevice()->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer);
 }
 
 void CubeRenderer::InitPipeline()
@@ -48,7 +87,8 @@ void CubeRenderer::InitPipeline()
 	// Creates the input layout.
 	D3D11_INPUT_ELEMENT_DESC elementDesc[] =
 	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
 	m_deviceResources->GetD3DDevice()->CreateInputLayout(
@@ -83,22 +123,83 @@ void CubeRenderer::InitPipeline()
 	// Cleanup.
 	delete []vertexShaderFileData;
 	delete []pixelShaderFileData;
+
+	// Creates the constant buffer.
+	CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+	m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_constantBuffer);
+
+	// Initializes the projection matrix.
+	SIZE outputSize = m_deviceResources->GetOutputSize();
+	float aspectRatio = (float)outputSize.cx / outputSize.cy;
+	float fovAngleY = 70.0f * XM_PI / 180.0f;
+
+	// This is a simple example of change that can be made when the app is in
+	// portrait or snapped view.
+	if (aspectRatio < 1.0f)
+	{
+		fovAngleY *= 2.0f;
+	}
+
+	// This sample makes use of a right-handed coordinate system using row-major matrices.
+	XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovRH(
+		fovAngleY,
+		aspectRatio,
+		0.01f,
+		100.0f
+	);
+
+	// Ignores the orientation.
+	XMMATRIX orientationMatrix = XMMatrixIdentity();
+
+	XMStoreFloat4x4(
+		&m_constantBufferData.projection,
+		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
+	);
+
+	// Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
+	static const XMVECTORF32 eye = { 0.0f, 0.7f, 1.5f, 0.0f };
+	static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f, 0.0f };
+	static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+
+	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
 }
 
 void CubeRenderer::Update()
 {
+	// Converts to radians.
+	float radians = XMConvertToRadians(m_degreesPerSecond++);
+
+	// Prepares to pass the updated model matrix to the shader.
+	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
 }
 
 void CubeRenderer::Render()
 {
+	// Gets the device context.
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
+	// Sets the render target.
 	ID3D11RenderTargetView *const targets[1] = { m_deviceResources->GetBackBufferRenderTargetView() };
 	context->OMSetRenderTargets(1, targets, nullptr);
 
-	UINT stride = sizeof(VERTEX);
+	// Clear the back buffer.
+	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::CornflowerBlue);
+
+	// Prepares the constant buffer to send it to the graphics device.
+	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
+
+	// Sets the vertex buffer and index buffer.
+	UINT stride = sizeof(VertexPositionColor);
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, &m_vertexBuffer, &stride, &offset);
+	context->IASetIndexBuffer(m_indexBuffer, DXGI_FORMAT_R16_UINT, 0);
+
+	// Sets the primitive.
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	context->Draw(3, 0);
+
+	// Sends the constant buffer to the graphics device.
+	context->VSSetConstantBuffers1(0, 1, &m_constantBuffer, nullptr, nullptr);
+
+	// Draws the objects.
+	context->DrawIndexed(m_indexCount, 0, 0);
 }

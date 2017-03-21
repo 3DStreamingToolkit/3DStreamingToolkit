@@ -2,11 +2,10 @@
 
 #include <d3d11.h>
 
+#include "defs.h"
 #include "nvEncodeAPI.h"
 #include "nvCPUOPSys.h"
 #include "NvHWEncoder.h"
-
-#define MAX_ENCODE_QUEUE 32
 
 namespace Toolkit3DLibrary
 {
@@ -87,9 +86,9 @@ namespace Toolkit3DLibrary
     class VideoHelper
     {
 	public:
-		VideoHelper(ID3D11Device*, ID3D11DeviceContext*);
-		~VideoHelper();
-		void									Initialize(IDXGISwapChain*, int, int, char*);
+												VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context);
+												~VideoHelper();
+		void									Initialize(IDXGISwapChain* swapChain, int width, int height, char* outputFile);
 		void									Capture();
 
 	private:
