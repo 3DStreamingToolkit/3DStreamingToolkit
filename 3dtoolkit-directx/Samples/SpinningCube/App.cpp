@@ -128,15 +128,16 @@ int WINAPI wWinMain(
 	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
-	// Initializes the video helper library.
+	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext());
 
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
-
-	// Starts capturing.
-	g_videoHelper->StartCapture();
+	RECT rc;
+	GetClientRect(g_hWnd, &rc);
+	UINT width = rc.right - rc.left;
+	UINT height = rc.bottom - rc.top;
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), width, height, "output.mp4");
 
 	// Main message loop.
 	MSG msg = { 0 };
@@ -153,9 +154,6 @@ int WINAPI wWinMain(
 			g_videoHelper->Capture();
 		}
 	}
-
-	// Ends capturing.
-	g_videoHelper->EndCapture();
 
 	// Cleanup.
 	delete g_cubeRenderer;

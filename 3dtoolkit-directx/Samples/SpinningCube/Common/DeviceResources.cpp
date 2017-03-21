@@ -93,12 +93,6 @@ HRESULT DeviceResources::CreateDeviceResources()
 // These resources need to be recreated every time the window size is changed.
 HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 {
-	// Gets the window size.
-	RECT rc;
-	GetClientRect(hWnd, &rc);
-	UINT width = rc.right - rc.left;
-	UINT height = rc.bottom - rc.top;
-
 	// Obtains DXGI factory from device.
 	HRESULT hr = S_OK;
 	IDXGIDevice* dxgiDevice = nullptr;
@@ -164,6 +158,11 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	}
 
 	// Initializes the viewport.
+	RECT rc;
+	GetClientRect(hWnd, &rc);
+	UINT width = rc.right - rc.left;
+	UINT height = rc.bottom - rc.top;
+
 	D3D11_VIEWPORT viewport =
 	{
 		0,				// TopLeftX

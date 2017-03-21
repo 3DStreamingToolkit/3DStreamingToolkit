@@ -21,7 +21,6 @@ VideoHelper::VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context) :
 // Destructor for VideoHelper.
 VideoHelper::~VideoHelper()
 {
-	FlushEncoder();
 	Deinitialize();
 
 	if (m_pNvHWEncoder)
@@ -31,32 +30,16 @@ VideoHelper::~VideoHelper()
 	}
 }
 
-// Caches pointer to the swap chain.
-void VideoHelper::Initialize(IDXGISwapChain* swapChain)
+// Initializes the swap chain and IO buffers.
+void VideoHelper::Initialize(IDXGISwapChain* swapChain, int width, int height, char* outputFile)
 {
 	m_swapChain = swapChain;
-}
-
-// Cleanup resources.
-NVENCSTATUS VideoHelper::Deinitialize()
-{
-	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
-	ReleaseIOBuffers();
-	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
-	return nvStatus;
-}
-
-// Starts capturing the video stream.
-void VideoHelper::StartCapture()
-{
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
 
-	// TODO: Moves to params
-	m_encodeConfig.outputFileName = "output.mpeg";
-	m_encodeConfig.width = 480;
-	m_encodeConfig.height = 320;
-
+	m_encodeConfig.outputFileName = outputFile;
+	m_encodeConfig.width = width;
+	m_encodeConfig.height = height;
 	m_encodeConfig.endFrameIdx = INT_MAX;
 	m_encodeConfig.bitrate = 5000000;
 	m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
@@ -84,7 +67,7 @@ void VideoHelper::StartCapture()
 	}
 
 	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
-	
+
 	// Prints config info to console.
 	PrintConfig(m_encodeConfig);
 
@@ -102,6 +85,16 @@ void VideoHelper::StartCapture()
 	{
 		return;
 	}
+}
+
+// Cleanup resources.
+NVENCSTATUS VideoHelper::Deinitialize()
+{
+	FlushEncoder();
+	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	ReleaseIOBuffers();
+	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
+	return nvStatus;
 }
 
 // Captures frame buffer from the swap chain.
@@ -124,12 +117,13 @@ void VideoHelper::Capture()
 		pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
 	}
 
-	ID3D11DeviceContext* context = m_d3dContext;
-	IDXGISwapChain* swapChain = m_swapChain;
+	ID3D11Texture2D* frameBuffer = nullptr;
 	HRESULT hr = m_swapChain->GetBuffer(0,
 		__uuidof(ID3D11Texture2D),
-		reinterpret_cast< void** >(&pEncodeBuffer->stInputBfr.pARGBSurface));
+		reinterpret_cast<void**>(&frameBuffer));
 
+	m_d3dContext->CopyResource(pEncodeBuffer->stInputBfr.pARGBSurface, frameBuffer);
+	frameBuffer->Release();
 	nvStatus = m_pNvHWEncoder->NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource, &pEncodeBuffer->stInputBfr.hInputSurface);
 	if (nvStatus != NV_ENC_SUCCESS)
 	{
@@ -147,11 +141,6 @@ void VideoHelper::Capture()
 	}
 }
 
-// Saves video output file.
-void VideoHelper::EndCapture()
-{
-}
-
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight)
 {
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
@@ -165,7 +154,7 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 		// Initializes the input buffer, backed by ID3D11Texture2D*.
 		D3D11_TEXTURE2D_DESC desc = { 0 };
 		desc.ArraySize = 1;
-		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		desc.Width = uInputWidth;
 		desc.Height = uInputHeight;
 		desc.MipLevels = 1;
