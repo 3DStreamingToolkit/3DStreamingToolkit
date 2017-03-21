@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Net35Lib.cs" />
     <Compile Include="TestClass1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
