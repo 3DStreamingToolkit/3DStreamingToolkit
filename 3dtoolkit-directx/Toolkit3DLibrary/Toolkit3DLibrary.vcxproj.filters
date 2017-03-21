@@ -6,11 +6,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="NvEncoder\common\src\NvHWEncoder.cpp">
-      <Filter>NvEncoder</Filter>
-    </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="VideoHelper.cpp" />
+    <ClCompile Include="NvEncoder\src\NvHWEncoder.cpp">
+      <Filter>NvEncoder</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
