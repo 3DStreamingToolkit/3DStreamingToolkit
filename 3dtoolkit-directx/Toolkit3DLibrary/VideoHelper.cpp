@@ -6,8 +6,6 @@
 #include "nvFileIO.h"
 #include "nvUtils.h"
 
-#define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
-
 using namespace Toolkit3DLibrary;
 
 // Constructor for VideoHelper.
@@ -46,7 +44,7 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain, int width, int height, c
 	m_encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
 	m_encodeConfig.deviceType = 0;
 	m_encodeConfig.codec = NV_ENC_H264;
-	m_encodeConfig.fps = 30;
+	m_encodeConfig.fps = 60;
 	m_encodeConfig.qp = 28;
 	m_encodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
 	m_encodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
@@ -100,6 +98,7 @@ NVENCSTATUS VideoHelper::Deinitialize()
 // Captures frame buffer from the swap chain.
 void VideoHelper::Capture()
 {
+	// Try to process the pending input buffers.
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	EncodeBuffer* pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
 	if (!pEncodeBuffer)
@@ -117,11 +116,13 @@ void VideoHelper::Capture()
 		pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
 	}
 
+	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
 	HRESULT hr = m_swapChain->GetBuffer(0,
 		__uuidof(ID3D11Texture2D),
 		reinterpret_cast<void**>(&frameBuffer));
 
+	// Copies the frame buffer to the encode input buffer.
 	m_d3dContext->CopyResource(pEncodeBuffer->stInputBfr.pARGBSurface, frameBuffer);
 	frameBuffer->Release();
 	nvStatus = m_pNvHWEncoder->NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource, &pEncodeBuffer->stInputBfr.hInputSurface);
@@ -131,6 +132,7 @@ void VideoHelper::Capture()
 		return;
 	}
 
+	// Encoding.
 	if (SUCCEEDED(hr))
 	{
 		nvStatus = m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, m_encodeConfig.width, m_encodeConfig.height);

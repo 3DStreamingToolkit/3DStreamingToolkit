@@ -24,6 +24,11 @@ void DeviceResources::CleanupResources()
 	SAFE_RELEASE(m_d3dDevice);
 }
 
+SIZE DeviceResources::GetOutputSize() const
+{
+	return m_outputSize;
+}
+
 ID3D11Device1* DeviceResources::GetD3DDevice() const
 {
 	return m_d3dDevice;
@@ -174,6 +179,8 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	};
 
 	m_d3dContext->RSSetViewports(1, &viewport);
+	m_outputSize.cx = width;
+	m_outputSize.cy = height;
 
 	return hr;
 }
