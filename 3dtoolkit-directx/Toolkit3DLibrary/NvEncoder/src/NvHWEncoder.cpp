@@ -1035,7 +1035,7 @@ NVENCSTATUS CNvHWEncoder::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
 #endif
     }
 
-	// TODO: check eos issue
+	// TODO: Check eos issue
     //if (pEncodeBuffer->stOutputBfr.bEOSFlag)
     //    return NV_ENC_SUCCESS;
 
