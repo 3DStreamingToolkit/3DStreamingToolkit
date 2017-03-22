@@ -426,7 +426,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
-    DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 640, 480 );
+    DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720 );
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
