@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpinningCube", "Samples\Spi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Toolkit3DLibrary", "Toolkit3DLibrary\Toolkit3DLibrary.vcxproj", "{6BC9C817-FD14-4540-A9C0-63CF16F770A6}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MultithreadedRendering11", "Samples\MultithreadedRendering\MultithreadedRendering11_2012.vcxproj", "{D3D11103-96D0-4629-88B8-122C0256058C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -46,11 +48,24 @@ Global
 		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x64.Build.0 = Release|x64
 		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x86.ActiveCfg = Release|Win32
 		{6BC9C817-FD14-4540-A9C0-63CF16F770A6}.Release|x86.Build.0 = Release|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Debug|x64.ActiveCfg = Debug|x64
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Debug|x64.Build.0 = Debug|x64
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Debug|x86.ActiveCfg = Debug|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Debug|x86.Build.0 = Debug|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Profile|x64.ActiveCfg = Profile|x64
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Profile|x64.Build.0 = Profile|x64
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Profile|x86.ActiveCfg = Profile|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Profile|x86.Build.0 = Profile|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x64.ActiveCfg = Release|x64
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x64.Build.0 = Release|x64
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x86.ActiveCfg = Release|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CC6B7BC0-284E-43FD-B4C4-C451A4E944FA} = {E59944F3-3F7E-4B5E-BE6A-504A6A0B4815}
+		{D3D11103-96D0-4629-88B8-122C0256058C} = {E59944F3-3F7E-4B5E-BE6A-504A6A0B4815}
 	EndGlobalSection
 EndGlobal

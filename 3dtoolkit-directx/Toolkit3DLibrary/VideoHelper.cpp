@@ -156,7 +156,7 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 		// Initializes the input buffer, backed by ID3D11Texture2D*.
 		D3D11_TEXTURE2D_DESC desc = { 0 };
 		desc.ArraySize = 1;
-		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		desc.Width = uInputWidth;
 		desc.Height = uInputHeight;
 		desc.MipLevels = 1;
