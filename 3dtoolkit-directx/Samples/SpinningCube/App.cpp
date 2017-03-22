@@ -68,7 +68,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	// Creates window.
-	RECT rc = { 0, 0, 800, 600 };
+	RECT rc = { 0, 0, 1280, 720 };
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	g_hWnd = CreateWindow(
 		L"SpinningCubeClass",
@@ -137,7 +137,7 @@ int WINAPI wWinMain(
 	GetClientRect(g_hWnd, &rc);
 	UINT width = rc.right - rc.left;
 	UINT height = rc.bottom - rc.top;
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), width, height, "output.mp4");
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), width, height, "output.h264");
 
 	// Main message loop.
 	MSG msg = { 0 };
