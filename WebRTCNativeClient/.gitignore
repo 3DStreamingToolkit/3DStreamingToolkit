@@ -22,7 +22,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 
-# Lib files -> use Zip to extract them
+# Lib Binaries -> unzip to compile
 LibBinaries/
 
 # Visual Studio 2015 cache/options directory

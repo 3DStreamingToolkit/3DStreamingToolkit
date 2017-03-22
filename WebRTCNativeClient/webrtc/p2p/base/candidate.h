@@ -109,8 +109,7 @@ class Candidate {
     // This can happen for e.g. when preference = 3.
     uint64_t prio_val = static_cast<uint64_t>(preference * 127) << 24;
     priority_ = static_cast<uint32_t>(
-		prio_val < static_cast<uint64_t>(UINT_MAX) ? prio_val : static_cast<uint64_t>(UINT_MAX)
-        );
+        std::min(prio_val, static_cast<uint64_t>(UINT_MAX)));
   }
 
   // TODO(honghaiz): Change to usernameFragment or ufrag.

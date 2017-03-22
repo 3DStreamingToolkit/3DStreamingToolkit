@@ -259,7 +259,6 @@ class VideoCapturer : public sigslot::has_slots<>,
 
   void UpdateInputSize(int width, int height);
 
- 
   rtc::ThreadChecker thread_checker_;
   std::string id_;
   CaptureState capture_state_;

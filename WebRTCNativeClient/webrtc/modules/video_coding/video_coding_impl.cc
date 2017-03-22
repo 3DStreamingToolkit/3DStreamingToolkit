@@ -200,11 +200,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.RegisterReceiveStatisticsCallback(receiveStats);
   }
 
-  int32_t RegisterDecoderTimingCallback(
-      VCMDecoderTimingCallback* decoderTiming) override {
-    return receiver_.RegisterDecoderTimingCallback(decoderTiming);
-  }
-
   int32_t RegisterFrameTypeCallback(
       VCMFrameTypeCallback* frameTypeCallback) override {
     return receiver_.RegisterFrameTypeCallback(frameTypeCallback);
@@ -235,10 +230,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   }
 
   int32_t Delay() const override { return receiver_.Delay(); }
-
-  uint32_t DiscardedPackets() const override {
-    return receiver_.DiscardedPackets();
-  }
 
   int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                 VCMDecodeErrorMode errorMode) override {
