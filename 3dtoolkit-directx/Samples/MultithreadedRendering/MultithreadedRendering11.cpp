@@ -1477,7 +1477,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
     g_SampleUI.SetSize( 170, 300 );
 
 	// Initializes the video helper
-	g_videoHelper->Initialize(pSwapChain, pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height, "c:\\Projects\\MyGit\\3dtoolkit\\3dtoolkit-directx\\Samples\\MultithreadedRendering\\Build\\Output\\Win32\\Debug\\output.mp4");
+	g_videoHelper->Initialize(pSwapChain, "output.h264");
 
     return S_OK;
 }
