@@ -17,6 +17,7 @@
 #include <set>
 #include <string>
 
+#include "webrtc/media/base/fakevideocapturer.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/examples/peerconnection/client/main_wnd.h"

@@ -184,7 +184,8 @@ class CopyOnWriteBuffer {
       return;
     }
 
-    CloneDataIfReferenced(buffer_->capacity() > buffer_->size() + size ? buffer_->capacity() : buffer_->size() + size);
+    CloneDataIfReferenced(std::max(buffer_->capacity(),
+        buffer_->size() + size));
     buffer_->AppendData(data, size);
     RTC_DCHECK(IsConsistent());
   }
