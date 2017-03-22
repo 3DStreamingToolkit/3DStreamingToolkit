@@ -311,18 +311,6 @@ class VideoCodingModule : public Module {
   virtual int32_t RegisterReceiveStatisticsCallback(
       VCMReceiveStatisticsCallback* receiveStats) = 0;
 
-  // Register a decoder timing callback which will be called to deliver
-  // information about the timing of the decoder in the receiving side of the
-  // VCM, for instance the current and maximum frame decode latency.
-  //
-  // Input:
-  //      - decoderTiming  : The callback object to register.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t RegisterDecoderTimingCallback(
-      VCMDecoderTimingCallback* decoderTiming) = 0;
-
   // Register a frame type request callback. This callback will be called when
   // the
   // module needs to request specific frame types from the send side.
@@ -405,12 +393,6 @@ class VideoCodingModule : public Module {
   // Return value      : Total delay in ms, on success.
   //                     < 0,               on error.
   virtual int32_t Delay() const = 0;
-
-  // Returns the number of packets discarded by the jitter buffer due to being
-  // too late. This can include duplicated packets which arrived after the
-  // frame was sent to the decoder. Therefore packets which were prematurely
-  // NACKed will be counted.
-  virtual uint32_t DiscardedPackets() const = 0;
 
   // Robustness APIs
 
