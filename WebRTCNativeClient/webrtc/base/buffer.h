@@ -328,7 +328,7 @@ class BufferT {
     // https://github.com/facebook/folly/blob/master/folly/docs/FBVector.md and
     // http://www.gahcep.com/cpp-internals-stl-vector-part-1/.
     const size_t new_capacity =
-        extra_headroom ? capacity > capacity_ + capacity_ / 2 ? capacity : capacity_ + capacity_ / 2
+        extra_headroom ? std::max(capacity, capacity_ + capacity_ / 2)
                        : capacity;
 
     std::unique_ptr<T[]> new_data(new T[new_capacity]);

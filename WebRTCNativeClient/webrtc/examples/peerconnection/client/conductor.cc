@@ -409,7 +409,7 @@ void Conductor::AddStreams() {
           kVideoLabel,
           peer_connection_factory_->CreateVideoSource(OpenVideoCaptureDevice(),
                                                       NULL)));
-  main_wnd_->StartLocalRenderer(video_track);
+  // main_wnd_->StartLocalRenderer(video_track);
 
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);

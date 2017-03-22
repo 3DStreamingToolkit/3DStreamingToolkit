@@ -44,7 +44,7 @@ std::string GetPeerConnectionString() {
 }
 
 std::string GetDefaultServerName() {
-  return GetEnvVarOrDefault("WEBRTC_SERVER", "localhost");
+  return GetEnvVarOrDefault("WEBRTC_SERVER", "n3dtoolkit.southcentralus.cloudapp.azure.com");
 }
 
 std::string GetPeerName() {

@@ -22,6 +22,8 @@
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
 
+#include "fakevideocapturer.h"
+
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";
 const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
@@ -368,31 +370,31 @@ void Conductor::ConnectToPeer(int peer_id) {
 
 std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice() {
   std::vector<std::string> device_names;
-  {
-    std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
-        webrtc::VideoCaptureFactory::CreateDeviceInfo());
-    if (!info) {
-      return nullptr;
-    }
-    int num_devices = info->NumberOfDevices();
-    for (int i = 0; i < num_devices; ++i) {
-      const uint32_t kSize = 256;
-      char name[kSize] = {0};
-      char id[kSize] = {0};
-      if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) {
-        device_names.push_back(name);
-      }
-    }
-  }
+  //{
+  //  std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
+  //      webrtc::VideoCaptureFactory::CreateDeviceInfo());
+  //  if (!info) {
+  //    return nullptr;
+  //  }
+  //  int num_devices = info->NumberOfDevices();
+  //  for (int i = 0; i < num_devices; ++i) {
+  //    const uint32_t kSize = 256;
+  //    char name[kSize] = {0};
+  //    char id[kSize] = {0};
+  //    if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) {
+  //      device_names.push_back(name);
+  //    }
+  //  }
+  //}
 
-  cricket::WebRtcVideoDeviceCapturerFactory factory;
+  VideoCapturerFactoryCustom factory;
   std::unique_ptr<cricket::VideoCapturer> capturer;
-  for (const auto& name : device_names) {
-    capturer = factory.Create(cricket::Device(name, 0));
-    if (capturer) {
-      break;
-    }
-  }
+
+  cricket::Device dummyDevice;
+  dummyDevice.name = "custom dummy device";
+
+  capturer = factory.Create(dummyDevice);
+
   return capturer;
 }
 
@@ -400,9 +402,9 @@ void Conductor::AddStreams() {
   if (active_streams_.find(kStreamLabel) != active_streams_.end())
     return;  // Already added.
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      peer_connection_factory_->CreateAudioTrack(
-          kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
+  //rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+  //    peer_connection_factory_->CreateAudioTrack(
+  //        kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
       peer_connection_factory_->CreateVideoTrack(
@@ -414,7 +416,7 @@ void Conductor::AddStreams() {
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
-  stream->AddTrack(audio_track);
+  // stream->AddTrack(audio_track);
   stream->AddTrack(video_track);
   if (!peer_connection_->AddStream(stream)) {
     LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
