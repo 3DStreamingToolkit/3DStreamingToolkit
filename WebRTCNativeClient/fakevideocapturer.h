@@ -74,7 +74,6 @@ public:
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
 			webrtc::I420Buffer::Create(720, 480));
 		buffer->InitializeData();
-		buffer->InitializeData
 		webrtc::I420Buffer::SetBlack(buffer);
 
 		auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();

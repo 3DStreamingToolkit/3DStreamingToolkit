@@ -153,17 +153,15 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 	// Initializes the encode buffer queue.
 	m_EncodeBufferQueue.Initialize(m_stEncodeBuffer, m_uEncodeBufferCount);
 
-	// Finds the suitable format.
-	DXGI_FORMAT format;
-	switch (swapChainDesc.BufferDesc.Format)
+	// Finds the suitable format for buffer.
+	DXGI_FORMAT format = swapChainDesc.BufferDesc.Format;
+	if (format == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
 	{
-		case DXGI_FORMAT_R8G8B8A8_UNORM:
-		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
-			format = DXGI_FORMAT_R8G8B8A8_UNORM;
-			break;
-
-		default:
-			format = DXGI_FORMAT_B8G8R8A8_UNORM;
+		format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	}
+	else if (format == DXGI_FORMAT_B8G8R8A8_UNORM_SRGB)
+	{
+		format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	}
 
 	for (uint32_t i = 0; i < m_uEncodeBufferCount; i++)
@@ -194,7 +192,22 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 			return nvStatus;
 		}
 
-		m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_ARGB;
+		// Maps the buffer format to the relevant NvEnc encoder format
+		switch (format)
+		{
+			case DXGI_FORMAT_B8G8R8A8_UNORM:
+				m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_ARGB;
+				break;
+
+			case DXGI_FORMAT_R10G10B10A2_UNORM:
+				m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+				break;
+
+			default:
+				m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_ABGR;
+				break;
+		}
+
 		m_stEncodeBuffer[i].stInputBfr.dwWidth = uInputWidth;
 		m_stEncodeBuffer[i].stInputBfr.dwHeight = uInputHeight;
 		m_stEncodeBuffer[i].stInputBfr.pARGBSurface = pVPSurfaces[i];
