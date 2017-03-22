@@ -130,7 +130,7 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferCount = 2; // Front and back buffer to swap
 		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
-		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swapChainDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
 		hr = dxgiFactory2->CreateSwapChainForHwnd(
@@ -140,6 +140,11 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 			nullptr, 
 			nullptr, 
 			&m_swapChain);
+
+		if (FAILED(hr))
+		{
+			return hr;
+		}
 
 		dxgiFactory2->Release();
 	}
