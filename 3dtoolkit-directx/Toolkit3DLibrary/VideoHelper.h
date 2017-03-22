@@ -88,7 +88,7 @@ namespace Toolkit3DLibrary
 	public:
 												VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context);
 												~VideoHelper();
-		void									Initialize(IDXGISwapChain* swapChain, int width, int height, char* outputFile);
+		void									Initialize(IDXGISwapChain* swapChain, char* outputFile);
 		void									Capture();
 
 	private:
@@ -105,7 +105,7 @@ namespace Toolkit3DLibrary
 		EncodeConfig							m_encodeConfig;
 
 		NVENCSTATUS                             Deinitialize();
-		NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight);
+		NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc);
 		NVENCSTATUS								ReleaseIOBuffers();
 		NVENCSTATUS                             FlushEncoder();
 

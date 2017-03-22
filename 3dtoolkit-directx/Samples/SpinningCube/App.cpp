@@ -137,7 +137,7 @@ int WINAPI wWinMain(
 	GetClientRect(g_hWnd, &rc);
 	UINT width = rc.right - rc.left;
 	UINT height = rc.bottom - rc.top;
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), width, height, "output.h264");
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
 
 	// Main message loop.
 	MSG msg = { 0 };

@@ -29,15 +29,17 @@ VideoHelper::~VideoHelper()
 }
 
 // Initializes the swap chain and IO buffers.
-void VideoHelper::Initialize(IDXGISwapChain* swapChain, int width, int height, char* outputFile)
+void VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 {
-	m_swapChain = swapChain;
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
-	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	swapChain->GetDesc(&swapChainDesc);
+	m_swapChain = swapChain;
 
+	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
 	m_encodeConfig.outputFileName = outputFile;
-	m_encodeConfig.width = width;
-	m_encodeConfig.height = height;
+	m_encodeConfig.width = swapChainDesc.BufferDesc.Width;
+	m_encodeConfig.height = swapChainDesc.BufferDesc.Height;
 	m_encodeConfig.endFrameIdx = INT_MAX;
 	m_encodeConfig.bitrate = 5000000;
 	m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
@@ -78,7 +80,7 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain, int width, int height, c
 
 	m_uEncodeBufferCount = m_encodeConfig.numB + 4;
 
-	nvStatus = AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height);
+	nvStatus = AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height, swapChainDesc);
 	if (nvStatus != NV_ENC_SUCCESS)
 	{
 		return;
@@ -143,7 +145,7 @@ void VideoHelper::Capture()
 	}
 }
 
-NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight)
+NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)
 {
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	ID3D11Texture2D* pVPSurfaces[16];
@@ -151,12 +153,25 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 	// Initializes the encode buffer queue.
 	m_EncodeBufferQueue.Initialize(m_stEncodeBuffer, m_uEncodeBufferCount);
 
+	// Finds the suitable format.
+	DXGI_FORMAT format;
+	switch (swapChainDesc.BufferDesc.Format)
+	{
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+			format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			break;
+
+		default:
+			format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	}
+
 	for (uint32_t i = 0; i < m_uEncodeBufferCount; i++)
 	{
 		// Initializes the input buffer, backed by ID3D11Texture2D*.
 		D3D11_TEXTURE2D_DESC desc = { 0 };
 		desc.ArraySize = 1;
-		desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		desc.Format = format;
 		desc.Width = uInputWidth;
 		desc.Height = uInputHeight;
 		desc.MipLevels = 1;
