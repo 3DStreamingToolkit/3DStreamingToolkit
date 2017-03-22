@@ -509,7 +509,7 @@ NVENCSTATUS CNvHWEncoder::NvEncRegisterResource(NV_ENC_INPUT_RESOURCE_TYPE resou
     registerResParams.width = width;
     registerResParams.height = height;
     registerResParams.pitch = pitch;
-    registerResParams.bufferFormat = NV_ENC_BUFFER_FORMAT_ARGB;
+    registerResParams.bufferFormat = NV_ENC_BUFFER_FORMAT_ABGR;
 
     nvStatus = m_pEncodeAPI->nvEncRegisterResource(m_hEncoder, &registerResParams);
     if (nvStatus != NV_ENC_SUCCESS)
@@ -1035,8 +1035,9 @@ NVENCSTATUS CNvHWEncoder::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
 #endif
     }
 
-    if (pEncodeBuffer->stOutputBfr.bEOSFlag)
-        return NV_ENC_SUCCESS;
+	// TODO: check eos issue
+    //if (pEncodeBuffer->stOutputBfr.bEOSFlag)
+    //    return NV_ENC_SUCCESS;
 
     nvStatus = NV_ENC_SUCCESS;
     NV_ENC_LOCK_BITSTREAM lockBitstreamData;
