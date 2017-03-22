@@ -183,7 +183,7 @@ void CubeRenderer::Render()
 	context->OMSetRenderTargets(1, targets, nullptr);
 
 	// Clear the back buffer.
-	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::CornflowerBlue);
+	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::Black);
 
 	// Prepares the constant buffer to send it to the graphics device.
 	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
