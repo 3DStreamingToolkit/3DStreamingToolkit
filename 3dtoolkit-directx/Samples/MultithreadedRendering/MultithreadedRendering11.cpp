@@ -6,11 +6,11 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //--------------------------------------------------------------------------------------
+#include "resource.h"
 #include "DXUT.h"
 #include "DXUTcamera.h"
 #include "DXUTgui.h"
 #include "DXUTsettingsDlg.h"
-#include "resource.h"
 #include "SDKmisc.h"
 #include "SDKMesh.h"
 
@@ -224,14 +224,21 @@ CModelViewerCamera          g_Camera;               // A model viewing camera
 
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 150.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
-static const FLOAT          s_fNearPlane            = 2.0f;
-static const FLOAT          s_fFarPlane             = 4000.0f;
-static const FLOAT          s_fFOV                  = XM_PI / 4.0f;
-static const XMVECTORF32    s_vSceneCenter          = { 0.0f, 350.0f, 0.0f, 0.f };
-static const FLOAT          s_fSceneRadius          = 600.0f;
-static const FLOAT          s_fDefaultCameraRadius  = 300.0f;
-static const FLOAT          s_fMinCameraRadius      = 150.0f;
-static const FLOAT          s_fMaxCameraRadius      = 450.0f;
+static const FLOAT          s_fNearPlane = 2.0f;
+static const FLOAT          s_fFarPlane = 4000.0f;
+static const FLOAT          s_fFOV = XM_PI / 4.0f;
+static const XMVECTORF32    s_vSceneCenter = { 0.0f, 350.0f, 0.0f, 0.f };
+static const FLOAT          s_fSceneRadius = 600.0f;
+static const FLOAT          s_fDefaultCameraRadius = 300.0f;
+static const FLOAT          s_fMinCameraRadius = 150.0f;
+static const FLOAT          s_fMaxCameraRadius = 450.0f;
+
+#ifdef STEREO_OUTPUT_MODE
+	CModelViewerCamera          g_Camera_left;               // A model viewing camera
+	CModelViewerCamera			g_Camera_right;
+#endif
+
+
 
 #ifdef RENDER_SCENE_LIGHT_POV
 bool                        g_bRenderSceneLightPOV  = false;
@@ -426,7 +433,11 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
-    DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720 );
+#ifdef STEREO_OUTPUT_MODE
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 2560, 720);
+#else
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
+#endif // STEREO_OUTPUT_MODE
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
