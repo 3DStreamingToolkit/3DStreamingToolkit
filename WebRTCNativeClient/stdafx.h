@@ -19,3 +19,7 @@
 
 
 // TODO: reference additional headers your program requires here
+#include <d3d11_1.h>
+#include <d3dcompiler.h>
+#include <DirectXColors.h>
+#include <DirectXMath.h>
