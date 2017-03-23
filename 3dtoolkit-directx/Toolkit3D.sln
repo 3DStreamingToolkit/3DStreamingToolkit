@@ -14,6 +14,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Toolkit3DLibrary", "Toolkit
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MultithreadedRendering11", "Samples\MultithreadedRendering\MultithreadedRendering11_2012.vcxproj", "{D3D11103-96D0-4629-88B8-122C0256058C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WebRTCNativeClient", "..\WebRTCNativeClient\WebRTCNativeClient.vcxproj", "{3584A64E-FEEC-402B-9D3C-21A6930FF32B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -60,6 +62,18 @@ Global
 		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x64.Build.0 = Release|x64
 		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x86.ActiveCfg = Release|Win32
 		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x86.Build.0 = Release|Win32
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Debug|x64.ActiveCfg = Debug|x64
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Debug|x64.Build.0 = Debug|x64
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Debug|x86.ActiveCfg = Debug|Win32
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Debug|x86.Build.0 = Debug|Win32
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Profile|x64.ActiveCfg = Release|x64
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Profile|x64.Build.0 = Release|x64
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Profile|x86.ActiveCfg = Release|Win32
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Profile|x86.Build.0 = Release|Win32
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Release|x64.ActiveCfg = Release|x64
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Release|x64.Build.0 = Release|x64
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Release|x86.ActiveCfg = Release|Win32
+		{3584A64E-FEEC-402B-9D3C-21A6930FF32B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
