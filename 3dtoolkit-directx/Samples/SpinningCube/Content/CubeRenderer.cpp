@@ -135,6 +135,10 @@ void CubeRenderer::InitPipeline()
 
 	// Initializes the projection matrix.
 	SIZE outputSize = m_deviceResources->GetOutputSize();
+#ifdef STEREO_OUTPUT_MODE
+	outputSize.cy = outputSize.cy * 2;
+#endif // STEREO_OUTPUT_MODE
+
 	float aspectRatio = (float)outputSize.cx / outputSize.cy;
 	float fovAngleY = 70.0f * XM_PI / 180.0f;
 
