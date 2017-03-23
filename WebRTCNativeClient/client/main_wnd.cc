@@ -19,23 +19,8 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
-#include "directx/DeviceResources.h"
-#include "directx/CubeRenderer.h"
-#include "VideoHelper.h"
-
-using namespace DX;
-using namespace Toolkit3DLibrary;
-using namespace Toolkit3DSample;
-
 ATOM MainWnd::wnd_class_ = 0;
 const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";
-
-//--------------------------------------------------------------------------------------
-// Toolkit3DLibrary
-//--------------------------------------------------------------------------------------
-DeviceResources*	g_deviceResources = nullptr;
-CubeRenderer*		g_cubeRenderer = nullptr;
-VideoHelper*		g_videoHelper = nullptr;
 
 using rtc::sprintfn;
 
@@ -113,24 +98,6 @@ bool MainWnd::Create() {
 
   CreateChildWindows();
   SwitchToConnectUI();
-
-  // Initializes the device resources.
-  g_deviceResources = new DeviceResources();
-  g_deviceResources->SetWindow(wnd_);
-
-  // Initializes the cube renderer.
-  g_cubeRenderer = new CubeRenderer(g_deviceResources);
-
-  // Creates and initializes the video helper library.
-  g_videoHelper = new VideoHelper(
-	  g_deviceResources->GetD3DDevice(),
-	  g_deviceResources->GetD3DDeviceContext());
-
-  RECT rc;
-  GetClientRect(wnd_, &rc);
-  UINT width = rc.right - rc.left;
-  UINT height = rc.bottom - rc.top;
-  g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
 
   return wnd_ != NULL;
 }
