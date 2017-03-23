@@ -6,6 +6,11 @@ using namespace DirectX;
 using namespace DX;
 using namespace Toolkit3DSample;
 
+// Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
+static const XMVECTORF32 eye = { 0.0f, 0.7f, 1.5f, 0.0f };
+static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f, 0.0f };
+static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	m_degreesPerSecond(45),
 	m_indexCount(0),
@@ -156,11 +161,6 @@ void CubeRenderer::InitPipeline()
 		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
 	);
 
-	// Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
-	static const XMVECTORF32 eye = { 0.0f, 0.7f, 1.5f, 0.0f };
-	static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f, 0.0f };
-	static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-
 	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
 }
 
@@ -185,9 +185,6 @@ void CubeRenderer::Render()
 	// Clear the back buffer.
 	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::Black);
 
-	// Prepares the constant buffer to send it to the graphics device.
-	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
-
 	// Sets the vertex buffer and index buffer.
 	UINT stride = sizeof(VertexPositionColor);
 	UINT offset = 0;
@@ -204,14 +201,30 @@ void CubeRenderer::Render()
 	// Gets the viewport.
 	D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
 
+	// Updates view matrix for the left eye.
+	XMVECTORF32 leftEye = eye;
+	leftEye.f[0] -= IPD / 2;
+	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(leftEye, at, up)));
+	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
+
 	// Draws the objects in the left eye.
 	context->RSSetViewports(1, viewports);
 	context->DrawIndexed(m_indexCount, 0, 0);
+
+	// Updates view matrix for the right eye.
+	XMVECTORF32 rightEye = eye;
+	rightEye.f[0] += IPD / 2;
+	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(rightEye, at, up)));
+	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
 
 	// Draws the objects in the right eye.
 	context->RSSetViewports(1, viewports + 1);
 	context->DrawIndexed(m_indexCount, 0, 0);
 #else // STEREO_OUTPUT_MODE
+	// Updates view matrix.
+	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
+
 	// Draws the objects.
 	context->DrawIndexed(m_indexCount, 0, 0);
 #endif // STEREO_OUTPUT_MODE
