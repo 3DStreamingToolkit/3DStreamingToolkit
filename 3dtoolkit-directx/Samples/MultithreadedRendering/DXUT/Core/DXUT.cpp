@@ -2217,19 +2217,34 @@ HRESULT WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext 
     HRESULT hr = S_OK;
 
     // Setup the viewport to match the backbuffer
-    D3D11_VIEWPORT vp;
-    vp.Width = (FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
-    vp.Height = (FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
-    vp.MinDepth = 0;
-    vp.MaxDepth = 1;
-    vp.TopLeftX = 0;
-    vp.TopLeftY = 0;
-    pd3dDeviceContext->RSSetViewports( 1, &vp );
+	D3D11_VIEWPORT* vp;
+#ifdef STEREO_OUTPUT_MODE
+	vp = new D3D11_VIEWPORT[2];
+	vp[0] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+	vp[1] = CD3D11_VIEWPORT(
+		(FLOAT)width / 2,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width /2,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+#else
+	vp = new D3D11_VIEWPORT[1];
+	vp[0] = CD3D11_VIEWPORT(
+		0.0f, 
+		0.0f, 
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+	pd3dDeviceContext->RSSetViewports(1, vp);
 
-    // Set the render targets
-    ID3D11RenderTargetView* pRTV = GetDXUTState().GetD3D11RenderTargetView();
-    ID3D11DepthStencilView* pDSV = GetDXUTState().GetD3D11DepthStencilView();
-    pd3dDeviceContext->OMSetRenderTargets( 1, &pRTV, pDSV );
+	// Set the render targets
+	ID3D11RenderTargetView* pRTV = GetDXUTState().GetD3D11RenderTargetView();
+	ID3D11DepthStencilView* pDSV = GetDXUTState().GetD3D11DepthStencilView();
+	pd3dDeviceContext->OMSetRenderTargets(1, &pRTV, pDSV);
+#endif
+	
 
     return hr;
 }

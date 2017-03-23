@@ -3,6 +3,7 @@
 // Used by BasicHLSL10.rc
 //
 #define IDI_MAIN_ICON                   101
+#define STEREO_OUTPUT_MODE
 
 // Next default values for new objects
 // 
