@@ -18,6 +18,7 @@ DeviceResources::~DeviceResources()
 
 void DeviceResources::CleanupResources()
 {
+	delete []m_screenViewport;
 	SAFE_RELEASE(m_d3dContext);
 	SAFE_RELEASE(m_d3dRenderTargetView);
 	SAFE_RELEASE(m_swapChain);
@@ -49,7 +50,7 @@ ID3D11RenderTargetView* DeviceResources::GetBackBufferRenderTargetView() const
 	return m_d3dRenderTargetView;
 }
 
-D3D11_VIEWPORT DeviceResources::GetScreenViewport() const
+D3D11_VIEWPORT* DeviceResources::GetScreenViewport() const
 {
 	return m_screenViewport;
 }
@@ -98,6 +99,12 @@ HRESULT DeviceResources::CreateDeviceResources()
 // These resources need to be recreated every time the window size is changed.
 HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 {
+	// Gets the width and height of the window.
+	RECT rc;
+	GetClientRect(hWnd, &rc);
+	UINT width = rc.right - rc.left;
+	UINT height = rc.bottom - rc.top;
+
 	// Obtains DXGI factory from device.
 	HRESULT hr = S_OK;
 	IDXGIDevice* dxgiDevice = nullptr;
@@ -132,6 +139,8 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
 		swapChainDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		swapChainDesc.Width = width;
+		swapChainDesc.Height = height;
 
 		hr = dxgiFactory2->CreateSwapChainForHwnd(
 			m_d3dDevice, 
@@ -168,22 +177,33 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	}
 
 	// Initializes the viewport.
-	RECT rc;
-	GetClientRect(hWnd, &rc);
-	UINT width = rc.right - rc.left;
-	UINT height = rc.bottom - rc.top;
+#ifdef STEREO_OUTPUT_MODE
+	m_screenViewport = new D3D11_VIEWPORT[2];
 
-	D3D11_VIEWPORT viewport =
-	{
-		0,				// TopLeftX
-		0,				// TopLeftY
-		(FLOAT)width,	// Width
-		(FLOAT)height,	// Height
-		0.0f,			// MinDepth
-		1.0f			// MaxDepth
-	};
+	// Left eye.
+	m_screenViewport[0] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)width / 2,
+		(FLOAT)height);
 
-	m_d3dContext->RSSetViewports(1, &viewport);
+	// Right eye.
+	m_screenViewport[1] = CD3D11_VIEWPORT(
+		(FLOAT)width / 2,
+		0.0f,
+		(FLOAT)width / 2,
+		(FLOAT)height);
+#else // STEREO_OUTPUT_MODE
+	m_screenViewport = new D3D11_VIEWPORT[1];
+	m_screenViewport[0] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)width,
+		(FLOAT)height);
+
+	m_d3dContext->RSSetViewports(1, m_screenViewport);
+#endif // STEREO_OUTPUT_MODE
+
 	m_outputSize.cx = width;
 	m_outputSize.cy = height;
 

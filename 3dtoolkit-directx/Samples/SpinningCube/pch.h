@@ -6,3 +6,5 @@
 #include <d3dcompiler.h>
 #include <DirectXColors.h>
 #include <DirectXMath.h>
+
+#include "defs.h"
