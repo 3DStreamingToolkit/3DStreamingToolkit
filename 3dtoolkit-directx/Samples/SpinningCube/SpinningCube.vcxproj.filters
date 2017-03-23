@@ -31,5 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="defs.h" />
   </ItemGroup>
 </Project>

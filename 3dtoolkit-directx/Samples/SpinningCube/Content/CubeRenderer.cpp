@@ -200,6 +200,19 @@ void CubeRenderer::Render()
 	// Sends the constant buffer to the graphics device.
 	context->VSSetConstantBuffers1(0, 1, &m_constantBuffer, nullptr, nullptr);
 
+#ifdef STEREO_OUTPUT_MODE
+	// Gets the viewport.
+	D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
+
+	// Draws the objects in the left eye.
+	context->RSSetViewports(1, viewports);
+	context->DrawIndexed(m_indexCount, 0, 0);
+
+	// Draws the objects in the right eye.
+	context->RSSetViewports(1, viewports + 1);
+	context->DrawIndexed(m_indexCount, 0, 0);
+#else // STEREO_OUTPUT_MODE
 	// Draws the objects.
 	context->DrawIndexed(m_indexCount, 0, 0);
+#endif // STEREO_OUTPUT_MODE
 }

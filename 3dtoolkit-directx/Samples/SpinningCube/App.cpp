@@ -68,7 +68,11 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	// Creates window.
+#ifdef STEREO_OUTPUT_MODE
+	RECT rc = { 0, 0, 2560, 720 };
+#else
 	RECT rc = { 0, 0, 1280, 720 };
+#endif
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	g_hWnd = CreateWindow(
 		L"SpinningCubeClass",

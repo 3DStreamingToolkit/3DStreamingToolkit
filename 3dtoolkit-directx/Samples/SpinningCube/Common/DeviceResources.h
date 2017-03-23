@@ -18,7 +18,7 @@ namespace DX
 		ID3D11DeviceContext1*						GetD3DDeviceContext() const;
 		IDXGISwapChain1*							GetSwapChain() const;
 		ID3D11RenderTargetView*						GetBackBufferRenderTargetView() const;
-		D3D11_VIEWPORT								GetScreenViewport() const;
+		D3D11_VIEWPORT*								GetScreenViewport() const;
 
 	private:
 		// Direct3D objects.
@@ -28,7 +28,7 @@ namespace DX
 
 		// Direct3D rendering objects. Required for 3D.
 		ID3D11RenderTargetView*						m_d3dRenderTargetView;
-		D3D11_VIEWPORT								m_screenViewport;
+		D3D11_VIEWPORT*								m_screenViewport;
 
 		// Cached device properties.
 		SIZE										m_outputSize;
