@@ -54,6 +54,12 @@
     <ClInclude Include="directx\DeviceResources.h">
       <Filter>DirectX</Filter>
     </ClInclude>
+    <ClInclude Include="directx\CubeRenderer.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="directx\DirectXHelper.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -77,6 +83,9 @@
     <ClCompile Include="directx\DeviceResources.cpp">
       <Filter>DirectX</Filter>
     </ClCompile>
+    <ClCompile Include="directx\CubeRenderer.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WebRTCNativeClient.rc">
@@ -90,5 +99,13 @@
     <Image Include="WebRTCNativeClient.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="directx\PixelShader.hlsl">
+      <Filter>DirectX</Filter>
+    </FxCompile>
+    <FxCompile Include="directx\VertexShader.hlsl">
+      <Filter>DirectX</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
