@@ -172,8 +172,9 @@ public:
 	void SendFakeVideoFrame()
 	{
 		void* pFrameBuffer = nullptr;
-		int frameSizeInBytes, width, height = 0;
+		int frameSizeInBytes, width = 0, height = 0;
 		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
+		//g_videoHelper->CaptureCompressedFrame(&pFrameBuffer, &frameSizeInBytes);
 		if (frameSizeInBytes == 0)
 		{
 			return;
