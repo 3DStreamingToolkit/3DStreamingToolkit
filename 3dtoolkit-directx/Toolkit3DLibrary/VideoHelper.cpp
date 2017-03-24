@@ -159,68 +159,6 @@ void VideoHelper::Capture()
 	}
 }
 
-/* Based on formulas found at http://en.wikipedia.org/wiki/YUV */
-int
-vidcap_rgb32_to_i420(int width, int height, const char * src, char * dst)
-{
-	unsigned char * dst_y_even;
-	unsigned char * dst_y_odd;
-	unsigned char * dst_u;
-	unsigned char * dst_v;
-	const unsigned char *src_even;
-	const unsigned char *src_odd;
-	int i, j;
-
-	src_even = (const unsigned char *)src;
-	src_odd = src_even + width * 4;
-
-	dst_y_even = (unsigned char *)dst;
-	dst_y_odd = dst_y_even + width;
-	dst_u = dst_y_even + width * height;
-	dst_v = dst_u + ((width * height) >> 2);
-
-	for (i = 0; i < height / 2; ++i)
-	{
-		for (j = 0; j < width / 2; ++j)
-		{
-			short r, g, b;
-			b = *src_even++;
-			g = *src_even++;
-			r = *src_even++;
-			++src_even;
-			*dst_y_even++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
-
-			*dst_u++ = ((r * -38 - g * 74 + b * 112 + 128) >> 8) + 128;
-			*dst_v++ = ((r * 112 - g * 94 - b * 18 + 128) >> 8) + 128;
-
-			b = *src_even++;
-			g = *src_even++;
-			r = *src_even++;
-			++src_even;
-			*dst_y_even++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
-
-			b = *src_odd++;
-			g = *src_odd++;
-			r = *src_odd++;
-			++src_odd;
-			*dst_y_odd++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
-
-			b = *src_odd++;
-			g = *src_odd++;
-			r = *src_odd++;
-			++src_odd;
-			*dst_y_odd++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
-		}
-
-		dst_y_even += width;
-		dst_y_odd += width;
-		src_even += width * 4;
-		src_odd += width * 4;
-	}
-
-	return 0;
-}
-
 // Captures frame buffer from the swap chain.
 void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 {
@@ -251,13 +189,18 @@ void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 		int bufferHeight = m_stagingFrameBufferDesc.Height;
 		size_t size_y = static_cast<size_t>(bufferWidth) * bufferHeight;
 		size_t size_uv = static_cast<size_t>(half_width) * ((bufferHeight + 1) / 2);
-		// char* dst = new char[size_y + size_uv + size_uv];
-		//vidcap_rgb32_to_i420(width, height, (char*)mapped.pData, dst);
 		*buffer = (char*)mapped.pData;
 		*size = size_y + size_uv + size_uv;
 		*width = bufferWidth;
 		*height = bufferHeight;
 	}
+}
+
+void VideoHelper::CaptureCompressedFrame(void** buffer, int* size)
+{
+	NV_ENC_LOCK_BITSTREAM bitStream = m_pNvHWEncoder->GetLockBitStream();
+	*buffer = bitStream.bitstreamBufferPtr;
+	*size = bitStream.bitstreamSizeInBytes;
 }
 
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)
