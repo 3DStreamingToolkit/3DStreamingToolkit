@@ -91,6 +91,7 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
   {
 	g_cubeRenderer->Update();
 	g_cubeRenderer->Render();
+	g_videoHelper->Capture();
 
 	// Enable preview window
 	//g_deviceResources->Present();

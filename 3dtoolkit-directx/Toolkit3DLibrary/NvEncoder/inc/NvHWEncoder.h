@@ -162,6 +162,7 @@ public:
     uint32_t                                             m_uMaxHeight;
     uint32_t                                             m_uCurWidth;
     uint32_t                                             m_uCurHeight;
+	NV_ENC_LOCK_BITSTREAM								 m_lockBitstreamData;
 
 protected:
     bool                                                 m_bEncoderInitialized;
@@ -225,6 +226,7 @@ public:
     NVENCSTATUS                                          FlushEncoder();
     NVENCSTATUS                                          ValidateEncodeGUID(GUID inputCodecGuid);
     NVENCSTATUS                                          ValidatePresetGUID(GUID presetCodecGuid, GUID inputCodecGuid);
+	NV_ENC_LOCK_BITSTREAM								 GetLockBitStream();
     static NVENCSTATUS                                   ParseArguments(EncodeConfig *encodeConfig, int argc, char *argv[]);
 };
 
