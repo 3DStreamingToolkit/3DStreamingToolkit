@@ -6,5 +6,5 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Net35Only.unity
-    guid: 42cf46b0ae2390c4ba41dad28f474ff3
+    path: Assets/WebRtcUtils.unity
+    guid: 669dce1d7f852914abd69405bad8f917

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace TestLibNet35
 {
-    public class Net35Lib
+    public class Net35
     {
         public string Hello(string msg)
         {
