@@ -26,6 +26,8 @@ VideoHelper::~VideoHelper()
 		delete m_pNvHWEncoder;
 		m_pNvHWEncoder = NULL;
 	}
+
+	SAFE_RELEASE(m_stagingFrameBuffer);
 }
 
 // Initializes the swap chain and IO buffers.
@@ -85,6 +87,18 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 	{
 		return;
 	}
+
+	// Initializes the input buffer, backed by ID3D11Texture2D*.
+	m_stagingFrameBufferDesc = { 0 };
+	m_stagingFrameBufferDesc.ArraySize = 1;
+	m_stagingFrameBufferDesc.Format = swapChainDesc.BufferDesc.Format;
+	m_stagingFrameBufferDesc.Width = swapChainDesc.BufferDesc.Width;
+	m_stagingFrameBufferDesc.Height = swapChainDesc.BufferDesc.Height;
+	m_stagingFrameBufferDesc.MipLevels = 1;
+	m_stagingFrameBufferDesc.SampleDesc.Count = 1;
+	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
+	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
 }
 
 // Cleanup resources.
@@ -145,12 +159,102 @@ void VideoHelper::Capture()
 	}
 }
 
+/* Based on formulas found at http://en.wikipedia.org/wiki/YUV */
+int
+vidcap_rgb32_to_i420(int width, int height, const char * src, char * dst)
+{
+	unsigned char * dst_y_even;
+	unsigned char * dst_y_odd;
+	unsigned char * dst_u;
+	unsigned char * dst_v;
+	const unsigned char *src_even;
+	const unsigned char *src_odd;
+	int i, j;
+
+	src_even = (const unsigned char *)src;
+	src_odd = src_even + width * 4;
+
+	dst_y_even = (unsigned char *)dst;
+	dst_y_odd = dst_y_even + width;
+	dst_u = dst_y_even + width * height;
+	dst_v = dst_u + ((width * height) >> 2);
+
+	for (i = 0; i < height / 2; ++i)
+	{
+		for (j = 0; j < width / 2; ++j)
+		{
+			short r, g, b;
+			b = *src_even++;
+			g = *src_even++;
+			r = *src_even++;
+			++src_even;
+			*dst_y_even++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
+
+			*dst_u++ = ((r * -38 - g * 74 + b * 112 + 128) >> 8) + 128;
+			*dst_v++ = ((r * 112 - g * 94 - b * 18 + 128) >> 8) + 128;
+
+			b = *src_even++;
+			g = *src_even++;
+			r = *src_even++;
+			++src_even;
+			*dst_y_even++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
+
+			b = *src_odd++;
+			g = *src_odd++;
+			r = *src_odd++;
+			++src_odd;
+			*dst_y_odd++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
+
+			b = *src_odd++;
+			g = *src_odd++;
+			r = *src_odd++;
+			++src_odd;
+			*dst_y_odd++ = ((r * 66 + g * 129 + b * 25 + 128) >> 8) + 16;
+		}
+
+		dst_y_even += width;
+		dst_y_odd += width;
+		src_even += width * 4;
+		src_odd += width * 4;
+	}
+
+	return 0;
+}
+
 // Captures frame buffer from the swap chain.
 void VideoHelper::Capture(void** buffer, int* size)
 {
-	NV_ENC_LOCK_BITSTREAM bitStream = m_pNvHWEncoder->GetLockBitStream();
-	*buffer = bitStream.bitstreamBufferPtr;
-	*size = bitStream.bitstreamSizeInBytes;
+	// Gets the frame buffer from the swap chain.
+	ID3D11Texture2D* frameBuffer = nullptr;
+	HRESULT hr = m_swapChain->GetBuffer(0,
+		__uuidof(ID3D11Texture2D),
+		reinterpret_cast<void**>(&frameBuffer));
+
+	if (FAILED(hr))
+	{
+		return;
+	}
+
+	// Copies the frame buffer to the encode input buffer.
+	m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
+	frameBuffer->Release();
+
+	// Accesses frame buffer
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	hr = m_d3dContext->Map(m_stagingFrameBuffer, 0, D3D11_MAP_READ, 0, &mapped);
+	if (SUCCEEDED(hr))
+	{
+		m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
+		int width = m_stagingFrameBufferDesc.Width;
+		int half_width = width >> 1;
+		int height = m_stagingFrameBufferDesc.Height;
+		size_t size_y = static_cast<size_t>(width) * height;
+		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
+		char* dst = new char[size_y + size_uv + size_uv];
+		vidcap_rgb32_to_i420(width, height, (char*)mapped.pData, dst);
+		*buffer = dst;
+		*size = size_y + size_uv + size_uv;
+	}
 }
 
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)
