@@ -87,6 +87,7 @@ protected:
         ID3D11Texture2D*        m_D3D11DepthStencil;       // the D3D11 depth stencil texture (optional)
         ID3D11DepthStencilView* m_D3D11DepthStencilView;   // the D3D11 depth stencil view (optional)
         ID3D11RenderTargetView* m_D3D11RenderTargetView;   // the D3D11 render target view
+		D3D11_VIEWPORT*			m_D3D11ScreenViewport;		   // the D3D11 screen viewport
         ID3D11RasterizerState*  m_D3D11RasterizerState;    // the D3D11 Rasterizer state
 
         // D3D11.1 specific
@@ -292,6 +293,7 @@ public:
     GET_SET_ACCESSOR( ID3D11Texture2D*, D3D11DepthStencil );
     GET_SET_ACCESSOR( ID3D11DepthStencilView*, D3D11DepthStencilView );   
     GET_SET_ACCESSOR( ID3D11RenderTargetView*, D3D11RenderTargetView );
+	GET_SET_ACCESSOR( D3D11_VIEWPORT*, D3D11ScreenViewport);
     GET_SET_ACCESSOR( ID3D11RasterizerState*, D3D11RasterizerState );
 
     GET_SET_ACCESSOR( ID3D11Device1*, D3D11Device1 );
@@ -557,6 +559,7 @@ ID3D11DeviceContext* WINAPI DXUTGetD3D11DeviceContext()    { return GetDXUTState
 ID3D11DeviceContext1* WINAPI DXUTGetD3D11DeviceContext1()  { return GetDXUTState().GetD3D11DeviceContext1(); }
 IDXGISwapChain* WINAPI DXUTGetDXGISwapChain()              { return GetDXUTState().GetDXGISwapChain(); }
 ID3D11RenderTargetView* WINAPI DXUTGetD3D11RenderTargetView() { return GetDXUTState().GetD3D11RenderTargetView(); }
+D3D11_VIEWPORT* WINAPI DXUTGetD3D11ScreenViewport()        { return GetDXUTState().GetD3D11ScreenViewport(); }
 ID3D11DepthStencilView* WINAPI DXUTGetD3D11DepthStencilView() { return GetDXUTState().GetD3D11DepthStencilView(); }
 const DXGI_SURFACE_DESC* WINAPI DXUTGetDXGIBackBufferSurfaceDesc() { return GetDXUTState().GetBackBufferSurfaceDescDXGI(); }
 HINSTANCE WINAPI DXUTGetHINSTANCE()                        { return GetDXUTState().GetHInstance(); }
@@ -1021,8 +1024,8 @@ HRESULT WINAPI DXUTCreateWindow( const WCHAR* strWindowTitle, HINSTANCE hInstanc
             GetDXUTState().SetWindowCreatedWithDefaultPositions( true );
 
         // Find the window's initial size, but it might be changed later
-        int nDefaultWidth = 640;
-        int nDefaultHeight = 480;
+        int nDefaultWidth = 2560;
+        int nDefaultHeight = 720;
         if( GetDXUTState().GetOverrideWidth() != 0 )
             nDefaultWidth = GetDXUTState().GetOverrideWidth();
         if( GetDXUTState().GetOverrideHeight() != 0 )
@@ -2215,40 +2218,54 @@ void DXUTUpdateDeviceSettingsWithOverrides( _Inout_ DXUTDeviceSettings* pDeviceS
 HRESULT WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext )
 {
     HRESULT hr = S_OK;
-
-    // Setup the viewport to match the backbuffer
-	D3D11_VIEWPORT* vp;
-#ifdef STEREO_OUTPUT_MODE
-	vp = new D3D11_VIEWPORT[2];
-	vp[0] = CD3D11_VIEWPORT(
-		0.0f,
-		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
-	vp[1] = CD3D11_VIEWPORT(
-		(FLOAT)width / 2,
-		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width /2,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
-#else
-	vp = new D3D11_VIEWPORT[1];
-	vp[0] = CD3D11_VIEWPORT(
-		0.0f, 
-		0.0f, 
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
-	pd3dDeviceContext->RSSetViewports(1, vp);
+	DXUTSetD3D11Viewport(pd3dDeviceContext, 0);
 
 	// Set the render targets
 	ID3D11RenderTargetView* pRTV = GetDXUTState().GetD3D11RenderTargetView();
 	ID3D11DepthStencilView* pDSV = GetDXUTState().GetD3D11DepthStencilView();
 	pd3dDeviceContext->OMSetRenderTargets(1, &pRTV, pDSV);
-#endif
-	
 
     return hr;
 }
 
+HRESULT WINAPI DXUTSetupD3D11Viewports()
+{
+	HRESULT hr = S_OK;
+	D3D11_VIEWPORT* vp;
+	// Setup the viewport to match the backbuffer
+	vp = new D3D11_VIEWPORT[3];
+	vp[0] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+	vp[1] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+	vp[2] = CD3D11_VIEWPORT(
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+
+	GetDXUTState().SetD3D11ScreenViewport(vp);
+
+	return hr;
+}
+
+HRESULT WINAPI DXUTSetD3D11Viewport(ID3D11DeviceContext* pd3dImmediateContext, INT viewport)
+{
+	HRESULT hr = S_OK;
+#ifdef STEREO_OUTPUT_MODE
+	DXUTDeviceSettings* pDeviceSettings = GetDXUTState().GetCurrentDeviceSettings();
+	DXUTResizeDXGIBuffers(pDeviceSettings->d3d11.sd.BufferDesc.Width / 2, pDeviceSettings->d3d11.sd.BufferDesc.Height, false);
+#endif // STEREO_OUTPUT_MODE
+
+	pd3dImmediateContext->RSSetViewports(1, GetDXUTState().GetD3D11ScreenViewport() + viewport);
+	return hr;
+}
 
 //--------------------------------------------------------------------------------------
 // Creates a render target view, and depth stencil texture and view.
@@ -2315,7 +2332,9 @@ HRESULT DXUTCreateD3D11Views( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3
         DXUT_SetDebugName( pDSV, "DXUT" );
         GetDXUTState().SetD3D11DepthStencilView( pDSV );
     }
-
+	hr = DXUTSetupD3D11Viewports();
+	if (FAILED(hr))
+		return hr;
     hr = DXUTSetupD3D11Views( pd3dImmediateContext );
     if( FAILED( hr ) )
         return hr;
@@ -2796,9 +2815,13 @@ void WINAPI DXUTRender3DEnvironment()
         if( !IsIconic( DXUTGetHWND() ) )
         {
             GetClientRect( DXUTGetHWND(), &rcClient );
-            
-            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right );
-            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom );
+#ifdef STEREO_OUTPUT_MODE
+            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right / 2);
+            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom);
+#else
+			assert(DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right);
+			assert(DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom);
+#endif
         }
 #endif
     }
@@ -3581,8 +3604,8 @@ void DXUTResizeDXGIBuffers( UINT Width, UINT Height, BOOL bFullScreen )
 
     // ResizeBuffers
     V( pSwapChain->ResizeBuffers( pDevSettings->d3d11.sd.BufferCount,
-                                  Width,
-                                  Height,
+								  (UINT)rcCurrentClient.right,
+								  (UINT)rcCurrentClient.bottom,
                                   pDevSettings->d3d11.sd.BufferDesc.Format,
                                   Flags ) );
 
@@ -3875,8 +3898,13 @@ void DXUTUpdateBackBufferDesc()
     {
         D3D11_TEXTURE2D_DESC TexDesc;
         pBackBuffer->GetDesc( &TexDesc );
-        pBBufferSurfaceDesc->Width = ( UINT )TexDesc.Width;
-        pBBufferSurfaceDesc->Height = ( UINT )TexDesc.Height;
+#ifdef STEREO_OUTPUT_MODE
+		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width / 2;
+#else
+		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width / 2;
+#endif // STEREO_OUTPUT_MODE
+		pBBufferSurfaceDesc->Height = (UINT)TexDesc.Height;
+
         pBBufferSurfaceDesc->Format = TexDesc.Format;
         pBBufferSurfaceDesc->SampleDesc = TexDesc.SampleDesc;
         SAFE_RELEASE( pBackBuffer );
