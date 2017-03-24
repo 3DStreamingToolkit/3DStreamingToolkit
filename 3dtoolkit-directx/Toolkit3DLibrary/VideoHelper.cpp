@@ -222,7 +222,7 @@ vidcap_rgb32_to_i420(int width, int height, const char * src, char * dst)
 }
 
 // Captures frame buffer from the swap chain.
-void VideoHelper::Capture(void** buffer, int* size)
+void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 {
 	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
@@ -242,18 +242,21 @@ void VideoHelper::Capture(void** buffer, int* size)
 	// Accesses frame buffer
 	D3D11_MAPPED_SUBRESOURCE mapped;
 	hr = m_d3dContext->Map(m_stagingFrameBuffer, 0, D3D11_MAP_READ, 0, &mapped);
+
 	if (SUCCEEDED(hr))
 	{
 		m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
-		int width = m_stagingFrameBufferDesc.Width;
-		int half_width = width >> 1;
-		int height = m_stagingFrameBufferDesc.Height;
-		size_t size_y = static_cast<size_t>(width) * height;
-		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
-		char* dst = new char[size_y + size_uv + size_uv];
-		vidcap_rgb32_to_i420(width, height, (char*)mapped.pData, dst);
-		*buffer = dst;
+		int bufferWidth = m_stagingFrameBufferDesc.Width;
+		int half_width = bufferWidth >> 1;
+		int bufferHeight = m_stagingFrameBufferDesc.Height;
+		size_t size_y = static_cast<size_t>(bufferWidth) * bufferHeight;
+		size_t size_uv = static_cast<size_t>(half_width) * ((bufferHeight + 1) / 2);
+		// char* dst = new char[size_y + size_uv + size_uv];
+		//vidcap_rgb32_to_i420(width, height, (char*)mapped.pData, dst);
+		*buffer = (char*)mapped.pData;
 		*size = size_y + size_uv + size_uv;
+		*width = bufferWidth;
+		*height = bufferHeight;
 	}
 }
 

@@ -90,7 +90,7 @@ namespace Toolkit3DLibrary
 												~VideoHelper();
 		void									Initialize(IDXGISwapChain* swapChain, char* outputFile);
 		void									Capture();
-		void									Capture(void** buffer, int* size);
+		void									Capture(void** buffer, int* size, int* width, int* height);
 
 	private:
 		ID3D11Device*							m_d3dDevice;
