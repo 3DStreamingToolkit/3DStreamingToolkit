@@ -32,6 +32,8 @@ using namespace Concurrency;
 using namespace Toolkit3DLibrary;
 
 extern VideoHelper*		g_videoHelper;
+extern UINT				g_windowWidth;
+extern UINT				g_windowHeight;
 
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
@@ -74,22 +76,47 @@ public:
 			GetCaptureFormat()->interval,
 			GetCaptureFormat()->fourcc);
 	}
+
+	rtc::scoped_refptr<webrtc::I420Buffer> ReadI420Buffer(
+		int width, 
+		int height, 
+		uint8_t *data) 
+	{
+		int half_width = (width + 1) / 2;
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
+			// Explicit stride, no padding between rows.
+			webrtc::I420Buffer::Create(width, height, width, half_width, half_width));
+
+		size_t size_y = static_cast<size_t>(width) * height;
+		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
+
+		memcpy(buffer->MutableDataY(), data, size_y);
+		memcpy(buffer->MutableDataU(), data + size_y, size_uv);
+		memcpy(buffer->MutableDataV(), data + size_y + size_uv, size_uv);
+		return buffer;
+	}
+
 	void SendFakeVideoFrame()
 	{
 		void* pFrameBuffer = nullptr;
 		int frameSizeInBytes = 0;
 		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes);
-		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-			webrtc::I420Buffer::Create(720, 480));
-		buffer->InitializeData();
-		webrtc::I420Buffer::SetBlack(buffer);
+		if (frameSizeInBytes == 0)
+		{
+			return;
+		}
+
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer = ReadI420Buffer(
+			g_windowWidth,
+			g_windowHeight,
+			(uint8_t*)pFrameBuffer);
 
 		auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 		OnFrame(webrtc::VideoFrame(
 			buffer, rotation_,
 			timeStamp),
-			720, 480);
+			g_windowWidth, g_windowHeight);
 	}
 	bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
 		// default to 30fps
@@ -142,6 +169,7 @@ public:
 		{
 			while (running_)
 			{
+				g_videoHelper->Capture();
 				SendFakeVideoFrame();
 			}
 		});

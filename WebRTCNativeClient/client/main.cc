@@ -31,6 +31,8 @@ using namespace Toolkit3DSample;
 DeviceResources*	g_deviceResources = nullptr;
 CubeRenderer*		g_cubeRenderer = nullptr;
 VideoHelper*		g_videoHelper = nullptr;
+UINT				g_windowWidth = 0;
+UINT				g_windowHeight = 0;
 
 int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
                     wchar_t* cmd_line, int cmd_show) {
@@ -83,6 +85,8 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
   UINT width = rc.right - rc.left;
   UINT height = rc.bottom - rc.top;
   g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
+  g_windowWidth = width;
+  g_windowHeight = height;
 
   // Main loop.
   MSG msg;
@@ -91,7 +95,7 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
   {
 	g_cubeRenderer->Update();
 	g_cubeRenderer->Render();
-	g_videoHelper->Capture();
+	//g_videoHelper->Capture();
 
 	// Enable preview window
 	//g_deviceResources->Present();
