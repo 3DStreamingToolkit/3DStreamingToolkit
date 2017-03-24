@@ -145,6 +145,14 @@ void VideoHelper::Capture()
 	}
 }
 
+// Captures frame buffer from the swap chain.
+void VideoHelper::Capture(void** buffer, int* size)
+{
+	NV_ENC_LOCK_BITSTREAM bitStream = m_pNvHWEncoder->GetLockBitStream();
+	*buffer = bitStream.bitstreamBufferPtr;
+	*size = bitStream.bitstreamSizeInBytes;
+}
+
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)
 {
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;

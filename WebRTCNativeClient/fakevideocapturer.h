@@ -26,7 +26,12 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "ppltasks.h"
 
+#include "VideoHelper.h"
+
 using namespace Concurrency;
+using namespace Toolkit3DLibrary;
+
+extern VideoHelper*		g_videoHelper;
 
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
@@ -71,6 +76,9 @@ public:
 	}
 	void SendFakeVideoFrame()
 	{
+		void* pFrameBuffer = nullptr;
+		int frameSizeInBytes = 0;
+		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes);
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
 			webrtc::I420Buffer::Create(720, 480));
 		buffer->InitializeData();
