@@ -10,7 +10,7 @@ public class LibCallNet35 : MonoBehaviour
         
     public void Net35Call()
     {
-        var call = new Net35Lib();
+        var call = new Net35();
         statusText.text = call.Hello("Confirm NET35");
     }
 }
