@@ -1,0 +1,40 @@
+﻿<UserControl
+    x:Class="PeerConnectionClient.Controls.ErrorControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:PeerConnectionClient"
+    xmlns:utilities="using:PeerConnectionClient.Utilities"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="32"
+    d:DesignWidth="400">
+
+    <UserControl.Resources>
+        <utilities:BoolToVisConverter Negated="True"  x:Key="BoolToVisConverterNegated" />
+    </UserControl.Resources>
+    <Grid>
+        <ContentPresenter x:Name="MyPresenter" />
+        <Button x:Name="LeftButton"
+                Width="12"
+                Height="12"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                IsTabStop="False"
+                Opacity="1"
+                Style="{StaticResource TextBlockButtonStyle}">
+            <Button.RenderTransform>
+                <CompositeTransform TranslateX="-14" TranslateY="-14" />
+            </Button.RenderTransform>
+            <Button.Flyout>
+                <Flyout Placement="Right">
+                    <ItemsControl ItemsSource="{Binding Errors}" />
+                </Flyout>
+            </Button.Flyout>
+            <Ellipse Margin="2"
+               Fill="Red"
+               Visibility="{Binding Valid, Converter={StaticResource BoolToVisConverterNegated}}"
+               Stretch="Uniform" />
+        </Button>
+    </Grid>
+</UserControl>
