@@ -12,7 +12,7 @@ public class LibCallNet35 : MonoBehaviour
     public void Net35Call()
     {
 #if UNITY_EDITOR
-        var call = new Net35();
+        var call = new TestLibNet35.Net35();
         statusText.text = call.Hello("Confirm NET35");
 #else
         statusText.text = "EDITOR ONLY";
