@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-#if !UNITY_EDITOR
+#if UNITY_UWP
 using WebRtcUtils;
 
 using System.Collections.ObjectModel;
@@ -34,18 +34,19 @@ public class WebRtcHelpers : MonoBehaviour
     public Text peerText;
     public Text inputText;
 
-#if UNITY_EDITOR
-    private List<Peer> Peers;
-#else
+#if UNITY_UWP
     private ObservableCollection<Peer> Peers;
+    
+#else
+    private List<Peer> Peers;
 #endif
-    private Peer peerConnection;
+    private Peer peerConnection = null;
 
 
     void Start()
     {
         statusText.text += "\nStarted...\n";
-#if !UNITY_EDITOR
+#if UNITY_UWP
         Conductor.Instance.Signaller.OnSignedIn += Signaller_OnSignedIn;
         Conductor.Instance.Signaller.OnDisconnected += Signaller_OnDisconnected;
         Conductor.Instance.Signaller.OnPeerConnected += Signaller_OnPeerConnected;
@@ -62,7 +63,7 @@ public class WebRtcHelpers : MonoBehaviour
 
     public void VersionCheck()
     {
-#if !UNITY_EDITOR
+#if UNITY_UWP
         statusText.text = "UWP 10 - Version: " + Utils.LibTestCall();        
 #else
         statusText.text = "NET 3.5 Script";
@@ -109,7 +110,7 @@ public class WebRtcHelpers : MonoBehaviour
         if (Peers == null)
         {
 
-#if !UNITY_EDITOR
+#if UNITY_UWP
             Peers = new ObservableCollection<Peer>();
             Conductor.Instance.Peers = Peers;
 #else
@@ -140,9 +141,9 @@ public class WebRtcHelpers : MonoBehaviour
         if (peerText.text == string.Empty)
         {
             peerText.text = "UnityClient";
-        }        
-        
-#if !UNITY_EDITOR
+        }
+
+#if UNITY_UWP
 //Conductor.Instance.StartLogin(
 //       server,
 //       port,
@@ -157,14 +158,14 @@ public class WebRtcHelpers : MonoBehaviour
 
     public void DisconnectFromSignaller()
     {
-#if !UNITY_EDITOR
+#if UNITY_UWP
         Conductor.Instance.DisconnectFromServer();
 #endif
     }
 
     public void SendToPeer()
     {
-#if !UNITY_EDITOR
+#if UNITY_UWP
         Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, inputText.text);
 #endif
     }

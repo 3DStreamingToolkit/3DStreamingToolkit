@@ -6,5 +6,5 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/WebRtcConductor.unity
-    guid: bdd77b7a5c0111046afb4e8c6da4762e
+    path: Assets/NetFrameworkTest.unity
+    guid: 771bd2369a1b374439036974a2cdab6e
