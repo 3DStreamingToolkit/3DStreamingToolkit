@@ -34,9 +34,9 @@ public class WebRtcHelpers : MonoBehaviour
     public Text peerText;
     public Text inputText;
 
+
 #if UNITY_UWP
     private ObservableCollection<Peer> Peers;
-    
 #else
     private List<Peer> Peers;
 #endif
