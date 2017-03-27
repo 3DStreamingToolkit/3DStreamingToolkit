@@ -2,6 +2,9 @@
 
 #include "stdafx.h"
 
+#define FRAME_BUFFER_WIDTH	640
+#define FRAME_BUFFER_HEIGHT	480
+
 namespace DX
 {
 	class DeviceResources

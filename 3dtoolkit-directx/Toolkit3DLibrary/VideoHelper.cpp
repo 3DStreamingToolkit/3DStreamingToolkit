@@ -160,7 +160,7 @@ void VideoHelper::Capture()
 }
 
 // Captures frame buffer from the swap chain.
-void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
+void VideoHelper::Capture(void** buffer, int* size)
 {
 	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
@@ -177,30 +177,18 @@ void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 	m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
 	frameBuffer->Release();
 
-	// Accesses frame buffer
+	// Accesses the frame buffer.
+	D3D11_TEXTURE2D_DESC desc;
+	m_stagingFrameBuffer->GetDesc(&desc);
 	D3D11_MAPPED_SUBRESOURCE mapped;
 	hr = m_d3dContext->Map(m_stagingFrameBuffer, 0, D3D11_MAP_READ, 0, &mapped);
-
 	if (SUCCEEDED(hr))
 	{
-		m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
-		int bufferWidth = m_stagingFrameBufferDesc.Width;
-		int half_width = bufferWidth >> 1;
-		int bufferHeight = m_stagingFrameBufferDesc.Height;
-		size_t size_y = static_cast<size_t>(bufferWidth) * bufferHeight;
-		size_t size_uv = static_cast<size_t>(half_width) * ((bufferHeight + 1) / 2);
-		*buffer = (char*)mapped.pData;
-		*size = size_y + size_uv + size_uv;
-		*width = bufferWidth;
-		*height = bufferHeight;
+		*buffer = mapped.pData;
+		*size = mapped.RowPitch * desc.Height;
 	}
-}
 
-void VideoHelper::CaptureCompressedFrame(void** buffer, int* size)
-{
-	NV_ENC_LOCK_BITSTREAM bitStream = m_pNvHWEncoder->GetLockBitStream();
-	*buffer = bitStream.bitstreamBufferPtr;
-	*size = bitStream.bitstreamSizeInBytes;
+	m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
 }
 
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)
