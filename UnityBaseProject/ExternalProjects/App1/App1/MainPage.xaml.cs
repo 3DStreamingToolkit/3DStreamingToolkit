@@ -20,7 +20,7 @@ using PeerConnectionClient.Signalling;
 using PeerConnectionClient.Utilities;
 using System.Collections.ObjectModel;
 using System.Windows;
-using Windows.UI.Core;
+
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -66,17 +66,10 @@ namespace App1
             );
         }
 
-        private async void RunOnUiThread(DispatchedHandler handler)
+        private async void Instance_OnPeerConnectionClosed()
         {
             await Dispatcher.RunAsync(
                 Windows.UI.Core.CoreDispatcherPriority.Normal,
-                handler
-            );            
-        }
-
-        private void Instance_OnPeerConnectionClosed()
-        {
-            RunOnUiThread(
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Connection Closed";
@@ -84,9 +77,10 @@ namespace App1
             );
         }
 
-        private void Instance_OnPeerConnectionCreated()
+        private async void Instance_OnPeerConnectionCreated()
         {
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Connection Created";
@@ -94,9 +88,10 @@ namespace App1
             );
         }
 
-        private void Signaller_OnServerConnectionFailure()
+        private async void Signaller_OnServerConnectionFailure()
         {
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text +=
                     "Server Connection Failure";
@@ -104,9 +99,10 @@ namespace App1
             );
         }
 
-        private void Signaller_OnPeerHangup(int peer_id)
+        private async void Signaller_OnPeerHangup(int peer_id)
         {
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Hangup: " + peer_id;
@@ -114,9 +110,10 @@ namespace App1
             );
         }
 
-        private void Signaller_OnPeerDisconnected(int peer_id)
+        private async void Signaller_OnPeerDisconnected(int peer_id)
         {
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Disconnected: " + peer_id;
@@ -124,16 +121,17 @@ namespace App1
             );
         }
 
-        private void Signaller_OnMessageFromPeer(int peer_id, string message)
+        private async void Signaller_OnMessageFromPeer(int peer_id, string message)
         {
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock2.Text += String.Format("{0}-{1}\n", peer_id, message);
                 }
             );
         }
 
-        private void Signaller_OnPeerConnected(int id, string name)
+        private async void Signaller_OnPeerConnected(int id, string name)
         {
             if (Peers == null)
             {
@@ -142,25 +140,28 @@ namespace App1
             }
             Peers.Add(peerConnection = new Peer { Id = id, Name = name });
 
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text += String.Format("Peer Connected: {0}-{1}\n", id, name);                    
                 }
             );            
         }
 
-        private void Signaller_OnDisconnected()
-        {
-            RunOnUiThread(
+        private async void Signaller_OnDisconnected()
+        {            
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text += "\nSignaller Disconnected\n";
                 }
             );
         }
 
-        private void Signaller_OnSignedIn()
+        private async void Signaller_OnSignedIn()
         {
-            RunOnUiThread(
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
                 () => {
                     MessagesTextBlock.Text += "\nSignaller Signed In\n";
                 }
@@ -171,7 +172,7 @@ namespace App1
         {
             //MessagesTextBlock.Text += MessageTextBox.Text + "\n";
             if (peerConnection != null)
-            {                
+            {
                 await Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, MessageTextBox.Text);
             }
         }
@@ -222,6 +223,7 @@ namespace App1
             {
                 MessagesTextBlock.Text += "No Peer Setup\n";
             }
-        }                
+        }
+                
     }
 }

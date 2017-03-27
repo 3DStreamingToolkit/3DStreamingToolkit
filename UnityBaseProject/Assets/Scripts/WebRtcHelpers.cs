@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-#if UNITY_UWP
+#if !UNITY_EDITOR
 using WebRtcUtils;
 
 using System.Collections.ObjectModel;
@@ -33,9 +33,14 @@ public class WebRtcHelpers : MonoBehaviour
     public Text statusText;
     public Text peerText;
     public Text inputText;
+    public Text camText;
 
+    private Transform camTransform;
+    private Vector3 prevPos;
+    private Quaternion prevRot;
+    private string camMessage;
 
-#if UNITY_UWP
+#if !UNITY_EDITOR
     private ObservableCollection<Peer> Peers;
 #else
     private List<Peer> Peers;
@@ -46,7 +51,12 @@ public class WebRtcHelpers : MonoBehaviour
     void Start()
     {
         statusText.text += "\nStarted...\n";
-#if UNITY_UWP
+        camTransform = Camera.main.transform;
+        prevPos = camTransform.position;
+        prevRot = camTransform.rotation;
+
+
+#if !UNITY_EDITOR
         Conductor.Instance.Signaller.OnSignedIn += Signaller_OnSignedIn;
         Conductor.Instance.Signaller.OnDisconnected += Signaller_OnDisconnected;
         Conductor.Instance.Signaller.OnPeerConnected += Signaller_OnPeerConnected;
@@ -61,9 +71,36 @@ public class WebRtcHelpers : MonoBehaviour
 #endif
     }
 
+    void Update()
+    {        
+        if (Vector3.Distance(prevPos, camTransform.position) > 0.05f ||
+            Quaternion.Angle(prevRot, camTransform.rotation) > 2f)
+        {
+            prevPos = camTransform.position;
+            prevRot = camTransform.rotation;
+            var eulerRot = prevRot.eulerAngles;
+            camText.text = camMessage = string.Format(
+                "CAM:{0},{1},{2},{3},{4},{5}",
+                prevPos.x,
+                prevPos.y,
+                prevPos.z,
+                eulerRot.x,
+                eulerRot.y,
+                eulerRot.z);
+
+            if (peerConnection != null)
+            {
+#if !UNITY_EDITOR
+                Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, camMessage);
+#endif
+            }
+        }
+
+    }
+
     public void VersionCheck()
     {
-#if UNITY_UWP
+#if !UNITY_EDITOR
         statusText.text = "UWP 10 - Version: " + Utils.LibTestCall();        
 #else
         statusText.text = "NET 3.5 Script";
@@ -97,12 +134,16 @@ public class WebRtcHelpers : MonoBehaviour
 
     private void Signaller_OnPeerDisconnected(int peer_id)
     {
-        statusText.text += "Peer Disconnected: " + peer_id + "\n";
+        statusText.text += string.Format("Peer Disconnected: {0}\n", peer_id);
+        if (peerConnection.Id == peer_id)
+        {
+            peerConnection = null;
+        }
     }
 
     private void Signaller_OnMessageFromPeer(int peer_id, string message)
-    {
-        statusText.text += string.Format("MSG:{0}-{1}\n", peer_id, message);
+    {        
+        statusText.text += string.Format("MSG:{0}\n{1}\n", peer_id, message);
     }
 
     private void Signaller_OnPeerConnected(int id, string name)
@@ -110,15 +151,16 @@ public class WebRtcHelpers : MonoBehaviour
         if (Peers == null)
         {
 
-#if UNITY_UWP
+#if !UNITY_EDITOR
             Peers = new ObservableCollection<Peer>();
             Conductor.Instance.Peers = Peers;
 #else
             Peers = new List<Peer>();
 #endif
         }
+        // TODO:  Support Peer Selection instead of automatically switching latest connection
         Peers.Add(peerConnection = new Peer { Id = id, Name = name });
-        statusText.text += "Peer Connected: " + id + "\n";
+        statusText.text += string.Format("Peer Connected: {0}-{1}", id, name);
     }
 
     private void Signaller_OnDisconnected()
@@ -132,18 +174,14 @@ public class WebRtcHelpers : MonoBehaviour
     }
 
     public void ConnectToSignaller()
-    {
-        //Conductor.Instance.StartLogin(
-        //       "n3dtoolkit.southcentralus.cloudapp.azure.com",
-        //       "8888",
-        //       name);
-        statusText.text += "Attempting Connect\n";
+    {        
+        statusText.text += "Connect to Signaller\n";
         if (peerText.text == string.Empty)
         {
             peerText.text = "UnityClient";
         }
 
-#if UNITY_UWP
+#if !UNITY_EDITOR
 //Conductor.Instance.StartLogin(
 //       server,
 //       port,
@@ -158,14 +196,14 @@ public class WebRtcHelpers : MonoBehaviour
 
     public void DisconnectFromSignaller()
     {
-#if UNITY_UWP
+#if !UNITY_EDITOR
         Conductor.Instance.DisconnectFromServer();
 #endif
     }
 
     public void SendToPeer()
     {
-#if UNITY_UWP
+#if !UNITY_EDITOR
         Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, inputText.text);
 #endif
     }

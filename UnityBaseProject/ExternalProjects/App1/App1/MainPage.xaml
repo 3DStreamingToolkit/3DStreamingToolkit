@@ -8,19 +8,19 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <Button x:Name="SendButton" Content="Send" HorizontalAlignment="Left" Margin="387,50,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="SendButton_Click"/>
-        <TextBox x:Name="MessageTextBox" HorizontalAlignment="Left" Margin="50,50,0,0" TextWrapping="Wrap" Text="Message" VerticalAlignment="Top" FontSize="18" Height="50" Width="315" />
-        <TextBox x:Name="PeerTextBox" HorizontalAlignment="Left" Margin="576,114,0,0" TextWrapping="Wrap" Text="TestPeer" VerticalAlignment="Top" FontSize="18" Height="50" Width="315" />
-        <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Height="360" Width="315" Margin="50,114,0,0">
+        <Button x:Name="SendButton" Content="Send" HorizontalAlignment="Left" Margin="165,552,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="SendButton_Click"/>
+        <TextBox x:Name="MessageTextBox" HorizontalAlignment="Left" Margin="20,497,0,0" TextWrapping="Wrap" Text="Message" VerticalAlignment="Top" FontSize="18" Height="50" Width="315" />
+        <TextBox x:Name="PeerTextBox" HorizontalAlignment="Left" Margin="20,385,0,0" TextWrapping="Wrap" Text="TestPeer" VerticalAlignment="Top" FontSize="18" Height="50" Width="315" />
+        <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Height="360" Width="315" Margin="20,20,0,0">
             <TextBlock x:Name="MessagesTextBlock" HorizontalAlignment="Left" Margin="0,0,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Height="360" Width="315" FontSize="18" />
         </Border>
-        <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Height="300" Width="315" Margin="576,174,0,0">
-            <TextBlock x:Name="MessagesTextBlock2" HorizontalAlignment="Left" Margin="0,0,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Height="300" Width="315" FontSize="18" />
+        <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Height="360" Width="500" Margin="340,20,0,0">
+            <TextBlock x:Name="MessagesTextBlock2" HorizontalAlignment="Left" Margin="0,0,-1,-1" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Height="359" Width="499" FontSize="18" />
         </Border>
-        <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" Margin="576,50,0,0" VerticalAlignment="Top" Height="50" Width="150" FontSize="18" Click="ConnectButton_Click" />
-        <Button x:Name="DisconnectButton" Content="Disconnect" HorizontalAlignment="Left" Margin="741,50,0,0" VerticalAlignment="Top" Height="50" Width="150" FontSize="18" Click="DisconnectButton_Click" />
-        <Button x:Name="ConnectPeerButton" Content="Connect Peer" HorizontalAlignment="Left" Margin="387,114,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="ConnectPeerButton_Click"/>
-        <Button x:Name="ClearButton" Content="Clear" HorizontalAlignment="Left" Margin="387,180,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="ClearButton_Click" />
-        <Button x:Name="ClearButton2" Content="Clear2" HorizontalAlignment="Left" Margin="387,252,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="ClearButton2_Click" />
+        <Button x:Name="ConnectButton" Content="Connect" HorizontalAlignment="Left" Margin="20,442,0,0" VerticalAlignment="Top" Height="50" Width="150" FontSize="18" Click="ConnectButton_Click" />
+        <Button x:Name="DisconnectButton" Content="Disconnect" HorizontalAlignment="Left" Margin="185,442,0,0" VerticalAlignment="Top" Height="50" Width="150" FontSize="18" Click="DisconnectButton_Click" />
+        <Button x:Name="ConnectPeerButton" Content="Connect Peer" HorizontalAlignment="Left" Margin="340,442,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="ConnectPeerButton_Click"/>
+        <Button x:Name="ClearButton" Content="Clear1" HorizontalAlignment="Left" Margin="340,385,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="ClearButton_Click" />
+        <Button x:Name="ClearButton2" Content="Clear2" HorizontalAlignment="Left" Margin="515,385,0,0" VerticalAlignment="Top" Height="50" Width="170" FontSize="18" Click="ClearButton2_Click" />
     </Grid>
 </Page>
