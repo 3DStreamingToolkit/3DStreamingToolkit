@@ -246,7 +246,6 @@ public:
 		{
 			while (running_)
 			{
-				g_videoHelper->Capture();
 				SendFakeVideoFrame();
 			}
 		});
