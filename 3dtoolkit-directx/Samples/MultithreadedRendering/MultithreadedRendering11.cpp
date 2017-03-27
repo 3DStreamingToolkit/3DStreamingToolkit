@@ -1639,15 +1639,8 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
 		ID3D11ShaderResourceView* ppNullResources[g_iNumShadows] = { nullptr };
 		pd3dContext->PSSetShaderResources(2, g_iNumShadows, ppNullResources);
 
-#ifdef STEREO_OUTPUT_MODE
-
 		// Given shadow map as depth-stencil, no render target
 		pd3dContext->RSSetViewports(1, pStaticParams->m_pViewport);
-#else
-
-		// Given shadow map as depth-stencil, no render target
-		pd3dContext->RSSetViewports(1, pStaticParams->m_pViewport);
-#endif
 
         pd3dContext->OMSetRenderTargets( 0, nullptr, pStaticParams->m_pDepthStencilView );
     }
@@ -2318,10 +2311,8 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
                                   float fElapsedTime, void* pUserContext )
 {
-
-
+#ifdef STEREO_OUTPUT_MODE
 	D3D11_VIEWPORT* viewports = DXUTGetD3D11ScreenViewport();
-#ifdef STEREO_OUTPUT_MODE 
 	XMVECTORF32 leftEye = s_vDefaultEye;
 	leftEye.f[0] -= IPD / 2;
 	g_Camera.SetViewParams(leftEye, s_vDefaultLookAt);
@@ -2336,16 +2327,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	//XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(leftEye, at, up)));
 	//context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
 
-	
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
-#else
-
-	DXUTSetD3D11Viewport(pd3dImmediateContext, 0);
-	g_Camera.SetViewParams(s_vDefaultEye, s_vDefaultLookAt);
+#else // STEREO_OUTPUT_MODE
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
 #endif // STEREO_OUTPUT_MODE
-
-
 
 	// Captures frame.
 	g_videoHelper->Capture();

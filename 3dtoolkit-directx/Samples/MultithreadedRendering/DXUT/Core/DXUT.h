@@ -16,10 +16,8 @@
 #error "DXUT requires a Unicode build."
 #endif
 
-#define STEREO_OUTPUT_MODE
+//#define STEREO_OUTPUT_MODE
 #define IPD				0.02f
-
-
 
 #ifndef STRICT
 #define STRICT

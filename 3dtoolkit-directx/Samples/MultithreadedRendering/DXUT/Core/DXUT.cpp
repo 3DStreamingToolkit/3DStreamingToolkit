@@ -87,7 +87,7 @@ protected:
         ID3D11Texture2D*        m_D3D11DepthStencil;       // the D3D11 depth stencil texture (optional)
         ID3D11DepthStencilView* m_D3D11DepthStencilView;   // the D3D11 depth stencil view (optional)
         ID3D11RenderTargetView* m_D3D11RenderTargetView;   // the D3D11 render target view
-		D3D11_VIEWPORT*			m_D3D11ScreenViewport;		   // the D3D11 screen viewport
+		D3D11_VIEWPORT*			m_D3D11ScreenViewport;	   // the D3D11 screen viewport
         ID3D11RasterizerState*  m_D3D11RasterizerState;    // the D3D11 Rasterizer state
 
         // D3D11.1 specific
@@ -2218,7 +2218,20 @@ void DXUTUpdateDeviceSettingsWithOverrides( _Inout_ DXUTDeviceSettings* pDeviceS
 HRESULT WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext )
 {
     HRESULT hr = S_OK;
+
+#ifdef STEREO_OUTPUT_MODE
 	DXUTSetD3D11Viewport(pd3dDeviceContext, 0);
+#else // STEREO_OUTPUT_MODE
+	// Setup the viewport to match the backbuffer
+	D3D11_VIEWPORT vp;
+	vp.Width = (FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
+	vp.Height = (FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
+	vp.MinDepth = 0;
+	vp.MaxDepth = 1;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	pd3dDeviceContext->RSSetViewports(1, &vp);
+#endif // STEREO_OUTPUT_MODE
 
 	// Set the render targets
 	ID3D11RenderTargetView* pRTV = GetDXUTState().GetD3D11RenderTargetView();
@@ -2332,9 +2345,12 @@ HRESULT DXUTCreateD3D11Views( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3
         DXUT_SetDebugName( pDSV, "DXUT" );
         GetDXUTState().SetD3D11DepthStencilView( pDSV );
     }
-	hr = DXUTSetupD3D11Viewports();
-	if (FAILED(hr))
-		return hr;
+
+	// Phong: TODO
+	//hr = DXUTSetupD3D11Viewports();
+	//if (FAILED(hr))
+	//	return hr;
+
     hr = DXUTSetupD3D11Views( pd3dImmediateContext );
     if( FAILED( hr ) )
         return hr;
@@ -3901,8 +3917,8 @@ void DXUTUpdateBackBufferDesc()
 #ifdef STEREO_OUTPUT_MODE
 		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width / 2;
 #else
-		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width / 2;
-#endif // STEREO_OUTPUT_MODE
+		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width;
+#endif
 		pBBufferSurfaceDesc->Height = (UINT)TexDesc.Height;
 
         pBBufferSurfaceDesc->Format = TexDesc.Format;
