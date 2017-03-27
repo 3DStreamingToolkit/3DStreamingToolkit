@@ -54,7 +54,7 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 	m_encodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
 	m_encodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
 	m_encodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
-	m_encodeConfig.presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
+	m_encodeConfig.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
 	m_encodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
 	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
 	if (m_encodeConfig.fOutput == NULL)
