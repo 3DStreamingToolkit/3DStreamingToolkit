@@ -24,18 +24,18 @@
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/system_wrappers/include/clock.h"
-#include "libyuv/compare.h"  // NOLINT
-#include "libyuv/convert.h"  // NOLINT
+//#include "libyuv/compare.h"  // NOLINT
+//#include "libyuv/convert.h"  // NOLINT
 #include "ppltasks.h"
 
 #include "VideoHelper.h"
+#include "directx\DeviceResources.h"
+#include "libyuv/convert.h"
 
 using namespace Concurrency;
 using namespace Toolkit3DLibrary;
 
 extern VideoHelper*		g_videoHelper;
-extern UINT				g_windowWidth;
-extern UINT				g_windowHeight;
 
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
@@ -48,6 +48,16 @@ public:
 		rotation_(webrtc::kVideoRotation_0) {
 		// Default supported formats. Use ResetSupportedFormats to over write.
 		std::vector<cricket::VideoFormat> formats;
+		formats.push_back(cricket::VideoFormat(1280, 720,
+			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+		formats.push_back(cricket::VideoFormat(640, 480,
+			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+		formats.push_back(cricket::VideoFormat(320, 240,
+			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+		formats.push_back(cricket::VideoFormat(160, 120,
+			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
+		formats.push_back(cricket::VideoFormat(1280, 720,
+			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
 		formats.push_back(cricket::VideoFormat(1420, 700,
 			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_H264));
 		ResetSupportedFormats(formats);
@@ -135,66 +145,55 @@ public:
 	}
 
 	rtc::scoped_refptr<webrtc::I420Buffer> ReadI420Buffer(
-		int width,
-		int height,
-		uint8_t *data,
-		int size)
+		int width, 
+		int height, 
+		uint8_t *data) 
 	{
-		int input_frame_size = size;
-		int y_plane_size = YPlaneSize(width, height);
-		uint8_t* dst_y = new uint8_t[y_plane_size];
-		int u_plane_size = UPlaneSize(width, height);
-		uint8_t* dst_u = new uint8_t[u_plane_size];
-		int v_plane_size = VPlaneSize(width, height);
-		uint8_t* dst_v = new uint8_t[v_plane_size];
-
+		int half_width = (width + 1) / 2;
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
 			// Explicit stride, no padding between rows.
-			webrtc::I420Buffer::Create(width, height, DstStrideY(width), DstStrideU(width), DstStrideV(width)));
+			webrtc::I420Buffer::Create(width, height, width, half_width, half_width));
 
-		int counter = 0;  // Counter to form frame names.
-		bool success = false;  // Is conversion successful.
+		size_t size_y = static_cast<size_t>(width) * height;
+		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
 
-		// Convert to I420 frame.
-		libyuv::ARGBToI420(data, SrcStrideFrame(width),
-			dst_y, DstStrideY(width),
-			dst_u, DstStrideU(width),
-			dst_v, DstStrideV(width),
-			width, height);
-
-		memcpy(buffer->MutableDataY(), dst_y, y_plane_size);
-		memcpy(buffer->MutableDataU(), dst_u, u_plane_size);
-		memcpy(buffer->MutableDataV(), dst_v, v_plane_size);
-
+		memcpy(buffer->MutableDataY(), data, size_y);
+		memcpy(buffer->MutableDataU(), data + size_y, size_uv);
+		memcpy(buffer->MutableDataV(), data + size_y + size_uv, size_uv);
 		return buffer;
 	}
 
 	void SendFakeVideoFrame()
 	{
 		void* pFrameBuffer = nullptr;
-		int frameSizeInBytes, width = 0, height = 0;
-		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-		//g_videoHelper->CaptureCompressedFrame(&pFrameBuffer, &frameSizeInBytes);
+		int frameSizeInBytes = 0;
+		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes);
 		if (frameSizeInBytes == 0)
 		{
 			return;
 		}
 
-		rtc::scoped_refptr<webrtc::I420Buffer> buffer = ReadI420Buffer(
-			width,
-			height,
-			(uint8_t*)pFrameBuffer, frameSizeInBytes);
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
+			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
-		//rtc::scoped_refptr<webrtc::I420Buffer> buffer = CreateGradient(
-		//	g_windowWidth,
-		//	g_windowHeight);
+		libyuv::ARGBToI420(
+			(uint8_t*)pFrameBuffer,
+			FRAME_BUFFER_WIDTH * 4,
+			buffer.get()->MutableDataY(),
+			buffer.get()->StrideY(),
+			buffer.get()->MutableDataU(),
+			buffer.get()->StrideU(),
+			buffer.get()->MutableDataV(),
+			buffer.get()->StrideV(),
+			FRAME_BUFFER_WIDTH,
+			FRAME_BUFFER_HEIGHT);
 
 		auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 		OnFrame(webrtc::VideoFrame(
 			buffer, rotation_,
 			timeStamp),
-			g_windowWidth, g_windowHeight);
+			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 	}
 	bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
 		// default to 30fps
@@ -207,7 +206,7 @@ public:
 		if (!running_) {
 			return false;
 		}
-		RTC_CHECK(fourcc == cricket::FOURCC_H264);
+		RTC_CHECK(fourcc == cricket::FOURCC_I420);
 		RTC_CHECK(width > 0);
 		RTC_CHECK(height > 0);
 
@@ -223,7 +222,7 @@ public:
 			rtc::scoped_refptr<webrtc::I420Buffer> buffer(
 				webrtc::I420Buffer::Create(adapted_width, adapted_height));
 			buffer->InitializeData();
-
+		
 			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 			OnFrame(webrtc::VideoFrame(
@@ -265,6 +264,7 @@ public:
 	bool IsRunning() override { return running_; }
 	bool IsScreencast() const override { return is_screencast_; }
 	bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
+		fourccs->push_back(cricket::FOURCC_I420);
 		fourccs->push_back(cricket::FOURCC_H264);
 		return true;
 	}

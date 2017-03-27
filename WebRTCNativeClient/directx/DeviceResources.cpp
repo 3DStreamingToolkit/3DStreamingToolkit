@@ -132,6 +132,8 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
 		swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+		swapChainDesc.Width = FRAME_BUFFER_WIDTH;
+		swapChainDesc.Height = FRAME_BUFFER_HEIGHT;
 
 		hr = dxgiFactory2->CreateSwapChainForHwnd(
 			m_d3dDevice, 
