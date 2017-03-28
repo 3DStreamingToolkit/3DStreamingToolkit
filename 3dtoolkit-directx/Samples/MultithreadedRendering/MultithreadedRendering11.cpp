@@ -184,6 +184,14 @@ ID3D11Buffer*               g_pcbPSPerObject = nullptr;
 ID3D11Buffer*               g_pcbPSPerLight = nullptr;
 ID3D11Buffer*               g_pcbPSPerScene = nullptr;
 
+// Stereo output type.
+enum STEREO_OUTPUT_TYPE
+{
+	DEFAULT, // Non-stereo
+	LEFT_EYE,
+	RIGHT_EYE
+};
+
 //--------------------------------------------------------------------------------------
 // UI control IDs
 //--------------------------------------------------------------------------------------
@@ -1480,7 +1488,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 	g_HUD.SetSize(170, 170);
 	g_SampleUI.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, pBackBufferSurfaceDesc->Height - 300);
 	g_SampleUI.SetSize(170, 300);
-#else
+#else // STEREO_OUTPUT_MODE
 	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
 	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
 	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
@@ -1489,10 +1497,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 	g_HUD.SetSize(170, 170);
 	g_SampleUI.SetLocation(pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300);
 	g_SampleUI.SetSize(170, 300);
-#endif
-
-
-
+#endif // STEREO_OUTPUT_MODE
 
 	// Initializes the video helper
 	g_videoHelper->Initialize(pSwapChain, "output.h264");
@@ -1734,8 +1739,8 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
 //      - Several deferred contexts in worker threads, handling objects alternately
 // The scene can be either the main scene, a mirror scene, or a shadow map scene
 //--------------------------------------------------------------------------------------
-HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *pStaticParams, 
-                    const SceneParamsDynamic *pDynamicParams )
+HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *pStaticParams,
+					 const SceneParamsDynamic *pDynamicParams, STEREO_OUTPUT_TYPE outputType)
 {
     HRESULT hr = S_OK;
 
@@ -1789,8 +1794,26 @@ HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *
         V( RenderSceneSetup( pd3dContext, pStaticParams, pDynamicParams ) );
     }
 
-    //Render
-    g_Mesh11.Render( pd3dContext, 0, 1 );
+#ifdef STEREO_OUTPUT_MODE
+	// Gets the viewport.
+	D3D11_VIEWPORT* viewports = DXUTGetD3D11ScreenViewport();
+
+	if (outputType == STEREO_OUTPUT_TYPE::LEFT_EYE)
+	{
+		// Render scene in the left eye.
+		pd3dContext->RSSetViewports(1, viewports);
+		g_Mesh11.Render(pd3dContext, 0, 1);
+	}
+	else if (outputType == STEREO_OUTPUT_TYPE::RIGHT_EYE)
+	{
+		// Render scene in the right eye.
+		pd3dContext->RSSetViewports(1, viewports + 1);
+		g_Mesh11.Render(pd3dContext, 0, 1);
+	}
+#else // STEREO_OUTPUT_MODE
+	//Render
+	g_Mesh11.Render(pd3dContext, 0, 1);
+#endif // STEREO_OUTPUT_MODE
 
     // If we are doing ST_DEFERRED_PER_CHUNK or MT_DEFERRED_PER_CHUNK, generate and execute command lists now.
     if ( IsRenderDeferredPerChunk() )
@@ -1862,7 +1885,7 @@ VOID RenderShadow( int iShadow, ID3D11DeviceContext* pd3dContext )
     SceneParamsDynamic DynamicParams;   
     XMStoreFloat4x4( &DynamicParams.m_mViewProj, m );
 
-    V( RenderScene( pd3dContext, &g_StaticParamsShadow[iShadow], &DynamicParams ) );
+    V( RenderScene( pd3dContext, &g_StaticParamsShadow[iShadow], &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
 }
 
 
@@ -1992,7 +2015,7 @@ VOID RenderMirror( int iMirror, ID3D11DeviceContext* pd3dContext )
     SceneParamsDynamic DynamicParams;
     XMStoreFloat4x4( &DynamicParams.m_mViewProj, mvp );
 
-    V( RenderScene( pd3dContext, &g_StaticParamsMirror[iMirror], &DynamicParams ) );
+    V( RenderScene( pd3dContext, &g_StaticParamsMirror[iMirror], &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
 
     //--------------------------------------------------------------------------------------
     // Clear the stencil bit to 0 over the mirror quad.
@@ -2043,9 +2066,51 @@ VOID RenderMirror( int iMirror, ID3D11DeviceContext* pd3dContext )
 VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 {
     HRESULT hr;
-
     XMMATRIX mvp;
 
+#ifdef STEREO_OUTPUT_MODE
+	// Render scene in the left eye.
+	g_Camera.SetViewParams(
+		DirectX::XMVectorSubtract(g_Camera.GetEyePt(), DirectX::XMVectorSet(IPD, 0, 0, 0)),
+		g_Camera.GetLookAtPt());
+
+#ifdef RENDER_SCENE_LIGHT_POV
+	if (g_bRenderSceneLightPOV)
+	{
+		mvp = CalcLightViewProj(0);
+	}
+	else
+#endif
+	{
+		mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+	}
+
+	SceneParamsDynamic DynamicParamsLeft;
+	XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
+
+	V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParamsLeft, STEREO_OUTPUT_TYPE::LEFT_EYE));
+
+	// Render scene in the right eye.
+	g_Camera.SetViewParams(
+		DirectX::XMVectorAdd(g_Camera.GetEyePt(), DirectX::XMVectorSet(IPD, 0, 0, 0)),
+		g_Camera.GetLookAtPt());
+
+#ifdef RENDER_SCENE_LIGHT_POV
+	if (g_bRenderSceneLightPOV)
+	{
+		mvp = CalcLightViewProj(0);
+	}
+	else
+#endif
+	{
+		mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+	}
+
+	SceneParamsDynamic DynamicParamsRight;
+	XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
+
+	V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParamsRight, STEREO_OUTPUT_TYPE::RIGHT_EYE));
+#else // STEREO_OUTPUT_MODE
 #ifdef RENDER_SCENE_LIGHT_POV
     if ( g_bRenderSceneLightPOV )
     {
@@ -2060,7 +2125,8 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
     SceneParamsDynamic DynamicParams;
     XMStoreFloat4x4( &DynamicParams.m_mViewProj, mvp );
 
-    V( RenderScene( pd3dContext, &g_StaticParamsDirect, &DynamicParams ) );
+    V( RenderScene( pd3dContext, &g_StaticParamsDirect, &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
+#endif // STEREO_OUTPUT_MODE
 }
 
 
@@ -2311,26 +2377,7 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
                                   float fElapsedTime, void* pUserContext )
 {
-#ifdef STEREO_OUTPUT_MODE
-	D3D11_VIEWPORT* viewports = DXUTGetD3D11ScreenViewport();
-	XMVECTORF32 leftEye = s_vDefaultEye;
-	leftEye.f[0] -= IPD / 2;
-	g_Camera.SetViewParams(leftEye, s_vDefaultLookAt);
-	DXUTSetD3D11Viewport(pd3dImmediateContext, 1);
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
-
-	XMVECTORF32 rightEye = s_vDefaultEye;
-	rightEye.f[0] += IPD / 2;
-	g_Camera.SetViewParams(rightEye, s_vDefaultLookAt);
-	DXUTSetD3D11Viewport(pd3dImmediateContext, 2);
-
-	//XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(leftEye, at, up)));
-	//context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
-
-	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
-#else // STEREO_OUTPUT_MODE
-	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
-#endif // STEREO_OUTPUT_MODE
 
 	// Captures frame.
 	g_videoHelper->Capture();

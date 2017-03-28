@@ -2220,7 +2220,22 @@ HRESULT WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext 
     HRESULT hr = S_OK;
 
 #ifdef STEREO_OUTPUT_MODE
-	DXUTSetD3D11Viewport(pd3dDeviceContext, 0);
+	// Setup the viewport to match the backbuffer
+	D3D11_VIEWPORT* vp;
+	vp = new D3D11_VIEWPORT[2];
+	vp[0] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+
+	vp[1] = CD3D11_VIEWPORT(
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		0.0f,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+
+	GetDXUTState().SetD3D11ScreenViewport(vp);
 #else // STEREO_OUTPUT_MODE
 	// Setup the viewport to match the backbuffer
 	D3D11_VIEWPORT vp;
@@ -2239,45 +2254,6 @@ HRESULT WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext 
 	pd3dDeviceContext->OMSetRenderTargets(1, &pRTV, pDSV);
 
     return hr;
-}
-
-HRESULT WINAPI DXUTSetupD3D11Viewports()
-{
-	HRESULT hr = S_OK;
-	D3D11_VIEWPORT* vp;
-	// Setup the viewport to match the backbuffer
-	vp = new D3D11_VIEWPORT[3];
-	vp[0] = CD3D11_VIEWPORT(
-		0.0f,
-		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
-	vp[1] = CD3D11_VIEWPORT(
-		0.0f,
-		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
-	vp[2] = CD3D11_VIEWPORT(
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
-		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
-
-	GetDXUTState().SetD3D11ScreenViewport(vp);
-
-	return hr;
-}
-
-HRESULT WINAPI DXUTSetD3D11Viewport(ID3D11DeviceContext* pd3dImmediateContext, INT viewport)
-{
-	HRESULT hr = S_OK;
-#ifdef STEREO_OUTPUT_MODE
-	DXUTDeviceSettings* pDeviceSettings = GetDXUTState().GetCurrentDeviceSettings();
-	DXUTResizeDXGIBuffers(pDeviceSettings->d3d11.sd.BufferDesc.Width / 2, pDeviceSettings->d3d11.sd.BufferDesc.Height, false);
-#endif // STEREO_OUTPUT_MODE
-
-	pd3dImmediateContext->RSSetViewports(1, GetDXUTState().GetD3D11ScreenViewport() + viewport);
-	return hr;
 }
 
 //--------------------------------------------------------------------------------------
@@ -2345,11 +2321,6 @@ HRESULT DXUTCreateD3D11Views( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3
         DXUT_SetDebugName( pDSV, "DXUT" );
         GetDXUTState().SetD3D11DepthStencilView( pDSV );
     }
-
-	// Phong: TODO
-	//hr = DXUTSetupD3D11Viewports();
-	//if (FAILED(hr))
-	//	return hr;
 
     hr = DXUTSetupD3D11Views( pd3dImmediateContext );
     if( FAILED( hr ) )
@@ -2831,15 +2802,10 @@ void WINAPI DXUTRender3DEnvironment()
         if( !IsIconic( DXUTGetHWND() ) )
         {
             GetClientRect( DXUTGetHWND(), &rcClient );
-#ifdef STEREO_OUTPUT_MODE
-            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right / 2);
-            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom);
-#else
 			assert(DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right);
 			assert(DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom);
-#endif
         }
-#endif
+#endif // DEBUG
     }
 
     if ( GetDXUTState().GetSaveScreenShot() )
@@ -2993,6 +2959,7 @@ void DXUTCleanup3DEnvironment( _In_ bool bReleaseSettings )
         {
             pSwapChain->SetFullscreenState( FALSE, 0 );
         }
+
         SAFE_RELEASE( pSwapChain );
         GetDXUTState().SetDXGISwapChain( nullptr );
         GetDXUTState().SetReleasingSwapChain( false );
@@ -3028,6 +2995,10 @@ void DXUTCleanup3DEnvironment( _In_ bool bReleaseSettings )
         GetDXUTState().SetD3D11DeviceContext( nullptr );
         GetDXUTState().SetD3D11DeviceContext1( nullptr );
 
+		// Release viewport
+		D3D11_VIEWPORT* pd3dScreenViewport = DXUTGetD3D11ScreenViewport();
+		SAFE_DELETE_ARRAY(pd3dScreenViewport);
+
         // Report live objects
         if ( pd3dDevice )
         {
@@ -3052,6 +3023,7 @@ void DXUTCleanup3DEnvironment( _In_ bool bReleaseSettings )
                 DXUT_ERR( L"DXUTCleanup3DEnvironment", DXUTERR_NONZEROREFCOUNT );
             }
         }
+
         GetDXUTState().SetD3D11Device( nullptr );
         GetDXUTState().SetD3D11Device1( nullptr );
 
@@ -3915,7 +3887,7 @@ void DXUTUpdateBackBufferDesc()
         D3D11_TEXTURE2D_DESC TexDesc;
         pBackBuffer->GetDesc( &TexDesc );
 #ifdef STEREO_OUTPUT_MODE
-		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width / 2;
+		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width;
 #else
 		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width;
 #endif
