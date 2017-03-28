@@ -16,6 +16,9 @@
 #error "DXUT requires a Unicode build."
 #endif
 
+#define STEREO_OUTPUT_MODE
+#define IPD				2.0f
+
 #ifndef STRICT
 #define STRICT
 #endif
@@ -297,6 +300,7 @@ ID3D11DeviceContext1*	 WINAPI DXUTGetD3D11DeviceContext1(); // Does not addref u
 HRESULT                  WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext ); // Supports immediate or deferred context
 D3D_FEATURE_LEVEL        WINAPI DXUTGetD3D11DeviceFeatureLevel(); // Returns the D3D11 devices current feature level
 ID3D11RenderTargetView*  WINAPI DXUTGetD3D11RenderTargetView(); // Does not addref unlike typical Get* APIs
+D3D11_VIEWPORT *		 WINAPI DXUTGetD3D11ScreenViewport();
 ID3D11DepthStencilView*  WINAPI DXUTGetD3D11DepthStencilView(); // Does not addref unlike typical Get* APIs
 
 // General
