@@ -3886,11 +3886,7 @@ void DXUTUpdateBackBufferDesc()
     {
         D3D11_TEXTURE2D_DESC TexDesc;
         pBackBuffer->GetDesc( &TexDesc );
-#ifdef STEREO_OUTPUT_MODE
 		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width;
-#else
-		pBBufferSurfaceDesc->Width = (UINT)TexDesc.Width;
-#endif
 		pBBufferSurfaceDesc->Height = (UINT)TexDesc.Height;
 
         pBBufferSurfaceDesc->Format = TexDesc.Format;
