@@ -6,11 +6,11 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //--------------------------------------------------------------------------------------
+#include "resource.h"
 #include "DXUT.h"
 #include "DXUTcamera.h"
 #include "DXUTgui.h"
 #include "DXUTsettingsDlg.h"
-#include "resource.h"
 #include "SDKmisc.h"
 #include "SDKMesh.h"
 
@@ -81,7 +81,7 @@ struct SceneParamsStatic
     // are for a shadow map.  Otherwise, use the DXUT
     // defaults.
     ID3D11DepthStencilView*     m_pDepthStencilView;
-    D3D11_VIEWPORT*             m_pViewport;
+	D3D11_VIEWPORT*             m_pViewport;
 };
 
 // Everything necessary for scene setup which depends on
@@ -184,6 +184,14 @@ ID3D11Buffer*               g_pcbPSPerObject = nullptr;
 ID3D11Buffer*               g_pcbPSPerLight = nullptr;
 ID3D11Buffer*               g_pcbPSPerScene = nullptr;
 
+// Stereo output type.
+enum STEREO_OUTPUT_TYPE
+{
+	DEFAULT, // Non-stereo
+	LEFT_EYE,
+	RIGHT_EYE
+};
+
 //--------------------------------------------------------------------------------------
 // UI control IDs
 //--------------------------------------------------------------------------------------
@@ -224,14 +232,14 @@ CModelViewerCamera          g_Camera;               // A model viewing camera
 
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 150.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
-static const FLOAT          s_fNearPlane            = 2.0f;
-static const FLOAT          s_fFarPlane             = 4000.0f;
-static const FLOAT          s_fFOV                  = XM_PI / 4.0f;
-static const XMVECTORF32    s_vSceneCenter          = { 0.0f, 350.0f, 0.0f, 0.f };
-static const FLOAT          s_fSceneRadius          = 600.0f;
-static const FLOAT          s_fDefaultCameraRadius  = 300.0f;
-static const FLOAT          s_fMinCameraRadius      = 150.0f;
-static const FLOAT          s_fMaxCameraRadius      = 450.0f;
+static const FLOAT          s_fNearPlane = 2.0f;
+static const FLOAT          s_fFarPlane = 4000.0f;
+static const FLOAT          s_fFOV = XM_PI / 4.0f;
+static const XMVECTORF32    s_vSceneCenter = { 0.0f, 350.0f, 0.0f, 0.f };
+static const FLOAT          s_fSceneRadius = 600.0f;
+static const FLOAT          s_fDefaultCameraRadius = 300.0f;
+static const FLOAT          s_fMinCameraRadius = 150.0f;
+static const FLOAT          s_fMaxCameraRadius = 450.0f;
 
 #ifdef RENDER_SCENE_LIGHT_POV
 bool                        g_bRenderSceneLightPOV  = false;
@@ -426,7 +434,11 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
-    DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720 );
+#ifdef STEREO_OUTPUT_MODE
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 2560, 720);
+#else
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
+#endif // STEREO_OUTPUT_MODE
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
@@ -509,7 +521,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     g_vLightDir[3] = XMVector3Normalize( v );
 
     // Update the camera's position based on user input 
-    g_Camera.FrameMove( fElapsedTime );
+	g_Camera.FrameMove(fElapsedTime);
 }
 
 
@@ -584,7 +596,7 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bo
 #endif
 
     // Pass all remaining windows messages to camera so it can respond to user input
-    g_Camera.HandleMessages( hWnd, uMsg, wParam, lParam );
+	g_Camera.HandleMessages(hWnd, uMsg, wParam, lParam);
 
     return 0;
 }
@@ -1351,8 +1363,8 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
     DXUT_SetDebugName( g_pcbPSPerLight, "CB_PS_PER_LIGHT" );
 
     // Setup the camera's view parameters
-    g_Camera.SetViewParams( s_vDefaultEye, s_vDefaultLookAt );
-    g_Camera.SetRadius( s_fDefaultCameraRadius, s_fMinCameraRadius, s_fMaxCameraRadius );
+	g_Camera.SetViewParams(s_vDefaultEye, s_vDefaultLookAt);
+	g_Camera.SetRadius(s_fDefaultCameraRadius, s_fMinCameraRadius, s_fMaxCameraRadius);
 
     // Setup backface culling states:
     //  1) g_pRasterizerStateNoCull --- no culling (debugging only)
@@ -1467,14 +1479,25 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 
     // Setup the camera's projection parameters
     float fAspectRatio = pBackBufferSurfaceDesc->Width / ( FLOAT )pBackBufferSurfaceDesc->Height;
-    g_Camera.SetProjParams( s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane );
-    g_Camera.SetWindow( pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height );
-    g_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
+#ifdef STEREO_OUTPUT_MODE
+	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
+	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width / 2, pBackBufferSurfaceDesc->Height);
+	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
 
-    g_HUD.SetLocation( pBackBufferSurfaceDesc->Width - 170, 0 );
-    g_HUD.SetSize( 170, 170 );
-    g_SampleUI.SetLocation( pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300 );
-    g_SampleUI.SetSize( 170, 300 );
+	g_HUD.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, 0);
+	g_HUD.SetSize(170, 170);
+	g_SampleUI.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, pBackBufferSurfaceDesc->Height - 300);
+	g_SampleUI.SetSize(170, 300);
+#else // STEREO_OUTPUT_MODE
+	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
+	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
+	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
+
+	g_HUD.SetLocation(pBackBufferSurfaceDesc->Width - 170, 0);
+	g_HUD.SetSize(170, 170);
+	g_SampleUI.SetLocation(pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300);
+	g_SampleUI.SetSize(170, 300);
+#endif // STEREO_OUTPUT_MODE
 
 	// Initializes the video helper
 	g_videoHelper->Initialize(pSwapChain, "output.h264");
@@ -1618,11 +1641,12 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
     if ( bShadow )
     {
         // No shadow maps as textures
-        ID3D11ShaderResourceView* ppNullResources[g_iNumShadows] = { nullptr };
-        pd3dContext->PSSetShaderResources( 2, g_iNumShadows, ppNullResources );
+		ID3D11ShaderResourceView* ppNullResources[g_iNumShadows] = { nullptr };
+		pd3dContext->PSSetShaderResources(2, g_iNumShadows, ppNullResources);
 
-        // Given shadow map as depth-stencil, no render target
-        pd3dContext->RSSetViewports( 1, pStaticParams->m_pViewport );
+		// Given shadow map as depth-stencil, no render target
+		pd3dContext->RSSetViewports(1, pStaticParams->m_pViewport);
+
         pd3dContext->OMSetRenderTargets( 0, nullptr, pStaticParams->m_pDepthStencilView );
     }
     else
@@ -1715,8 +1739,8 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
 //      - Several deferred contexts in worker threads, handling objects alternately
 // The scene can be either the main scene, a mirror scene, or a shadow map scene
 //--------------------------------------------------------------------------------------
-HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *pStaticParams, 
-                    const SceneParamsDynamic *pDynamicParams )
+HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *pStaticParams,
+					 const SceneParamsDynamic *pDynamicParams, STEREO_OUTPUT_TYPE outputType)
 {
     HRESULT hr = S_OK;
 
@@ -1770,8 +1794,26 @@ HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *
         V( RenderSceneSetup( pd3dContext, pStaticParams, pDynamicParams ) );
     }
 
-    //Render
-    g_Mesh11.Render( pd3dContext, 0, 1 );
+#ifdef STEREO_OUTPUT_MODE
+	// Gets the viewport.
+	D3D11_VIEWPORT* viewports = DXUTGetD3D11ScreenViewport();
+
+	if (outputType == STEREO_OUTPUT_TYPE::LEFT_EYE)
+	{
+		// Render scene in the left eye.
+		pd3dContext->RSSetViewports(1, viewports);
+		g_Mesh11.Render(pd3dContext, 0, 1);
+	}
+	else if (outputType == STEREO_OUTPUT_TYPE::RIGHT_EYE)
+	{
+		// Render scene in the right eye.
+		pd3dContext->RSSetViewports(1, viewports + 1);
+		g_Mesh11.Render(pd3dContext, 0, 1);
+	}
+#else // STEREO_OUTPUT_MODE
+	//Render
+	g_Mesh11.Render(pd3dContext, 0, 1);
+#endif // STEREO_OUTPUT_MODE
 
     // If we are doing ST_DEFERRED_PER_CHUNK or MT_DEFERRED_PER_CHUNK, generate and execute command lists now.
     if ( IsRenderDeferredPerChunk() )
@@ -1843,7 +1885,7 @@ VOID RenderShadow( int iShadow, ID3D11DeviceContext* pd3dContext )
     SceneParamsDynamic DynamicParams;   
     XMStoreFloat4x4( &DynamicParams.m_mViewProj, m );
 
-    V( RenderScene( pd3dContext, &g_StaticParamsShadow[iShadow], &DynamicParams ) );
+    V( RenderScene( pd3dContext, &g_StaticParamsShadow[iShadow], &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
 }
 
 
@@ -1973,7 +2015,7 @@ VOID RenderMirror( int iMirror, ID3D11DeviceContext* pd3dContext )
     SceneParamsDynamic DynamicParams;
     XMStoreFloat4x4( &DynamicParams.m_mViewProj, mvp );
 
-    V( RenderScene( pd3dContext, &g_StaticParamsMirror[iMirror], &DynamicParams ) );
+    V( RenderScene( pd3dContext, &g_StaticParamsMirror[iMirror], &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
 
     //--------------------------------------------------------------------------------------
     // Clear the stencil bit to 0 over the mirror quad.
@@ -2024,9 +2066,51 @@ VOID RenderMirror( int iMirror, ID3D11DeviceContext* pd3dContext )
 VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 {
     HRESULT hr;
-
     XMMATRIX mvp;
 
+#ifdef STEREO_OUTPUT_MODE
+	// Render scene in the left eye.
+	g_Camera.SetViewParams(
+		DirectX::XMVectorSubtract(g_Camera.GetEyePt(), DirectX::XMVectorSet(IPD, 0, 0, 0)),
+		g_Camera.GetLookAtPt());
+
+#ifdef RENDER_SCENE_LIGHT_POV
+	if (g_bRenderSceneLightPOV)
+	{
+		mvp = CalcLightViewProj(0);
+	}
+	else
+#endif
+	{
+		mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+	}
+
+	SceneParamsDynamic DynamicParamsLeft;
+	XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
+
+	V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParamsLeft, STEREO_OUTPUT_TYPE::LEFT_EYE));
+
+	// Render scene in the right eye.
+	g_Camera.SetViewParams(
+		DirectX::XMVectorAdd(g_Camera.GetEyePt(), DirectX::XMVectorSet(IPD, 0, 0, 0)),
+		g_Camera.GetLookAtPt());
+
+#ifdef RENDER_SCENE_LIGHT_POV
+	if (g_bRenderSceneLightPOV)
+	{
+		mvp = CalcLightViewProj(0);
+	}
+	else
+#endif
+	{
+		mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+	}
+
+	SceneParamsDynamic DynamicParamsRight;
+	XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
+
+	V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParamsRight, STEREO_OUTPUT_TYPE::RIGHT_EYE));
+#else // STEREO_OUTPUT_MODE
 #ifdef RENDER_SCENE_LIGHT_POV
     if ( g_bRenderSceneLightPOV )
     {
@@ -2041,7 +2125,8 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
     SceneParamsDynamic DynamicParams;
     XMStoreFloat4x4( &DynamicParams.m_mViewProj, mvp );
 
-    V( RenderScene( pd3dContext, &g_StaticParamsDirect, &DynamicParams ) );
+    V( RenderScene( pd3dContext, &g_StaticParamsDirect, &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
+#endif // STEREO_OUTPUT_MODE
 }
 
 
@@ -2170,6 +2255,121 @@ unsigned int WINAPI _PerChunkRenderDeferredProc( LPVOID lpParameter )
     }
 }
 
+void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
+	float fElapsedTime, void* pUserContext)
+{
+	HRESULT hr;
+
+#ifdef ADJUSTABLE_LIGHT
+	g_vLightDir[0] = g_LightControl.GetLightDirection();
+	g_vLightPos[0] = s_vSceneCenter - s_fSceneRadius * g_vLightDir[0];
+#endif
+
+	if (g_bClearStateUponBeginCommandList)
+	{
+		pd3dImmediateContext->ClearState();
+		V(DXUTSetupD3D11Views(pd3dImmediateContext));
+	}
+
+	// If the settings dialog is being shown, then render it instead of rendering the app's scene
+	if (g_D3DSettingsDlg.IsActive())
+	{
+		g_D3DSettingsDlg.OnRender(fElapsedTime);
+		return;
+	}
+
+	// Clear the render target
+	pd3dImmediateContext->ClearRenderTargetView(DXUTGetD3D11RenderTargetView(), Colors::MidnightBlue);
+	pd3dImmediateContext->ClearDepthStencilView(DXUTGetD3D11DepthStencilView(),
+		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0, 0);
+
+	// Three possible render pathways:
+	if (IsRenderMultithreadedPerScene())
+	{
+		// Signal all worker threads, then wait for completion
+		for (int iInstance = 0; iInstance < g_iNumPerSceneRenderThreads; ++iInstance)
+		{
+			// signal ready for scene kickoff
+			SetEvent(g_hBeginPerSceneRenderDeferredEvent[iInstance]);
+		}
+
+		// wait for completion
+		WaitForMultipleObjects(g_iNumPerSceneRenderThreads,
+			g_hEndPerSceneRenderDeferredEvent,
+			TRUE,
+			INFINITE);
+	}
+	else if (IsRenderDeferredPerScene())
+	{
+		// Perform the same tasks, serialized on the main thread but using deferred contexts
+		for (int iShadow = 0; iShadow < g_iNumShadows; ++iShadow)
+		{
+			RenderShadow(iShadow, g_pd3dPerSceneDeferredContext[iShadow]);
+			V(g_pd3dPerSceneDeferredContext[iShadow]->FinishCommandList(
+				!g_bClearStateUponFinishCommandList,
+				&g_pd3dPerSceneCommandList[iShadow]));
+		}
+
+		for (int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror)
+		{
+			RenderMirror(iMirror, g_pd3dPerSceneDeferredContext[iMirror]);
+			V(g_pd3dPerSceneDeferredContext[iMirror]->FinishCommandList(
+				!g_bClearStateUponFinishCommandList,
+				&g_pd3dPerSceneCommandList[g_iNumShadows + iMirror]));
+		}
+
+		RenderSceneDirect(g_pd3dPerSceneDeferredContext[g_iNumMirrors]);
+		V(g_pd3dPerSceneDeferredContext[g_iNumMirrors]->FinishCommandList(
+			!g_bClearStateUponFinishCommandList,
+			&g_pd3dPerSceneCommandList[g_iNumShadows + g_iNumMirrors]));
+	}
+	else
+	{
+		// Perform the same tasks, serialized on the main thread using the immediate context
+		for (int iShadow = 0; iShadow < g_iNumShadows; ++iShadow)
+		{
+			RenderShadow(iShadow, pd3dImmediateContext);
+		}
+
+		for (int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror)
+		{
+			RenderMirror(iMirror, pd3dImmediateContext);
+		}
+
+		RenderSceneDirect(pd3dImmediateContext);
+	}
+
+	// If we are doing ST_DEFERRED_PER_SCENE or MT_DEFERRED_PER_SCENE, we have generated a 
+	// bunch of command lists.  Execute those lists now.
+	if (IsRenderDeferredPerScene())
+	{
+		for (int iInstance = 0; iInstance < g_iNumPerSceneRenderThreads; ++iInstance)
+		{
+			pd3dImmediateContext->ExecuteCommandList(g_pd3dPerSceneCommandList[iInstance],
+				!g_bClearStateUponExecuteCommandList);
+			SAFE_RELEASE(g_pd3dPerSceneCommandList[iInstance]);
+		}
+	}
+	else
+	{
+		// If we rendered directly, optionally clear state for consistent behavior with
+		// the other render pathways.
+		if (g_bClearStateUponFinishCommandList || g_bClearStateUponExecuteCommandList)
+		{
+			pd3dImmediateContext->ClearState();
+		}
+	}
+
+	// Assume this context is completely from scratch for purposes of subsequent HUD rendering
+	V(DXUTSetupD3D11Views(pd3dImmediateContext));
+
+	// Render the HUD
+	DXUT_BeginPerfEvent(DXUT_PERFEVENTCOLOR, L"HUD / Stats");
+	g_HUD.OnRender(fElapsedTime);
+	g_SampleUI.OnRender(fElapsedTime);
+	RenderText();
+	DXUT_EndPerfEvent();
+}
 
 //--------------------------------------------------------------------------------------
 // Render the scene using the D3D11 device
@@ -2177,117 +2377,7 @@ unsigned int WINAPI _PerChunkRenderDeferredProc( LPVOID lpParameter )
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
                                   float fElapsedTime, void* pUserContext )
 {
-    HRESULT hr;
-
-#ifdef ADJUSTABLE_LIGHT
-    g_vLightDir[0] = g_LightControl.GetLightDirection();
-    g_vLightPos[0] = s_vSceneCenter - s_fSceneRadius * g_vLightDir[0];
-#endif
-
-    if ( g_bClearStateUponBeginCommandList )
-    {
-        pd3dImmediateContext->ClearState();
-        V( DXUTSetupD3D11Views( pd3dImmediateContext ) );
-    }
-
-    // If the settings dialog is being shown, then render it instead of rendering the app's scene
-    if( g_D3DSettingsDlg.IsActive() )
-    {
-        g_D3DSettingsDlg.OnRender( fElapsedTime );
-        return;
-    }
-
-    // Clear the render target
-    pd3dImmediateContext->ClearRenderTargetView( DXUTGetD3D11RenderTargetView(), Colors::MidnightBlue );
-    pd3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), 
-        D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0, 0 );
-
-    // Three possible render pathways:
-    if ( IsRenderMultithreadedPerScene() )
-    {
-        // Signal all worker threads, then wait for completion
-        for ( int iInstance = 0; iInstance < g_iNumPerSceneRenderThreads; ++iInstance )
-        {
-            // signal ready for scene kickoff
-            SetEvent( g_hBeginPerSceneRenderDeferredEvent[iInstance] );
-        }
-
-        // wait for completion
-        WaitForMultipleObjects( g_iNumPerSceneRenderThreads, 
-            g_hEndPerSceneRenderDeferredEvent, 
-            TRUE, 
-            INFINITE );
-    }
-    else if ( IsRenderDeferredPerScene() )
-    {
-        // Perform the same tasks, serialized on the main thread but using deferred contexts
-        for ( int iShadow = 0; iShadow < g_iNumShadows; ++iShadow )
-        {
-            RenderShadow( iShadow, g_pd3dPerSceneDeferredContext[iShadow] );
-            V( g_pd3dPerSceneDeferredContext[iShadow]->FinishCommandList( 
-                !g_bClearStateUponFinishCommandList, 
-                &g_pd3dPerSceneCommandList[iShadow] ) );
-        }
-
-        for ( int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror )
-        {
-            RenderMirror( iMirror, g_pd3dPerSceneDeferredContext[iMirror] );
-            V( g_pd3dPerSceneDeferredContext[iMirror]->FinishCommandList( 
-                !g_bClearStateUponFinishCommandList, 
-                &g_pd3dPerSceneCommandList[g_iNumShadows + iMirror] ) );
-        }
-
-        RenderSceneDirect( g_pd3dPerSceneDeferredContext[g_iNumMirrors] );
-        V( g_pd3dPerSceneDeferredContext[g_iNumMirrors]->FinishCommandList( 
-            !g_bClearStateUponFinishCommandList, 
-            &g_pd3dPerSceneCommandList[g_iNumShadows + g_iNumMirrors] ) );
-    }
-    else
-    {
-        // Perform the same tasks, serialized on the main thread using the immediate context
-        for ( int iShadow = 0; iShadow < g_iNumShadows; ++iShadow )
-        {
-            RenderShadow( iShadow, pd3dImmediateContext );
-        }
-
-        for ( int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror )
-        {
-            RenderMirror( iMirror, pd3dImmediateContext );
-        }
-
-        RenderSceneDirect( pd3dImmediateContext );
-    }
-
-    // If we are doing ST_DEFERRED_PER_SCENE or MT_DEFERRED_PER_SCENE, we have generated a 
-    // bunch of command lists.  Execute those lists now.
-    if ( IsRenderDeferredPerScene() )
-    {
-        for ( int iInstance = 0; iInstance < g_iNumPerSceneRenderThreads; ++iInstance )
-        {
-            pd3dImmediateContext->ExecuteCommandList( g_pd3dPerSceneCommandList[iInstance], 
-                !g_bClearStateUponExecuteCommandList );
-            SAFE_RELEASE( g_pd3dPerSceneCommandList[iInstance] );
-        }
-    }
-    else
-    {
-        // If we rendered directly, optionally clear state for consistent behavior with
-        // the other render pathways.
-        if ( g_bClearStateUponFinishCommandList || g_bClearStateUponExecuteCommandList )
-        {
-            pd3dImmediateContext->ClearState();
-        }
-    }
-
-    // Assume this context is completely from scratch for purposes of subsequent HUD rendering
-    V( DXUTSetupD3D11Views( pd3dImmediateContext ) );
-
-    // Render the HUD
-    DXUT_BeginPerfEvent( DXUT_PERFEVENTCOLOR, L"HUD / Stats" );
-    g_HUD.OnRender( fElapsedTime );
-    g_SampleUI.OnRender( fElapsedTime );
-    RenderText();
-    DXUT_EndPerfEvent();
+	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
 
 	// Captures frame.
 	g_videoHelper->Capture();
