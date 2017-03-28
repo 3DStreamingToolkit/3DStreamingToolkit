@@ -160,7 +160,7 @@ public class WebRtcHelpers : MonoBehaviour
         }
         // TODO:  Support Peer Selection instead of automatically switching latest connection
         Peers.Add(peerConnection = new Peer { Id = id, Name = name });
-        statusText.text += string.Format("Peer Connected: {0}-{1}", id, name);
+        statusText.text += string.Format("Peer Connected: {0}-{1}\n", id, name);
     }
 
     private void Signaller_OnDisconnected()
@@ -188,7 +188,8 @@ public class WebRtcHelpers : MonoBehaviour
 //       peer);
 
         Conductor.Instance.StartLogin(
-               "n3dtoolkit.southcentralus.cloudapp.azure.com",
+               //"n3dtoolkit.southcentralus.cloudapp.azure.com",
+               "localhost",
                "8888",
                peerText.text);
 #endif
@@ -206,6 +207,11 @@ public class WebRtcHelpers : MonoBehaviour
 #if !UNITY_EDITOR
         Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, inputText.text);
 #endif
+    }
+
+    public void ClearText()
+    {
+        statusText.text = string.Empty;
     }
 
 }

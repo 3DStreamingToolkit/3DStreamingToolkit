@@ -19,8 +19,7 @@ using PeerConnectionClient.MVVM;
 using PeerConnectionClient.Signalling;
 using PeerConnectionClient.Utilities;
 using System.Collections.ObjectModel;
-using System.Windows;
-
+using Windows.UI.Core;
 
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -34,6 +33,13 @@ namespace App1
     {
         private ObservableCollection<Peer> Peers;
         private Peer peerConnection;
+
+#if LOCAL
+        private string signalHost = "n3dtoolkit.southcentralus.cloudapp.azure.com";
+#else
+        private string signalHost = "localhost";
+#endif
+        private string signalPort = "8888";
 
         public MainPage()
         {
@@ -51,14 +57,19 @@ namespace App1
             Conductor.Instance.OnPeerConnectionCreated += Instance_OnPeerConnectionCreated;
             Conductor.Instance.OnPeerConnectionClosed += Instance_OnPeerConnectionClosed;
             Conductor.Instance.OnReadyToConnect += Instance_OnReadyToConnect;
-
-
         }
 
-        private async void Instance_OnReadyToConnect()
+        public async void RunOnUi(DispatchedHandler handler)
         {
             await Dispatcher.RunAsync(
                 Windows.UI.Core.CoreDispatcherPriority.Normal,
+                handler
+            );
+        }
+
+        private void Instance_OnReadyToConnect()
+        {
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text +=
                     "Ready To Connect";
@@ -66,10 +77,9 @@ namespace App1
             );
         }
 
-        private async void Instance_OnPeerConnectionClosed()
+        private void Instance_OnPeerConnectionClosed()
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Connection Closed";
@@ -77,10 +87,9 @@ namespace App1
             );
         }
 
-        private async void Instance_OnPeerConnectionCreated()
+        private void Instance_OnPeerConnectionCreated()
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Connection Created";
@@ -88,10 +97,9 @@ namespace App1
             );
         }
 
-        private async void Signaller_OnServerConnectionFailure()
+        private void Signaller_OnServerConnectionFailure()
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text +=
                     "Server Connection Failure";
@@ -99,10 +107,9 @@ namespace App1
             );
         }
 
-        private async void Signaller_OnPeerHangup(int peer_id)
+        private void Signaller_OnPeerHangup(int peer_id)
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Hangup: " + peer_id;
@@ -110,10 +117,9 @@ namespace App1
             );
         }
 
-        private async void Signaller_OnPeerDisconnected(int peer_id)
+        private void Signaller_OnPeerDisconnected(int peer_id)
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text +=
                     "Peer Disconnected: " + peer_id;
@@ -121,17 +127,16 @@ namespace App1
             );
         }
 
-        private async void Signaller_OnMessageFromPeer(int peer_id, string message)
+        private void Signaller_OnMessageFromPeer(int peer_id, string message)
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock2.Text += String.Format("{0}-{1}\n", peer_id, message);
                 }
             );
         }
 
-        private async void Signaller_OnPeerConnected(int id, string name)
+        private void Signaller_OnPeerConnected(int id, string name)
         {
             if (Peers == null)
             {
@@ -140,28 +145,25 @@ namespace App1
             }
             Peers.Add(peerConnection = new Peer { Id = id, Name = name });
 
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text += String.Format("Peer Connected: {0}-{1}\n", id, name);                    
                 }
             );            
         }
 
-        private async void Signaller_OnDisconnected()
-        {            
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+        private void Signaller_OnDisconnected()
+        {
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text += "\nSignaller Disconnected\n";
                 }
             );
         }
 
-        private async void Signaller_OnSignedIn()
+        private void Signaller_OnSignedIn()
         {
-            await Dispatcher.RunAsync(
-                Windows.UI.Core.CoreDispatcherPriority.Normal,
+            RunOnUi(
                 () => {
                     MessagesTextBlock.Text += "\nSignaller Signed In\n";
                 }
@@ -169,11 +171,11 @@ namespace App1
         }
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
-        {
-            //MessagesTextBlock.Text += MessageTextBox.Text + "\n";
+        {                 
             if (peerConnection != null)
             {
-                await Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, MessageTextBox.Text);
+                MessagesTextBlock.Text += string.Format("Attempt Send: {0}-{1}\n", peerConnection.Id, MessageTextBox.Text);
+                await Conductor.Instance.Signaller.SendToPeer(peerConnection.Id, MessageTextBox.Text);               
             }
         }
 
@@ -184,8 +186,8 @@ namespace App1
             new Task(() =>
             {
                 Conductor.Instance.StartLogin(
-                "n3dtoolkit.southcentralus.cloudapp.azure.com",
-                "8888",
+                signalHost,
+                signalPort,
                 name);
             }).Start();
         }
@@ -217,13 +219,15 @@ namespace App1
             if (peerConnection != null)
             {
                 MessagesTextBlock.Text += string.Format("Connect to Peer: {0}\n", peerConnection.Id);
-                new Task(() => { Conductor.Instance.ConnectToPeer(peerConnection); }).Start();
+                new Task(() =>
+                {
+                    Conductor.Instance.ConnectToPeer(peerConnection);
+                }).Start();
             }
             else
             {
                 MessagesTextBlock.Text += "No Peer Setup\n";
             }
-        }
-                
+        }                
     }
 }
