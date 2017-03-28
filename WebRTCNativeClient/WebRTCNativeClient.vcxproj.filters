@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="DirectX">
+      <UniqueIdentifier>{a4f4b7de-2ba8-4d53-8611-5728038dd76f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -48,6 +51,15 @@
     <ClInclude Include="fakevideocapturer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="directx\DeviceResources.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="directx\CubeRenderer.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="directx\DirectXHelper.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -68,6 +80,12 @@
     <ClCompile Include="client\peer_connection_client.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="directx\DeviceResources.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="directx\CubeRenderer.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WebRTCNativeClient.rc">
@@ -81,5 +99,13 @@
     <Image Include="WebRTCNativeClient.ico">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="directx\PixelShader.hlsl">
+      <Filter>DirectX</Filter>
+    </FxCompile>
+    <FxCompile Include="directx\VertexShader.hlsl">
+      <Filter>DirectX</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

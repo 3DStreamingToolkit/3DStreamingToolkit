@@ -26,6 +26,8 @@ VideoHelper::~VideoHelper()
 		delete m_pNvHWEncoder;
 		m_pNvHWEncoder = NULL;
 	}
+
+	SAFE_RELEASE(m_stagingFrameBuffer);
 }
 
 // Initializes the swap chain and IO buffers.
@@ -85,6 +87,18 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 	{
 		return;
 	}
+
+	// Initializes the input buffer, backed by ID3D11Texture2D*.
+	m_stagingFrameBufferDesc = { 0 };
+	m_stagingFrameBufferDesc.ArraySize = 1;
+	m_stagingFrameBufferDesc.Format = swapChainDesc.BufferDesc.Format;
+	m_stagingFrameBufferDesc.Width = swapChainDesc.BufferDesc.Width;
+	m_stagingFrameBufferDesc.Height = swapChainDesc.BufferDesc.Height;
+	m_stagingFrameBufferDesc.MipLevels = 1;
+	m_stagingFrameBufferDesc.SampleDesc.Count = 1;
+	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
+	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
 }
 
 // Cleanup resources.
@@ -143,6 +157,38 @@ void VideoHelper::Capture()
 			return;
 		}
 	}
+}
+
+// Captures frame buffer from the swap chain.
+void VideoHelper::Capture(void** buffer, int* size)
+{
+	// Gets the frame buffer from the swap chain.
+	ID3D11Texture2D* frameBuffer = nullptr;
+	HRESULT hr = m_swapChain->GetBuffer(0,
+		__uuidof(ID3D11Texture2D),
+		reinterpret_cast<void**>(&frameBuffer));
+
+	if (FAILED(hr))
+	{
+		return;
+	}
+
+	// Copies the frame buffer to the encode input buffer.
+	m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
+	frameBuffer->Release();
+
+	// Accesses the frame buffer.
+	D3D11_TEXTURE2D_DESC desc;
+	m_stagingFrameBuffer->GetDesc(&desc);
+	D3D11_MAPPED_SUBRESOURCE mapped;
+	hr = m_d3dContext->Map(m_stagingFrameBuffer, 0, D3D11_MAP_READ, 0, &mapped);
+	if (SUCCEEDED(hr))
+	{
+		*buffer = mapped.pData;
+		*size = mapped.RowPitch * desc.Height;
+	}
+
+	m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
 }
 
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)

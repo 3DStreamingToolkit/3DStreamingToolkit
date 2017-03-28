@@ -90,7 +90,7 @@ bool MainWnd::Create() {
   ui_thread_id_ = ::GetCurrentThreadId();
   wnd_ = ::CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, kClassName, L"WebRTC",
       WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN,
-      CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+      CW_USEDEFAULT, CW_USEDEFAULT, 640, 480,
       NULL, NULL, GetModuleHandle(NULL), this);
 
   ::SendMessage(wnd_, WM_SETFONT, reinterpret_cast<WPARAM>(GetDefaultFont()),

@@ -1040,16 +1040,15 @@ NVENCSTATUS CNvHWEncoder::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
     //    return NV_ENC_SUCCESS;
 
     nvStatus = NV_ENC_SUCCESS;
-    NV_ENC_LOCK_BITSTREAM lockBitstreamData;
-    memset(&lockBitstreamData, 0, sizeof(lockBitstreamData));
-    SET_VER(lockBitstreamData, NV_ENC_LOCK_BITSTREAM);
-    lockBitstreamData.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
-    lockBitstreamData.doNotWait = false;
+    memset(&m_lockBitstreamData, 0, sizeof(m_lockBitstreamData));
+    SET_VER(m_lockBitstreamData, NV_ENC_LOCK_BITSTREAM);
+	m_lockBitstreamData.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
+	m_lockBitstreamData.doNotWait = false;
 
-    nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &lockBitstreamData);
+    nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &m_lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
-        fwrite(lockBitstreamData.bitstreamBufferPtr, 1, lockBitstreamData.bitstreamSizeInBytes, m_fOutput);
+        fwrite(m_lockBitstreamData.bitstreamBufferPtr, 1, m_lockBitstreamData.bitstreamSizeInBytes, m_fOutput);
         nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(m_hEncoder, pEncodeBuffer->stOutputBfr.hBitstreamBuffer);
     }
     else
@@ -1253,6 +1252,11 @@ NVENCSTATUS CNvHWEncoder::NvEncFlushEncoderQueue(void *hEOSEvent)
         assert(0);
     }
     return nvStatus;
+}
+
+NV_ENC_LOCK_BITSTREAM CNvHWEncoder::GetLockBitStream()
+{
+	return m_lockBitstreamData;
 }
 
 NVENCSTATUS CNvHWEncoder::ParseArguments(EncodeConfig *encodeConfig, int argc, char *argv[])
