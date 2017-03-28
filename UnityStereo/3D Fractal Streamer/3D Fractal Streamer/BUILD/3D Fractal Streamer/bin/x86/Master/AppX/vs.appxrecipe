@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Machine>DESKTOP-M7UOU8A</Machine>
+    <WindowsUser>rickb</WindowsUser>
+    <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
+    <TargetOsVersion>10.0</TargetOsVersion>
+    <TargetOsDescription>Windows 10.0</TargetOsDescription>
+    <SolutionConfiguration>Master|x86</SolutionConfiguration>
+    <PackageArchitecture>x86</PackageArchitecture>
+    <PackageIdentityName>c7e4ff9a-0f15-4d2b-b6ed-ab4c54c26ce9</PackageIdentityName>
+    <PackageIdentityPublisher>CN=DefaultCompany</PackageIdentityPublisher>
+    <IntermediateOutputPath>C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\obj\x86\Master\</IntermediateOutputPath>
+    <RemoteDeploymentType>
+    </RemoteDeploymentType>
+    <PackageRegistrationPath>
+    </PackageRegistrationPath>
+    <RemoveNonLayoutFiles>true</RemoveNonLayoutFiles>
+    <RegisteredManifestChecksum>19BCBAD0AB53B5B25525082A0EB0B73E4622FF7BEB13EBA8D05D0779FF1FB304</RegisteredManifestChecksum>
+    <RegisteredPackageMoniker>3DFractalStreamer_1.0.0.0_x86__pzq3xp76mxafg</RegisteredPackageMoniker>
+    <RegisteredUserModeAppID>3DFractalStreamer_pzq3xp76mxafg!App</RegisteredUserModeAppID>
+    <RegisteredPackageID>3DFractalStreamer</RegisteredPackageID>
+    <RegisteredPackagePublisher>CN=DefaultCompany</RegisteredPackagePublisher>
+    <RegisteredVersion>1.0.0.0</RegisteredVersion>
+    <JitOptimizationSuppressed>False</JitOptimizationSuppressed>
+  </PropertyGroup>
+  <ItemGroup>
+    <AppXManifest Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\AppxManifest.xml">
+      <PackagePath>AppxManifest.xml</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-27T23:55:37.657</Modified>
+    </AppXManifest>
+  </ItemGroup>
+  <ItemGroup>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\3D Fractal Streamer.dll">
+      <PackagePath>3D Fractal Streamer.dll</PackagePath>
+      <Modified>2017-03-27T23:55:35.921</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\3D Fractal Streamer.exe">
+      <PackagePath>3D Fractal Streamer.exe</PackagePath>
+      <Modified>2017-03-27T23:55:37.616</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\3D Fractal Streamer.pdb">
+      <PackagePath>3D Fractal Streamer.pdb</PackagePath>
+      <Modified>2017-03-27T23:55:37.606</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Assets\SplashScreen.scale-200.png">
+      <PackagePath>Assets\SplashScreen.scale-200.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-10T05:35:46.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Assets\Square150x150Logo.scale-200.png">
+      <PackagePath>Assets\Square150x150Logo.scale-200.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-16T15:06:20.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Assets\Square44x44Logo.scale-200.png">
+      <PackagePath>Assets\Square44x44Logo.scale-200.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-16T14:55:24.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
+      <PackagePath>Assets\Square44x44Logo.targetsize-24_altform-unplated.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-16T15:04:56.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Assets\StoreLogo.png">
+      <PackagePath>Assets\StoreLogo.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-16T15:04:56.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Assets\Wide310x150Logo.scale-200.png">
+      <PackagePath>Assets\Wide310x150Logo.scale-200.png</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-16T14:57:26.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\BridgeInterface.dll">
+      <PackagePath>BridgeInterface.dll</PackagePath>
+      <Modified>2017-03-16T17:04:18.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\BridgeInterface.pdb">
+      <PackagePath>BridgeInterface.pdb</PackagePath>
+      <Modified>2017-03-16T17:04:18.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\BridgeInterface.winmd">
+      <PackagePath>BridgeInterface.winmd</PackagePath>
+      <Modified>2017-03-16T17:04:18.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\ClrCompression.dll">
+      <PackagePath>ClrCompression.dll</PackagePath>
+      <Modified>2015-07-23T06:08:02.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\globalgamemanagers">
+      <PackagePath>Data\globalgamemanagers</PackagePath>
+      <Modified>2017-03-27T23:53:11.485</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\globalgamemanagers.assets">
+      <PackagePath>Data\globalgamemanagers.assets</PackagePath>
+      <Modified>2017-03-27T23:53:11.579</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\level0">
+      <PackagePath>Data\level0</PackagePath>
+      <Modified>2017-03-27T23:53:10.875</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\level0.resS">
+      <PackagePath>Data\level0.resS</PackagePath>
+      <Modified>2017-03-27T23:53:10.872</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\managedAssemblies.txt">
+      <PackagePath>Data\managedAssemblies.txt</PackagePath>
+      <Modified>2017-03-27T23:53:26.110</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\Resources\unity default resources">
+      <PackagePath>Data\Resources\unity default resources</PackagePath>
+      <Modified>2017-03-16T15:07:36.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\Resources\unity_builtin_extra">
+      <PackagePath>Data\Resources\unity_builtin_extra</PackagePath>
+      <Modified>2017-03-27T23:53:11.942</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\sharedassets0.assets">
+      <PackagePath>Data\sharedassets0.assets</PackagePath>
+      <Modified>2017-03-27T23:53:11.675</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Data\sharedassets0.assets.resS">
+      <PackagePath>Data\sharedassets0.assets.resS</PackagePath>
+      <Modified>2017-03-27T23:53:11.672</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\Resource.res">
+      <PackagePath>Resource.res</PackagePath>
+      <Modified>2017-03-27T23:53:26.145</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\resources.pri">
+      <PackagePath>resources.pri</PackagePath>
+      <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
+      <Modified>2017-03-27T23:22:30.327</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\UnityEngineDelegates.dll">
+      <PackagePath>UnityEngineDelegates.dll</PackagePath>
+      <Modified>2017-03-16T17:04:32.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\UnityEngineDelegates.pdb">
+      <PackagePath>UnityEngineDelegates.pdb</PackagePath>
+      <Modified>2017-03-16T17:04:32.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\UnityEngineDelegates.winmd">
+      <PackagePath>UnityEngineDelegates.winmd</PackagePath>
+      <Modified>2017-03-16T17:04:28.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\UnityPlayer.dll">
+      <PackagePath>UnityPlayer.dll</PackagePath>
+      <Modified>2017-03-16T17:19:42.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\UnityPlayer.winmd">
+      <PackagePath>UnityPlayer.winmd</PackagePath>
+      <Modified>2017-03-16T17:19:34.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\WinRTBridge.winmd">
+      <PackagePath>WinRTBridge.winmd</PackagePath>
+      <Modified>2017-03-16T17:04:36.000</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\_Resources\0.rsrc">
+      <PackagePath>_Resources\0.rsrc</PackagePath>
+      <Modified>2017-03-27T23:54:21.907</Modified>
+    </AppxPackagedFile>
+    <AppxPackagedFile Include="C:\projects\unity\holotest100\3D Fractal Streamer\3D Fractal Streamer\BUILD\3D Fractal Streamer\bin\x86\Master\ilc\_Resources\index.txt">
+      <PackagePath>_Resources\index.txt</PackagePath>
+      <Modified>2017-03-27T23:54:21.940</Modified>
+    </AppxPackagedFile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\">
+      <Name>Microsoft.VCLibs.140.00</Name>
+      <Version>14.0.24123.0</Version>
+      <Architecture>ARM</Architecture>
+      <FrameworkIdentity>Name = Microsoft.VCLibs.140.00, MinVersion = 14.0.24123.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\.\AppX\Retail\ARM\Microsoft.VCLibs.ARM.14.00.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\">
+      <Name>Microsoft.VCLibs.140.00</Name>
+      <Version>14.0.24123.0</Version>
+      <Architecture>x64</Architecture>
+      <FrameworkIdentity>Name = Microsoft.VCLibs.140.00, MinVersion = 14.0.24123.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\.\AppX\Retail\x64\Microsoft.VCLibs.x64.14.00.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\">
+      <Name>Microsoft.VCLibs.140.00</Name>
+      <Version>14.0.24123.0</Version>
+      <Architecture>x86</Architecture>
+      <FrameworkIdentity>Name = Microsoft.VCLibs.140.00, MinVersion = 14.0.24123.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs\14.0\.\AppX\Retail\x86\Microsoft.VCLibs.x86.14.00.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Framework.1.3\1.3\">
+      <Name>Microsoft.NET.Native.Framework.1.3</Name>
+      <Version>1.3.24201.0</Version>
+      <Architecture>ARM</Architecture>
+      <FrameworkIdentity>Name = Microsoft.NET.Native.Framework.1.3, MinVersion = 1.3.24201.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Framework.1.3\1.3\.\arm\ret\Native\Microsoft.NET.Native.Framework.1.3.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Framework.1.3\1.3\">
+      <Name>Microsoft.NET.Native.Framework.1.3</Name>
+      <Version>1.3.24201.0</Version>
+      <Architecture>x64</Architecture>
+      <FrameworkIdentity>Name = Microsoft.NET.Native.Framework.1.3, MinVersion = 1.3.24201.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Framework.1.3\1.3\.\x64\ret\Native\Microsoft.NET.Native.Framework.1.3.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Framework.1.3\1.3\">
+      <Name>Microsoft.NET.Native.Framework.1.3</Name>
+      <Version>1.3.24201.0</Version>
+      <Architecture>x86</Architecture>
+      <FrameworkIdentity>Name = Microsoft.NET.Native.Framework.1.3, MinVersion = 1.3.24201.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Framework.1.3\1.3\.\x86\ret\Native\Microsoft.NET.Native.Framework.1.3.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Runtime.1.4\1.4\">
+      <Name>Microsoft.NET.Native.Runtime.1.4</Name>
+      <Version>1.4.24201.0</Version>
+      <Architecture>ARM</Architecture>
+      <FrameworkIdentity>Name = Microsoft.NET.Native.Runtime.1.4, MinVersion = 1.4.24201.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Runtime.1.4\1.4\.\AppX\ARM\Microsoft.NET.Native.Runtime.1.4.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Runtime.1.4\1.4\">
+      <Name>Microsoft.NET.Native.Runtime.1.4</Name>
+      <Version>1.4.24201.0</Version>
+      <Architecture>x64</Architecture>
+      <FrameworkIdentity>Name = Microsoft.NET.Native.Runtime.1.4, MinVersion = 1.4.24201.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Runtime.1.4\1.4\.\AppX\x64\Microsoft.NET.Native.Runtime.1.4.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+    <ResolvedSDKReference Include="C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Runtime.1.4\1.4\">
+      <Name>Microsoft.NET.Native.Runtime.1.4</Name>
+      <Version>1.4.24201.0</Version>
+      <Architecture>x86</Architecture>
+      <FrameworkIdentity>Name = Microsoft.NET.Native.Runtime.1.4, MinVersion = 1.4.24201.0, Publisher = %27CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US%27</FrameworkIdentity>
+      <AppxLocation>C:\Program Files %28x86%29\Microsoft SDKs\Windows Kits\10\ExtensionSDKs\Microsoft.NET.Native.Runtime.1.4\1.4\.\AppX\x86\Microsoft.NET.Native.Runtime.1.4.appx</AppxLocation>
+      <MoreInfo>
+      </MoreInfo>
+    </ResolvedSDKReference>
+  </ItemGroup>
+</Project>
