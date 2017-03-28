@@ -90,6 +90,7 @@ namespace Toolkit3DLibrary
 												~VideoHelper();
 		void									Initialize(IDXGISwapChain* swapChain, char* outputFile);
 		void									Capture();
+		void									Capture(void** buffer, int* size);
 
 	private:
 		ID3D11Device*							m_d3dDevice;
@@ -103,6 +104,8 @@ namespace Toolkit3DLibrary
 		EncodeBuffer							m_stEncodeBuffer[MAX_ENCODE_QUEUE];
 		CNvQueue<EncodeBuffer>                  m_EncodeBufferQueue;
 		EncodeConfig							m_encodeConfig;
+		ID3D11Texture2D*						m_stagingFrameBuffer;
+		D3D11_TEXTURE2D_DESC					m_stagingFrameBufferDesc;
 
 		NVENCSTATUS                             Deinitialize();
 		NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc);

@@ -24,9 +24,18 @@
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/system_wrappers/include/clock.h"
+//#include "libyuv/compare.h"  // NOLINT
+//#include "libyuv/convert.h"  // NOLINT
 #include "ppltasks.h"
 
+#include "VideoHelper.h"
+#include "directx\DeviceResources.h"
+#include "libyuv/convert.h"
+
 using namespace Concurrency;
+using namespace Toolkit3DLibrary;
+
+extern VideoHelper*		g_videoHelper;
 
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
@@ -49,12 +58,54 @@ public:
 			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
 		formats.push_back(cricket::VideoFormat(1280, 720,
 			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
+		formats.push_back(cricket::VideoFormat(1420, 700,
+			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_H264));
 		ResetSupportedFormats(formats);
 	}
 	FakeVideoCapturer() : FakeVideoCapturer(false) {}
 
 	~FakeVideoCapturer() {
 		SignalDestroyed(this);
+	}
+
+	// Returns the size in bytes of the input RGBA frames.
+	int InputFrameSize(int width, int height) const {
+		return width*height * 4;
+	}
+
+	// Returns the size of the Y plane in bytes.
+	int YPlaneSize(int width, int height) const {
+		return width*height;
+	}
+
+	// Returns the size of the U plane in bytes.
+	int UPlaneSize(int width, int height) const {
+		return ((width + 1) / 2)*((height) / 2);
+	}
+
+	// Returns the size of the V plane in bytes.
+	int VPlaneSize(int width, int height) const {
+		return ((width + 1) / 2)*((height) / 2);
+	}
+
+	// Returns the number of bytes per row in the RGBA frame.
+	int SrcStrideFrame(int width) const {
+		return width * 4;
+	}
+
+	// Returns the number of bytes in the Y plane.
+	int DstStrideY(int width) const {
+		return width;
+	}
+
+	// Returns the number of bytes in the U plane.
+	int DstStrideU(int width) const {
+		return (width + 1) / 2;
+	}
+
+	// Returns the number of bytes in the V plane.
+	int DstStrideV(int width) const {
+		return (width + 1) / 2;
 	}
 
 	void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) {
@@ -69,19 +120,80 @@ public:
 			GetCaptureFormat()->interval,
 			GetCaptureFormat()->fourcc);
 	}
+
+	rtc::scoped_refptr<webrtc::I420Buffer> CreateGradient(int width, int height) {
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
+			webrtc::I420Buffer::Create(width, height));
+		// Initialize with gradient, Y = 128(x/w + y/h), U = 256 x/w, V = 256 y/h
+		for (int x = 0; x < width; x++) {
+			for (int y = 0; y < height; y++) {
+				buffer->MutableDataY()[x + y * width] =
+					128 * (x * height + y * width) / (width * height);
+			}
+		}
+		int chroma_width = (width + 1) / 2;
+		int chroma_height = (height + 1) / 2;
+		for (int x = 0; x < chroma_width; x++) {
+			for (int y = 0; y < chroma_height; y++) {
+				buffer->MutableDataU()[x + y * chroma_width] =
+					255 * x / (chroma_width - 1);
+				buffer->MutableDataV()[x + y * chroma_width] =
+					255 * y / (chroma_height - 1);
+			}
+		}
+		return buffer;
+	}
+
+	rtc::scoped_refptr<webrtc::I420Buffer> ReadI420Buffer(
+		int width, 
+		int height, 
+		uint8_t *data) 
+	{
+		int half_width = (width + 1) / 2;
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
+			// Explicit stride, no padding between rows.
+			webrtc::I420Buffer::Create(width, height, width, half_width, half_width));
+
+		size_t size_y = static_cast<size_t>(width) * height;
+		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
+
+		memcpy(buffer->MutableDataY(), data, size_y);
+		memcpy(buffer->MutableDataU(), data + size_y, size_uv);
+		memcpy(buffer->MutableDataV(), data + size_y + size_uv, size_uv);
+		return buffer;
+	}
+
 	void SendFakeVideoFrame()
 	{
-		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-			webrtc::I420Buffer::Create(720, 480));
-		buffer->InitializeData();
-		webrtc::I420Buffer::SetBlack(buffer);
+		void* pFrameBuffer = nullptr;
+		int frameSizeInBytes = 0;
+		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes);
+		if (frameSizeInBytes == 0)
+		{
+			return;
+		}
+
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
+			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+
+		libyuv::ARGBToI420(
+			(uint8_t*)pFrameBuffer,
+			FRAME_BUFFER_WIDTH * 4,
+			buffer.get()->MutableDataY(),
+			buffer.get()->StrideY(),
+			buffer.get()->MutableDataU(),
+			buffer.get()->StrideU(),
+			buffer.get()->MutableDataV(),
+			buffer.get()->StrideV(),
+			FRAME_BUFFER_WIDTH,
+			FRAME_BUFFER_HEIGHT);
 
 		auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 		OnFrame(webrtc::VideoFrame(
 			buffer, rotation_,
 			timeStamp),
-			720, 480);
+			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 	}
 	bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
 		// default to 30fps
@@ -152,7 +264,7 @@ public:
 	bool IsScreencast() const override { return is_screencast_; }
 	bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
 		fourccs->push_back(cricket::FOURCC_I420);
-		fourccs->push_back(cricket::FOURCC_MJPG);
+		fourccs->push_back(cricket::FOURCC_H264);
 		return true;
 	}
 

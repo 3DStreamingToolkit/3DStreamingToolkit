@@ -17,6 +17,20 @@
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/win32socketserver.h"
 
+#include "directx/DeviceResources.h"
+#include "directx/CubeRenderer.h"
+#include "VideoHelper.h"
+
+using namespace DX;
+using namespace Toolkit3DLibrary;
+using namespace Toolkit3DSample;
+
+//--------------------------------------------------------------------------------------
+// Toolkit3DLibrary
+//--------------------------------------------------------------------------------------
+DeviceResources*	g_deviceResources = nullptr;
+CubeRenderer*		g_cubeRenderer = nullptr;
+VideoHelper*		g_videoHelper = nullptr;
 
 int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
                     wchar_t* cmd_line, int cmd_show) {
@@ -52,11 +66,34 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
   rtc::scoped_refptr<Conductor> conductor(
         new rtc::RefCountedObject<Conductor>(&client, &wnd));
 
+  // Initializes the device resources.
+  g_deviceResources = new DeviceResources();
+  g_deviceResources->SetWindow(wnd.handle());
+
+  // Initializes the cube renderer.
+  g_cubeRenderer = new CubeRenderer(g_deviceResources);
+
+  // Creates and initializes the video helper library.
+  g_videoHelper = new VideoHelper(
+	  g_deviceResources->GetD3DDevice(),
+	  g_deviceResources->GetD3DDeviceContext());
+
+  g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
+
   // Main loop.
   MSG msg;
   BOOL gm;
-  while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1) {
-    if (!wnd.PreTranslateMessage(&msg)) {
+  while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1) 
+  {
+	g_cubeRenderer->Update();
+	g_cubeRenderer->Render();
+	//g_videoHelper->Capture();
+
+	// Enable preview window
+	//g_deviceResources->Present();
+
+	if (!wnd.PreTranslateMessage(&msg)) 
+	{
       ::TranslateMessage(&msg);
       ::DispatchMessage(&msg);
     }
