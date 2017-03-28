@@ -3,7 +3,7 @@
 #include "stdafx.h"
 
 #ifdef STEREO_OUTPUT_MODE
-#define FRAME_BUFFER_WIDTH	1280
+#define FRAME_BUFFER_WIDTH	640
 #else
 #define FRAME_BUFFER_WIDTH	640
 #endif // STEREO_OUTPUT_MODE
