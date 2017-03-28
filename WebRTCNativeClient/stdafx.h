@@ -23,3 +23,6 @@
 #include <d3dcompiler.h>
 #include <DirectXColors.h>
 #include <DirectXMath.h>
+
+#define STEREO_OUTPUT_MODE
+#define IPD 0.02f

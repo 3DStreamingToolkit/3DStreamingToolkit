@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
 #include "DeviceResources.h"
 
 namespace Toolkit3DSample

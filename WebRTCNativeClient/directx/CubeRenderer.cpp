@@ -136,7 +136,7 @@ void CubeRenderer::InitPipeline()
 	// Initializes the projection matrix.
 	SIZE outputSize = m_deviceResources->GetOutputSize();
 #ifdef STEREO_OUTPUT_MODE
-	outputSize.cy = outputSize.cy * 2;
+	outputSize.cy = outputSize.cy;
 #endif // STEREO_OUTPUT_MODE
 
 	float aspectRatio = (float)outputSize.cx / outputSize.cy;
