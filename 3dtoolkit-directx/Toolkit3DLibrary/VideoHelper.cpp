@@ -191,6 +191,13 @@ void VideoHelper::Capture(void** buffer, int* size)
 	m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
 }
 
+// Captures encoded frames from NvEncoder.
+void VideoHelper::CaptureEncodedFrame(void** buffer, int* size)
+{
+	*buffer = m_pNvHWEncoder->m_lockBitstreamData.bitstreamBufferPtr;
+	*size = m_pNvHWEncoder->m_lockBitstreamData.bitstreamSizeInBytes;
+}
+
 NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc)
 {
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
