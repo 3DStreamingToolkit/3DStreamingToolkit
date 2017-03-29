@@ -171,6 +171,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="VideoHelper.cpp" />
+    <ClCompile Include="VideoTestRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

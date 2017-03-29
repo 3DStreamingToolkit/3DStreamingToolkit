@@ -30,37 +30,68 @@ VideoHelper::~VideoHelper()
 	SAFE_RELEASE(m_stagingFrameBuffer);
 }
 
+void VideoHelper::SetEncodeConfig(EncodeConfig nvEncodeConfig) {
+	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
+	m_encodeConfig = nvEncodeConfig;
+	if (m_encodeConfig.fOutput == NULL)
+	{
+		PRINTERR("Failed to create \"%s\"\n", m_encodeConfig.outputFileName);
+	}
+}
+
 // Initializes the swap chain and IO buffers.
 void VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 {
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	swapChain->GetDesc(&swapChainDesc);
+	EncodeConfig encodingSettings;
+	memset(&encodingSettings, 0, sizeof(EncodeConfig));
 	m_swapChain = swapChain;
-
-	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
-	m_encodeConfig.outputFileName = outputFile;
-	m_encodeConfig.width = swapChainDesc.BufferDesc.Width;
-	m_encodeConfig.height = swapChainDesc.BufferDesc.Height;
-	m_encodeConfig.endFrameIdx = INT_MAX;
-	m_encodeConfig.bitrate = 5000000;
-	m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
-	m_encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
-	m_encodeConfig.deviceType = 0;
-	m_encodeConfig.codec = NV_ENC_H264;
-	m_encodeConfig.fps = 60;
-	m_encodeConfig.qp = 28;
-	m_encodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
-	m_encodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
-	m_encodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
-	m_encodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
-	m_encodeConfig.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
-	m_encodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
-	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
-	if (m_encodeConfig.fOutput == NULL)
-	{
-		PRINTERR("Failed to create \"%s\"\n", m_encodeConfig.outputFileName);
-	}
+	encodingSettings.outputFileName = outputFile;
+	encodingSettings.width = swapChainDesc.BufferDesc.Width;
+	encodingSettings.height = swapChainDesc.BufferDesc.Height;
+	encodingSettings.bitrate = 5000000;
+	encodingSettings.startFrameIdx = 0;
+	encodingSettings.endFrameIdx = 1000;
+	//encodingSettings.endFrameIdx = INT_MAX;
+	//encodingSettings.bitrate = 5000000;
+	/*
+	NV_ENC_PARAMS_RC_CONSTQP Constant QP mode
+	NV_ENC_PARAMS_RC_VBR Variable bitrate mode
+	NV_ENC_PARAMS_RC_CBR Constant bitrate mode
+	NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ low - delay CBR, high quality
+	NV_ENC_PARAMS_RC_CBR_HQ CBR, high quality(slower)
+	NV_ENC_PARAMS_RC_VBR_HQ VBR, high quality(slower)
+	*/
+	encodingSettings.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+	//Infinite needed for low latency encoding
+	encodingSettings.gopLength = NVENC_INFINITE_GOPLENGTH;
+	encodingSettings.deviceType = 0;
+	encodingSettings.codec = NV_ENC_H264;
+	encodingSettings.fps = 60;
+	//encodingSettings.qp = 28;
+	//encodingSettings.i_quant_factor = DEFAULT_I_QFACTOR;
+	//encodingSettings.b_quant_factor = DEFAULT_B_QFACTOR;
+	//encodingSettings.i_quant_offset = DEFAULT_I_QOFFSET;
+	//encodingSettings.b_quant_offset = DEFAULT_B_QOFFSET;
+	//encodingSettings.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+	encodingSettings.presetGUID = NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+	encodingSettings.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
+	//encodingSettings.enableAsyncMode = false;
+	/*encodingSettings.enableMEOnly = false;
+	encodingSettings.enableTemporalAQ = true;
+	encodingSettings.encoderPreset = "";
+	encodingSettings.intraRefreshDuration = 0;
+	encodingSettings.intraRefreshEnableFlag = true;
+	encodingSettings.intraRefreshPeriod = 0;
+	encodingSettings.invalidateRefFramesEnableFlag = true;
+	encodingSettings.preloadedFrameCount = 0;
+	encodingSettings.vbvMaxBitrate = 0;
+	encodingSettings.vbvSize = 0;
+	*/
+	encodingSettings.fOutput = fopen(encodingSettings.outputFileName, "wb");
+	SetEncodeConfig(encodingSettings);
 
 	nvStatus = m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
 	if (nvStatus != NV_ENC_SUCCESS)
@@ -99,6 +130,7 @@ void VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
 	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
+	m_encoderInitialized = true;
 }
 
 // Cleanup resources.
@@ -108,6 +140,7 @@ NVENCSTATUS VideoHelper::Deinitialize()
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	ReleaseIOBuffers();
 	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
+	m_encoderInitialized = false;
 	return nvStatus;
 }
 

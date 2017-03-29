@@ -105,6 +105,7 @@ namespace Toolkit3DLibrary
 		EncodeBuffer							m_stEncodeBuffer[MAX_ENCODE_QUEUE];
 		CNvQueue<EncodeBuffer>                  m_EncodeBufferQueue;
 		EncodeConfig							m_encodeConfig;
+		bool									m_encoderInitialized;
 		ID3D11Texture2D*						m_stagingFrameBuffer;
 		D3D11_TEXTURE2D_DESC					m_stagingFrameBufferDesc;
 
@@ -113,7 +114,14 @@ namespace Toolkit3DLibrary
 		NVENCSTATUS								ReleaseIOBuffers();
 		NVENCSTATUS                             FlushEncoder();
 
+		// TestRunner
+		EncodeConfig							m_minEncodeConfig;
+		EncodeConfig							m_maxEncodeConfig;
+		EncodeConfig							m_stepEncodeConfig;
+		bool									m_testsComplete;
+		int										m_currentFrame;
+
 		// Debug
 		void									PrintConfig(EncodeConfig encodeConfig);
-    };
+	};
 }
