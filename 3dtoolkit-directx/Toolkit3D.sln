@@ -117,6 +117,7 @@ Global
 		{84DA0532-9D88-4118-B454-C4801178A330}.TestRunner|x64.ActiveCfg = TestRunner|x64
 		{84DA0532-9D88-4118-B454-C4801178A330}.TestRunner|x64.Build.0 = TestRunner|x64
 		{84DA0532-9D88-4118-B454-C4801178A330}.TestRunner|x86.ActiveCfg = TestRunner|Win32
+		{D3D11103-96D0-4629-88B8-122C0256058C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

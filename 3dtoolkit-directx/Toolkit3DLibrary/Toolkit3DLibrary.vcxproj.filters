@@ -4,10 +4,28 @@
     <Filter Include="Headers">
       <UniqueIdentifier>{fc03c18e-3374-4407-8529-83c32d24ddf4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="WebRTC">
+      <UniqueIdentifier>{71197533-b98a-4f1c-8603-5393ec13092b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="VideoHelper.cpp" />
+    <ClCompile Include="NvEncoder\src\NvHWEncoder.cpp">
+      <Filter>NvEncoder</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\conductor.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\defaults.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\main_wnd.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\peer_connection_client.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\macros.h">
