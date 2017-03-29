@@ -20,9 +20,6 @@
     <ClCompile Include="WebRTC\defaults.cpp">
       <Filter>WebRTC</Filter>
     </ClCompile>
-    <ClCompile Include="WebRTC\main_wnd.cpp">
-      <Filter>WebRTC</Filter>
-    </ClCompile>
     <ClCompile Include="WebRTC\peer_connection_client.cpp">
       <Filter>WebRTC</Filter>
     </ClCompile>
