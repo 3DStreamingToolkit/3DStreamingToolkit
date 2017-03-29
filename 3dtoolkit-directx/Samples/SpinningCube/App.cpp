@@ -137,12 +137,18 @@ int WINAPI wWinMain(
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext());
 
+	//g_videoHelper.VideoTestRunner
 	RECT rc;
 	GetClientRect(g_hWnd, &rc);
 	UINT width = rc.right - rc.left;
 	UINT height = rc.bottom - rc.top;
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
 
+#ifdef TEST_RUNNER
+	g_videoHelper->StartTestRunner(g_deviceResources->GetSwapChain());
+#else
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
+#endif // TEST_RUNNER
+	
 	// Main message loop.
 	MSG msg = { 0 };
 	while (WM_QUIT != msg.message)
@@ -155,12 +161,21 @@ int WINAPI wWinMain(
 		else
 		{
 			Render();
+#ifdef TEST_RUNNER
+			if (g_videoHelper->TestsComplete())
+				break;
+			g_videoHelper->TestCapture();
+			if (g_videoHelper->IsNewTest()) {
+				delete g_cubeRenderer;
+				g_cubeRenderer = new CubeRenderer(g_deviceResources);
+			}
+#else
 			g_videoHelper->Capture();
+#endif
 		}
 	}
 
 	// Cleanup.
-	delete g_cubeRenderer;
 	delete g_deviceResources;
 
 	return (int)msg.wParam;

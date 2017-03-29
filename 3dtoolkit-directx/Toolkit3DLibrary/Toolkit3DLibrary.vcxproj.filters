@@ -11,6 +11,7 @@
     <ClCompile Include="NvEncoder\src\NvHWEncoder.cpp">
       <Filter>NvEncoder</Filter>
     </ClCompile>
+    <ClCompile Include="VideoTestRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
