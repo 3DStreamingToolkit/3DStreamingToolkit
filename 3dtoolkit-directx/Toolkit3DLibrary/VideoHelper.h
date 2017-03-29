@@ -91,6 +91,7 @@ namespace Toolkit3DLibrary
 		void									Initialize(IDXGISwapChain* swapChain, char* outputFile);
 		void									Capture();
 		void									Capture(void** buffer, int* size);
+		void									CaptureEncodedFrame(void** buffer, int* size);
 
 	private:
 		ID3D11Device*							m_d3dDevice;
