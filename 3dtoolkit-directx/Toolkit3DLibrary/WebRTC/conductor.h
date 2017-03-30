@@ -19,118 +19,139 @@
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "main_wnd.h"
 #include "peer_connection_client.h"
+#include "main_wnd.h"
 
-namespace webrtc {
-class VideoCaptureModule;
-}  // namespace webrtc
+namespace webrtc
+{
+	class VideoCaptureModule;
+}
 
-namespace cricket {
-class VideoRenderer;
-}  // namespace cricket
+namespace cricket
+{
+	class VideoRenderer;
+}
 
-class Conductor
-  : public webrtc::PeerConnectionObserver,
-    public webrtc::CreateSessionDescriptionObserver,
+class Conductor : public webrtc::PeerConnectionObserver,
+	public webrtc::CreateSessionDescriptionObserver,
     public PeerConnectionClientObserver,
-    public MainWndCallback {
- public:
-  enum CallbackID {
-    MEDIA_CHANNELS_INITIALIZED = 1,
-    PEER_CONNECTION_CLOSED,
-    SEND_MESSAGE_TO_PEER,
-    NEW_STREAM_ADDED,
-    STREAM_REMOVED,
-  };
+	public MainWndCallback
+{
+public:
+	enum CallbackID 
+	{
+		MEDIA_CHANNELS_INITIALIZED = 1,
+		PEER_CONNECTION_CLOSED,
+		SEND_MESSAGE_TO_PEER,
+		NEW_STREAM_ADDED,
+		STREAM_REMOVED,
+	};
 
-  Conductor(PeerConnectionClient* client, MainWindow* main_wnd);
+	Conductor(PeerConnectionClient* client, MainWindow* main_wnd);
 
-  bool connection_active() const;
+	bool connection_active() const;
 
-  virtual void Close();
+	virtual void Close();
 
- protected:
-  ~Conductor();
-  bool InitializePeerConnection();
-  bool ReinitializePeerConnectionForLoopback();
-  bool CreatePeerConnection(bool dtls);
-  void DeletePeerConnection();
-  void EnsureStreamingUI();
-  void AddStreams();
-  std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
+protected:
+	~Conductor();
 
-  //
-  // PeerConnectionObserver implementation.
-  //
+	bool InitializePeerConnection();
 
-  void OnSignalingChange(
-      webrtc::PeerConnectionInterface::SignalingState new_state) override{};
-  void OnAddStream(
-      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-  void OnRemoveStream(
-      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-  void OnDataChannel(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
-  void OnRenegotiationNeeded() override {}
-  void OnIceConnectionChange(
-      webrtc::PeerConnectionInterface::IceConnectionState new_state) override{};
-  void OnIceGatheringChange(
-      webrtc::PeerConnectionInterface::IceGatheringState new_state) override{};
-  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
-  void OnIceConnectionReceivingChange(bool receiving) override {}
+	bool ReinitializePeerConnectionForLoopback();
 
-  //
-  // PeerConnectionClientObserver implementation.
-  //
+	bool CreatePeerConnection(bool dtls);
 
-  void OnSignedIn() override;
+	void DeletePeerConnection();
 
-  void OnDisconnected() override;
+	void EnsureStreamingUI();
 
-  void OnPeerConnected(int id, const std::string& name) override;
+	void AddStreams();
 
-  void OnPeerDisconnected(int id) override;
+	std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
 
-  void OnMessageFromPeer(int peer_id, const std::string& message) override;
+	//-------------------------------------------------------------------------
+	// PeerConnectionObserver implementation.
+	//-------------------------------------------------------------------------
 
-  void OnMessageSent(int err) override;
+	void OnSignalingChange(
+		webrtc::PeerConnectionInterface::SignalingState new_state) override {};
 
-  void OnServerConnectionFailure() override;
+	void OnAddStream(
+		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
-  //
-  // MainWndCallback implementation.
-  //
+	void OnRemoveStream(
+		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
-  void StartLogin(const std::string& server, int port) override;
+	void OnDataChannel(
+		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
 
-  void DisconnectFromServer() override;
+	void OnRenegotiationNeeded() override {}
 
-  void ConnectToPeer(int peer_id) override;
+	void OnIceConnectionChange(
+		webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
 
-  void DisconnectFromCurrentPeer() override;
+	void OnIceGatheringChange(
+		webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
 
-  void UIThreadCallback(int msg_id, void* data) override;
+	void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
 
-  // CreateSessionDescriptionObserver implementation.
-  void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(const std::string& error) override;
+	void OnIceConnectionReceivingChange(bool receiving) override {}
 
- protected:
-  // Send a message to the remote peer.
-  void SendMessage(const std::string& json_object);
+	//-------------------------------------------------------------------------
+	// PeerConnectionClientObserver implementation.
+	//-------------------------------------------------------------------------
 
-  int peer_id_;
-  bool loopback_;
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-      peer_connection_factory_;
-  PeerConnectionClient* client_;
-  MainWindow* main_wnd_;
-  std::deque<std::string*> pending_messages_;
-  std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
-      active_streams_;
-  std::string server_;
+	void OnSignedIn() override;
+
+	void OnDisconnected() override;
+
+	void OnPeerConnected(int id, const std::string& name) override;
+
+	void OnPeerDisconnected(int id) override;
+
+	void OnMessageFromPeer(int peer_id, const std::string& message) override;
+
+	void OnMessageSent(int err) override;
+
+	void OnServerConnectionFailure() override;
+
+	//-------------------------------------------------------------------------
+	// MainWndCallback implementation.
+	//-------------------------------------------------------------------------
+
+	void StartLogin(const std::string& server, int port) override;
+
+	void DisconnectFromServer() override;
+
+	void ConnectToPeer(int peer_id) override;
+
+	void DisconnectFromCurrentPeer() override;
+
+	void UIThreadCallback(int msg_id, void* data) override;
+
+	// CreateSessionDescriptionObserver implementation.
+	void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
+
+	void OnFailure(const std::string& error) override;
+
+protected:
+	// Send a message to the remote peer.
+	void SendMessage(const std::string& json_object);
+
+	int peer_id_;
+	bool loopback_;
+	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+		peer_connection_factory_;
+
+	PeerConnectionClient* client_;
+	MainWindow* main_wnd_;
+	std::deque<std::string*> pending_messages_;
+	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
+		active_streams_;
+
+	std::string server_;
 };
 
-#endif  // WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
+#endif // WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
