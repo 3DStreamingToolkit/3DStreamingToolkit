@@ -177,6 +177,7 @@ int WINAPI wWinMain(
 
 	// Cleanup.
 	delete g_deviceResources;
+	delete g_cubeRenderer;
 
 	return (int)msg.wParam;
 }

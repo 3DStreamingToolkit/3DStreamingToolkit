@@ -10,7 +10,7 @@
 #include "VideoHelper.h"
 #include "nvFileIO.h"
 #include "nvUtils.h"
-#include <string>;
+#include <string>
 
 using namespace Toolkit3DLibrary;
 
