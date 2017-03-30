@@ -250,3 +250,9 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# 3DStreaming 
+*.h264
+*.log
+*.cso
+[Ii]nt
