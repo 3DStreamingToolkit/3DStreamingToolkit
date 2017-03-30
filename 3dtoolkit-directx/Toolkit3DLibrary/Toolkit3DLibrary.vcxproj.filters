@@ -23,6 +23,9 @@
     <ClCompile Include="WebRTC\peer_connection_client.cpp">
       <Filter>WebRTC</Filter>
     </ClCompile>
+    <ClCompile Include="WebRTC\default_main_window.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\macros.h">

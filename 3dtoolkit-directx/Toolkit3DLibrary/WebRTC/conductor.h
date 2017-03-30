@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
-#define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
+#ifndef WEBRTC_CONDUCTOR_H_
+#define WEBRTC_CONDUCTOR_H_
 
 #include <deque>
 #include <map>
@@ -17,10 +17,10 @@
 #include <set>
 #include <string>
 
+#include "peer_connection_client.h"
+#include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "peer_connection_client.h"
-#include "main_wnd.h"
 
 namespace webrtc
 {
@@ -35,7 +35,7 @@ namespace cricket
 class Conductor : public webrtc::PeerConnectionObserver,
 	public webrtc::CreateSessionDescriptionObserver,
     public PeerConnectionClientObserver,
-	public MainWndCallback
+	public MainWindowCallback
 {
 public:
 	enum CallbackID 
@@ -47,7 +47,7 @@ public:
 		STREAM_REMOVED,
 	};
 
-	Conductor(PeerConnectionClient* client, MainWindow* main_wnd);
+	Conductor(PeerConnectionClient* client, MainWindow* main_window);
 
 	bool connection_active() const;
 
@@ -146,7 +146,7 @@ protected:
 		peer_connection_factory_;
 
 	PeerConnectionClient* client_;
-	MainWindow* main_wnd_;
+	MainWindow* main_window_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
 		active_streams_;
@@ -154,4 +154,4 @@ protected:
 	std::string server_;
 };
 
-#endif // WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_CONDUCTOR_H_
+#endif // WEBRTC_CONDUCTOR_H_
