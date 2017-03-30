@@ -8,7 +8,7 @@
 #endif // TEST_RUNNER
 
 #include "conductor.h"
-#include "main_wnd.h"
+#include "default_main_window.h"
 #include "peer_connection_client.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"

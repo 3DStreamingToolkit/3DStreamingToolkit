@@ -252,6 +252,7 @@
     <ClCompile Include="VideoHelper.cpp" />
     <ClCompile Include="WebRTC\conductor.cpp" />
     <ClCompile Include="WebRTC\defaults.cpp" />
+    <ClCompile Include="WebRTC\default_main_window.cpp" />
     <ClCompile Include="WebRTC\peer_connection_client.cpp" />
   </ItemGroup>
   <ItemGroup>

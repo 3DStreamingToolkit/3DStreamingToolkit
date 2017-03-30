@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_MAIN_WND_H_
-#define WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_MAIN_WND_H_
+#ifndef WEBRTC_MAIN_WINDOW_H_
+#define WEBRTC_MAIN_WINDOW_H_
 
 #include <map>
 #include <memory>
@@ -22,7 +22,7 @@
 #include "webrtc/media/base/videocommon.h"
 #include "peer_connection_client.h"
 
-class MainWndCallback
+class MainWindowCallback
 {
 public:
 	virtual void StartLogin(const std::string& server, int port) = 0;
@@ -38,7 +38,7 @@ public:
 	virtual void Close() = 0;
 
 protected:
-	virtual ~MainWndCallback() {}
+	virtual ~MainWindowCallback() {}
 };
 
 // Pure virtual interface for the main window.
@@ -54,7 +54,7 @@ public:
 
 	virtual ~MainWindow() {}
 
-	virtual void RegisterObserver(MainWndCallback* callback) = 0;
+	virtual void RegisterObserver(MainWindowCallback* callback) = 0;
 
 	virtual bool IsWindow() = 0;
 
@@ -79,4 +79,4 @@ public:
 	virtual void QueueUIThreadCallback(int msg_id, void* data) = 0;
 };
 
-#endif // WEBRTC_EXAMPLES_PEERCONNECTION_CLIENT_MAIN_WND_H_
+#endif // WEBRTC_MAIN_WINDOW_H_
