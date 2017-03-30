@@ -3,10 +3,17 @@
 #include "CubeRenderer.h"
 #ifdef TEST_RUNNER
 #include "VideoTestRunner.h"
-#else
+#else // TEST_RUNNER
 #include "VideoHelper.h"
 #endif // TEST_RUNNER
 
+#include "conductor.h"
+#include "main_wnd.h"
+#include "peer_connection_client.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/win32socketinit.h"
+#include "webrtc/base/win32socketserver.h"
 
 using namespace DX;
 using namespace Toolkit3DLibrary;
@@ -20,7 +27,7 @@ DeviceResources*	g_deviceResources = nullptr;
 CubeRenderer*		g_cubeRenderer = nullptr;
 #ifdef TEST_RUNNER
 VideoTestRunner*	g_videoTestRunner = nullptr;
-#else
+#else // TEST_RUNNER
 VideoHelper*		g_videoHelper = nullptr;
 #endif // TESTRUNNER
 
@@ -118,6 +125,19 @@ void Render()
 }
 
 //--------------------------------------------------------------------------------------
+// WebRTC
+//--------------------------------------------------------------------------------------
+void InitWebRTC()
+{
+	rtc::EnsureWinsockInit();
+	rtc::Win32Thread w32_thread;
+	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
+
+	rtc::InitializeSSL();
+	PeerConnectionClient client;
+}
+
+//--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
@@ -157,7 +177,7 @@ int WINAPI wWinMain(
 		g_deviceResources->GetD3DDeviceContext()); 
 
 	g_videoTestRunner->StartTestRunner(g_deviceResources->GetSwapChain());
-#else
+#else // TEST_RUNNER
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
 		g_deviceResources->GetD3DDevice(),
@@ -186,9 +206,9 @@ int WINAPI wWinMain(
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);
 			}
-#else
+#else // TEST_RUNNER
 			g_videoHelper->Capture();
-#endif
+#endif // TEST_RUNNER
 		}
 	}
 
