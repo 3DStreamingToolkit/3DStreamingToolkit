@@ -19,11 +19,23 @@
 #include <algorithm>
 
 #include "MultiDeviceContextDXUTMesh.h"
+
 #ifdef TEST_RUNNER
 #include "VideoTestRunner.h"
-#else
+#else // TEST_RUNNER
 #include "VideoHelper.h"
 #endif // TEST_RUNNER
+
+#ifdef SERVER_APP
+#include "conductor.h"
+#include "default_main_window.h"
+#include "flagdefs.h"
+#include "peer_connection_client.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/win32socketinit.h"
+#include "webrtc/base/win32socketserver.h"
+#endif // SERVER_APP
 
 #pragma warning( disable : 4100 )
 
@@ -385,7 +397,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 void InitApp();
 void RenderText();
 
-
 //--------------------------------------------------------------------------------------
 // Convenient checks for the current render pathway
 //--------------------------------------------------------------------------------------
@@ -394,24 +405,96 @@ inline bool IsRenderDeferredPerScene()
     return g_iDeviceContextType == DEVICECONTEXT_ST_DEFERRED_PER_SCENE
         || g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_SCENE;
 }
+
 inline bool IsRenderMultithreadedPerScene() 
 { 
     return g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_SCENE;
 }
+
 inline bool IsRenderDeferredPerChunk() 
 { 
     return g_iDeviceContextType == DEVICECONTEXT_ST_DEFERRED_PER_CHUNK
         || g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_CHUNK;
 }
+
 inline bool IsRenderMultithreadedPerChunk() 
 { 
     return g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_CHUNK;
 }
+
 inline bool IsRenderDeferred()
 {
     return IsRenderDeferredPerScene() || IsRenderDeferredPerChunk();
 }
 
+#ifdef SERVER_APP
+
+//--------------------------------------------------------------------------------------
+// WebRTC
+//--------------------------------------------------------------------------------------
+int InitWebRTC()
+{
+	rtc::EnsureWinsockInit();
+	rtc::Win32Thread w32_thread;
+	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
+
+	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+		1280, 720);
+
+	if (!wnd.Create())
+	{
+		RTC_NOTREACHED();
+		return -1;
+	}
+
+	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+
+	//// Creates and initializes the video helper library.
+	g_videoHelper = new VideoHelper(
+		DXUTGetD3D11Device(),
+		DXUTGetD3D11DeviceContext());
+
+	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
+
+	rtc::InitializeSSL();
+	PeerConnectionClient client;
+	rtc::scoped_refptr<Conductor> conductor(
+		new rtc::RefCountedObject<Conductor>(&client, &wnd, g_videoHelper));
+
+	// Main loop.
+	MSG msg;
+	BOOL gm;
+	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	{
+		DXUTMainLoop(); // Enter into the DXUT render loop
+
+		if (!wnd.PreTranslateMessage(&msg))
+		{
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
+		}
+	}
+
+	if (conductor->connection_active() || client.is_connected())
+	{
+		while ((conductor->connection_active() || client.is_connected()) &&
+			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+		{
+			if (!wnd.PreTranslateMessage(&msg))
+			{
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			}
+		}
+	}
+
+	rtc::CleanupSSL();
+
+	return 0;
+}
+
+#endif // SERVER_APP
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -442,7 +525,9 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
-    DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
+    
+#ifndef SERVER_APP
+	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 #ifdef STEREO_OUTPUT_MODE
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 2560, 720);
@@ -453,15 +538,17 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
-#else
+#else // TEST_RUNNER
 	// Initializes the video helper
 	g_videoHelper->Initialize(DXUTGetDXGISwapChain(), "output.h264");
 #endif // TEST_RUNNER
 
-
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
+#else // SERVER_APP
+	return InitWebRTC();
+#endif // SERVER_APP
 }
 
 
@@ -1540,6 +1627,7 @@ pSwapChain,
 	g_SampleUI.SetSize(170, 300);
 #endif // !TEST_RUNNER	
 #endif // STEREO_OUTPUT_MODE
+
     return S_OK;
 }
 
@@ -2418,8 +2506,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
                                   float fElapsedTime, void* pUserContext )
 {
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
+
 #ifdef TEST_RUNNER
-	if (g_videoTestRunner->TestsComplete()) {
+	if (g_videoTestRunner->TestsComplete()) 
+	{
 		//Send escape key to app to exit execution.
 		INPUT escape;
 
@@ -2439,16 +2529,18 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		SendInput(1, &escape, sizeof(INPUT));
 		return;
 	}
+	
 	//Captures frame
 	g_videoTestRunner->TestCapture();
-	if (g_videoTestRunner->IsNewTest()) {
+	if (g_videoTestRunner->IsNewTest()) 
+	{
 		//reset content state here
 		g_Camera.Reset();
 	}
-#else
+#else // TEST_RUNNER
 	//Captures frame
 	g_videoHelper->Capture();
-#endif
+#endif // TEST_RUNNER
 }
 
 
