@@ -1,19 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="NvEncoder">
-      <UniqueIdentifier>{85c9e6b2-c9c8-479f-bd6d-1cd0c9961ab3}</UniqueIdentifier>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{fc03c18e-3374-4407-8529-83c32d24ddf4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="VideoHelper.cpp" />
-    <ClCompile Include="NvEncoder\src\NvHWEncoder.cpp">
-      <Filter>NvEncoder</Filter>
-    </ClCompile>
-    <ClCompile Include="VideoTestRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="inc\macros.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\defs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\pch.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\VideoHelper.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

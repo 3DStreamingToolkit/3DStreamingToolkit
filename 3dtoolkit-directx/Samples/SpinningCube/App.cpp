@@ -1,7 +1,12 @@
 #include "pch.h"
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
+#ifdef TEST_RUNNER
+#include "VideoTestRunner.h"
+#else
 #include "VideoHelper.h"
+#endif // TEST_RUNNER
+
 
 using namespace DX;
 using namespace Toolkit3DLibrary;
@@ -13,7 +18,12 @@ using namespace Toolkit3DSample;
 HWND				g_hWnd = nullptr;
 DeviceResources*	g_deviceResources = nullptr;
 CubeRenderer*		g_cubeRenderer = nullptr;
+#ifdef TEST_RUNNER
+VideoTestRunner*	g_videoTestRunner = nullptr;
+#else
 VideoHelper*		g_videoHelper = nullptr;
+#endif // TESTRUNNER
+
 
 //--------------------------------------------------------------------------------------
 // Called every time the application receives a message
@@ -132,10 +142,7 @@ int WINAPI wWinMain(
 	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext());
+
 
 	//g_videoHelper.VideoTestRunner
 	RECT rc;
@@ -144,8 +151,18 @@ int WINAPI wWinMain(
 	UINT height = rc.bottom - rc.top;
 
 #ifdef TEST_RUNNER
-	g_videoHelper->StartTestRunner(g_deviceResources->GetSwapChain());
+	// Creates and initializes the video test runner library.
+	g_videoTestRunner = new VideoTestRunner(
+		g_deviceResources->GetD3DDevice(),
+		g_deviceResources->GetD3DDeviceContext()); 
+
+	g_videoTestRunner->StartTestRunner(g_deviceResources->GetSwapChain());
 #else
+	// Creates and initializes the video helper library.
+	g_videoHelper = new VideoHelper(
+		g_deviceResources->GetD3DDevice(),
+		g_deviceResources->GetD3DDeviceContext());
+
 	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
 #endif // TEST_RUNNER
 	
@@ -162,10 +179,10 @@ int WINAPI wWinMain(
 		{
 			Render();
 #ifdef TEST_RUNNER
-			if (g_videoHelper->TestsComplete())
+			if (g_videoTestRunner->TestsComplete())
 				break;
-			g_videoHelper->TestCapture();
-			if (g_videoHelper->IsNewTest()) {
+			g_videoTestRunner->TestCapture();
+			if (g_videoTestRunner->IsNewTest()) {
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);
 			}
