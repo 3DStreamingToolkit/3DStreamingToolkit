@@ -33,7 +33,7 @@ public:
 		UI_THREAD_CALLBACK = WM_APP + 1,
 	};
 
-	DefaultMainWindow(const char* server, int port, bool auto_connect, bool auto_call);
+	DefaultMainWindow(const char* server, int port, bool auto_connect, bool auto_call, int width = CW_USEDEFAULT, int height = CW_USEDEFAULT);
 
 	~DefaultMainWindow();
 
@@ -193,6 +193,8 @@ private:
 	std::string port_;
 	bool auto_connect_;
 	bool auto_call_;
+	int width_;
+	int height_;
 };
 
 #endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_

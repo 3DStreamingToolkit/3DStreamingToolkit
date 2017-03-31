@@ -17,6 +17,7 @@
 #include <set>
 #include <string>
 
+#include "VideoHelper.h"
 #include "peer_connection_client.h"
 #include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"
@@ -47,7 +48,8 @@ public:
 		STREAM_REMOVED,
 	};
 
-	Conductor(PeerConnectionClient* client, MainWindow* main_window);
+	Conductor(PeerConnectionClient* client, MainWindow* main_window,
+		Toolkit3DLibrary::VideoHelper* video_helper);
 
 	bool connection_active() const;
 
@@ -147,6 +149,7 @@ protected:
 
 	PeerConnectionClient* client_;
 	MainWindow* main_window_;
+	Toolkit3DLibrary::VideoHelper* video_helper_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
 		active_streams_;

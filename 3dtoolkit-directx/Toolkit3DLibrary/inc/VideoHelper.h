@@ -88,13 +88,14 @@ namespace Toolkit3DLibrary
 	public:
 												VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context);
 												~VideoHelper();
-		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile);
-		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
+												
+		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile = nullptr);
+		NVENCSTATUS								InitializeEncoder(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
+		NVENCSTATUS                             Deinitialize();
 		NVENCSTATUS								SetEncodeProfile(int profileIndex);
 		void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
 		void									Capture();
-		void									Capture(void** buffer, int* size);
-		NVENCSTATUS                             Deinitialize();
+		void									Capture(void** buffer, int* size, int* width, int* height);
 		void									CaptureEncodedFrame(void** buffer, int* size);
 
 		// Debug
@@ -103,7 +104,6 @@ namespace Toolkit3DLibrary
 	private:
 		ID3D11Device*							m_d3dDevice;
 		ID3D11DeviceContext*					m_d3dContext;
-		DXGI_SWAP_CHAIN_DESC					m_swapChainDesc;
 		IDXGISwapChain*							m_swapChain;
 
 		// NvEncoder
