@@ -1,57 +1,34 @@
 #pragma once
 
 #include "pch.h"
-#ifdef _WIN32
-	#include <io.h> 
-	#define access    _access_s
-#else
-	#include <unistd.h>
-#endif
-#include "VideoHelper.h"
-#include "nvFileIO.h"
-#include "nvUtils.h"
+#include "VideoTestRunner.h"
 #include <string>
 
 using namespace Toolkit3DLibrary;
 
-//Constructor for Video Test Runner
-void VideoHelper::InitializeTestRunner()
+// Constructor for VideoHelper.
+VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* context) :
+	m_d3dDevice(device),
+	m_d3dContext(context)
 {
-	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;
-	m_swapChain->GetDesc(&swapChainDesc);
+	m_videoHelper = new VideoHelper(device, context);
+}
 
-	nvStatus = m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
-	if (nvStatus != NV_ENC_SUCCESS)
-	{
-		return;
-	}
+// Destructor for VideoHelper.
+VideoTestRunner::~VideoTestRunner()
+{
+	delete m_videoHelper;
+}
 
-	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
-
-	// Prints config info to console.
-	PrintConfig(m_encodeConfig);
-
-	// Creates the encoder.
-	nvStatus = m_pNvHWEncoder->CreateEncoder(&m_encodeConfig);
-	if (nvStatus != NV_ENC_SUCCESS)
-	{
-		return;
-	}
-
-	m_uEncodeBufferCount = m_encodeConfig.numB + 4;
-
-	nvStatus = AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height, swapChainDesc);
-	if (nvStatus != NV_ENC_SUCCESS)
-	{
-		return;
-	}
+void VideoTestRunner::InitializeTest()
+{
+	m_videoHelper->Initialize(m_swapChain, m_encodeConfig);
 	m_encoderInitialized = true;
 }
 
-void VideoHelper::TestCapture() {
+void VideoTestRunner::TestCapture() {
 	if (m_currentFrame < m_encodeConfig.endFrameIdx) {
-		Capture();
+		m_videoHelper->Capture();
 		m_currentFrame++;
 	}
 	else {
@@ -60,33 +37,21 @@ void VideoHelper::TestCapture() {
 	}
 }
 
-void VideoHelper::StartTestRunner(IDXGISwapChain* swapChain) {
+void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
 	m_testsComplete = false;
-	EncodeConfig encodingSettings;
-	memset(&encodingSettings, 0, sizeof(EncodeConfig));
-	DXGI_SWAP_CHAIN_DESC swapChainDesc;
-	swapChain->GetDesc(&swapChainDesc);
 	m_swapChain = swapChain;
 
+	EncodeConfig m_encodeConfig;
+	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
 
-	encodingSettings.outputFileName = "lossless.h264";
-	encodingSettings.width = swapChainDesc.BufferDesc.Width;
-	encodingSettings.height = swapChainDesc.BufferDesc.Height;
-	encodingSettings.bitrate = 100000000;
-	encodingSettings.startFrameIdx = 0;
-	encodingSettings.endFrameIdx = 500;
-	//Infinite needed for low latency encoding
-	encodingSettings.gopLength = NVENC_INFINITE_GOPLENGTH;
-	encodingSettings.deviceType = 0;
-	encodingSettings.codec = NV_ENC_H264;
-	encodingSettings.fps = 60;
-	encodingSettings.presetGUID = NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
-	encodingSettings.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
-	encodingSettings.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
-	encodingSettings.fOutput = fopen(encodingSettings.outputFileName, "wb");
+	m_videoHelper->GetDefaultEncodeConfig(m_encodeConfig);
+	m_encodeConfig.outputFileName = "lossless.h264";
+	m_encodeConfig.bitrate = 100000000;
+	m_encodeConfig.endFrameIdx = 500;
+	m_encodeConfig.presetGUID = NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
 
-	SetEncodeConfig(encodingSettings);
-	m_currentFrame = encodingSettings.startFrameIdx;
+	m_currentFrame = m_encodeConfig.startFrameIdx;
 
 	memset(&m_minEncodeConfig, 0, sizeof(EncodeConfig));
 	m_minEncodeConfig = m_encodeConfig;
@@ -111,10 +76,10 @@ void VideoHelper::StartTestRunner(IDXGISwapChain* swapChain) {
 	IncrementTestRunner();
 }
 
-void VideoHelper::IncrementTestRunner() {
+void VideoTestRunner::IncrementTestRunner() {
 	if (!m_testsComplete) {
 		if (!access("lossless.h264", 0) == 0) {
-			InitializeTestRunner();
+			InitializeTest();
 		}
 		else {
 			//Test to see if we are incrementing from lossless to the runner iterations
@@ -134,9 +99,11 @@ void VideoHelper::IncrementTestRunner() {
 			//If file already exists, don't rerun it.
 			if (!access(outFileName, 0) == 0) {
 				m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
-				if (m_encoderInitialized)
-					Deinitialize();
-				InitializeTestRunner();
+				if (m_encoderInitialized) {
+					delete m_videoHelper;
+					m_videoHelper = new VideoHelper(m_d3dDevice, m_d3dContext);
+				}
+				InitializeTest();
 			}
 			else {
 				if (m_encodeConfig.enableTemporalAQ == !m_minEncodeConfig.enableTemporalAQ) {
@@ -174,10 +141,10 @@ void VideoHelper::IncrementTestRunner() {
 	}
 }
 
-bool VideoHelper::IsNewTest() {
+bool VideoTestRunner::IsNewTest() {
 	return m_currentFrame == 0 ? true : false;
 }
 
-bool VideoHelper::TestsComplete() {
+bool VideoTestRunner::TestsComplete() {
 	return m_testsComplete;
 }
