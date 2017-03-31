@@ -73,7 +73,7 @@ void AddListBoxItem(HWND listbox, const std::string& str, LPARAM item_data)
 }  // namespace
 
 DefaultMainWindow::DefaultMainWindow(const char* server, int port,
-	bool auto_connect, bool auto_call) : 
+	bool auto_connect, bool auto_call, int width, int height) : 
 		ui_(CONNECT_TO_SERVER),
 		wnd_(NULL),
 		edit1_(NULL),
@@ -87,7 +87,9 @@ DefaultMainWindow::DefaultMainWindow(const char* server, int port,
 		nested_msg_(NULL),
 		server_(server),
 		auto_connect_(auto_connect),
-		auto_call_(auto_call)
+		auto_call_(auto_call),
+		width_(width),
+		height_(height)
 {
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
@@ -110,7 +112,7 @@ bool DefaultMainWindow::Create()
 	ui_thread_id_ = ::GetCurrentThreadId();
 	wnd_ = ::CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, kClassName, L"WebRTC",
 		WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN,
-		CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+		CW_USEDEFAULT, CW_USEDEFAULT, width_, height_,
 		NULL, NULL, GetModuleHandle(NULL), this);
 
 	::SendMessage(wnd_, WM_SETFONT, reinterpret_cast<WPARAM>(GetDefaultFont()), TRUE);

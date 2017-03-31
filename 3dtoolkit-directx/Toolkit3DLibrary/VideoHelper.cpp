@@ -33,20 +33,43 @@ VideoHelper::~VideoHelper()
 
 // Initializes the swap chain and IO buffers.
 NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
-{		
-	//Relative path
-	m_encodeConfig.outputFileName = outputFile;
-	GetDefaultEncodeConfig(m_encodeConfig);
-	return Initialize(swapChain, m_encodeConfig);
-}
-
-NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig) {
-	swapChain->GetDesc(&m_swapChainDesc);
+{
+	// Caches the pointer to the swap chain.
 	m_swapChain = swapChain;
 
+	// Gets the swap chain desc.
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	swapChain->GetDesc(&swapChainDesc);	
+	
+	// Initializes the staging frame buffer, backed by ID3D11Texture2D*.
+	m_stagingFrameBufferDesc = { 0 };
+	m_stagingFrameBufferDesc.ArraySize = 1;
+	m_stagingFrameBufferDesc.Format = swapChainDesc.BufferDesc.Format;
+	m_stagingFrameBufferDesc.Width = swapChainDesc.BufferDesc.Width;
+	m_stagingFrameBufferDesc.Height = swapChainDesc.BufferDesc.Height;
+	m_stagingFrameBufferDesc.MipLevels = 1;
+	m_stagingFrameBufferDesc.SampleDesc.Count = 1;
+	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
+	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
+	
+	// Initializes the NvEncoder.
+	if (outputFile != nullptr)
+	{
+		// Relative path
+		m_encodeConfig.outputFileName = outputFile;
+		GetDefaultEncodeConfig(m_encodeConfig);
+		return InitializeEncoder(swapChain, m_encodeConfig);
+	}
+	
+	return NV_ENC_SUCCESS;
+}
+
+NVENCSTATUS VideoHelper::InitializeEncoder(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig) 
+{
 	m_encodeConfig = nvEncodeConfig;
-	m_encodeConfig.width = m_swapChainDesc.BufferDesc.Width;
-	m_encodeConfig.height = m_swapChainDesc.BufferDesc.Height;
+	m_encodeConfig.width = swapChain.BufferDesc.Width;
+	m_encodeConfig.height = swapChain.BufferDesc.Height;
 	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
 	if (m_encodeConfig.fOutput == NULL)
 	{
@@ -62,12 +85,15 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEn
 
 	//Specific mandatory settings for LOSSLESS encoding presets
 	if (m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID ||
-		m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) {
+		m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) 
+	{
 		m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
 		m_pNvHWEncoder->m_stEncodeConfig.profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
 		m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.qpPrimeYZeroTransformBypassFlag = 1;
 	}
-	if (nvEncodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_HQ) {
+	
+	if (nvEncodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_HQ) 
+	{
 		m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
 	}
 	
@@ -79,24 +105,13 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEn
 
 	m_uEncodeBufferCount = m_encodeConfig.numB + 4;
 
-	CHECK_NV_FAILED(AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height, m_swapChainDesc));
-
-	// Initializes the input buffer, backed by ID3D11Texture2D*.
-	m_stagingFrameBufferDesc = { 0 };
-	m_stagingFrameBufferDesc.ArraySize = 1;
-	m_stagingFrameBufferDesc.Format = m_swapChainDesc.BufferDesc.Format;
-	m_stagingFrameBufferDesc.Width = m_swapChainDesc.BufferDesc.Width;
-	m_stagingFrameBufferDesc.Height = m_swapChainDesc.BufferDesc.Height;
-	m_stagingFrameBufferDesc.MipLevels = 1;
-	m_stagingFrameBufferDesc.SampleDesc.Count = 1;
-	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
-	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
+	CHECK_NV_FAILED(AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height, swapChain));
 	
 	return NV_ENC_SUCCESS;
 }
 
-void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) {
+void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) 
+{
 	//In bits per second - ignored for lossless presets
 	nvEncodeConfig.bitrate = 5000000;
 	//Unused by nvEncode
@@ -133,7 +148,6 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) {
 	nvEncodeConfig.invalidateRefFramesEnableFlag = true;
 	//NV_ENC_H264_PROFILE_HIGH_444_GUID
 	SetEncodeProfile(2);
-
 }
 
 // Cleanup resources.
@@ -195,7 +209,7 @@ void VideoHelper::Capture()
 }
 
 // Captures frame buffer from the swap chain.
-void VideoHelper::Capture(void** buffer, int* size)
+void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 {
 	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
@@ -215,6 +229,8 @@ void VideoHelper::Capture(void** buffer, int* size)
 	{
 		*buffer = mapped.pData;
 		*size = mapped.RowPitch * desc.Height;
+		*width = desc.Width;
+		*height = desc.Height;
 	}
 
 	m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
@@ -307,20 +323,31 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 
 	return NV_ENC_SUCCESS;
 }
-NVENCSTATUS VideoHelper::SetEncodeProfile(int profileIndex) {
+
+NVENCSTATUS VideoHelper::SetEncodeProfile(int profileIndex) 
+{
 	GUID choice;
 	switch (profileIndex)
 	{
 		//Main should be used for most cases
-	case 1: choice = NV_ENC_H264_PROFILE_MAIN_GUID; break;
+		case 1:
+			choice = NV_ENC_H264_PROFILE_MAIN_GUID;
+			break;
+			
 		//High 444 is only for lossless encode profile
-	case 2: choice = NV_ENC_H264_PROFILE_HIGH_444_GUID; break;
+		case 2:
+			choice = NV_ENC_H264_PROFILE_HIGH_444_GUID;
+			break;
+			
 		//Enables stereo frame packing
-	case 3: choice = NV_ENC_H264_PROFILE_STEREO_GUID; break;
+		case 3:
+			choice = NV_ENC_H264_PROFILE_STEREO_GUID;
+			break;
+			
 		//Fallback to auto, avoid this.
-	case 0: 
-	default: choice = NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID;
-		break;
+		case 0: 
+			default: choice = NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID;
+			break;
 	}
 
 	m_pNvHWEncoder->m_stEncodeConfig.profileGUID = choice;
