@@ -34,6 +34,7 @@ namespace Toolkit3DLibrary
 		bool									m_testsComplete;
 		int										m_currentFrame;
 		bool									m_lockIterator;
+		bool								    m_initialized;
 		char*									m_fileName;
 
 	};

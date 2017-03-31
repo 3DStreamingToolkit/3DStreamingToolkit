@@ -2401,7 +2401,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
                                   float fElapsedTime, void* pUserContext )
 {
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
-
 #ifdef TEST_RUNNER
 	if (g_videoTestRunner->TestsComplete())
 		return;
@@ -2409,6 +2408,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 	g_videoTestRunner->TestCapture();
 	if (g_videoTestRunner->IsNewTest()) {
 		//reset content state here
+		g_Camera.Reset();
 	}
 #else
 	//Captures frame
