@@ -33,6 +33,8 @@ namespace Toolkit3DLibrary
 		EncodeConfig							m_stepEncodeConfig;
 		bool									m_testsComplete;
 		int										m_currentFrame;
+		bool									m_lockIterator;
+		char*									m_fileName;
 
 	};
 }
