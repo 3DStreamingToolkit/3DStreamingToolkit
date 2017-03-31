@@ -104,6 +104,12 @@ int InitWebRTC()
 	}
 
 	rtc::CleanupSSL();
+
+	// Cleanup.
+	delete g_videoHelper;
+	delete g_cubeRenderer;
+	delete g_deviceResources;
+
 	return 0;
 }
 
@@ -279,9 +285,10 @@ int WINAPI wWinMain(
 		}
 	}
 
-	// Cleanup.
-	delete g_deviceResources;
+	// Cleanup resources.
+	delete g_videoHelper;
 	delete g_cubeRenderer;
+	delete g_deviceResources;
 
 	return (int)msg.wParam;
 #else // SERVER_APP
