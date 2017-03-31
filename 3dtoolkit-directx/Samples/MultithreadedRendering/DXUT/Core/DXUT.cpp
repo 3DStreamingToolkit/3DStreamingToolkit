@@ -2825,8 +2825,14 @@ void WINAPI DXUTRender3DEnvironment()
         dwFlags = GetDXUTState().GetCurrentDeviceSettings()->d3d11.PresentFlags;
     UINT SyncInterval = GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval;
 
+#ifdef SERVER_APP
     // Show the frame on the primary surface.
-    hr = pSwapChain->Present( SyncInterval, dwFlags );
+    hr = S_OK;
+#else
+	// Show the frame on the primary surface.
+	hr = pSwapChain->Present( SyncInterval, dwFlags );
+#endif
+
     if( DXGI_STATUS_OCCLUDED == hr )
     {
         // There is a window covering our entire rendering area.
