@@ -13,13 +13,14 @@ VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* cont
 {
 	m_videoHelper = new VideoHelper(device, context);
 	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
+	m_initialized = false;
+	m_encoderInitialized = false;
 }
 
 // Destructor for VideoHelper.
 VideoTestRunner::~VideoTestRunner()
 {
 	delete m_videoHelper;
-	m_encoderInitialized = false;
 }
 
 void VideoTestRunner::InitializeTest()
@@ -45,6 +46,10 @@ void VideoTestRunner::TestCapture() {
 }
 
 void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
+	//Simple check to allow TestRunner to act as singleton for multithreaded renderers
+	if (m_initialized)
+		return;
+	m_initialized = true;
 	m_testsComplete = false;
 	m_swapChain = swapChain;
 	m_fileName = "lossless.h264";
