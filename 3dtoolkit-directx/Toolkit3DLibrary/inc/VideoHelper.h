@@ -93,6 +93,7 @@ namespace Toolkit3DLibrary
 		void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
 		void									Capture();
 		void									Capture(void** buffer, int* size);
+		NVENCSTATUS                             Deinitialize();
 		void									CaptureEncodedFrame(void** buffer, int* size);
 
 		// Debug
@@ -115,7 +116,6 @@ namespace Toolkit3DLibrary
 		ID3D11Texture2D*						m_stagingFrameBuffer;
 		D3D11_TEXTURE2D_DESC					m_stagingFrameBufferDesc;
 
-		NVENCSTATUS                             Deinitialize();
 		NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc);
 		NVENCSTATUS								ReleaseIOBuffers();
 		NVENCSTATUS                             FlushEncoder();

@@ -19,7 +19,11 @@
 #include <algorithm>
 
 #include "MultiDeviceContextDXUTMesh.h"
+#ifdef TEST_RUNNER
+#include "VideoTestRunner.h"
+#else
 #include "VideoHelper.h"
+#endif // TEST_RUNNER
 
 #pragma warning( disable : 4100 )
 
@@ -349,7 +353,13 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 //--------------------------------------------------------------------------------------
 // Video Helper
 //--------------------------------------------------------------------------------------
+#ifdef TEST_RUNNER
+VideoTestRunner*			g_videoTestRunner = nullptr;
+#else
 VideoHelper*				g_videoHelper = nullptr;
+#endif // TEST_RUNNER
+
+
 
 //--------------------------------------------------------------------------------------
 // Forward declarations 
@@ -1459,10 +1469,18 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
 
     V_RETURN( InitializeWorkerThreads( pd3dDevice ) );
 
+#ifdef TEST_RUNNER
+	// Creates and initializes the video test runner library.
+	g_videoTestRunner = new VideoTestRunner(
+		DXUTGetD3D11Device(),
+		DXUTGetD3D11DeviceContext());
+#else
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
 		DXUTGetD3D11Device(),
 		DXUTGetD3D11DeviceContext());
+#endif // TEST_RUNNER
+
 
     return S_OK;
 }
@@ -1499,8 +1517,13 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 	g_SampleUI.SetSize(170, 300);
 #endif // STEREO_OUTPUT_MODE
 
+#ifdef TEST_RUNNER
+	// Initializes the video test runner
+	g_videoTestRunner->StartTestRunner(pSwapChain);
+#else
 	// Initializes the video helper
 	g_videoHelper->Initialize(pSwapChain, "output.h264");
+#endif // TEST_RUNNER
 
     return S_OK;
 }
@@ -2379,8 +2402,18 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 {
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
 
-	// Captures frame.
+#ifdef TEST_RUNNER
+	if (g_videoTestRunner->TestsComplete())
+		return;
+	//Captures frame
+	g_videoTestRunner->TestCapture();
+	if (g_videoTestRunner->IsNewTest()) {
+		//reset content state here
+	}
+#else
+	//Captures frame
 	g_videoHelper->Capture();
+#endif
 }
 
 

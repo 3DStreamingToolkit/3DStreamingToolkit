@@ -55,8 +55,19 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEn
 
 	CHECK_NV_FAILED(m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX));
 
-	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
-
+	//Setting explicitly for all other modes
+	m_pNvHWEncoder->m_stEncodeConfig.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
+	m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_41;
+	
+	//Specific mandatory settings for LOSSLESS encoding presets
+	if (m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID ||
+		m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) {
+		m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
+		m_pNvHWEncoder->m_stEncodeConfig.profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
+		m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.qpPrimeYZeroTransformBypassFlag = 1;
+	}
+	//m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
+	
 	// Prints config info to console.
 	PrintConfig(m_encodeConfig);
 
@@ -78,32 +89,45 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEn
 	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
 	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
-	m_encoderInitialized = true;
 	
 	return NV_ENC_SUCCESS;
 }
 
 void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) {
-	//In bits per second
+	//In bits per second - ignored for lossless presets
 	nvEncodeConfig.bitrate = 5000000;
 	//Unused by nvEncode
 	nvEncodeConfig.startFrameIdx = 0;
 	//Unused by nvEncode
 	nvEncodeConfig.endFrameIdx = INT_MAX;
-	nvEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+	nvEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
 	//Infinite needed for low latency encoding
 	nvEncodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
-	nvEncodeConfig.deviceType = 0;
+	//DeviceType 1 = Force CUDA
+	nvEncodeConfig.deviceType = 1;
 	//Only supported codec for WebRTC
 	nvEncodeConfig.codec = NV_ENC_H264;
 	nvEncodeConfig.fps = 60;
-	//Quantization Parameter
-	nvEncodeConfig.qp = 51;
-	nvEncodeConfig.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+	//Quantization Parameter - must be 0 for lossless
+	nvEncodeConfig.qp = 0;
+	nvEncodeConfig.presetGUID = NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+	//Must be set to frame
 	nvEncodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
+	//Initial QP factors for bitrate spinup
+	//nvEncodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
+	//nvEncodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
+	//nvEncodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
+	//nvEncodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
+	nvEncodeConfig.intraRefreshEnableFlag = true;
+	nvEncodeConfig.intraRefreshPeriod = 60;
+	nvEncodeConfig.intraRefreshDuration = 3;
 	//Enable temporal Adaptive Quantization
 	//Shifts quantization matrix based on complexity of frame over time
 	nvEncodeConfig.enableTemporalAQ = true;
+	//Need this to be able to recover from stream drops
+	//Client needs to send back a last good timestamp, and we call
+	//NvEncInvalidateRefFrames(encoder,timestamp) to reissue I frame
+	nvEncodeConfig.invalidateRefFramesEnableFlag = true;
 }
 
 // Cleanup resources.
@@ -113,7 +137,6 @@ NVENCSTATUS VideoHelper::Deinitialize()
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	ReleaseIOBuffers();
 	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
-	m_encoderInitialized = false;
 	return nvStatus;
 }
 
@@ -247,7 +270,10 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 				break;
 
 			case DXGI_FORMAT_R10G10B10A2_UNORM:
-				m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+				if(m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.qpPrimeYZeroTransformBypassFlag == 1)
+					m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_YUV444_10BIT;
+				else	
+					m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
 				break;
 
 			default:

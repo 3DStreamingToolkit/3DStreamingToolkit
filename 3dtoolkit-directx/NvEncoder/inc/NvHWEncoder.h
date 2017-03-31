@@ -163,6 +163,7 @@ public:
     uint32_t                                             m_uCurWidth;
     uint32_t                                             m_uCurHeight;
 	NV_ENC_LOCK_BITSTREAM								 m_lockBitstreamData;
+	NV_ENC_CONFIG                                        m_stEncodeConfig;
 
 protected:
     bool                                                 m_bEncoderInitialized;
@@ -172,7 +173,6 @@ protected:
     HINSTANCE                                            m_hinstLib;
     void                                                *m_hEncoder;
     NV_ENC_INITIALIZE_PARAMS                             m_stCreateEncodeParams;
-    NV_ENC_CONFIG                                        m_stEncodeConfig;
 
 public:
     NVENCSTATUS NvEncOpenEncodeSession(void* device, uint32_t deviceType);
