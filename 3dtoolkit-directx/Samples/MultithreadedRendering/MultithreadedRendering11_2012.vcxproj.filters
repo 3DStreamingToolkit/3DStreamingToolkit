@@ -137,6 +137,7 @@
     <ClInclude Include="DXUT\Core\DXUT.h">
       <Filter>DXUT</Filter>
     </ClInclude>
+    <ClInclude Include="defs.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

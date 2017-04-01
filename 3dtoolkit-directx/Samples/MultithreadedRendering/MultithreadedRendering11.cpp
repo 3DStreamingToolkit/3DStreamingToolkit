@@ -450,7 +450,7 @@ int InitWebRTC()
 	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
-	//// Creates and initializes the video helper library.
+	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
 		DXUTGetD3D11Device(),
 		DXUTGetD3D11DeviceContext());
@@ -630,14 +630,16 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     // Update the camera's position based on user input 
 	g_Camera.FrameMove(fElapsedTime);
 
+#if defined(MOVING_CAMERA) || defined(TEST_RUNNER)
 	// Rotate camera
 	DirectX::XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
-	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(3.5 / 180 * 3.14);
+	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(fElapsedTime * CAMERA_SPEED / 180 * XM_PI);
 	DirectX::XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
 	DirectX::XMMATRIX transformMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
 	g_Camera.SetViewParams(
 		DirectX::XMVector3Transform(g_Camera.GetEyePt(), transformMatrix),
 		g_Camera.GetLookAtPt());
+#endif // MOVING_CAMERA || TEST_RUNNER
 }
 
 

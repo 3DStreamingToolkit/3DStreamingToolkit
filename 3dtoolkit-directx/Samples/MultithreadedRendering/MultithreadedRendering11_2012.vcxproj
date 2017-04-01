@@ -539,6 +539,7 @@
     <ClCompile Include="DXUT\Optional\SDKmisc.cpp" />
     <ClCompile Include="MultiDeviceContextDXUTMesh.cpp" />
     <ClCompile Include="MultithreadedRendering11.cpp" />
+    <ClInclude Include="defs.h" />
     <ClInclude Include="DXUT\Core\DDSTextureLoader.h" />
     <ClInclude Include="DXUT\Core\dxerr.h" />
     <ClInclude Include="DXUT\Core\DXUT.h" />
