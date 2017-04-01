@@ -467,7 +467,8 @@ int InitWebRTC()
 	BOOL gm;
 	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 	{
-		DXUTMainLoop(); // Enter into the DXUT render loop
+		// Render a frame during idle time (no messages are waiting)
+		DXUTRender3DEnvironment();
 
 		if (!wnd.PreTranslateMessage(&msg))
 		{

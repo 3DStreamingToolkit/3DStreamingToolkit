@@ -256,10 +256,8 @@
     <ClCompile Include="WebRTC\peer_connection_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inc\defs.h" />
-    <ClInclude Include="inc\macros.h" />
-    <ClInclude Include="inc\pch.h" />
-    <ClInclude Include="inc\VideoHelper.h" />
+    <ClInclude Include="defs.h" />
+    <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">

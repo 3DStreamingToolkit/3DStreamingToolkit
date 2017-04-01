@@ -28,17 +28,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inc\macros.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\defs.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\pch.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\VideoHelper.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="defs.h" />
   </ItemGroup>
 </Project>
