@@ -15,6 +15,14 @@ VideoHelper::VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context) :
 {
 	m_pNvHWEncoder = new CNvHWEncoder();
 	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
+
+#ifdef MULTITHREAD_PROTECTION
+	// Enables multithread protection.
+	ID3D11Multithread* multithread;
+	m_d3dDevice->QueryInterface(IID_PPV_ARGS(&multithread));
+	multithread->SetMultithreadProtected(true);
+	multithread->Release();
+#endif // MULTITHREAD_PROTECTION
 }
 
 // Destructor for VideoHelper.

@@ -1,8 +1,8 @@
 #pragma once
 
-#define STEREO_OUTPUT_MODE
+//#define STEREO_OUTPUT_MODE
 #define IPD 2.0f
-//#define SERVER_APP
+#define SERVER_APP
 
 #ifdef STEREO_OUTPUT_MODE
 #define FRAME_BUFFER_WIDTH	1280
