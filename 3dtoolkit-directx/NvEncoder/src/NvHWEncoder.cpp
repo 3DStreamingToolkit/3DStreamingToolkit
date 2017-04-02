@@ -993,12 +993,19 @@ GUID CNvHWEncoder::GetPresetGUID(char* encoderPreset, int codec)
     {
         presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
     }
-    else if (encoderPreset && (stricmp(encoderPreset, "lossless") == 0))
+    else if (encoderPreset && (stricmp(encoderPreset, "losslessHP") == 0))
     {
         presetGUID = NV_ENC_PRESET_LOSSLESS_HP_GUID;
     }
-    else
-    {
+	else if (encoderPreset && (stricmp(encoderPreset, "lossless") == 0)) 
+	{
+		presetGUID = NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+	} 
+	else if (encoderPreset && (stricmp(encoderPreset, "lowLatency") == 0))
+	{
+		presetGUID = NV_ENC_PRESET_LOW_LATENCY_DEFAULT_GUID;
+	}
+	else {
         if (encoderPreset)
             PRINTERR("Unsupported preset guid %s\n", encoderPreset);
         presetGUID = NV_ENC_PRESET_DEFAULT_GUID;

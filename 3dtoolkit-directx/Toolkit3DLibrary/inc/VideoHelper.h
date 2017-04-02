@@ -90,6 +90,7 @@ namespace Toolkit3DLibrary
 												~VideoHelper();
 		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile);
 		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
+		NVENCSTATUS								SetEncodeProfile(int profileIndex);
 		void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
 		void									Capture();
 		void									Capture(void** buffer, int* size);

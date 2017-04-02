@@ -31,9 +31,9 @@ namespace Toolkit3DLibrary
 		EncodeConfig							m_minEncodeConfig;
 		EncodeConfig							m_maxEncodeConfig;
 		EncodeConfig							m_stepEncodeConfig;
+		bool									m_lastTest;
 		bool									m_testsComplete;
 		int										m_currentFrame;
-		bool									m_lockIterator;
 		bool								    m_initialized;
 		char*									m_fileName;
 
