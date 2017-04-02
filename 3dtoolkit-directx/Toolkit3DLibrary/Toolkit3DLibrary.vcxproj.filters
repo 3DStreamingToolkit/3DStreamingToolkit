@@ -30,5 +30,8 @@
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="defs.h" />
+    <ClInclude Include="WebRTC\fakevideocapturer.h">
+      <Filter>WebRTC</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

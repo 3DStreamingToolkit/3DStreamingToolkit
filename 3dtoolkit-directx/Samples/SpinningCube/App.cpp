@@ -36,6 +36,15 @@ VideoHelper*		g_videoHelper = nullptr;
 #endif // TESTRUNNER
 
 
+//--------------------------------------------------------------------------------------
+// Global Methods
+//--------------------------------------------------------------------------------------
+void FrameUpdate()
+{
+	g_cubeRenderer->Update();
+	g_cubeRenderer->Render();
+}
+
 #ifdef SERVER_APP
 
 //--------------------------------------------------------------------------------------
@@ -73,16 +82,13 @@ int InitWebRTC()
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(&client, &wnd, g_videoHelper));
+		new rtc::RefCountedObject<Conductor>(&client, &wnd, &FrameUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;
 	BOOL gm;
 	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 	{
-		g_cubeRenderer->Update();
-		g_cubeRenderer->Render();
-
 		if (!wnd.PreTranslateMessage(&msg))
 		{
 			::TranslateMessage(&msg);
@@ -202,8 +208,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 //--------------------------------------------------------------------------------------
 void Render()
 {
-	g_cubeRenderer->Update();
-	g_cubeRenderer->Render();
+	FrameUpdate();
 	g_deviceResources->Present();
 }
 
@@ -295,3 +300,4 @@ int WINAPI wWinMain(
 	return InitWebRTC();
 #endif // SERVER_APP
 }
+

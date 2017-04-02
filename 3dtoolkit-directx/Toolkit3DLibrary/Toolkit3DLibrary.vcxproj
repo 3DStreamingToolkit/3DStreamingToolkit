@@ -30,7 +30,7 @@
     <ProjectGuid>{6BC9C817-FD14-4540-A9C0-63CF16F770A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Toolkit3DLibrary</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -258,6 +258,7 @@
   <ItemGroup>
     <ClInclude Include="defs.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="WebRTC\fakevideocapturer.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">
