@@ -234,7 +234,7 @@ bool                        g_bWireFrame = false;
 //--------------------------------------------------------------------------------------
 CModelViewerCamera          g_Camera;               // A model viewing camera
 
-static const XMVECTORF32    s_vDefaultEye = { 30.0f, 150.0f, -150.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
@@ -449,6 +449,16 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #else
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
 #endif // STEREO_OUTPUT_MODE
+
+#ifdef TEST_RUNNER
+	// Initializes the video test runner
+	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
+#else
+	// Initializes the video helper
+	g_videoHelper->Initialize(DXUTGetDXGISwapChain(), "output.h264");
+#endif // TEST_RUNNER
+
+
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
@@ -532,6 +542,15 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // Update the camera's position based on user input 
 	g_Camera.FrameMove(fElapsedTime);
+
+	// Rotate camera
+	DirectX::XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
+	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(3.5 / 180 * 3.14);
+	DirectX::XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
+	DirectX::XMMATRIX transformMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
+	g_Camera.SetViewParams(
+		DirectX::XMVector3Transform(g_Camera.GetEyePt(), transformMatrix),
+		g_Camera.GetLookAtPt());
 }
 
 
@@ -1271,12 +1290,12 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
     DXUT_SetDebugName(g_pVertexLayout11, "Compressed" );
 #endif
 
-    V_RETURN( pd3dDevice->CreateInputLayout( UncompressedLayout, 
+    /*V_RETURN( pd3dDevice->CreateInputLayout( UncompressedLayout, 
         ARRAYSIZE( UncompressedLayout ), 
         pVertexShaderBuffer->GetBufferPointer(),
         pVertexShaderBuffer->GetBufferSize(), 
         &g_pMirrorVertexLayout11 ) );
-    DXUT_SetDebugName( g_pMirrorVertexLayout11, "Mirror" );
+    DXUT_SetDebugName( g_pMirrorVertexLayout11, "Mirror" );*/
     
     SAFE_RELEASE( pVertexShaderBuffer );
     SAFE_RELEASE( pPixelShaderBuffer );
@@ -1375,6 +1394,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
     // Setup the camera's view parameters
 	g_Camera.SetViewParams(s_vDefaultEye, s_vDefaultLookAt);
 	g_Camera.SetRadius(s_fDefaultCameraRadius, s_fMinCameraRadius, s_fMaxCameraRadius);
+	g_Camera.Reset();
 
     // Setup backface culling states:
     //  1) g_pRasterizerStateNoCull --- no culling (debugging only)
@@ -1487,7 +1507,8 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
 
 
 //--------------------------------------------------------------------------------------
-HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
+HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapChain* 
+pSwapChain,
                                           const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
 {
     HRESULT hr;
@@ -1501,30 +1522,24 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapCha
 	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
 	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width / 2, pBackBufferSurfaceDesc->Height);
 	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
-
+#ifndef TEST_RUNNER
 	g_HUD.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, 0);
 	g_HUD.SetSize(170, 170);
 	g_SampleUI.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, pBackBufferSurfaceDesc->Height - 300);
 	g_SampleUI.SetSize(170, 300);
+#endif // !TEST_RUNNER
+	
 #else // STEREO_OUTPUT_MODE
 	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
 	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
 	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
-
+#ifndef TEST_RUNNER
 	g_HUD.SetLocation(pBackBufferSurfaceDesc->Width - 170, 0);
 	g_HUD.SetSize(170, 170);
 	g_SampleUI.SetLocation(pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300);
 	g_SampleUI.SetSize(170, 300);
+#endif // !TEST_RUNNER	
 #endif // STEREO_OUTPUT_MODE
-
-#ifdef TEST_RUNNER
-	// Initializes the video test runner
-	g_videoTestRunner->StartTestRunner(pSwapChain);
-#else
-	// Initializes the video helper
-	g_videoHelper->Initialize(pSwapChain, "output.h264");
-#endif // TEST_RUNNER
-
     return S_OK;
 }
 
@@ -2182,7 +2197,7 @@ unsigned int WINAPI _PerSceneRenderDeferredProc( LPVOID lpParameter )
         }
         else if ( iInstance < g_iNumShadows + g_iNumMirrors )
         {
-            RenderMirror( iInstance - g_iNumShadows, pd3dDeferredContext );
+            //RenderMirror( iInstance - g_iNumShadows, pd3dDeferredContext );
         }
         else
         {
@@ -2302,7 +2317,7 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 	}
 
 	// Clear the render target
-	pd3dImmediateContext->ClearRenderTargetView(DXUTGetD3D11RenderTargetView(), Colors::MidnightBlue);
+	pd3dImmediateContext->ClearRenderTargetView(DXUTGetD3D11RenderTargetView(), Colors::Black);
 	pd3dImmediateContext->ClearDepthStencilView(DXUTGetD3D11DepthStencilView(),
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0, 0);
 
@@ -2335,7 +2350,7 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 
 		for (int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror)
 		{
-			RenderMirror(iMirror, g_pd3dPerSceneDeferredContext[iMirror]);
+			//RenderMirror(iMirror, g_pd3dPerSceneDeferredContext[iMirror]);
 			V(g_pd3dPerSceneDeferredContext[iMirror]->FinishCommandList(
 				!g_bClearStateUponFinishCommandList,
 				&g_pd3dPerSceneCommandList[g_iNumShadows + iMirror]));
@@ -2354,10 +2369,10 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 			RenderShadow(iShadow, pd3dImmediateContext);
 		}
 
-		for (int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror)
+		/*for (int iMirror = 0; iMirror < g_iNumMirrors; ++iMirror)
 		{
 			RenderMirror(iMirror, pd3dImmediateContext);
-		}
+		}*/
 
 		RenderSceneDirect(pd3dImmediateContext);
 	}
@@ -2387,11 +2402,13 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 	V(DXUTSetupD3D11Views(pd3dImmediateContext));
 
 	// Render the HUD
+#ifndef TEST_RUNNER
 	DXUT_BeginPerfEvent(DXUT_PERFEVENTCOLOR, L"HUD / Stats");
 	g_HUD.OnRender(fElapsedTime);
 	g_SampleUI.OnRender(fElapsedTime);
 	RenderText();
 	DXUT_EndPerfEvent();
+#endif // !TEST_RUNNER
 }
 
 //--------------------------------------------------------------------------------------
@@ -2402,8 +2419,26 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 {
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
 #ifdef TEST_RUNNER
-	if (g_videoTestRunner->TestsComplete())
+	if (g_videoTestRunner->TestsComplete()) {
+		//Send escape key to app to exit execution.
+		INPUT escape;
+
+		// Set up a generic keyboard event.
+		escape.type = INPUT_KEYBOARD;
+		escape.ki.wScan = 0; // hardware scan code for key
+		escape.ki.time = 0;
+		escape.ki.dwExtraInfo = 0;
+
+		// Press the "Escape" key
+		escape.ki.wVk = 0x1B; // virtual-key code for the "escape" key
+		escape.ki.dwFlags = 0; // 0 for key press
+		SendInput(1, &escape, sizeof(INPUT));
+
+		// Release the "Escape" key
+		escape.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+		SendInput(1, &escape, sizeof(INPUT));
 		return;
+	}
 	//Captures frame
 	g_videoTestRunner->TestCapture();
 	if (g_videoTestRunner->IsNewTest()) {

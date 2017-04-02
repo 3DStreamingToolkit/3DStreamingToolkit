@@ -55,10 +55,11 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEn
 
 	CHECK_NV_FAILED(m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX));
 
-	//Setting explicitly for all other modes
-	m_pNvHWEncoder->m_stEncodeConfig.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
-	m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_41;
+	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
 	
+	//H264 level sets maximum bitrate limits.  4.1 supported by almost all mobile devices.
+	m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_41;
+
 	//Specific mandatory settings for LOSSLESS encoding presets
 	if (m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID ||
 		m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) {
@@ -66,7 +67,9 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEn
 		m_pNvHWEncoder->m_stEncodeConfig.profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
 		m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.qpPrimeYZeroTransformBypassFlag = 1;
 	}
-	//m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
+	if (nvEncodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_HQ) {
+		m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
+	}
 	
 	// Prints config info to console.
 	PrintConfig(m_encodeConfig);
@@ -101,23 +104,23 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) {
 	//Unused by nvEncode
 	nvEncodeConfig.endFrameIdx = INT_MAX;
 	nvEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
+	nvEncodeConfig.encoderPreset = "losslessHP";
 	//Infinite needed for low latency encoding
 	nvEncodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
 	//DeviceType 1 = Force CUDA
-	nvEncodeConfig.deviceType = 1;
+	nvEncodeConfig.deviceType = 0;
 	//Only supported codec for WebRTC
 	nvEncodeConfig.codec = NV_ENC_H264;
 	nvEncodeConfig.fps = 60;
 	//Quantization Parameter - must be 0 for lossless
 	nvEncodeConfig.qp = 0;
-	nvEncodeConfig.presetGUID = NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
 	//Must be set to frame
 	nvEncodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
 	//Initial QP factors for bitrate spinup
-	//nvEncodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
-	//nvEncodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
-	//nvEncodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
-	//nvEncodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
+	nvEncodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
+	nvEncodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
+	nvEncodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
+	nvEncodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
 	nvEncodeConfig.intraRefreshEnableFlag = true;
 	nvEncodeConfig.intraRefreshPeriod = 60;
 	nvEncodeConfig.intraRefreshDuration = 3;
@@ -128,6 +131,9 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) {
 	//Client needs to send back a last good timestamp, and we call
 	//NvEncInvalidateRefFrames(encoder,timestamp) to reissue I frame
 	nvEncodeConfig.invalidateRefFramesEnableFlag = true;
+	//NV_ENC_H264_PROFILE_HIGH_444_GUID
+	SetEncodeProfile(2);
+
 }
 
 // Cleanup resources.
@@ -299,6 +305,25 @@ NVENCSTATUS VideoHelper::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInput
 	// Registers for the output event.
 	CHECK_NV_FAILED(m_pNvHWEncoder->NvEncRegisterAsyncEvent(&m_stEOSOutputBfr.hOutputEvent));
 
+	return NV_ENC_SUCCESS;
+}
+NVENCSTATUS VideoHelper::SetEncodeProfile(int profileIndex) {
+	GUID choice;
+	switch (profileIndex)
+	{
+		//Main should be used for most cases
+	case 1: choice = NV_ENC_H264_PROFILE_MAIN_GUID; break;
+		//High 444 is only for lossless encode profile
+	case 2: choice = NV_ENC_H264_PROFILE_HIGH_444_GUID; break;
+		//Enables stereo frame packing
+	case 3: choice = NV_ENC_H264_PROFILE_STEREO_GUID; break;
+		//Fallback to auto, avoid this.
+	case 0: 
+	default: choice = NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID;
+		break;
+	}
+
+	m_pNvHWEncoder->m_stEncodeConfig.profileGUID = choice;
 	return NV_ENC_SUCCESS;
 }
 

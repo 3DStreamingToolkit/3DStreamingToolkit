@@ -15,6 +15,7 @@ VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* cont
 	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
 	m_initialized = false;
 	m_encoderInitialized = false;
+	m_lastTest = false;
 }
 
 // Destructor for VideoHelper.
@@ -38,6 +39,11 @@ void VideoTestRunner::TestCapture() {
 		}
 		else {
 			m_currentFrame = 0;
+			if (m_lastTest) {
+				m_testsComplete = true;
+				m_lastTest = false;
+				return;
+			}
 			IncrementTestRunner();
 			return;
 		}
@@ -55,29 +61,30 @@ void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
 	m_fileName = "lossless.h264";
 
 	m_videoHelper->GetDefaultEncodeConfig(m_encodeConfig);
-	m_encodeConfig.endFrameIdx = 200;
+	m_encodeConfig.endFrameIdx = 300;
 
 	m_currentFrame = 0;
 
 	memset(&m_minEncodeConfig, 0, sizeof(EncodeConfig));
 	m_minEncodeConfig = m_encodeConfig;
 	m_minEncodeConfig.bitrate = 1500000;
-	m_minEncodeConfig.enableTemporalAQ = false;
+	m_minEncodeConfig.enableTemporalAQ = true;
 	m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
-	m_minEncodeConfig.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+	m_minEncodeConfig.encoderPreset = "lowLatencyHQ";
+	m_videoHelper->SetEncodeProfile(1);
 
 	memset(&m_maxEncodeConfig, 0, sizeof(EncodeConfig));
 	m_maxEncodeConfig = m_encodeConfig;
-	m_maxEncodeConfig.bitrate = 5000000;
+	m_maxEncodeConfig.bitrate = 10000000;
 	m_maxEncodeConfig.enableTemporalAQ = true;
 	m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
-	m_maxEncodeConfig.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+	m_minEncodeConfig.encoderPreset = "lowLatencyHQ";
 
 	memset(&m_stepEncodeConfig, 0, sizeof(EncodeConfig));
 	m_stepEncodeConfig = m_encodeConfig;
 	m_stepEncodeConfig.bitrate = 250000;
 	m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
-	m_stepEncodeConfig.presetGUID = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+	m_minEncodeConfig.encoderPreset = "lowLatencyHQ";
 
 	IncrementTestRunner();
 }
@@ -91,7 +98,9 @@ void VideoTestRunner::IncrementTestRunner() {
 		InitializeTest();
 		return;
 	}
-		
+	if (m_lastTest) {
+		return;
+	}
 	//Test to see if we are incrementing from lossless to the runner iterations
 	if (m_fileName == "lossless.h264") {
 		//Need to reset to runner config
@@ -102,13 +111,15 @@ void VideoTestRunner::IncrementTestRunner() {
 	strcpy(m_fileName, std::to_string(m_encodeConfig.bitrate / 1000).c_str());
 	strcat(m_fileName, "kbps-AQ");
 	strcat(m_fileName, std::to_string(m_encodeConfig.enableTemporalAQ).c_str());
-	strcat(m_fileName, ".h264");
+	strcat(m_fileName, "-");
+	strcat(m_fileName, m_encodeConfig.encoderPreset);
+	strcat(m_fileName, "-CBR-LL-HQ.h264");
 
-	if (m_encodeConfig.enableTemporalAQ == !m_minEncodeConfig.enableTemporalAQ) {
-		m_encodeConfig.enableTemporalAQ = m_minEncodeConfig.enableTemporalAQ;
+	if (m_encodeConfig.enableTemporalAQ == 0) {
+		m_encodeConfig.enableTemporalAQ = 1;
 	}
 	else {
-		m_encodeConfig.enableTemporalAQ = !m_minEncodeConfig.enableTemporalAQ;
+		m_encodeConfig.enableTemporalAQ = 0;
 		IncrementTestRunner();
 		return;
 	}
@@ -119,15 +130,10 @@ void VideoTestRunner::IncrementTestRunner() {
 		return;
 	}
 	else {
-		m_encodeConfig.bitrate = m_minEncodeConfig.bitrate;
+		m_encodeConfig.bitrate = m_maxEncodeConfig.bitrate;
+		m_lastTest = true;
+		IncrementTestRunner();
 	}
-
-	if (m_encodeConfig.qp == m_minEncodeConfig.qp &&
-		m_encodeConfig.bitrate == m_minEncodeConfig.bitrate) {
-		m_testsComplete = true;
-		return;
-	}	
-
 }
 
 bool VideoTestRunner::IsNewTest() {
