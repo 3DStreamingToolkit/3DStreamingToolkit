@@ -36,9 +36,11 @@ using namespace Toolkit3DLibrary;
 class FakeVideoCapturer : public cricket::VideoCapturer
 {
 public:
-	explicit FakeVideoCapturer(bool is_screencast, 
+	explicit FakeVideoCapturer(bool is_screencast,
+		void (*frame_update_func)(),
 		Toolkit3DLibrary::VideoHelper* video_helper) :
 			running_(false),
+			frame_update_func_(frame_update_func),
 			video_helper_(video_helper),
 			initial_timestamp_(rtc::TimeNanos()),
 			next_timestamp_(rtc::kNumNanosecsPerMillisec),
@@ -69,7 +71,7 @@ public:
 		ResetSupportedFormats(formats);
 	}
 
-	FakeVideoCapturer() : FakeVideoCapturer(false, nullptr) {}
+	FakeVideoCapturer() : FakeVideoCapturer(false, nullptr, nullptr) {}
 
 	~FakeVideoCapturer()
 	{
@@ -207,7 +209,7 @@ public:
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
 			frameWidth, frameHeight);
 
-		libyuv::ARGBToI420(
+		libyuv::ABGRToI420(
 			(uint8_t*)pFrameBuffer,
 			frameWidth * 4,
 			buffer.get()->MutableDataY(),
@@ -283,7 +285,9 @@ public:
 		{
 			while (running_)
 			{
+				frame_update_func_();
 				SendFakeVideoFrame();
+				//std::this_thread::sleep_for(std::chrono::milliseconds(30));
 			}
 		});
 
@@ -334,6 +338,7 @@ private:
 	int64_t next_timestamp_;
 	const bool is_screencast_;
 	webrtc::VideoRotation rotation_;
+	void (*frame_update_func_)();
 	VideoHelper* video_helper_;
 };
 
@@ -348,16 +353,17 @@ public:
 	{
 		// XXX: WebRTC uses device name to instantiate the capture, which is always 0.
 		return std::unique_ptr<cricket::VideoCapturer>(
-			new FakeVideoCapturer(false, nullptr));
+			new FakeVideoCapturer(false, nullptr, nullptr));
 	}
 
 	virtual std::unique_ptr<cricket::VideoCapturer> Create(
 		const cricket::Device& device,
+		void (*frame_update_func)(),
 		Toolkit3DLibrary::VideoHelper* video_helper)
 	{
 		// XXX: WebRTC uses device name to instantiate the capture, which is always 0.
 		return std::unique_ptr<cricket::VideoCapturer>(
-			new FakeVideoCapturer(false, video_helper));
+			new FakeVideoCapturer(false, frame_update_func, video_helper));
 	}
 };
 

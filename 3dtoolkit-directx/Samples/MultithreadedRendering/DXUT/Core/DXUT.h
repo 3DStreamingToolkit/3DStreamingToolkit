@@ -79,7 +79,7 @@
 // Direct3D11 includes
 #include <d3dcommon.h>
 #include <dxgi.h>
-#include <d3d11_4.h>
+#include <d3d11_1.h>
 #include <d3dcompiler.h>
 
 // DirectXMath includes

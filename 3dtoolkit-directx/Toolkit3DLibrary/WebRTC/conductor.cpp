@@ -60,11 +60,12 @@ protected:
 };
 
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_window,
-	Toolkit3DLibrary::VideoHelper* video_helper) :
+	void (*frame_update_func)(), Toolkit3DLibrary::VideoHelper* video_helper) :
 		peer_id_(-1),
 		loopback_(false),
 		client_(client),
 		main_window_(main_window),
+		frame_update_func_(frame_update_func),
 		video_helper_(video_helper)
 {
 	client_->RegisterObserver(this);
@@ -469,7 +470,7 @@ std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice()
 	std::unique_ptr<cricket::VideoCapturer> capturer;
 	cricket::Device dummyDevice;
 	dummyDevice.name = "custom dummy device";
-	capturer = factory.Create(dummyDevice, video_helper_);
+	capturer = factory.Create(dummyDevice, frame_update_func_, video_helper_);
 	return capturer;
 }
 

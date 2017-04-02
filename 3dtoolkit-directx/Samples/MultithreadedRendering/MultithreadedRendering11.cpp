@@ -427,6 +427,11 @@ inline bool IsRenderDeferred()
     return IsRenderDeferredPerScene() || IsRenderDeferredPerChunk();
 }
 
+void FrameUpdate()
+{
+	DXUTRender3DEnvironment();
+}
+
 #ifdef SERVER_APP
 
 //--------------------------------------------------------------------------------------
@@ -460,16 +465,13 @@ int InitWebRTC()
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(&client, &wnd, g_videoHelper));
+		new rtc::RefCountedObject<Conductor>(&client, &wnd, &FrameUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;
 	BOOL gm;
 	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 	{
-		// Render a frame during idle time (no messages are waiting)
-		DXUTRender3DEnvironment();
-
 		if (!wnd.PreTranslateMessage(&msg))
 		{
 			::TranslateMessage(&msg);
