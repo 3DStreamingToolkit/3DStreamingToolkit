@@ -285,7 +285,11 @@ public:
 		{
 			while (running_)
 			{
-				frame_update_func_();
+				if (frame_update_func_)
+				{
+					frame_update_func_();
+				}
+
 				SendFakeVideoFrame();
 				//std::this_thread::sleep_for(std::chrono::milliseconds(30));
 			}

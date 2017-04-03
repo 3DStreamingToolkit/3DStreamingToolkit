@@ -1,15 +1,17 @@
 #pragma once
 
-//#define STEREO_OUTPUT_MODE
-#define IPD 2.0f
 #define SERVER_APP
+//#define STEREO_OUTPUT_MODE
 
 #ifdef STEREO_OUTPUT_MODE
+#define IPD 2.0f
 #define FRAME_BUFFER_WIDTH	1280
-#else
+#else // STEREO_OUTPUT_MODE
 #define FRAME_BUFFER_WIDTH	640
 #endif // STEREO_OUTPUT_MODE
 #define FRAME_BUFFER_HEIGHT	480
 
-#define MOVING_CAMERA
+//#define MOVING_CAMERA
+#ifdef MOVING_CAMERA
 #define CAMERA_SPEED 5
+#endif // MOVING_CAMERA

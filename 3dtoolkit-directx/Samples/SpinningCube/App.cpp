@@ -82,7 +82,8 @@ int InitWebRTC()
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(&client, &wnd, &FrameUpdate, g_videoHelper));
+		new rtc::RefCountedObject<Conductor>(
+			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper));
 
 	// Main loop.
 	MSG msg;

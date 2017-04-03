@@ -49,7 +49,8 @@ public:
 	};
 
 	Conductor(PeerConnectionClient* client, MainWindow* main_window,
-		void (*frame_update_func)(), Toolkit3DLibrary::VideoHelper* video_helper);
+		void (*frame_update_func)(), void (*input_update_func)(const std::string&), 
+		Toolkit3DLibrary::VideoHelper* video_helper);
 
 	bool connection_active() const;
 
@@ -150,6 +151,7 @@ protected:
 	PeerConnectionClient* client_;
 	MainWindow* main_window_;
 	void (*frame_update_func_)();
+	void (*input_update_func_)(const std::string&);
 	Toolkit3DLibrary::VideoHelper* video_helper_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
