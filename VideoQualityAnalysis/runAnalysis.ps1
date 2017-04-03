@@ -49,12 +49,12 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $outCSV = @()
 $ffmpegPath = "ffmpeg-3.2.4-win64-static\bin"
-if(-not (Test-Path $ffmpegPath)) {
+if(-not (Test-Path $ffmpegPath) -Or ((Get-Command "ffmpeg.exe" -ErrorAction SilentlyContinue) -eq $null )) {
     $ffmpeg = Invoke-WebRequest -Uri https://ffmpeg.zeranoe.com/builds/win64/static/ffmpeg-3.2.4-win64-static.zip -OutFile $PWD\ffmpeg.zip
     [System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\ffmpeg.zip", ".\")
     Remove-Item -Path "ffmpeg.zip"
 }
-New-Item -ItemType Directory -Force -Path $InputFolder\out
+New-Item -ItemType Directory -Force -Path $OutputFolder
 Start-Process -FilePath "$ffmpegPath\ffmpeg.exe" -ArgumentList "-i `"$InputFolder\lossless.$VideoFormat`" -c:v rawvideo -pix_fmt yuv420p `"$InputFolder\lossless.yuv`" -y" -Wait -NoNewWindow
 Get-ChildItem $InputFolder -Filter *.$VideoFormat -File | 
 Foreach-Object {
@@ -63,7 +63,7 @@ Foreach-Object {
         Start-Process -FilePath "$ffmpegPath\ffmpeg.exe" -ArgumentList "-i `"$InputFolder\$video`" -c:v rawvideo -pix_fmt yuv420p `"$InputFolder\$video.yuv`" -y" -Wait -NoNewWindow
         Start-Process -FilePath "VQMT\VQMT.exe" -ArgumentList "`"$InputFolder\lossless.yuv`" `"$InputFolder\$video.yuv`" 720 2560 290 1 results PSNR SSIM MSSSIM VIFP PSNRHVS PSNRHVSM" -Wait -NoNewWindow
         Remove-Item -Path "$InputFolder\$video.yuv" -Force
-        Get-ChildItem $InputFolder -Filter *.csv |
+        Get-ChildItem $PWD -Filter *.csv |
         ForEach-Object {
             $csv = $_;
             $pdata = @()
@@ -82,10 +82,12 @@ Foreach-Object {
                 $pdata | Add-Member -MemberType NoteProperty "AQ" -Value $AQ
                 $pdata | Add-Member -MemberType NoteProperty "Type" -Value $Type
                 $pdata | Add-Member -MemberType NoteProperty "Test" -Value $valueType
+
+                $pdata | Export-Csv -NoTypeInformation -Path $OutputFolder\$kbps$aq$valueType$type.csv
                 
                 $outCSV += $pdata |
                     Select-Object -Property Test, Kbps, AQ, Type, frame, value
-                
+
                 Remove-Item -Path "$InputFolder\$csv" -Force
             }
         }
