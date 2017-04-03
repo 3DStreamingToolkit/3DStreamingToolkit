@@ -34,9 +34,19 @@ namespace WebRtcIntegration
             this.InitializeComponent();            
             _webRtcUtils = new WebRtcUtils();
             _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
+            _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
             _webRtcUtils.PeerVideo = PeerVideo;
-            _webRtcUtils.SelfVideo = SelfVideo;            
+            _webRtcUtils.SelfVideo = SelfVideo;
+            
             _webRtcUtils.Initialize();
+        }
+
+        private void _webRtcUtils_OnPeerMessageDataReceived(int peerId, string message)
+        {
+            new Task(() =>
+            {
+                PeerMessageTextBox.Text += string.Format("{0}-{1}\n", peerId, message);
+            }).Start();
         }
 
         private void _webRtcUtils_OnInitialized()
@@ -62,6 +72,11 @@ namespace WebRtcIntegration
         }
 
         private void SendMessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            _webRtcUtils.SendPeerMessageDataCommand.Execute(SendMessageTextBox.Text);
+        }
+
+        private void ClearStatusTextButton_Click(object sender, RoutedEventArgs e)
         {
             StatusTextBox.Text = string.Empty;
         }

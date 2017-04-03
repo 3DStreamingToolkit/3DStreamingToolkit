@@ -28,6 +28,6 @@
         <TextBox x:Name="SendMessageTextBox" Text="Send Message" HorizontalAlignment="Left" Margin="20,560,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" Height="40" Width="290" />
         <Button x:Name="SendMessageButton" Content="Send" HorizontalAlignment="Left" Margin="320,560,0,0" VerticalAlignment="Top" Height="40" Width="120" FontSize="18" Click="SendMessageButton_Click" />
         <TextBox x:Name="StatusTextBox" Text="TEST" HorizontalAlignment="Left" Margin="450,20,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" Height="530" Width="450" />
-        <Button x:Name="ClearStatusTextButton" Content="Clear" HorizontalAlignment="Left" Margin="800,560,0,0" VerticalAlignment="Top" Height="40" Width="100" FontSize="18" Click="SendMessageButton_Click" />
+        <Button x:Name="ClearStatusTextButton" Content="Clear" HorizontalAlignment="Left" Margin="800,560,0,0" VerticalAlignment="Top" Height="40" Width="100" FontSize="18" Click="ClearStatusTextButton_Click"  />
     </Grid>
 </Page>
