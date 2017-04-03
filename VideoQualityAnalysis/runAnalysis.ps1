@@ -94,7 +94,9 @@ Foreach-Object {
     }
 }
 Remove-Item "$InputFolder\lossless.yuv" -Force
-Remove-Item -Path ".\ffmpeg-3.2.4-win64-static" -Recurse
+if(Test-Path $ffmpegPath) {
+    Remove-Item -Path "$ffmpegPath" -Recurse
+}
 $outCSV | Export-Csv -NoTypeInformation -Path $OutputFolder\$CSVFileName    
 
 
