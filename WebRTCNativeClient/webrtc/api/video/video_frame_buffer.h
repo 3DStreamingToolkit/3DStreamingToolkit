@@ -26,6 +26,7 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   // subsampled, this is the highest-resolution plane.
   virtual int width() const = 0;
   virtual int height() const = 0;
+  virtual int encoded_length() const = 0;
 
   // Returns pointer to the pixel data for a given plane. The memory is owned by
   // the VideoFrameBuffer object and must not be freed by the caller.

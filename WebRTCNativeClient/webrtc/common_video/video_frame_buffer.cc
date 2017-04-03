@@ -79,6 +79,7 @@ WrappedI420Buffer::WrappedI420Buffer(int width,
                                      const rtc::Callback0<void>& no_longer_used)
     : width_(width),
       height_(height),
+	  encoded_length_(0),
       y_plane_(y_plane),
       u_plane_(u_plane),
       v_plane_(v_plane),
@@ -98,6 +99,10 @@ int WrappedI420Buffer::width() const {
 
 int WrappedI420Buffer::height() const {
   return height_;
+}
+
+int WrappedI420Buffer::encoded_length() const {
+	return encoded_length_;
 }
 
 const uint8_t* WrappedI420Buffer::DataY() const {
