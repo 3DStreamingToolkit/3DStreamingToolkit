@@ -44,7 +44,7 @@ enum H264DecoderImplEvent {
   kH264DecoderEventMax = 16,
 };
 
-#if defined(WEBRTC_INITIALIZE_FFMPEG)
+//#if defined(WEBRTC_INITIALIZE_FFMPEG)
 
 rtc::CriticalSection ffmpeg_init_lock;
 bool ffmpeg_initialized = false;
@@ -79,14 +79,20 @@ void InitializeFFmpeg() {
       RTC_NOTREACHED() << "av_lockmgr_register failed.";
       return;
     }
+	avcodec_register_all();
     av_register_all();
+	avformat_network_init();
     ffmpeg_initialized = true;
   }
 }
 
-#endif  // defined(WEBRTC_INITIALIZE_FFMPEG)
+// #endif  // defined(WEBRTC_INITIALIZE_FFMPEG)
 
 }  // namespace
+
+void H264DecoderImpl::InitFFmpeg() {
+	InitializeFFmpeg();
+}
 
 int H264DecoderImpl::AVGetBuffer2(
     AVCodecContext* context, AVFrame* av_frame, int flags) {

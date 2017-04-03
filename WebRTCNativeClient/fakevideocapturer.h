@@ -46,21 +46,12 @@ public:
 		next_timestamp_(rtc::kNumNanosecsPerMillisec),
 		is_screencast_(is_screencast),
 		rotation_(webrtc::kVideoRotation_0) {
+		SetCaptureFormat(NULL);
+		set_enable_video_adapter(false);
 		// Default supported formats. Use ResetSupportedFormats to over write.
 		std::vector<cricket::VideoFormat> formats;
-		formats.push_back(cricket::VideoFormat(1280, 720,
-			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-		formats.push_back(cricket::VideoFormat(640, 480,
-			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-		formats.push_back(cricket::VideoFormat(320, 240,
-			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-		formats.push_back(cricket::VideoFormat(160, 120,
-			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-		formats.push_back(cricket::VideoFormat(1280, 720,
-			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
-		formats.push_back(cricket::VideoFormat(1420, 700,
-			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_H264));
-		ResetSupportedFormats(formats);
+		formats.push_back(cricket::VideoFormat(FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_H264));
+		SetSupportedFormats(formats);
 	}
 	FakeVideoCapturer() : FakeVideoCapturer(false) {}
 
@@ -167,16 +158,18 @@ public:
 	{
 		void* pFrameBuffer = nullptr;
 		int frameSizeInBytes = 0;
-		g_videoHelper->Capture(&pFrameBuffer, &frameSizeInBytes);
+		g_videoHelper->CaptureEncodedFrame(&pFrameBuffer, &frameSizeInBytes);
 		if (frameSizeInBytes == 0)
 		{
 			return;
 		}
 
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, frameSizeInBytes);
 
-		libyuv::ARGBToI420(
+		memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
+
+		/*libyuv::ARGBToI420(
 			(uint8_t*)pFrameBuffer,
 			FRAME_BUFFER_WIDTH * 4,
 			buffer.get()->MutableDataY(),
@@ -186,7 +179,7 @@ public:
 			buffer.get()->MutableDataV(),
 			buffer.get()->StrideV(),
 			FRAME_BUFFER_WIDTH,
-			FRAME_BUFFER_HEIGHT);
+			FRAME_BUFFER_HEIGHT);*/
 
 		auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -246,7 +239,9 @@ public:
 		{
 			while (running_)
 			{
+				g_videoHelper->Capture();
 				SendFakeVideoFrame();
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			}
 		});
 
@@ -263,7 +258,6 @@ public:
 	bool IsRunning() override { return running_; }
 	bool IsScreencast() const override { return is_screencast_; }
 	bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
-		fourccs->push_back(cricket::FOURCC_I420);
 		fourccs->push_back(cricket::FOURCC_H264);
 		return true;
 	}
