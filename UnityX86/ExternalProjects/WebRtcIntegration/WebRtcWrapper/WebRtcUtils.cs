@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
+using Windows.Data.Json;
 using Windows.Storage;
 using Windows.UI.Core;
 using Windows.UI.Popups;
@@ -23,9 +24,12 @@ namespace WebRtcWrapper
     public class WebRtcUtils : DispatcherBindableBase
     {
         public event Action OnInitialized;
+        public event Action<int, string> OnPeerMessageDataReceived;
         public MediaElement SelfVideo;
         public MediaElement PeerVideo;
 
+        // Message Data Type
+        private static readonly string kMessageDataType = "message";
 
         private MediaVideoTrack _peerVideoTrack;
         private MediaVideoTrack _selfVideoTrack;
@@ -48,6 +52,7 @@ namespace WebRtcWrapper
             DisconnectFromServerCommand = new ActionCommand(DisconnectFromServerExecute, DisconnectFromServerCanExecute);
             AddIceServerCommand = new ActionCommand(AddIceServerExecute, AddIceServerCanExecute);
             RemoveSelectedIceServerCommand = new ActionCommand(RemoveSelectedIceServerExecute, RemoveSelectedIceServerCanExecute);
+            SendPeerMessageDataCommand = new ActionCommand(SendPeerMessageDataExecute, SendPeerMessageDataCanExecute);            
 
             Cameras = new ObservableCollection<MediaDevice>();
             Microphones = new ObservableCollection<MediaDevice>();
@@ -174,6 +179,11 @@ namespace WebRtcWrapper
                     IsMicrophoneEnabled = true;
                     IsCameraEnabled = true;
                 });
+            };
+
+            Conductor.Instance.OnPeerMessageDataReceived += (peerId, message) =>
+            {
+                OnPeerMessageDataReceived?.Invoke(peerId, message);
             };
 
             Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
@@ -313,6 +323,13 @@ namespace WebRtcWrapper
 
         private ActionCommand _settingsButtonCommand;
         public ActionCommand SettingsButtonCommand
+        {
+            get { return _settingsButtonCommand; }
+            set { SetProperty(ref _settingsButtonCommand, value); }
+        }
+
+        private ActionCommand _sendPeerMessageDataCommand;
+        public ActionCommand SendPeerMessageDataCommand
         {
             get { return _settingsButtonCommand; }
             set { SetProperty(ref _settingsButtonCommand, value); }
@@ -920,6 +937,45 @@ namespace WebRtcWrapper
         #endregion
 
         #region Action Handlers
+        private bool SendPeerMessageDataCanExecute(object obj)
+        {
+            if (!IsConnectedToPeer)
+            {
+                return false;
+            }
+
+            return IsConnected;
+        }
+
+        public void SendPeerMessageDataExecute(object obj)
+        {
+            new Task(async () =>
+            {
+                string msg = (string) obj;
+                JsonObject jsonMessage;
+
+                if (!JsonObject.TryParse(msg, out jsonMessage))
+                {
+                    jsonMessage = new JsonObject()
+                    {
+                        {"data", JsonValue.CreateStringValue(msg) }
+                    };
+                }
+
+                var jsonPackage = new JsonObject
+                {
+                    {"type", JsonValue.CreateStringValue(kMessageDataType)}
+                };
+                foreach (var o in jsonMessage)
+                {
+                    jsonPackage.Add(o.Key, o.Value);
+                }
+                await Conductor.Instance.Signaller.SendToPeer(SelectedPeer.Id, jsonPackage);
+                
+            }).Start();            
+        }
+
+
         private bool ConnectCommandCanExecute(object obj)
         {
             return !IsConnected && !IsConnecting && Ip.Valid && Port.Valid;
