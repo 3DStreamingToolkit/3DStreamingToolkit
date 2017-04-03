@@ -41,12 +41,20 @@ namespace WebRtcIntegration
             _webRtcUtils.Initialize();
         }
 
+        public async void RunOnUi(DispatchedHandler handler)
+        {
+            await Dispatcher.RunAsync(
+                Windows.UI.Core.CoreDispatcherPriority.Normal,
+                handler
+            );
+        }
+
         private void _webRtcUtils_OnPeerMessageDataReceived(int peerId, string message)
         {
-            new Task(() =>
+            RunOnUi(() =>
             {
                 PeerMessageTextBox.Text += string.Format("{0}-{1}\n", peerId, message);
-            }).Start();
+            });
         }
 
         private void _webRtcUtils_OnInitialized()
