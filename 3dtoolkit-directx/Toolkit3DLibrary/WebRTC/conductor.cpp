@@ -60,12 +60,14 @@ protected:
 };
 
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_window,
-	void (*frame_update_func)(), Toolkit3DLibrary::VideoHelper* video_helper) :
+	void (*frame_update_func)(), void (*input_update_func)(const std::string&),
+	Toolkit3DLibrary::VideoHelper* video_helper) :
 		peer_id_(-1),
 		loopback_(false),
 		client_(client),
 		main_window_(main_window),
 		frame_update_func_(frame_update_func),
+		input_update_func_(input_update_func),
 		video_helper_(video_helper)
 {
 	client_->RegisterObserver(this);
@@ -307,6 +309,12 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 		LOG(WARNING) << "Received a message from unknown peer while already in a "
 						"conversation with a different peer.";
 		return;
+	}
+
+	// Passes the message to server.
+	if (input_update_func_)
+	{
+		input_update_func_(message);
 	}
 
 	Json::Reader reader;

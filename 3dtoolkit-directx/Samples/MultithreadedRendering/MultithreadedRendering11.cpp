@@ -15,8 +15,9 @@
 #include "SDKMesh.h"
 
 #include <process.h>
-
 #include <algorithm>
+#include <sstream>
+#include <iostream>
 
 #include "MultiDeviceContextDXUTMesh.h"
 
@@ -37,10 +38,13 @@
 #include "webrtc/base/win32socketserver.h"
 #endif // SERVER_APP
 
+#include "rapidjson/document.h"
+
 #pragma warning( disable : 4100 )
 
 using namespace DirectX;
 using namespace Toolkit3DLibrary;
+using namespace rapidjson;
 
 // #defines for compile-time Debugging switches:
 //#define ADJUSTABLE_LIGHT          // The 0th light is adjustable with the mouse (right mouse button down)
@@ -432,6 +436,49 @@ void FrameUpdate()
 	DXUTRender3DEnvironment();
 }
 
+// Handles input from client.
+void InputUpdate(const std::string& message)
+{
+	Document jmessage;
+	jmessage.Parse(message.c_str());
+	const char* messageType = "message";
+	if (jmessage.HasMember("type") && 
+		!strcmp(jmessage["type"].GetString(), "message") &&
+		jmessage.HasMember("camera-transform"))
+	{
+		// Parses the camera transformation data.
+		const char* data = jmessage["camera-transform"].GetString();
+		std::istringstream datastream(data);
+		std::string token;
+		getline(datastream, token, ',');
+		float x = stof(token);
+		getline(datastream, token, ',');
+		float y = stof(token);
+		getline(datastream, token, ',');
+		float z = stof(token);
+		getline(datastream, token, ',');
+		float pitch = stof(token);
+		getline(datastream, token, ',');
+		float yaw = stof(token);
+		getline(datastream, token, ',');
+		float roll = stof(token);
+
+		// Initializes the eye position vector.
+		const XMVECTORF32 eye = { x, y, z, 0.f };
+
+		// Initializes the camera rotation matrix.
+		DirectX::XMMATRIX cameraRotation = XMMatrixRotationRollPitchYaw(
+			pitch, yaw, roll);
+
+		// Updates the camera view.
+		g_Camera.SetViewParams(
+			DirectX::XMVector3Transform(eye, cameraRotation),
+			g_Camera.GetLookAtPt());
+
+		g_Camera.FrameMove(0);
+	}
+}
+
 #ifdef SERVER_APP
 
 //--------------------------------------------------------------------------------------
@@ -465,7 +512,8 @@ int InitWebRTC()
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(&client, &wnd, &FrameUpdate, g_videoHelper));
+		new rtc::RefCountedObject<Conductor>(
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;
