@@ -12,7 +12,8 @@ namespace Toolkit3DLibrary
 		~VideoTestRunner();
 		void									InitializeTest();
 		void									StartTestRunner(IDXGISwapChain* swapChain);
-		void									IncrementTestRunner();
+		void									IncrementTest();
+		void									IncrementTestSuite();
 		bool									IsNewTest();
 		bool									TestsComplete();
 		void									TestCapture();
@@ -32,7 +33,9 @@ namespace Toolkit3DLibrary
 		EncodeConfig							m_maxEncodeConfig;
 		EncodeConfig							m_stepEncodeConfig;
 		bool									m_lastTest;
-		bool									m_testsComplete;
+		bool									m_testSuiteComplete;
+		bool									m_testRunComplete;
+		int										m_currentSuite;
 		int										m_currentFrame;
 		bool								    m_initialized;
 		char*									m_fileName;
