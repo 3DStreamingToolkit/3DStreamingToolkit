@@ -50,7 +50,7 @@ public:
 
 	Conductor(PeerConnectionClient* client, MainWindow* main_window,
 		void (*frame_update_func)(), void (*input_update_func)(const std::string&), 
-		Toolkit3DLibrary::VideoHelper* video_helper);
+		Toolkit3DLibrary::VideoHelper* video_helper, bool is_server_app);
 
 	bool connection_active() const;
 
@@ -72,6 +72,7 @@ protected:
 	void AddStreams();
 
 	std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
+	std::unique_ptr<cricket::VideoCapturer> OpenFakeVideoCaptureDevice();
 
 	//-------------------------------------------------------------------------
 	// PeerConnectionObserver implementation.
@@ -153,6 +154,7 @@ protected:
 	void (*frame_update_func_)();
 	void (*input_update_func_)(const std::string&);
 	Toolkit3DLibrary::VideoHelper* video_helper_;
+	bool is_server_app_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
 		active_streams_;
