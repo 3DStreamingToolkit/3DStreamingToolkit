@@ -33,7 +33,7 @@ public:
 		UI_THREAD_CALLBACK = WM_APP + 1,
 	};
 
-	DefaultMainWindow(const char* server, int port, bool auto_connect, bool auto_call, int width = CW_USEDEFAULT, int height = CW_USEDEFAULT);
+	DefaultMainWindow(const char* server, int port, bool auto_connect, bool auto_call, bool is_server_app, int width = CW_USEDEFAULT, int height = CW_USEDEFAULT);
 
 	~DefaultMainWindow();
 
@@ -150,7 +150,9 @@ protected:
 		LISTBOX_ID,
 	};
 
-	void OnPaint();
+	void OnClientAppPaint();
+
+	void OnServerAppPaint();
 
 	void OnDestroyed();
 
@@ -174,6 +176,7 @@ protected:
 	void HandleTabbing();
 
 private:
+	bool is_server_app_;
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;
 	UI ui_;

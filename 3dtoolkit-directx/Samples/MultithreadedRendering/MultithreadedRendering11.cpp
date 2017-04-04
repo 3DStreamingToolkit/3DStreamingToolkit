@@ -27,7 +27,7 @@
 #include "VideoHelper.h"
 #endif // TEST_RUNNER
 
-#ifdef SERVER_APP
+#ifdef REMOTE_RENDERING
 #include "conductor.h"
 #include "default_main_window.h"
 #include "flagdefs.h"
@@ -36,7 +36,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/win32socketserver.h"
-#endif // SERVER_APP
+#endif // REMOTE_RENDERING
 
 #include "rapidjson/document.h"
 
@@ -479,7 +479,7 @@ void InputUpdate(const std::string& message)
 	}
 }
 
-#ifdef SERVER_APP
+#ifdef REMOTE_RENDERING
 
 //--------------------------------------------------------------------------------------
 // WebRTC
@@ -490,8 +490,13 @@ int InitWebRTC()
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
+#ifdef SERVER_APP
 	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
-		1280, 720);
+		true, 1280, 720);
+#else // SERVER_APP
+	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+		false, 1280, 720);
+#endif // SERVER_APP
 
 	if (!wnd.Create())
 	{
@@ -511,9 +516,16 @@ int InitWebRTC()
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
+
+#ifdef SERVER_APP
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
+			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper, true));
+#else // SERVER_APP
+	rtc::scoped_refptr<Conductor> conductor(
+		new rtc::RefCountedObject<Conductor>(
+			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper, false));
+#endif // SERVER_APP
 
 	// Main loop.
 	MSG msg;
@@ -545,7 +557,7 @@ int InitWebRTC()
 	return 0;
 }
 
-#endif // SERVER_APP
+#endif // REMOTE_RENDERING
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -577,7 +589,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     
-#ifndef SERVER_APP
+#ifndef REMOTE_RENDERING
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 #ifdef STEREO_OUTPUT_MODE
@@ -597,9 +609,9 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
-#else // SERVER_APP
+#else // REMOTE_RENDERING
 	return InitWebRTC();
-#endif // SERVER_APP
+#endif // REMOTE_RENDERING
 }
 
 
@@ -2591,8 +2603,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		g_Camera.Reset();
 	}
 #else // TEST_RUNNER
-	//Captures frame
+#ifndef REMOTE_RENDERING
+	// Captures frame.
 	g_videoHelper->Capture();
+#endif // REMOTE_RENDERING
 #endif // TEST_RUNNER
 }
 
