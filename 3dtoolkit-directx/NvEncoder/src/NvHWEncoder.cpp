@@ -1005,6 +1005,10 @@ GUID CNvHWEncoder::GetPresetGUID(char* encoderPreset, int codec)
 	{
 		presetGUID = NV_ENC_PRESET_LOW_LATENCY_DEFAULT_GUID;
 	}
+	else if (encoderPreset && (stricmp(encoderPreset, "bluray") == 0))
+	{
+		presetGUID = NV_ENC_PRESET_BD_GUID;
+	}
 	else {
         if (encoderPreset)
             PRINTERR("Unsupported preset guid %s\n", encoderPreset);

@@ -16,7 +16,7 @@
 #error "DXUT requires a Unicode build."
 #endif
 //Static define here, also defined as a build configuration
-#define TEST_RUNNER
+//#define TEST_RUNNER
 
 #define STEREO_OUTPUT_MODE
 #define IPD				2.0f
