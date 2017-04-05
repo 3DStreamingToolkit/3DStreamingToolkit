@@ -138,7 +138,7 @@
       <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;WEBRTC_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\Toolkit3DLibrary;..\3dtoolkit-directx\Toolkit3DLibrary\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
