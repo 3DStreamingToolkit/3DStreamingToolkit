@@ -3,8 +3,6 @@
 // Static define here, also defined as a build configuration
 //#define TEST_RUNNER
 
-#define STEREO_OUTPUT_MODE
-
 #define REMOTE_RENDERING
 #ifdef REMOTE_RENDERING
 #define SERVER_APP

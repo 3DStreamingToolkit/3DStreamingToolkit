@@ -297,7 +297,7 @@ int WINAPI wWinMain(
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);
 			}
-#else // TEST_RUNNER
+
 			g_videoHelper->Capture();
 #endif // TEST_RUNNER
 		}

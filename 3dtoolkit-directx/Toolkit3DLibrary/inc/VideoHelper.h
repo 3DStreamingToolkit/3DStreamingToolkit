@@ -90,7 +90,7 @@ namespace Toolkit3DLibrary
 												~VideoHelper();
 												
 		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile = nullptr);
-		NVENCSTATUS								InitializeEncoder(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
+		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
 		NVENCSTATUS                             Deinitialize();
 		NVENCSTATUS								SetEncodeProfile(int profileIndex);
 		void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
@@ -117,6 +117,7 @@ namespace Toolkit3DLibrary
 		ID3D11Texture2D*						m_stagingFrameBuffer;
 		D3D11_TEXTURE2D_DESC					m_stagingFrameBufferDesc;
 
+		NVENCSTATUS								InitializeEncoder(DXGI_SWAP_CHAIN_DESC swapChainDesc, EncodeConfig nvEncodeConfig);
 		NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc);
 		NVENCSTATUS								ReleaseIOBuffers();
 		NVENCSTATUS                             FlushEncoder();
