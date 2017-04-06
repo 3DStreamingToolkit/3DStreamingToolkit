@@ -1262,6 +1262,7 @@ NVENCSTATUS CNvHWEncoder::NvEncFlushEncoderQueue(void *hEOSEvent)
     {
         assert(0);
     }
+
     return nvStatus;
 }
 

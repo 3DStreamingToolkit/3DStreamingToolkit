@@ -2602,11 +2602,9 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		//reset content state here
 		g_Camera.Reset();
 	}
-#else // TEST_RUNNER
-#ifndef REMOTE_RENDERING
+
 	// Captures frame.
 	g_videoHelper->Capture();
-#endif // REMOTE_RENDERING
 #endif // TEST_RUNNER
 }
 

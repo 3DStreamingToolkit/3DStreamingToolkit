@@ -67,17 +67,29 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 		// Relative path
 		m_encodeConfig.outputFileName = outputFile;
 		GetDefaultEncodeConfig(m_encodeConfig);
-		return InitializeEncoder(swapChain, m_encodeConfig);
+		return InitializeEncoder(swapChainDesc, m_encodeConfig);
 	}
 	
 	return NV_ENC_SUCCESS;
 }
 
-NVENCSTATUS VideoHelper::InitializeEncoder(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig) 
+NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig)
+{
+	// Caches the pointer to the swap chain.
+	m_swapChain = swapChain;
+
+	// Gets the swap chain desc.
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	swapChain->GetDesc(&swapChainDesc);
+
+	return InitializeEncoder(swapChainDesc, nvEncodeConfig);
+}
+
+NVENCSTATUS VideoHelper::InitializeEncoder(DXGI_SWAP_CHAIN_DESC swapChainDesc, EncodeConfig nvEncodeConfig)
 {
 	m_encodeConfig = nvEncodeConfig;
-	m_encodeConfig.width = swapChain.BufferDesc.Width;
-	m_encodeConfig.height = swapChain.BufferDesc.Height;
+	m_encodeConfig.width = swapChainDesc.BufferDesc.Width;
+	m_encodeConfig.height = swapChainDesc.BufferDesc.Height;
 	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
 	if (m_encodeConfig.fOutput == NULL)
 	{
@@ -87,24 +99,24 @@ NVENCSTATUS VideoHelper::InitializeEncoder(IDXGISwapChain* swapChain, EncodeConf
 	CHECK_NV_FAILED(m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX));
 
 	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
-	
+
 	//H264 level sets maximum bitrate limits.  4.1 supported by almost all mobile devices.
 	m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_41;
 
 	//Specific mandatory settings for LOSSLESS encoding presets
 	if (m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID ||
-		m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) 
+		m_encodeConfig.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID)
 	{
 		m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
 		m_pNvHWEncoder->m_stEncodeConfig.profileGUID = NV_ENC_H264_PROFILE_HIGH_444_GUID;
 		m_pNvHWEncoder->m_stEncodeConfig.encodeCodecConfig.h264Config.qpPrimeYZeroTransformBypassFlag = 1;
 	}
-	
-	if (nvEncodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_HQ) 
+
+	if (nvEncodeConfig.rcMode == NV_ENC_PARAMS_RC_VBR_HQ)
 	{
 		m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
 	}
-	
+
 	// Prints config info to console.
 	PrintConfig(m_encodeConfig);
 
@@ -113,33 +125,41 @@ NVENCSTATUS VideoHelper::InitializeEncoder(IDXGISwapChain* swapChain, EncodeConf
 
 	m_uEncodeBufferCount = m_encodeConfig.numB + 4;
 
-	CHECK_NV_FAILED(AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height, swapChain));
-	
+	CHECK_NV_FAILED(AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height, swapChainDesc));
+
 	return NV_ENC_SUCCESS;
 }
 
 void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig) 
 {
-	//In bits per second - ignored for lossless presets
+	//In bits per second - ignored for lossless presets.
 	nvEncodeConfig.bitrate = 5000000;
-	//Unused by nvEncode
+
+	//Unused by nvEncode.
 	nvEncodeConfig.startFrameIdx = 0;
-	//Unused by nvEncode
+
+	//Unused by nvEncode.
 	nvEncodeConfig.endFrameIdx = INT_MAX;
 	nvEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
 	nvEncodeConfig.encoderPreset = "losslessHP";
-	//Infinite needed for low latency encoding
+
+	//Infinite needed for low latency encoding.
 	nvEncodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
-	//DeviceType 1 = Force CUDA
+
+	//DeviceType 1 = Force CUDA.
 	nvEncodeConfig.deviceType = 0;
-	//Only supported codec for WebRTC
+
+	//Only supported codec for WebRTC.
 	nvEncodeConfig.codec = NV_ENC_H264;
 	nvEncodeConfig.fps = 60;
-	//Quantization Parameter - must be 0 for lossless
+
+	//Quantization Parameter - must be 0 for lossless.
 	nvEncodeConfig.qp = 0;
-	//Must be set to frame
+
+	//Must be set to frame.
 	nvEncodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
-	//Initial QP factors for bitrate spinup
+
+	//Initial QP factors for bitrate spinup.
 	nvEncodeConfig.i_quant_factor = DEFAULT_I_QFACTOR;
 	nvEncodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
 	nvEncodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
@@ -147,13 +167,16 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig)
 	nvEncodeConfig.intraRefreshEnableFlag = true;
 	nvEncodeConfig.intraRefreshPeriod = 60;
 	nvEncodeConfig.intraRefreshDuration = 3;
+
 	//Enable temporal Adaptive Quantization
 	//Shifts quantization matrix based on complexity of frame over time
 	nvEncodeConfig.enableTemporalAQ = true;
+
 	//Need this to be able to recover from stream drops
 	//Client needs to send back a last good timestamp, and we call
 	//NvEncInvalidateRefFrames(encoder,timestamp) to reissue I frame
 	nvEncodeConfig.invalidateRefFramesEnableFlag = true;
+
 	//NV_ENC_H264_PROFILE_HIGH_444_GUID
 	SetEncodeProfile(2);
 }
@@ -161,8 +184,8 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig)
 // Cleanup resources.
 NVENCSTATUS VideoHelper::Deinitialize()
 {
-	FlushEncoder();
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	FlushEncoder();
 	ReleaseIOBuffers();
 	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
 	return nvStatus;
@@ -174,6 +197,7 @@ void VideoHelper::Capture()
 	// Try to process the pending input buffers.
 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	EncodeBuffer* pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
+
 	if (!pEncodeBuffer)
 	{
 		pEncodeBuffer = m_EncodeBufferQueue.GetPending();
@@ -189,7 +213,6 @@ void VideoHelper::Capture()
 		pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
 	}
 
-	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
 	HRESULT hr = m_swapChain->GetBuffer(0,
 		__uuidof(ID3D11Texture2D),

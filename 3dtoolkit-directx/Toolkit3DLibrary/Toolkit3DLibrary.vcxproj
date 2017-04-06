@@ -100,32 +100,32 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -134,7 +134,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;_USRDLL;TOOLKIT3DLIBRARY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\NvEncoder\inc;WebRTC\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;..\NvEncoder\inc;WebRTC\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -167,8 +167,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TOOLKIT3DLIBRARY_EXPORTS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;..\NvEncoder\inc;WebRTC\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -184,9 +185,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TOOLKIT3DLIBRARY_EXPORTS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;TOOLKIT3DLIBRARY_EXPORTS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\NvEncoder\inc;WebRTC\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;..\NvEncoder\inc;WebRTC\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -250,16 +251,24 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="VideoHelper.cpp" />
+    <ClCompile Include="src\VideoHelper.cpp" />
     <ClCompile Include="WebRTC\conductor.cpp" />
     <ClCompile Include="WebRTC\defaults.cpp" />
     <ClCompile Include="WebRTC\default_main_window.cpp" />
     <ClCompile Include="WebRTC\peer_connection_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="defs.h" />
+    <ClInclude Include="inc\defs.h" />
+    <ClInclude Include="inc\macros.h" />
+    <ClInclude Include="inc\VideoHelper.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="WebRTC\conductor.h" />
+    <ClInclude Include="WebRTC\defaults.h" />
+    <ClInclude Include="WebRTC\default_main_window.h" />
     <ClInclude Include="WebRTC\fakevideocapturer.h" />
+    <ClInclude Include="WebRTC\flagdefs.h" />
+    <ClInclude Include="WebRTC\main_window.h" />
+    <ClInclude Include="WebRTC\peer_connection_client.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">

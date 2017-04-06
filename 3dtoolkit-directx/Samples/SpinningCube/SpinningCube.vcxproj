@@ -100,32 +100,32 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -135,7 +135,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary;..\..\NvEncoder\inc;..\..\Toolkit3DLibrary\WebRTC\inc;..\..\Toolkit3DLibrary\WebRTC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;..\..\Toolkit3DLibrary\WebRTC\inc;..\..\Toolkit3DLibrary\WebRTC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -181,16 +181,16 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;..\..\Toolkit3DLibrary\WebRTC\inc;..\..\Toolkit3DLibrary\WebRTC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>
-      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\Toolkit3DLibrary\WebRTC\libs\Win32\Release</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y $(OutDir)*.cso $(ProjectDir)</Command>
@@ -206,7 +206,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;TEST_RUNNER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary;..\..\NvEncoder\inc;..\..\Toolkit3DLibrary\WebRTC\inc;..\..\Toolkit3DLibrary\WebRTC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(IntermediateOutputPath);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;..\..\Toolkit3DLibrary\WebRTC\inc;..\..\Toolkit3DLibrary\WebRTC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
