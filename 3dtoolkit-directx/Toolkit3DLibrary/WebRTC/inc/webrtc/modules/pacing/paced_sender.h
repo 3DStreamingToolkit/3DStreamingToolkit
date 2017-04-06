@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/optional.h"
 #include "webrtc/base/thread_annotations.h"
 #include "webrtc/modules/include/module.h"
@@ -25,8 +26,8 @@ namespace webrtc {
 class AlrDetector;
 class BitrateProber;
 class Clock;
-class CriticalSectionWrapper;
 class ProbeClusterCreatedObserver;
+class RtcEventLog;
 
 namespace paced_sender {
 class IntervalBudget;
@@ -68,7 +69,9 @@ class PacedSender : public Module, public RtpPacketSender {
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
 
-  PacedSender(const Clock* clock, PacketSender* packet_sender);
+  PacedSender(const Clock* clock,
+              PacketSender* packet_sender,
+              RtcEventLog* event_log);
 
   virtual ~PacedSender();
 
@@ -159,7 +162,7 @@ class PacedSender : public Module, public RtpPacketSender {
   PacketSender* const packet_sender_;
   std::unique_ptr<AlrDetector> alr_detector_ GUARDED_BY(critsect_);
 
-  std::unique_ptr<CriticalSectionWrapper> critsect_;
+  rtc::CriticalSection critsect_;
   bool paused_ GUARDED_BY(critsect_);
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.

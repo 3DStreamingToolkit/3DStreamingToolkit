@@ -520,11 +520,11 @@ int InitWebRTC()
 #ifdef SERVER_APP
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper, true));
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, true));
 #else // SERVER_APP
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper, false));
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, false));
 #endif // SERVER_APP
 
 	// Main loop.

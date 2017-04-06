@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 
+#include "webrtc/api/audio_codecs/audio_format.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/deprecation.h"
 #include "webrtc/modules/rtp_rtcp/source/rtp_receiver_strategy.h"
@@ -43,6 +44,10 @@ class RTPPayloadRegistry {
 
   // TODO(magjed): Split RTPPayloadRegistry into separate Audio and Video class
   // and simplify the code. http://crbug/webrtc/6743.
+
+  // Replace all audio receive payload types with the given map.
+  void SetAudioReceivePayloads(std::map<int, SdpAudioFormat> codecs);
+
   int32_t RegisterReceivePayload(const CodecInst& audio_codec,
                                  bool* created_new_payload_type);
   int32_t RegisterReceivePayload(const VideoCodec& video_codec);
@@ -138,6 +143,13 @@ class RTPPayloadRegistry {
   // Only warn once per payload type, if an RTX packet is received but
   // no associated payload type found in |rtx_payload_type_map_|.
   std::set<int> payload_types_with_suppressed_warnings_ GUARDED_BY(crit_sect_);
+
+  // As a first step in splitting this class up in separate cases for audio and
+  // video, DCHECK that no instance is used for both audio and video.
+#if RTC_DCHECK_IS_ON
+  bool used_for_audio_ GUARDED_BY(crit_sect_) = false;
+  bool used_for_video_ GUARDED_BY(crit_sect_) = false;
+#endif
 };
 
 }  // namespace webrtc

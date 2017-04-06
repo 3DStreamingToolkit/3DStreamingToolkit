@@ -33,6 +33,7 @@ class RtpPacketSender;
 class RtpPacketReceived;
 class RtpReceiver;
 class RtpRtcp;
+class RtpTransportControllerSendInterface;
 class Transport;
 class TransportFeedbackObserver;
 
@@ -62,13 +63,12 @@ class ChannelProxy {
   virtual void EnableSendTransportSequenceNumber(int id);
   virtual void EnableReceiveTransportSequenceNumber(int id);
   virtual void RegisterSenderCongestionControlObjects(
-      RtpPacketSender* rtp_packet_sender,
-      TransportFeedbackObserver* transport_feedback_observer,
-      PacketRouter* packet_router,
+      RtpTransportControllerSendInterface* transport,
       RtcpBandwidthObserver* bandwidth_observer);
   virtual void RegisterReceiverCongestionControlObjects(
       PacketRouter* packet_router);
-  virtual void ResetCongestionControlObjects();
+  virtual void ResetSenderCongestionControlObjects();
+  virtual void ResetReceiverCongestionControlObjects();
   virtual CallStatistics GetRTCPStatistics() const;
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
   virtual NetworkStatistics GetNetworkStatistics() const;
@@ -82,6 +82,7 @@ class ChannelProxy {
   virtual void SetBitrate(int bitrate_bps, int64_t probing_interval_ms);
   virtual void SetRecPayloadType(int payload_type,
                                  const SdpAudioFormat& format);
+  virtual void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
   virtual void SetSink(std::unique_ptr<AudioSinkInterface> sink);
   virtual void SetInputMute(bool muted);
   virtual void RegisterExternalTransport(Transport* transport);
@@ -116,6 +117,10 @@ class ChannelProxy {
   virtual bool SetOpusMaxPlaybackRate(int frequency_hz);
   virtual bool SetSendCodec(const CodecInst& codec_inst);
   virtual bool SetSendCNPayloadType(int type, PayloadFrequencies frequency);
+  virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
+  virtual void OnRecoverableUplinkPacketLossRate(
+      float recoverable_packet_loss_rate);
+  virtual void RegisterLegacyReceiveCodecs();
 
  private:
   Channel* channel() const;

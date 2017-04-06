@@ -55,6 +55,7 @@ class VideoQualityTest : public test::CallTest {
     struct Audio {
       bool enabled;
       bool sync_video;
+      bool dtx;
     } audio;
     struct Screenshare {
       bool enabled;
@@ -145,7 +146,7 @@ class VideoQualityTest : public test::CallTest {
   int send_logs_;
 
   VideoSendStream::DegradationPreference degradation_preference_ =
-      VideoSendStream::DegradationPreference::kBalanced;
+      VideoSendStream::DegradationPreference::kMaintainFramerate;
   Params params_;
 };
 

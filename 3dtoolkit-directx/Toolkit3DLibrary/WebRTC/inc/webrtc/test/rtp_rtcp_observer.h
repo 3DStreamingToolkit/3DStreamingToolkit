@@ -67,6 +67,7 @@ class RtpRtcpObserver {
   }
 
  protected:
+  RtpRtcpObserver() : RtpRtcpObserver(0) {}
   explicit RtpRtcpObserver(int event_timeout_ms)
       : observation_complete_(false, false),
         parser_(RtpHeaderParser::Create()),
@@ -93,8 +94,9 @@ class PacketTransport : public test::DirectTransport {
   PacketTransport(Call* send_call,
                   RtpRtcpObserver* observer,
                   TransportType transport_type,
+                  MediaType media_type,
                   const FakeNetworkPipe::Config& configuration)
-      : test::DirectTransport(configuration, send_call),
+      : test::DirectTransport(configuration, send_call, media_type),
         observer_(observer),
         transport_type_(transport_type) {}
 
