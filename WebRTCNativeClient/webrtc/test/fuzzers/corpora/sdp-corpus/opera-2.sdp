@@ -42,7 +42,6 @@ a=extmap:3 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
 a=extmap:4 urn:3gpp:video-orientation
 a=recvonly
 a=rtcp-mux
-a=rtpmap:100 VP8/90000
 a=rtcp-fb:100 ccm fir
 a=rtcp-fb:100 nack
 a=rtcp-fb:100 nack pli

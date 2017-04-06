@@ -67,7 +67,7 @@ int NumTemporalLayers() {
 }
 
 // Flags common with screenshare loopback, with equal default values.
-DEFINE_string(codec, "VP8", "Video codec to use.");
+DEFINE_string(codec, "H264", "Video codec to use.");
 std::string Codec() {
   return static_cast<std::string>(FLAGS_codec);
 }
@@ -283,7 +283,7 @@ void Loopback() {
   }
 }
 }  // namespace webrtc
-
+#if 1
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   google::ParseCommandLineFlags(&argc, &argv, true);
@@ -292,3 +292,4 @@ int main(int argc, char* argv[]) {
   webrtc::test::RunTest(webrtc::Loopback);
   return 0;
 }
+#endif
