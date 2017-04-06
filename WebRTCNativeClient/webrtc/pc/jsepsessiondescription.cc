@@ -42,8 +42,8 @@ const char SessionDescriptionInterface::kOffer[] = "offer";
 const char SessionDescriptionInterface::kPrAnswer[] = "pranswer";
 const char SessionDescriptionInterface::kAnswer[] = "answer";
 
-const int JsepSessionDescription::kDefaultVideoCodecId = 100;
-const char JsepSessionDescription::kDefaultVideoCodecName[] = "VP8";
+const int JsepSessionDescription::kDefaultVideoCodecId = 107;
+const char JsepSessionDescription::kDefaultVideoCodecName[] = "H264";
 
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       const std::string& sdp,

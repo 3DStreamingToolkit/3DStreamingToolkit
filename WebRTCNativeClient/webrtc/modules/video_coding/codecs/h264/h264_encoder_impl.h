@@ -19,9 +19,24 @@
 #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
 #include "webrtc/modules/video_coding/utility/quality_scaler.h"
 
-#include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
+//#define USEOPENH264 1
+//#define USEX264 1
 
+// #include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
+#if USEOPENH264
+ #include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
 class ISVCEncoder;
+#elif USEX264
+//#define __STDC_CONSTANT_MACROS
+//x264 and ffmpeg headers
+extern "C"
+ {
+	+#include "third_party/x264/x264.h"
+		+ #include "third_party/ffmpeg/libavcodec/avcodec.h"
+		+ #include "third_party/ffmpeg/libavformat/avformat.h"
+		+ #include "third_party/ffmpeg/libswscale/swscale.h"
+		+ }
+#endif
 
 namespace webrtc {
 
@@ -68,14 +83,26 @@ class H264EncoderImpl : public H264Encoder {
 
  private:
   bool IsInitialized() const;
+#if USEOPENH264
   SEncParamExt CreateEncoderParams() const;
+#endif
 
   webrtc::H264BitstreamParser h264_bitstream_parser_;
   // Reports statistics with histograms.
   void ReportInit();
   void ReportError();
 
-  ISVCEncoder* openh264_encoder_;
+#if USEOPENH264
+  ISVCEncoder* encoder_;
+#elif  USEX264
+  //x264
+  x264_picture_t pic;
+  x264_picture_t pic_out;
+  x264_t *encoder_;
+  int i_frame = 0;
+  x264_nal_t *nal;
+#endif
+
   // Settings that are used by this encoder.
   int width_;
   int height_;
@@ -89,7 +116,9 @@ class H264EncoderImpl : public H264Encoder {
   H264PacketizationMode packetization_mode_;
 
   size_t max_payload_size_;
+#if USEOPENH264 || USEX264
   int32_t number_of_cores_;
+#endif
 
   EncodedImage encoded_image_;
   std::unique_ptr<uint8_t[]> encoded_image_buffer_;
