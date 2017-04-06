@@ -18,13 +18,8 @@ using PeerConnectionClient.Signalling;
 using WebRtcWrapper;
 using System.Threading.Tasks;
 
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
 namespace WebRtcIntegration
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainPage : Page
     {
         private WebRtcUtils _webRtcUtils;        
@@ -35,9 +30,9 @@ namespace WebRtcIntegration
             _webRtcUtils = new WebRtcUtils();
             _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
             _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
+            _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;            
             _webRtcUtils.PeerVideo = PeerVideo;
             _webRtcUtils.SelfVideo = SelfVideo;
-            
             _webRtcUtils.Initialize();
         }
 
@@ -47,6 +42,13 @@ namespace WebRtcIntegration
                 Windows.UI.Core.CoreDispatcherPriority.Normal,
                 handler
             );
+        }
+        private void _webRtcUtils_OnStatusMessageUpdate(string msg)
+        {
+            RunOnUi(() =>
+            {
+                StatusTextBox.Text += string.Format("{0}\n", msg);
+            });
         }
 
         private void _webRtcUtils_OnPeerMessageDataReceived(int peerId, string message)
@@ -66,27 +68,33 @@ namespace WebRtcIntegration
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
-            _webRtcUtils.ConnectCommand.Execute(PeerTextBox.Text);
+            _webRtcUtils.ConnectCommandExecute(PeerTextBox.Text);            
         }
 
         private void DisconnectButton_Click(object sender, RoutedEventArgs e)
         {
-            _webRtcUtils.DisconnectFromServerCommand.Execute(null);        }
+            _webRtcUtils.DisconnectFromServerExecute(null);            
+        }
 
         private void ConnectToPeerButton_Click(object sender, RoutedEventArgs e)
         {
             _webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
-            _webRtcUtils.ConnectToPeerCommand.Execute(null);
+            _webRtcUtils.ConnectToPeerCommandExecute(null);            
         }
 
         private void SendMessageButton_Click(object sender, RoutedEventArgs e)
         {
-            _webRtcUtils.SendPeerMessageDataCommand.Execute(SendMessageTextBox.Text);
+            _webRtcUtils.SendPeerMessageDataExecute(SendMessageTextBox.Text);            
         }
 
         private void ClearStatusTextButton_Click(object sender, RoutedEventArgs e)
         {
             StatusTextBox.Text = string.Empty;
+        }
+
+        private void ClearPeerMessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            PeerMessageTextBox.Text = string.Empty;
         }
     }
 }
