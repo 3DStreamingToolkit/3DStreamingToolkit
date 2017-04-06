@@ -434,7 +434,6 @@ enum RawVideoType {
 };
 
 // Video codec
-enum { kConfigParameterSize = 128 };
 enum { kPayloadNameSize = 32 };
 enum { kMaxSimulcastStreams = 4 };
 enum { kMaxSpatialLayers = 5 };
@@ -461,8 +460,8 @@ enum VP8ResilienceMode {
 class TemporalLayersFactory;
 // VP8 specific
 struct VideoCodecVP8 {
+  // TODO(nisse): Unused, delete?
   bool pictureLossIndicationOn;
-  bool feedbackModeOn;
   VideoCodecComplexity complexity;
   VP8ResilienceMode resilience;
   unsigned char numberOfTemporalLayers;

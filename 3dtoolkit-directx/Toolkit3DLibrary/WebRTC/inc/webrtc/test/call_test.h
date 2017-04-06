@@ -59,6 +59,23 @@ class CallTest : public ::testing::Test {
   static const int kNackRtpHistoryMs;
 
  protected:
+  // Needed for tests sending both audio and video on the same
+  // FakeNetworkPipe. We then need to set correct MediaType based on
+  // packet payload type, before passing the packet on to Call.
+  class PayloadDemuxer : public PacketReceiver {
+   public:
+    PayloadDemuxer() = default;
+
+    void SetReceiver(PacketReceiver* receiver);
+    DeliveryStatus DeliverPacket(MediaType media_type,
+                                 const uint8_t* packet,
+                                 size_t length,
+                                 const PacketTime& packet_time) override;
+
+   private:
+    PacketReceiver* receiver_ = nullptr;
+  };
+
   // RunBaseTest overwrites the audio_state and the voice_engine of the send and
   // receive Call configs to simplify test code and avoid having old VoiceEngine
   // APIs in the tests.
@@ -83,7 +100,9 @@ class CallTest : public ::testing::Test {
                                              int width,
                                              int height);
   void CreateFrameGeneratorCapturer(int framerate, int width, int height);
-  void CreateFakeAudioDevices();
+  void CreateFakeAudioDevices(
+      std::unique_ptr<FakeAudioDevice::Capturer> capturer,
+      std::unique_ptr<FakeAudioDevice::Renderer> renderer);
 
   void CreateVideoStreams();
   void CreateAudioStreams();
@@ -122,6 +141,9 @@ class CallTest : public ::testing::Test {
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   test::FakeVideoRenderer fake_renderer_;
 
+  PayloadDemuxer receive_demuxer_;
+  PayloadDemuxer send_demuxer_;
+
  private:
   // TODO(holmer): Remove once VoiceEngine is fully refactored to the new API.
   // These methods are used to set up legacy voice engines and channels which is
@@ -150,6 +172,7 @@ class CallTest : public ::testing::Test {
 
 class BaseTest : public RtpRtcpObserver {
  public:
+  BaseTest();
   explicit BaseTest(unsigned int timeout_ms);
   virtual ~BaseTest();
 
@@ -160,10 +183,19 @@ class BaseTest : public RtpRtcpObserver {
   virtual size_t GetNumAudioStreams() const;
   virtual size_t GetNumFlexfecStreams() const;
 
+  virtual std::unique_ptr<FakeAudioDevice::Capturer> CreateCapturer();
+  virtual std::unique_ptr<FakeAudioDevice::Renderer> CreateRenderer();
+  virtual void OnFakeAudioDevicesCreated(FakeAudioDevice* send_audio_device,
+                                         FakeAudioDevice* recv_audio_device);
+
   virtual Call::Config GetSenderCallConfig();
   virtual Call::Config GetReceiverCallConfig();
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
+  // Returns VIDEO for video-only tests, AUDIO for audio-only tests,
+  // and ANY for tests sending audio and video over the same
+  // transport.
+  virtual MediaType SelectMediaType();
   virtual test::PacketTransport* CreateSendTransport(Call* sender_call);
   virtual test::PacketTransport* CreateReceiveTransport();
 
@@ -193,6 +225,8 @@ class BaseTest : public RtpRtcpObserver {
   virtual void OnFrameGeneratorCapturerCreated(
       FrameGeneratorCapturer* frame_generator_capturer);
 
+  virtual void OnTestFinished();
+
   webrtc::RtcEventLogNullImpl event_log_;
 };
 
@@ -205,6 +239,7 @@ class SendTest : public BaseTest {
 
 class EndToEndTest : public BaseTest {
  public:
+  EndToEndTest();
   explicit EndToEndTest(unsigned int timeout_ms);
 
   bool ShouldCreateReceivers() const override;

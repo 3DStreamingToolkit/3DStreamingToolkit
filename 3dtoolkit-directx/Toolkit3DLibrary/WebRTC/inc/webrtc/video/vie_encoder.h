@@ -11,11 +11,13 @@
 #ifndef WEBRTC_VIDEO_VIE_ENCODER_H_
 #define WEBRTC_VIDEO_VIE_ENCODER_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "webrtc/api/video/video_rotation.h"
+#include "webrtc/api/video_codecs/video_encoder.h"
 #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/event.h"
 #include "webrtc/base/sequenced_task_checker.h"
@@ -30,7 +32,6 @@
 #include "webrtc/system_wrappers/include/atomic32.h"
 #include "webrtc/typedefs.h"
 #include "webrtc/video/overuse_frame_detector.h"
-#include "webrtc/video_encoder.h"
 #include "webrtc/video_send_stream.h"
 
 namespace webrtc {
@@ -62,7 +63,9 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   };
 
   // Downscale resolution at most 2 times for CPU reasons.
-  static const int kMaxCpuDowngrades = 2;
+  static const int kMaxCpuResolutionDowngrades = 2;
+  // Downscale framerate at most 4 times.
+  static const int kMaxCpuFramerateDowngrades = 4;
 
   ViEEncoder(uint32_t number_of_cores,
              SendStatisticsProxy* stats_proxy,
@@ -106,8 +109,6 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   // virtual to test EncoderStateFeedback with mocks.
   virtual void OnReceivedIntraFrameRequest(size_t stream_index);
-  virtual void OnReceivedSLI(uint8_t picture_id);
-  virtual void OnReceivedRPSI(uint64_t picture_id);
 
   void OnBitrateUpdated(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
@@ -174,6 +175,11 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void TraceFrameDropStart();
   void TraceFrameDropEnd();
 
+  const std::vector<int>& GetScaleCounters()
+      EXCLUSIVE_LOCKS_REQUIRED(&encoder_queue_);
+  void IncrementScaleCounter(int reason, int delta)
+      EXCLUSIVE_LOCKS_REQUIRED(&encoder_queue_);
+
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
@@ -210,14 +216,13 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   bool nack_enabled_ ACCESS_ON(&encoder_queue_);
   uint32_t last_observed_bitrate_bps_ ACCESS_ON(&encoder_queue_);
   bool encoder_paused_and_dropped_frame_ ACCESS_ON(&encoder_queue_);
-  bool has_received_sli_ ACCESS_ON(&encoder_queue_);
-  uint8_t picture_id_sli_ ACCESS_ON(&encoder_queue_);
-  bool has_received_rpsi_ ACCESS_ON(&encoder_queue_);
-  uint64_t picture_id_rpsi_ ACCESS_ON(&encoder_queue_);
   Clock* const clock_;
   // Counters used for deciding if the video resolution is currently
-  // restricted, and if so, why.
-  std::vector<int> scale_counter_ ACCESS_ON(&encoder_queue_);
+  // restricted, and if so, why, on a per degradation preference basis.
+  // TODO(sprang): Replace this with a state holding a relative overuse measure
+  // instead, that can be translated into suitable down-scale or fps limit.
+  std::map<const VideoSendStream::DegradationPreference, std::vector<int>>
+      scale_counters_ ACCESS_ON(&encoder_queue_);
   // Set depending on degradation preferences
   VideoSendStream::DegradationPreference degradation_preference_
       ACCESS_ON(&encoder_queue_);
@@ -225,6 +230,8 @@ class ViEEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.
     int input_pixel_count_;
+    // Framerate received from the source at the time of the adaptation.
+    int framerate_fps_;
     // Indicates if request was to adapt up or down.
     enum class Mode { kAdaptUp, kAdaptDown } mode_;
   };

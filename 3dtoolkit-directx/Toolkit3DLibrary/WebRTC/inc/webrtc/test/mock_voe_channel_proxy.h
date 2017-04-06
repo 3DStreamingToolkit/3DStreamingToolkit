@@ -30,14 +30,13 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD2(SetReceiveAudioLevelIndicationStatus, void(bool enable, int id));
   MOCK_METHOD1(EnableSendTransportSequenceNumber, void(int id));
   MOCK_METHOD1(EnableReceiveTransportSequenceNumber, void(int id));
-  MOCK_METHOD4(RegisterSenderCongestionControlObjects,
-               void(RtpPacketSender* rtp_packet_sender,
-                    TransportFeedbackObserver* transport_feedback_observer,
-                    PacketRouter* packet_router,
+  MOCK_METHOD2(RegisterSenderCongestionControlObjects,
+               void(RtpTransportControllerSendInterface* transport,
                     RtcpBandwidthObserver* bandwidth_observer));
   MOCK_METHOD1(RegisterReceiverCongestionControlObjects,
                void(PacketRouter* packet_router));
-  MOCK_METHOD0(ResetCongestionControlObjects, void());
+  MOCK_METHOD0(ResetSenderCongestionControlObjects, void());
+  MOCK_METHOD0(ResetReceiverCongestionControlObjects, void());
   MOCK_CONST_METHOD0(GetRTCPStatistics, CallStatistics());
   MOCK_CONST_METHOD0(GetRemoteRTCPReportBlocks, std::vector<ReportBlock>());
   MOCK_CONST_METHOD0(GetNetworkStatistics, NetworkStatistics());
@@ -87,6 +86,11 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(SetSendCodec, bool(const CodecInst& codec_inst));
   MOCK_METHOD2(SetSendCNPayloadType,
                bool(int type, PayloadFrequencies frequency));
+  MOCK_METHOD1(SetReceiveCodecs,
+               void(const std::map<int, SdpAudioFormat>& codecs));
+  MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
+  MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
+               void(float recoverable_packet_loss_rate));
 };
 }  // namespace test
 }  // namespace webrtc
