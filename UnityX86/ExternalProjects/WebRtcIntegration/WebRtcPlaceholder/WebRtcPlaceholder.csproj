@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WebRtcWrapper</RootNamespace>
-    <AssemblyName>WebRtcPlaceholder</AssemblyName>
+    <AssemblyName>WebRtcWrapper</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -38,8 +38,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="WebRtcPlaceholder.cs" />
     <Compile Include="WebRtcUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WebRtcWrapper\Placeholder</PostBuildEvent>
+  </PropertyGroup>
 </Project>

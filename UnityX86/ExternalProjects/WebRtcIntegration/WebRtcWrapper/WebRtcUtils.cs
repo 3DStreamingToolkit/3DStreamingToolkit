@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Data.Json;
+using Windows.Media.Core;
 using Windows.Storage;
 using Windows.UI.Core;
 using Windows.UI.Popups;
@@ -25,8 +27,11 @@ namespace WebRtcWrapper
     {
         public event Action OnInitialized;
         public event Action<int, string> OnPeerMessageDataReceived;
+        public event Action<string> OnStatusMessageUpdate;
         public MediaElement SelfVideo;
-        public MediaElement PeerVideo;
+        public MediaElement PeerVideo;        
+        public RawVideoSource rawVideo;
+        public int rawVideoCounter = 0;
 
         // Message Data Type
         private static readonly string kMessageDataType = "message";
@@ -116,6 +121,8 @@ namespace WebRtcWrapper
                     IsMicrophoneEnabled = true;
                     IsCameraEnabled = true;
                     IsConnecting = false;
+
+                    OnStatusMessageUpdate?.Invoke("Signed-In");
                 });
             };
 
@@ -138,6 +145,7 @@ namespace WebRtcWrapper
                     IsCameraEnabled = false;
                     IsDisconnecting = false;
                     Peers?.Clear();
+                    OnStatusMessageUpdate?.Invoke("Disconnected");
                 });
             };
 
@@ -145,7 +153,7 @@ namespace WebRtcWrapper
             {
                 RunOnUiThread(() =>
                 {
-                    // TODO: Handle Message                    
+                    // TODO: Handle All Peer Messages
                 });
             };
 
@@ -161,8 +169,8 @@ namespace WebRtcWrapper
                 {
                     IsReadyToConnect = false;
                     IsConnectedToPeer = true;
-
                     IsReadyToDisconnect = false;
+                    OnStatusMessageUpdate?.Invoke("Peer Connection Created");
                 });
             };
 
@@ -178,6 +186,7 @@ namespace WebRtcWrapper
                     GC.Collect(); // Ensure all references are truly dropped.
                     IsMicrophoneEnabled = true;
                     IsCameraEnabled = true;
+                    OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
                 });
             };
 
@@ -717,8 +726,11 @@ namespace WebRtcWrapper
                             var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
                             RunOnUiThread(() =>
                             {
-                                SelfVideo.SetMediaStreamSource(source);
-                                Debug.WriteLine("Video loopback enabled");
+                                if(SelfVideo != null)
+                                {
+                                    SelfVideo.SetMediaStreamSource(source);
+                                    Debug.WriteLine("Video loopback enabled");
+                                }
                             });
                         }
                     }
@@ -975,7 +987,6 @@ namespace WebRtcWrapper
             }).Start();            
         }
 
-
         private bool ConnectCommandCanExecute(object obj)
         {
             return !IsConnected && !IsConnecting && Ip.Valid && Port.Valid;
@@ -1032,7 +1043,6 @@ namespace WebRtcWrapper
 
             Peers?.Clear();
         }
-
         private bool AddIceServerCanExecute(object obj)
         {
             return NewIceServer.Valid;
@@ -1292,17 +1302,59 @@ namespace WebRtcWrapper
 
         private void Conductor_OnAddRemoteStream(MediaStreamEvent evt)
         {
+            if (PeerVideo == null)
+            {
+                return;
+            }
+
             _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_peerVideoTrack != null)
             {
+                
                 var source = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "PEER");
                 RunOnUiThread(() =>
                 {
                     PeerVideo.SetMediaStreamSource(source);
                 });
+
+                //var media = Media.CreateMedia().GetUserMedia(new RTCMediaStreamConstraints()
+                //{
+                //    videoEnabled = true,
+                //    audioEnabled = false
+                //});
+                //rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
+                //rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;                
             }
 
             IsReadyToDisconnect = true;
+        }
+
+        private void Source_OnRawVideoFrame(
+            uint p0, 
+            uint p1, 
+            byte[] p2, 
+            uint p3, 
+            byte[] p4, 
+            uint p5, 
+            byte[] p6, 
+            uint p7)
+        {
+            RunOnUiThread(() =>
+            {
+                rawVideoCounter++;
+                OnStatusMessageUpdate?.Invoke(string.Format(
+                    "{0}-{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}",
+                    p0, // Width
+                    p1, // Height
+                    p2 != null ? p2.Length.ToString() : "null",
+                    p3,
+                    p4 != null ? p4.Length.ToString() : "null",
+                    p5,
+                    p6 != null ? p6.Length.ToString() : "null",
+                    p7,
+                    rawVideoCounter
+                ));
+            });
         }
 
         private void Conductor_OnRemoveRemoteStream(MediaStreamEvent evt)
@@ -1354,10 +1406,7 @@ namespace WebRtcWrapper
         #endregion
 
         #region Conductor Event Handlers
-        public void ConnectToServer(string server, string port, string peerName)
-        {
-            throw new NotImplementedException();
-        }
+      
         #endregion
 
         #region Utility Methods
