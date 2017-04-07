@@ -23,6 +23,7 @@
     <None Include="DXUT\Optional\DXUTOpt_2012.vcxproj">
       <Filter>DXUT</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MultiDeviceContextDXUTMesh.cpp" />
@@ -137,6 +138,7 @@
     <ClInclude Include="DXUT\Core\DXUT.h">
       <Filter>DXUT</Filter>
     </ClInclude>
+    <ClInclude Include="defs.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

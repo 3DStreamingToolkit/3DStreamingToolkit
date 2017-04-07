@@ -1,6 +1,8 @@
 #pragma once
 
 #include <d3d11.h>
+
+#include "defs.h"
 #include "VideoHelper.h"
 
 namespace Toolkit3DLibrary

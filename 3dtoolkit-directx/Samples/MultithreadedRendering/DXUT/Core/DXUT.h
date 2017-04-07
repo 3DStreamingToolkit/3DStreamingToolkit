@@ -12,14 +12,13 @@
 //--------------------------------------------------------------------------------------
 #pragma once
 
+#include "defs.h"
+
 #ifndef UNICODE
 #error "DXUT requires a Unicode build."
 #endif
 //Static define here, also defined as a build configuration
 //#define TEST_RUNNER
-
-#define STEREO_OUTPUT_MODE
-#define IPD				2.0f
 
 #ifndef STRICT
 #define STRICT
@@ -53,6 +52,10 @@
 
 // Standard Windows includes
 #define NOMINMAX
+
+// Windows headers
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+
 #include <windows.h>
 #include <initguid.h>
 #include <assert.h>
@@ -63,6 +66,10 @@
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <memory.h>
+#include <tchar.h>
 
 // CRT's memory leak detection
 #if defined(DEBUG) || defined(_DEBUG)

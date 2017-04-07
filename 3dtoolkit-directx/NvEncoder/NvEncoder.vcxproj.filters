@@ -1,93 +1,96 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Header Files">
+    <Filter Include="inc">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{c3e13ae0-3b9f-4596-8443-feaf666125e1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\NvHWEncoder.cpp" />
-    <ClCompile Include="src\pch.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="src\NvHWEncoder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\cudaModuleMgr.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\drvapi_error_string.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_builtin_types.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cuda.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cuda_cuda.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cuda_d3d.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cuda_gl.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cudaD3D9.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cudaD3D10.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cudaD3D11.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cudaGL.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_cuviddec.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\dynlink_nvcuvid.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\exception.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\helper_cuda.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\helper_cuda_drvapi.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\helper_functions.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\helper_string.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\helper_timer.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\nvCPUOPSys.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\nvEncodeAPI.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\nvFileIO.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\NvHWEncoder.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\nvUtils.h">
-      <Filter>Header Files</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="src\pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\macros.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="inc\macros.h">
+      <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
