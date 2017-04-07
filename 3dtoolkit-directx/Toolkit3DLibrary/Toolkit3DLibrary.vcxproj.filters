@@ -1,26 +1,65 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Headers">
+    <Filter Include="WebRTC">
+      <UniqueIdentifier>{71197533-b98a-4f1c-8603-5393ec13092b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
       <UniqueIdentifier>{fc03c18e-3374-4407-8529-83c32d24ddf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{9842d50a-0500-4f58-9a77-aa5cc85a2907}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="VideoHelper.cpp" />
+    <ClCompile Include="WebRTC\conductor.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\defaults.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\peer_connection_client.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="WebRTC\default_main_window.cpp">
+      <Filter>WebRTC</Filter>
+    </ClCompile>
+    <ClCompile Include="src\VideoHelper.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inc\macros.h">
-      <Filter>Headers</Filter>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="WebRTC\fakevideocapturer.h">
+      <Filter>WebRTC</Filter>
     </ClInclude>
     <ClInclude Include="inc\defs.h">
-      <Filter>Headers</Filter>
+      <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="inc\pch.h">
-      <Filter>Headers</Filter>
+    <ClInclude Include="inc\macros.h">
+      <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="inc\VideoHelper.h">
-      <Filter>Headers</Filter>
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="WebRTC\conductor.h">
+      <Filter>WebRTC</Filter>
+    </ClInclude>
+    <ClInclude Include="WebRTC\default_main_window.h">
+      <Filter>WebRTC</Filter>
+    </ClInclude>
+    <ClInclude Include="WebRTC\defaults.h">
+      <Filter>WebRTC</Filter>
+    </ClInclude>
+    <ClInclude Include="WebRTC\flagdefs.h">
+      <Filter>WebRTC</Filter>
+    </ClInclude>
+    <ClInclude Include="WebRTC\main_window.h">
+      <Filter>WebRTC</Filter>
+    </ClInclude>
+    <ClInclude Include="WebRTC\peer_connection_client.h">
+      <Filter>WebRTC</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

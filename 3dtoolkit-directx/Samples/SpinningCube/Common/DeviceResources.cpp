@@ -99,12 +99,6 @@ HRESULT DeviceResources::CreateDeviceResources()
 // These resources need to be recreated every time the window size is changed.
 HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 {
-	// Gets the width and height of the window.
-	RECT rc;
-	GetClientRect(hWnd, &rc);
-	UINT width = rc.right - rc.left;
-	UINT height = rc.bottom - rc.top;
-
 	// Obtains DXGI factory from device.
 	HRESULT hr = S_OK;
 	IDXGIDevice* dxgiDevice = nullptr;
@@ -137,10 +131,10 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		swapChainDesc.BufferCount = 2; // Front and back buffer to swap
 		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
-		swapChainDesc.Format = DXGI_FORMAT_R10G10B10A2_UNORM;
+		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		swapChainDesc.Width = width;
-		swapChainDesc.Height = height;
+		swapChainDesc.Width = FRAME_BUFFER_WIDTH;
+		swapChainDesc.Height = FRAME_BUFFER_HEIGHT;
 
 		hr = dxgiFactory2->CreateSwapChainForHwnd(
 			m_d3dDevice, 
@@ -184,28 +178,28 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	m_screenViewport[0] = CD3D11_VIEWPORT(
 		0.0f,
 		0.0f,
-		(FLOAT)width / 2,
-		(FLOAT)height);
+		(FLOAT)FRAME_BUFFER_WIDTH / 2,
+		(FLOAT)FRAME_BUFFER_HEIGHT);
 
 	// Right eye.
 	m_screenViewport[1] = CD3D11_VIEWPORT(
-		(FLOAT)width / 2,
+		(FLOAT)FRAME_BUFFER_WIDTH / 2,
 		0.0f,
-		(FLOAT)width / 2,
-		(FLOAT)height);
+		(FLOAT)FRAME_BUFFER_WIDTH / 2,
+		(FLOAT)FRAME_BUFFER_HEIGHT);
 #else // STEREO_OUTPUT_MODE
 	m_screenViewport = new D3D11_VIEWPORT[1];
 	m_screenViewport[0] = CD3D11_VIEWPORT(
 		0.0f,
 		0.0f,
-		(FLOAT)width,
-		(FLOAT)height);
+		(FLOAT)FRAME_BUFFER_WIDTH,
+		(FLOAT)FRAME_BUFFER_HEIGHT);
 
 	m_d3dContext->RSSetViewports(1, m_screenViewport);
 #endif // STEREO_OUTPUT_MODE
 
-	m_outputSize.cx = width;
-	m_outputSize.cy = height;
+	m_outputSize.cx = FRAME_BUFFER_WIDTH;
+	m_outputSize.cy = FRAME_BUFFER_HEIGHT;
 
 	return hr;
 }

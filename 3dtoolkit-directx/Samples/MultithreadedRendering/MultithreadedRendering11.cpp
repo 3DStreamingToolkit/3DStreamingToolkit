@@ -15,20 +15,36 @@
 #include "SDKMesh.h"
 
 #include <process.h>
-
 #include <algorithm>
+#include <sstream>
+#include <iostream>
 
 #include "MultiDeviceContextDXUTMesh.h"
+
 #ifdef TEST_RUNNER
 #include "VideoTestRunner.h"
-#else
+#else // TEST_RUNNER
 #include "VideoHelper.h"
 #endif // TEST_RUNNER
+
+#ifdef REMOTE_RENDERING
+#include "conductor.h"
+#include "default_main_window.h"
+#include "flagdefs.h"
+#include "peer_connection_client.h"
+#include "webrtc/base/checks.h"
+#include "webrtc/base/ssladapter.h"
+#include "webrtc/base/win32socketinit.h"
+#include "webrtc/base/win32socketserver.h"
+#endif // REMOTE_RENDERING
+
+#include "rapidjson/document.h"
 
 #pragma warning( disable : 4100 )
 
 using namespace DirectX;
 using namespace Toolkit3DLibrary;
+using namespace rapidjson;
 
 // #defines for compile-time Debugging switches:
 //#define ADJUSTABLE_LIGHT          // The 0th light is adjustable with the mouse (right mouse button down)
@@ -385,7 +401,6 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 void InitApp();
 void RenderText();
 
-
 //--------------------------------------------------------------------------------------
 // Convenient checks for the current render pathway
 //--------------------------------------------------------------------------------------
@@ -394,24 +409,155 @@ inline bool IsRenderDeferredPerScene()
     return g_iDeviceContextType == DEVICECONTEXT_ST_DEFERRED_PER_SCENE
         || g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_SCENE;
 }
+
 inline bool IsRenderMultithreadedPerScene() 
 { 
     return g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_SCENE;
 }
+
 inline bool IsRenderDeferredPerChunk() 
 { 
     return g_iDeviceContextType == DEVICECONTEXT_ST_DEFERRED_PER_CHUNK
         || g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_CHUNK;
 }
+
 inline bool IsRenderMultithreadedPerChunk() 
 { 
     return g_iDeviceContextType == DEVICECONTEXT_MT_DEFERRED_PER_CHUNK;
 }
+
 inline bool IsRenderDeferred()
 {
     return IsRenderDeferredPerScene() || IsRenderDeferredPerChunk();
 }
 
+void FrameUpdate()
+{
+	DXUTRender3DEnvironment();
+}
+
+// Handles input from client.
+void InputUpdate(const std::string& message)
+{
+	Document jmessage;
+	jmessage.Parse(message.c_str());
+	const char* messageType = "message";
+	if (jmessage.HasMember("type") && 
+		!strcmp(jmessage["type"].GetString(), "message") &&
+		jmessage.HasMember("camera-transform"))
+	{
+		// Parses the camera transformation data.
+		const char* data = jmessage["camera-transform"].GetString();
+		std::istringstream datastream(data);
+		std::string token;
+		getline(datastream, token, ',');
+		float x = stof(token);
+		getline(datastream, token, ',');
+		float y = stof(token);
+		getline(datastream, token, ',');
+		float z = stof(token);
+		getline(datastream, token, ',');
+		float pitch = stof(token);
+		getline(datastream, token, ',');
+		float yaw = stof(token);
+		getline(datastream, token, ',');
+		float roll = stof(token);
+
+		// Initializes the eye position vector.
+		const XMVECTORF32 eye = { x, y, z, 0.f };
+
+		// Initializes the camera rotation matrix.
+		DirectX::XMMATRIX cameraRotation = XMMatrixRotationRollPitchYaw(
+			pitch, yaw, roll);
+
+		// Updates the camera view.
+		g_Camera.SetViewParams(
+			DirectX::XMVector3Transform(eye, cameraRotation),
+			g_Camera.GetLookAtPt());
+
+		g_Camera.FrameMove(0);
+	}
+}
+
+#ifdef REMOTE_RENDERING
+
+//--------------------------------------------------------------------------------------
+// WebRTC
+//--------------------------------------------------------------------------------------
+int InitWebRTC()
+{
+	rtc::EnsureWinsockInit();
+	rtc::Win32Thread w32_thread;
+	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
+
+#ifdef SERVER_APP
+	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+		true, 1280, 720);
+#else // SERVER_APP
+	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+		false, 1280, 720);
+#endif // SERVER_APP
+
+	if (!wnd.Create())
+	{
+		RTC_NOTREACHED();
+		return -1;
+	}
+
+	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+
+	// Creates and initializes the video helper library.
+	g_videoHelper = new VideoHelper(
+		DXUTGetD3D11Device(),
+		DXUTGetD3D11DeviceContext());
+
+	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
+
+	rtc::InitializeSSL();
+	PeerConnectionClient client;
+
+#ifdef SERVER_APP
+	rtc::scoped_refptr<Conductor> conductor(
+		new rtc::RefCountedObject<Conductor>(
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, true));
+#else // SERVER_APP
+	rtc::scoped_refptr<Conductor> conductor(
+		new rtc::RefCountedObject<Conductor>(
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, false));
+#endif // SERVER_APP
+
+	// Main loop.
+	MSG msg;
+	BOOL gm;
+	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	{
+		if (!wnd.PreTranslateMessage(&msg))
+		{
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
+		}
+	}
+
+	if (conductor->connection_active() || client.is_connected())
+	{
+		while ((conductor->connection_active() || client.is_connected()) &&
+			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+		{
+			if (!wnd.PreTranslateMessage(&msg))
+			{
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			}
+		}
+	}
+
+	rtc::CleanupSSL();
+
+	return 0;
+}
+
+#endif // REMOTE_RENDERING
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -442,7 +588,9 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
-    DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
+    
+#ifndef REMOTE_RENDERING
+	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 #ifdef STEREO_OUTPUT_MODE
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 2560, 720);
@@ -453,15 +601,17 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
-#else
+#else // TEST_RUNNER
 	// Initializes the video helper
 	g_videoHelper->Initialize(DXUTGetDXGISwapChain(), "output.h264");
 #endif // TEST_RUNNER
 
-
     DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
+#else // REMOTE_RENDERING
+	return InitWebRTC();
+#endif // REMOTE_RENDERING
 }
 
 
@@ -543,14 +693,16 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     // Update the camera's position based on user input 
 	g_Camera.FrameMove(fElapsedTime);
 
+#if defined(MOVING_CAMERA) || defined(TEST_RUNNER)
 	// Rotate camera
 	DirectX::XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
-	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(3.5 / 180 * 3.14);
+	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(fElapsedTime * CAMERA_SPEED / 180 * XM_PI);
 	DirectX::XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
 	DirectX::XMMATRIX transformMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
 	g_Camera.SetViewParams(
 		DirectX::XMVector3Transform(g_Camera.GetEyePt(), transformMatrix),
 		g_Camera.GetLookAtPt());
+#endif // MOVING_CAMERA || TEST_RUNNER
 }
 
 
@@ -1540,6 +1692,7 @@ pSwapChain,
 	g_SampleUI.SetSize(170, 300);
 #endif // !TEST_RUNNER	
 #endif // STEREO_OUTPUT_MODE
+
     return S_OK;
 }
 
@@ -2418,8 +2571,10 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
                                   float fElapsedTime, void* pUserContext )
 {
 	OnD3D11FrameRenderEye(pd3dDevice, pd3dImmediateContext, fTime, fElapsedTime, pUserContext);
+
 #ifdef TEST_RUNNER
-	if (g_videoTestRunner->TestsComplete()) {
+	if (g_videoTestRunner->TestsComplete()) 
+	{
 		//Send escape key to app to exit execution.
 		INPUT escape;
 
@@ -2439,16 +2594,16 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 		SendInput(1, &escape, sizeof(INPUT));
 		return;
 	}
+	
 	//Captures frame
 	g_videoTestRunner->TestCapture();
-	if (g_videoTestRunner->IsNewTest()) {
+	if (g_videoTestRunner->IsNewTest()) 
+	{
 		//reset content state here
 		g_Camera.Reset();
 	}
-#else
-	//Captures frame
-	g_videoHelper->Capture();
-#endif
+
+#endif // TEST_RUNNER
 }
 
 
