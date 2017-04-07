@@ -23,6 +23,7 @@ namespace webrtc {
 class I420Buffer : public VideoFrameBuffer {
  public:
   static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
+  static rtc::scoped_refptr<I420Buffer> Create(int width, int height, int encoded_length);
   static rtc::scoped_refptr<I420Buffer> Create(int width,
                                                int height,
                                                int stride_y,
@@ -58,6 +59,7 @@ class I420Buffer : public VideoFrameBuffer {
 
   int width() const override;
   int height() const override;
+  int encoded_length() const override;
   const uint8_t* DataY() const override;
   const uint8_t* DataU() const override;
   const uint8_t* DataV() const override;
@@ -98,13 +100,15 @@ class I420Buffer : public VideoFrameBuffer {
 
  protected:
   I420Buffer(int width, int height);
-  I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
+  I420Buffer(int width, int height, int encoded_length);
+  I420Buffer(int width, int height, int encoded_length, int stride_y, int stride_u, int stride_v);
 
   ~I420Buffer() override;
 
  private:
   const int width_;
   const int height_;
+  const int encoded_length_;
   const int stride_y_;
   const int stride_u_;
   const int stride_v_;

@@ -60,6 +60,7 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
                     const rtc::Callback0<void>& no_longer_used);
   int width() const override;
   int height() const override;
+  int encoded_length() const override;
 
   const uint8_t* DataY() const override;
   const uint8_t* DataU() const override;
@@ -78,6 +79,7 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
 
   const int width_;
   const int height_;
+  const int encoded_length_;
   const uint8_t* const y_plane_;
   const uint8_t* const u_plane_;
   const uint8_t* const v_plane_;

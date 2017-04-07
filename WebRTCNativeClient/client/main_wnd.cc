@@ -612,16 +612,22 @@ void MainWnd::VideoRenderer::OnFrame(
       buffer = webrtc::I420Buffer::Rotate(*buffer, video_frame.rotation());
     }
 
+	// int bufferSize = buffer->encoded_length();
+
     SetSize(buffer->width(), buffer->height());
 
-    RTC_DCHECK(image_.get() != NULL);
-    libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
-                       buffer->DataU(), buffer->StrideU(),
-                       buffer->DataV(), buffer->StrideV(),
-                       image_.get(),
-                       bmi_.bmiHeader.biWidth *
-                           bmi_.bmiHeader.biBitCount / 8,
-                       buffer->width(), buffer->height());
+	if (buffer->encoded_length() == 0)
+	{
+		RTC_DCHECK(image_.get() != NULL);
+		libyuv::I420ToABGR(buffer->DataY(), buffer->StrideY(),
+			buffer->DataU(), buffer->StrideU(),
+			buffer->DataV(), buffer->StrideV(),
+			image_.get(),
+			bmi_.bmiHeader.biWidth *
+			bmi_.bmiHeader.biBitCount / 8,
+			buffer->width(), buffer->height());
+	}
+
   }
   InvalidateRect(wnd_, NULL, TRUE);
 }

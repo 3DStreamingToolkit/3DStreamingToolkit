@@ -55,6 +55,8 @@ class H264DecoderImpl : public H264Decoder {
 
   const char* ImplementationName() const override;
 
+  void InitFFmpeg();
+
  private:
   // Called by FFmpeg when it needs a frame buffer to store decoded frames in.
   // The |VideoFrame| returned by FFmpeg at |Decode| originate from here. Their
