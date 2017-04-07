@@ -1,12 +1,11 @@
 #pragma once
 
-// Static define here, also defined as a build configuration
-//#define TEST_RUNNER
-
+#ifndef TEST_RUNNER
 #define REMOTE_RENDERING
 #ifdef REMOTE_RENDERING
 #define SERVER_APP
 #endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
 #define STEREO_OUTPUT_MODE
 #ifdef STEREO_OUTPUT_MODE
