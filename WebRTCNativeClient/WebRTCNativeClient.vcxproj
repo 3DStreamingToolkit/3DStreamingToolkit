@@ -102,33 +102,33 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
     <LibraryPath>$(ProjectDir)\LibBinaries\Debug_x86;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir);</IncludePath>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Int\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -153,7 +153,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\Toolkit3DLibrary;..\3dtoolkit-directx\Toolkit3DLibrary\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -170,7 +170,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\Toolkit3DLibrary;..\3dtoolkit-directx\Toolkit3DLibrary\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -189,7 +189,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\Toolkit3DLibrary;..\3dtoolkit-directx\Toolkit3DLibrary\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -208,7 +208,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\Toolkit3DLibrary;..\3dtoolkit-directx\Toolkit3DLibrary\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -227,7 +227,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\Toolkit3DLibrary;..\3dtoolkit-directx\Toolkit3DLibrary\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

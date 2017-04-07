@@ -21,6 +21,8 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+[Ii]ntermediate
+[Bb]uild
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -255,4 +257,3 @@ paket-files/
 *.h264
 *.log
 *.cso
-[Ii]nt
