@@ -395,7 +395,7 @@ WebRtcVideoChannel2::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     // VP8 denoising is enabled by default.
     vp8_settings.denoisingOn = codec_default_denoising ? true : denoising;
     vp8_settings.frameDroppingOn = frame_dropping;
-    return new rtc::RefCountedObject<
+    return new rtc::RefCountedObject< 
         webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
   }
   if (CodecNamesEq(codec.name, kVp9CodecName)) {
@@ -572,7 +572,7 @@ static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
         codec.name != kFlexfecCodecName)
       AddDefaultFeedbackParams(&codec);
     // Don't add same codec twice.
-    if (FindMatchingCodec(*unified_codecs, codec))
+    if (codec.name != kH264CodecName || FindMatchingCodec(*unified_codecs, codec))
       continue;
 
     unified_codecs->push_back(codec);

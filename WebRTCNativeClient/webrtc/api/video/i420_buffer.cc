@@ -34,21 +34,28 @@ int I420DataSize(int height, int stride_y, int stride_u, int stride_v) {
 }  // namespace
 
 I420Buffer::I420Buffer(int width, int height)
-    : I420Buffer(width, height, width, (width + 1) / 2, (width + 1) / 2) {
+    : I420Buffer(width, height, width, 0, (width + 1) / 2, (width + 1) / 2) {
 }
+
+I420Buffer::I420Buffer(int width, int height, int encoded_length)
+	: I420Buffer(width, height, encoded_length, width, (width + 1) / 2, (width + 1) / 2) {
+}
+
 
 I420Buffer::I420Buffer(int width,
                        int height,
+					   int encoded_length,
                        int stride_y,
                        int stride_u,
                        int stride_v)
     : width_(width),
       height_(height),
+	  encoded_length_(encoded_length),
       stride_y_(stride_y),
       stride_u_(stride_u),
       stride_v_(stride_v),
       data_(static_cast<uint8_t*>(AlignedMalloc(
-          I420DataSize(height, stride_y, stride_u, stride_v),
+		  encoded_length > 0 ? encoded_length : I420DataSize(height, stride_y, stride_u, stride_v),
           kBufferAlignment))) {
   RTC_DCHECK_GT(width, 0);
   RTC_DCHECK_GT(height, 0);
@@ -65,6 +72,10 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width, int height) {
   return new rtc::RefCountedObject<I420Buffer>(width, height);
 }
 
+rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width, int height, int encoded_length) {
+	return new rtc::RefCountedObject<I420Buffer>(width, height, encoded_length);
+}
+
 // static
 rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
                                                   int height,
@@ -72,7 +83,7 @@ rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
                                                   int stride_u,
                                                   int stride_v) {
   return new rtc::RefCountedObject<I420Buffer>(
-      width, height, stride_y, stride_u, stride_v);
+      width, height, 0, stride_y, stride_u, stride_v);
 }
 
 // static
@@ -153,6 +164,10 @@ int I420Buffer::width() const {
 
 int I420Buffer::height() const {
   return height_;
+}
+
+int I420Buffer::encoded_length() const {
+	return encoded_length_;
 }
 
 const uint8_t* I420Buffer::DataY() const {
