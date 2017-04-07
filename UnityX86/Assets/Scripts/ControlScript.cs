@@ -9,6 +9,7 @@ public class ControlScript : MonoBehaviour
 {
     public Text StatusText;
     public Text MessageText;
+    public InputField ServerInputTextField;
     public InputField PeerInputTextField;
     public InputField MessageInputField;
 
@@ -48,7 +49,7 @@ public class ControlScript : MonoBehaviour
 
     public void ConnectToServer()
     {
-        _webRtcUtils.ConnectCommandExecute(PeerInputTextField.text);
+        _webRtcUtils.ConnectToServer(ServerInputTextField.text, "8888", PeerInputTextField.text);        
     }
 
     public void DisconnectFromServer()
@@ -69,7 +70,17 @@ public class ControlScript : MonoBehaviour
 
     public void SendMessageToPeer()
     {
-        _webRtcUtils.SendPeerMessageDataExecute(MessageText.text);
+        _webRtcUtils.SendPeerMessageDataExecute(MessageInputField.text);        
+    }
+
+    public void ClearStatusText()
+    {
+        StatusText.text = string.Empty;
+    }
+
+    public void ClearMessageText()
+    {
+        MessageText.text = string.Empty;
     }
 
     void Update()

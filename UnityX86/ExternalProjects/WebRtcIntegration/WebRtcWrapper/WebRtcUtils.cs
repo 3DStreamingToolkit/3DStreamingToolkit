@@ -1003,6 +1003,15 @@ namespace WebRtcWrapper
             }).Start();
         }
 
+        public void ConnectToServer(string host, string port, string peerName)
+        {
+            new Task(() =>
+            {
+                IsConnecting = true;                
+                Conductor.Instance.StartLogin(host, port, peerName);
+            }).Start();
+        }
+
         private bool ConnectToPeerCommandCanExecute(object obj)
         {
             return SelectedPeer != null && Peers.Contains(SelectedPeer) && !IsConnectedToPeer && IsReadyToConnect;

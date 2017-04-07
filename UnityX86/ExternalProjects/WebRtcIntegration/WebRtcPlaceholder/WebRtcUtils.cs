@@ -23,6 +23,11 @@ namespace WebRtcWrapper
             OnStatusMessageUpdate?.Invoke("Connect Server");
         }
 
+        public void ConnectToServer(string host, string port, string peerName)
+        {
+            OnStatusMessageUpdate?.Invoke("ConnectToServer()");            
+        }
+
         public void DisconnectFromServerExecute(object obj)
         {
             OnStatusMessageUpdate?.Invoke("Disconnect Server");
