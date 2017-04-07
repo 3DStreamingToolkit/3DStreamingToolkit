@@ -12,11 +12,17 @@ public class ControlScript : MonoBehaviour
     public InputField PeerInputTextField;
     public InputField MessageInputField;
 
-
+    private Transform camTransform;
+    private Vector3 prevPos;
+    private Quaternion prevRot;
     private WebRtcUtils _webRtcUtils;
 
     void Start()
     {
+        camTransform = Camera.main.transform;
+        prevPos = camTransform.position;
+        prevRot = camTransform.rotation;
+
         _webRtcUtils = new WebRtcUtils();
         _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
         _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
@@ -68,6 +74,23 @@ public class ControlScript : MonoBehaviour
 
     void Update()
     {
+        if (Vector3.Distance(prevPos, camTransform.position) > 0.05f ||
+    Quaternion.Angle(prevRot, camTransform.rotation) > 2f)
+        {
+            prevPos = camTransform.position;
+            prevRot = camTransform.rotation;
+            var eulerRot = prevRot.eulerAngles;
+            var camMsg = string.Format(
+                @"{{""camera-transform"":""{0},{1},{2},{3},{4},{5}""}}",
+                prevPos.x,
+                prevPos.y,
+                prevPos.z,
+                eulerRot.x,
+                eulerRot.y,
+                eulerRot.z);
+
+            _webRtcUtils.SendPeerMessageDataExecute(camMsg);
+        }
 
     }
 }
