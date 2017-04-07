@@ -67,7 +67,7 @@ namespace WebRtcIntegration
         }
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
-        {
+        {            
             _webRtcUtils.ConnectCommandExecute(PeerTextBox.Text);            
         }
 
