@@ -291,20 +291,20 @@ int WINAPI wWinMain(
 			Render();
 #ifdef TEST_RUNNER
 			if (g_videoTestRunner->TestsComplete())
+			{
 				break;
+			}
+
 			g_videoTestRunner->TestCapture();
-			if (g_videoTestRunner->IsNewTest()) {
+			if (g_videoTestRunner->IsNewTest()) 
+			{
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);
 			}
-
-			g_videoHelper->Capture();
 #endif // TEST_RUNNER
 		}
 	}
 
-	// Cleanup resources.
-	delete g_videoHelper;
 	delete g_cubeRenderer;
 	delete g_deviceResources;
 
