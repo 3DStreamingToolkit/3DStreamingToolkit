@@ -849,12 +849,17 @@ void DefaultMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_f
     SetSize(buffer->width(), buffer->height());
 
     RTC_DCHECK(image_.get() != NULL);
-    libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
-                       buffer->DataU(), buffer->StrideU(),
-                       buffer->DataV(), buffer->StrideV(),
-                       image_.get(),
-                       bmi_.bmiHeader.biWidth * bmi_.bmiHeader.biBitCount / 8,
-                       buffer->width(), buffer->height());
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+	if (buffer->encoded_length() == 0)
+#endif // WEBRTC_RAW_ENCODED_FRAME
+	{
+		libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
+			buffer->DataU(), buffer->StrideU(),
+			buffer->DataV(), buffer->StrideV(),
+			image_.get(),
+			bmi_.bmiHeader.biWidth * bmi_.bmiHeader.biBitCount / 8,
+			buffer->width(), buffer->height());
+	}
 
 	InvalidateRect(wnd_, NULL, TRUE);
 }

@@ -89,14 +89,14 @@ namespace Toolkit3DLibrary
 												VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context);
 												~VideoHelper();
 												
-		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile = nullptr);
+		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile = nullptr, bool initEncoder = false);
 		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
 		NVENCSTATUS                             Deinitialize();
 		NVENCSTATUS								SetEncodeProfile(int profileIndex);
 		void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
 		void									Capture();
 		void									Capture(void** buffer, int* size, int* width, int* height);
-		void									CaptureEncodedFrame(void** buffer, int* size);
+		void									GetEncodedFrame(void** buffer, int* size, int* width, int* height);
 
 		// Debug
 		void									PrintConfig(EncodeConfig encodeConfig);

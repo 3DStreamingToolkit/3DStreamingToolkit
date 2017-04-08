@@ -731,7 +731,7 @@ NVENCSTATUS CNvHWEncoder::CreateEncoder(EncodeConfig *pEncCfg)
 
     m_fOutput = pEncCfg->fOutput;
 
-    if (!pEncCfg->width || !pEncCfg->height || !m_fOutput)
+    if (!pEncCfg->width || !pEncCfg->height)
     {
         return NV_ENC_ERR_INVALID_PARAM;
     }
@@ -1060,7 +1060,11 @@ NVENCSTATUS CNvHWEncoder::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
     nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &m_lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
-        fwrite(m_lockBitstreamData.bitstreamBufferPtr, 1, m_lockBitstreamData.bitstreamSizeInBytes, m_fOutput);
+		if (m_fOutput)
+		{
+			fwrite(m_lockBitstreamData.bitstreamBufferPtr, 1, m_lockBitstreamData.bitstreamSizeInBytes, m_fOutput);
+		}
+
         nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(m_hEncoder, pEncodeBuffer->stOutputBfr.hBitstreamBuffer);
     }
     else

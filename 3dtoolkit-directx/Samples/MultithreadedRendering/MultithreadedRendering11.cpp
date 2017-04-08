@@ -512,7 +512,11 @@ int InitWebRTC()
 		DXUTGetD3D11Device(),
 		DXUTGetD3D11DeviceContext());
 
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+	g_videoHelper->Initialize(DXUTGetDXGISwapChain(), nullptr, true);
+#else // WEBRTC_RAW_ENCODED_FRAME
 	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
+#endif // WEBRTC_RAW_ENCODED_FRAME
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
