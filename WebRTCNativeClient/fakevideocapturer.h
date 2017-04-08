@@ -158,14 +158,16 @@ public:
 	{
 		void* pFrameBuffer = nullptr;
 		int frameSizeInBytes = 0;
-		g_videoHelper->CaptureEncodedFrame(&pFrameBuffer, &frameSizeInBytes);
+		int width = 0;
+		int height = 0;
+		g_videoHelper->GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &width, &height);
 		if (frameSizeInBytes == 0)
 		{
 			return;
 		}
 
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT, frameSizeInBytes);
+			width, height, frameSizeInBytes);
 
 		memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
 
@@ -186,7 +188,7 @@ public:
 		OnFrame(webrtc::VideoFrame(
 			buffer, rotation_,
 			timeStamp),
-			FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+			width, height);
 	}
 	bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
 		// default to 30fps

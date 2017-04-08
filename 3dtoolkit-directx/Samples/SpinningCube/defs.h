@@ -7,7 +7,7 @@
 #endif // REMOTE_RENDERING
 #endif // TEST_RUNNER
 
-#define STEREO_OUTPUT_MODE
+//#define STEREO_OUTPUT_MODE
 #ifdef STEREO_OUTPUT_MODE
 #define IPD 0.02f
 #define FRAME_BUFFER_WIDTH	1280

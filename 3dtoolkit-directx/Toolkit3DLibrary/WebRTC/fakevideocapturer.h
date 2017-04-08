@@ -56,16 +56,10 @@ public:
 		formats.push_back(cricket::VideoFormat(640, 480,
 			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
 
-		formats.push_back(cricket::VideoFormat(320, 240,
-			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-
-		formats.push_back(cricket::VideoFormat(160, 120,
-			cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-
 		formats.push_back(cricket::VideoFormat(1280, 720,
 			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
 
-		formats.push_back(cricket::VideoFormat(1420, 700,
+		formats.push_back(cricket::VideoFormat(1280, 720,
 			cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_H264));
 
 		ResetSupportedFormats(formats);
@@ -200,12 +194,25 @@ public:
 		int frameSizeInBytes = 0;
 		int frameWidth = 0;
 		int frameHeight = 0;
+
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+		video_helper_->Capture();
+		video_helper_->GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &frameWidth, &frameHeight);
+#else // WEBRTC_RAW_ENCODED_FRAME
 		video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &frameWidth, &frameHeight);
+#endif // WEBRTC_RAW_ENCODED_FRAME
+
 		if (frameSizeInBytes == 0)
 		{
 			return;
 		}
 
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
+			frameWidth, frameHeight, frameSizeInBytes);
+
+		memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
+#else // WEBRTC_RAW_ENCODED_FRAME
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
 			frameWidth, frameHeight);
 
@@ -220,6 +227,7 @@ public:
 			buffer.get()->StrideV(),
 			frameWidth,
 			frameHeight);
+#endif // WEBRTC_RAW_ENCODED_FRAME
 
 		auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -289,7 +297,9 @@ public:
 				{
 					frame_update_func_();
 					SendFakeVideoFrame();
-					//std::this_thread::sleep_for(std::chrono::milliseconds(30));
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+					std::this_thread::sleep_for(std::chrono::milliseconds(50));
+#endif // WEBRTC_RAW_ENCODED_FRAME
 				}
 			}
 		});

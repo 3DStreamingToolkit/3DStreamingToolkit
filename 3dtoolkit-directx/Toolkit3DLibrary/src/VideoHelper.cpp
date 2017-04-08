@@ -40,7 +40,7 @@ VideoHelper::~VideoHelper()
 }
 
 // Initializes the swap chain and IO buffers.
-NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
+NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile, bool initEncoder)
 {
 	// Caches the pointer to the swap chain.
 	m_swapChain = swapChain;
@@ -62,7 +62,7 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain, char* outputFile)
 	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
 	
 	// Initializes the NvEncoder.
-	if (outputFile != nullptr)
+	if (outputFile != nullptr || initEncoder)
 	{
 		// Relative path
 		m_encodeConfig.outputFileName = outputFile;
@@ -90,10 +90,13 @@ NVENCSTATUS VideoHelper::InitializeEncoder(DXGI_SWAP_CHAIN_DESC swapChainDesc, E
 	m_encodeConfig = nvEncodeConfig;
 	m_encodeConfig.width = swapChainDesc.BufferDesc.Width;
 	m_encodeConfig.height = swapChainDesc.BufferDesc.Height;
-	m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
-	if (m_encodeConfig.fOutput == NULL)
+	if (m_encodeConfig.outputFileName)
 	{
-		PRINTERR("Failed to create \"%s\"\n", m_encodeConfig.outputFileName);
+		m_encodeConfig.fOutput = fopen(m_encodeConfig.outputFileName, "wb");
+		if (m_encodeConfig.fOutput == NULL)
+		{
+			PRINTERR("Failed to create \"%s\"\n", m_encodeConfig.outputFileName);
+		}
 	}
 
 	CHECK_NV_FAILED(m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX));
@@ -268,8 +271,13 @@ void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 }
 
 // Captures encoded frames from NvEncoder.
-void VideoHelper::CaptureEncodedFrame(void** buffer, int* size)
+void VideoHelper::GetEncodedFrame(void** buffer, int* size, int* width, int* height)
 {
+	// Accesses the frame buffer.
+	D3D11_TEXTURE2D_DESC desc;
+	m_stagingFrameBuffer->GetDesc(&desc);
+	*width = desc.Width;
+	*height = desc.Height;
 	*buffer = m_pNvHWEncoder->m_lockBitstreamData.bitstreamBufferPtr;
 	*size = m_pNvHWEncoder->m_lockBitstreamData.bitstreamSizeInBytes;
 }
