@@ -168,9 +168,9 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig)
 	nvEncodeConfig.intraRefreshPeriod = 60;
 	nvEncodeConfig.intraRefreshDuration = 3;
 
-	//Enable temporal Adaptive Quantization
-	//Shifts quantization matrix based on complexity of frame over time
-	nvEncodeConfig.enableTemporalAQ = true;
+	// Enable temporal Adaptive Quantization
+	// Shifts quantization matrix based on complexity of frame over time
+	nvEncodeConfig.enableTemporalAQ = false;
 
 	//Need this to be able to recover from stream drops
 	//Client needs to send back a last good timestamp, and we call

@@ -253,9 +253,6 @@ int WINAPI wWinMain(
 	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
-
-
-	//g_videoHelper.VideoTestRunner
 	RECT rc;
 	GetClientRect(g_hWnd, &rc);
 	UINT width = rc.right - rc.left;
