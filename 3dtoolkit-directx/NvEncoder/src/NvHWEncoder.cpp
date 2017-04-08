@@ -782,6 +782,7 @@ NVENCSTATUS CNvHWEncoder::CreateEncoder(EncodeConfig *pEncCfg)
         PRINTERR("nvEncGetEncodePresetConfig returned failure");
         return nvStatus;
     }
+
     memcpy(&m_stEncodeConfig, &stPresetCfg.presetCfg, sizeof(NV_ENC_CONFIG));
 
     m_stEncodeConfig.gopLength = pEncCfg->gopLength;
