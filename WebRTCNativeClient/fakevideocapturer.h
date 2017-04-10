@@ -114,7 +114,7 @@ public:
 
 	rtc::scoped_refptr<webrtc::I420Buffer> CreateGradient(int width, int height) {
 		rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-			webrtc::I420Buffer::Create(width, height));
+			webrtc::I420Buffer::Create(width, height, 0));
 		// Initialize with gradient, Y = 128(x/w + y/h), U = 256 x/w, V = 256 y/h
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {

@@ -538,8 +538,14 @@ int InitWebRTC()
 	{
 		if (!wnd.PreTranslateMessage(&msg))
 		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
+			try
+			{
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			}
+			catch (const std::exception& e) { // reference to the base of a polymorphic object
+				std::cout << e.what(); // information from length_error printed
+			}
 		}
 	}
 

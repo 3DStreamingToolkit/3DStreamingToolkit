@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "defs.h"
 #include "main_window.h"
 #include "peer_connection_client.h"
 #include "webrtc/api/mediastreaminterface.h"
