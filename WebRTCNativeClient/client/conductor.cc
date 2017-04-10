@@ -117,9 +117,20 @@ bool Conductor::CreatePeerConnection(bool dtls) {
 	RTC_DCHECK(peer_connection_.get() == NULL);
 
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
-	webrtc::PeerConnectionInterface::IceServer server;
-	server.uri = GetPeerConnectionString();
-	config.servers.push_back(server);
+
+#ifdef DEPLOYED_SERVICE
+	webrtc::PeerConnectionInterface::IceServer turnServer;
+	turnServer.uri = "turn:13.65.204.45:3478";
+	turnServer.username = "anzoloch";
+	turnServer.password = "3Dstreaming0317";
+	turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck; 
+		config.type = webrtc::PeerConnectionInterface::kRelay;
+	config.servers.push_back(turnServer);
+#else
+	webrtc::PeerConnectionInterface::IceServer stunServer;
+	stunServer.urls.push_back(GetPeerConnectionString());
+	config.servers.push_back(stunServer);
+#endif // DEPLOYED_SERVICE
 
 	webrtc::FakeConstraints constraints;
 	if (dtls) {
