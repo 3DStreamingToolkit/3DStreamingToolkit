@@ -12,6 +12,7 @@
 #include <windows.h>
 
 // C RunTime Header Files
+#include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <memory.h>
@@ -26,3 +27,4 @@
 
 #define STEREO_OUTPUT_MODE
 #define IPD 0.02f
+#define DEPLOYED_SERVICE
