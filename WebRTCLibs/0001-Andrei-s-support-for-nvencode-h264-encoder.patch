@@ -1,7 +1,7 @@
-From cc6679ba73ade97d06944153235b88205a917517 Mon Sep 17 00:00:00 2001
-From: Tyler Gibson <Tyler Gibson>
-Date: Tue, 11 Apr 2017 00:33:56 -0700
-Subject: [PATCH] Andrei's support for nvencode h264 encoder
+From 0ac98f148b4be03471baa2565d6012ed6232a52a Mon Sep 17 00:00:00 2001
+From: Tyler Gibson <tgibson@microsoft.com>
+Date: Wed, 12 Apr 2017 08:53:12 +0000
+Subject: [PATCH] [PATCH] Andrei's support for nvencode h264 encoder
 
 ---
  webrtc/api/video/i420_buffer.cc                    |  24 +-
@@ -17,7 +17,7 @@ Subject: [PATCH] Andrei's support for nvencode h264 encoder
  10 files changed, 353 insertions(+), 35 deletions(-)
 
 diff --git a/webrtc/api/video/i420_buffer.cc b/webrtc/api/video/i420_buffer.cc
-index 81f578983..3ef687c69 100644
+index 81f5789..3ef687c 100644
 --- a/webrtc/api/video/i420_buffer.cc
 +++ b/webrtc/api/video/i420_buffer.cc
 @@ -34,21 +34,28 @@ int I420DataSize(int height, int stride_y, int stride_u, int stride_v) {
@@ -93,7 +93,7 @@ index 81f578983..3ef687c69 100644
  
  uint8_t* I420Buffer::MutableDataY() {
 diff --git a/webrtc/api/video/i420_buffer.h b/webrtc/api/video/i420_buffer.h
-index 388a3dd76..bda0bb455 100644
+index 388a3dd..bda0bb4 100644
 --- a/webrtc/api/video/i420_buffer.h
 +++ b/webrtc/api/video/i420_buffer.h
 @@ -23,6 +23,7 @@ namespace webrtc {
@@ -130,7 +130,7 @@ index 388a3dd76..bda0bb455 100644
    const int stride_u_;
    const int stride_v_;
 diff --git a/webrtc/api/video/video_frame_buffer.h b/webrtc/api/video/video_frame_buffer.h
-index c8c2e5d5d..ec3c633b8 100644
+index c8c2e5d..ec3c633 100644
 --- a/webrtc/api/video/video_frame_buffer.h
 +++ b/webrtc/api/video/video_frame_buffer.h
 @@ -26,6 +26,7 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
@@ -142,7 +142,7 @@ index c8c2e5d5d..ec3c633b8 100644
    // Returns pointer to the pixel data for a given plane. The memory is owned by
    // the VideoFrameBuffer object and must not be freed by the caller.
 diff --git a/webrtc/common_video/include/video_frame_buffer.h b/webrtc/common_video/include/video_frame_buffer.h
-index dfdd480b5..7cb48ba0d 100644
+index dfdd480..7cb48ba 100644
 --- a/webrtc/common_video/include/video_frame_buffer.h
 +++ b/webrtc/common_video/include/video_frame_buffer.h
 @@ -60,6 +60,7 @@ class WrappedI420Buffer : public webrtc::VideoFrameBuffer {
@@ -162,7 +162,7 @@ index dfdd480b5..7cb48ba0d 100644
    const uint8_t* const u_plane_;
    const uint8_t* const v_plane_;
 diff --git a/webrtc/common_video/video_frame_buffer.cc b/webrtc/common_video/video_frame_buffer.cc
-index 4646bf491..e4b14aa7b 100644
+index 4646bf4..e4b14aa 100644
 --- a/webrtc/common_video/video_frame_buffer.cc
 +++ b/webrtc/common_video/video_frame_buffer.cc
 @@ -79,6 +79,7 @@ WrappedI420Buffer::WrappedI420Buffer(int width,
@@ -184,7 +184,7 @@ index 4646bf491..e4b14aa7b 100644
    return y_plane_;
  }
 diff --git a/webrtc/media/engine/webrtcvideoengine2.cc b/webrtc/media/engine/webrtcvideoengine2.cc
-index 087fc4e01..9b0ab2684 100644
+index 087fc4e..9b0ab26 100644
 --- a/webrtc/media/engine/webrtcvideoengine2.cc
 +++ b/webrtc/media/engine/webrtcvideoengine2.cc
 @@ -573,7 +573,7 @@ static void AppendVideoCodecs(const std::vector<VideoCodec>& input_codecs,
@@ -197,7 +197,7 @@ index 087fc4e01..9b0ab2684 100644
  
      unified_codecs->push_back(codec);
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 84bfafb8b..13d6be495 100644
+index 315d347..f421cc4 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 @@ -10,27 +10,49 @@
@@ -540,7 +540,7 @@ index 84bfafb8b..13d6be495 100644
    if (enc_ret != 0) {
      LOG(LS_ERROR) << "OpenH264 frame encoding failed, EncodeFrame returned "
                    << enc_ret << ".";
-@@ -361,26 +522,117 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+@@ -361,6 +522,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
      return WEBRTC_VIDEO_CODEC_ERROR;
    }
  
@@ -549,9 +549,10 @@ index 84bfafb8b..13d6be495 100644
    encoded_image_._encodedWidth = frame_buffer->width();
    encoded_image_._encodedHeight = frame_buffer->height();
    encoded_image_._timeStamp = input_frame.timestamp();
-   encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
-   encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
-   encoded_image_.rotation_ = input_frame.rotation();
+@@ -370,20 +533,109 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+   encoded_image_.content_type_ = (mode_ == kScreensharing)
+                                      ? VideoContentType::SCREENSHARE
+                                      : VideoContentType::UNSPECIFIED;
 +
 +#if USEOPENH264
    encoded_image_._frameType = ConvertToVideoFrameType(info.eFrameType);
@@ -603,7 +604,7 @@ index 84bfafb8b..13d6be495 100644
 +  uint8_t * p_nal = const_cast<uint8_t*>(frame_buffer->DataY()) + 4;
 +  // int encoded_buffer_size = frame_buffer->encoded_length();
 +  uint32_t * p_size;
-+  int i_nal;
++  size_t i_nal;
 +  p_size = (uint32_t*)(frame_buffer->DataY());
 +
 +  std::vector<H264::NaluIndex> NALUidx;
@@ -628,7 +629,7 @@ index 84bfafb8b..13d6be495 100644
 +  uint32_t totalNaluIndex = 0;
 +  for (int nal_index = 0; nal_index < i_nal; nal_index++)
 +  {
-+	  uint32_t currentNaluSize = 0;
++	  size_t currentNaluSize = 0;
 +	  currentNaluSize = NALUidx[nal_index].payload_size; //i_frame_size
 +	  memcpy(encoded_image_._buffer + encoded_image_._length, &p_nal[NALUidx[nal_index].payload_start_offset], currentNaluSize);//will add start code automatically
 +	  encoded_image_._length += currentNaluSize;
@@ -658,7 +659,7 @@ index 84bfafb8b..13d6be495 100644
  
      // Deliver encoded image.
      CodecSpecificInfo codec_specific;
-@@ -397,18 +649,24 @@ const char* H264EncoderImpl::ImplementationName() const {
+@@ -400,18 +652,24 @@ const char* H264EncoderImpl::ImplementationName() const {
  }
  
  bool H264EncoderImpl::IsInitialized() const {
@@ -686,7 +687,7 @@ index 84bfafb8b..13d6be495 100644
    if (mode_ == kRealtimeVideo) {
      encoder_params.iUsageType = CAMERA_VIDEO_REAL_TIME;
    } else if (mode_ == kScreensharing) {
-@@ -469,6 +727,8 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
+@@ -472,6 +730,8 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
    return encoder_params;
  }
  
@@ -696,7 +697,7 @@ index 84bfafb8b..13d6be495 100644
    if (has_reported_init_)
      return;
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
-index a455259bf..8cd59c335 100644
+index a455259..8cd59c3 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
 @@ -19,9 +19,24 @@
@@ -763,7 +764,7 @@ index a455259bf..8cd59c335 100644
    EncodedImage encoded_image_;
    std::unique_ptr<uint8_t[]> encoded_image_buffer_;
 diff --git a/webrtc/modules/video_coding/video_sender.cc b/webrtc/modules/video_coding/video_sender.cc
-index 0b54d13b2..6f958fa81 100644
+index 0b54d13..6f958fa 100644
 --- a/webrtc/modules/video_coding/video_sender.cc
 +++ b/webrtc/modules/video_coding/video_sender.cc
 @@ -308,6 +308,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
@@ -783,7 +784,7 @@ index 0b54d13b2..6f958fa81 100644
    // processing so frame size always matches.
    if (!_codecDataBase.MatchesCurrentResolution(videoFrame.width(),
 diff --git a/webrtc/video/video_loopback.cc b/webrtc/video/video_loopback.cc
-index ec206a859..ed6e011da 100644
+index ec206a8..ed6e011 100644
 --- a/webrtc/video/video_loopback.cc
 +++ b/webrtc/video/video_loopback.cc
 @@ -67,7 +67,7 @@ int NumTemporalLayers() {
@@ -810,5 +811,5 @@ index ec206a859..ed6e011da 100644
  }
 +#endif
 -- 
-2.12.1.windows.1
+2.9.2.windows.1
 
