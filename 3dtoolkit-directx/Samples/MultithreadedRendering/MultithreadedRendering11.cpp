@@ -457,11 +457,11 @@ void InputUpdate(const std::string& message)
 		getline(datastream, token, ',');
 		float z = stof(token);
 		getline(datastream, token, ',');
-		float pitch = stof(token);
+		float pitch = XMConvertToRadians(stof(token));
 		getline(datastream, token, ',');
-		float yaw = stof(token);
+		float yaw = XMConvertToRadians(stof(token));
 		getline(datastream, token, ',');
-		float roll = stof(token);
+		float roll = XMConvertToRadians(stof(token));
 
 		// Initializes the eye position vector.
 		const XMVECTORF32 eye = { x, y, z, 0.f };
