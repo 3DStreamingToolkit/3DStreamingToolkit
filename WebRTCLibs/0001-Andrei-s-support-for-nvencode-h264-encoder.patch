@@ -540,7 +540,7 @@ index 315d347..f421cc4 100644
    if (enc_ret != 0) {
      LOG(LS_ERROR) << "OpenH264 frame encoding failed, EncodeFrame returned "
                    << enc_ret << ".";
-@@ -361,6 +522,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+@@ -361,26 +522,119 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
      return WEBRTC_VIDEO_CODEC_ERROR;
    }
  
@@ -549,10 +549,9 @@ index 315d347..f421cc4 100644
    encoded_image_._encodedWidth = frame_buffer->width();
    encoded_image_._encodedHeight = frame_buffer->height();
    encoded_image_._timeStamp = input_frame.timestamp();
-@@ -370,20 +533,109 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
-   encoded_image_.content_type_ = (mode_ == kScreensharing)
-                                      ? VideoContentType::SCREENSHARE
-                                      : VideoContentType::UNSPECIFIED;
+   encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
+   encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
+   encoded_image_.rotation_ = input_frame.rotation();
 +
 +#if USEOPENH264
    encoded_image_._frameType = ConvertToVideoFrameType(info.eFrameType);
@@ -599,28 +598,33 @@ index 315d347..f421cc4 100644
 +#endif
 +
 +#if !USEOPENH264 && !USEX264
-+  // uint8_t * p_encoded_buffer = const_cast<uint8_t*>(frame_buffer->DataY());
 +
-+  uint8_t * p_nal = const_cast<uint8_t*>(frame_buffer->DataY()) + 4;
-+  // int encoded_buffer_size = frame_buffer->encoded_length();
-+  uint32_t * p_size;
++  uint8_t * p_nal = const_cast<uint8_t*>(frame_buffer->DataY());
++  int encoded_buffer_size = frame_buffer->encoded_length();
 +  size_t i_nal;
-+  p_size = (uint32_t*)(frame_buffer->DataY());
 +
 +  std::vector<H264::NaluIndex> NALUidx;
 +
 +  if ((p_nal[4] & 0x0F) != 0x07) {
-+	  NALUidx = H264::FindNaluIndices(p_nal, 5);
-+	  NALUidx[0].payload_size = p_size[0] - NALUidx[0].payload_start_offset;
-+	  //NALUidx[0].payload_start_offset = 4;
-+	  //NALUidx[0].start_offset = 0;
-+	  i_nal = 1;
++	  NALUidx = H264::FindNaluIndices(p_nal, encoded_buffer_size);
++	  if (NALUidx.size() < 1)
++		  return WEBRTC_VIDEO_CODEC_OK;
++
++	  i_nal = NALUidx.size();
++	  if (i_nal == 1)
++	  {
++		  NALUidx[0].payload_size = encoded_buffer_size - NALUidx[0].payload_start_offset;
++	  }
++	  else for (int i = 0; i < i_nal; i++)
++	  {
++		  NALUidx[i].payload_size = i + 1 >= i_nal ? encoded_buffer_size - NALUidx[i].payload_start_offset : NALUidx[i + 1].start_offset - NALUidx[i].payload_start_offset;
++	  }
 +  }
 +  else {
-+	  NALUidx = H264::FindNaluIndices(p_nal, /*p_size[0]*/200); // 200 Bytes is an estimation of the maximum size of SPS/PPS NAL units
++	  NALUidx = H264::FindNaluIndices(p_nal, 200); 
 +	  i_nal = NALUidx.size();
 +	  if (i_nal > 2)
-+		  NALUidx[i_nal - 1].payload_size = p_size[0] - NALUidx[i_nal - 1].payload_start_offset;
++		  NALUidx[i_nal - 1].payload_size = encoded_buffer_size - NALUidx[i_nal - 1].payload_start_offset;
 +  }
 +
 +  frag_header.VerifyAndAllocateFragmentationHeader(i_nal);
@@ -631,7 +635,7 @@ index 315d347..f421cc4 100644
 +  {
 +	  size_t currentNaluSize = 0;
 +	  currentNaluSize = NALUidx[nal_index].payload_size; //i_frame_size
-+	  memcpy(encoded_image_._buffer + encoded_image_._length, &p_nal[NALUidx[nal_index].payload_start_offset], currentNaluSize);//will add start code automatically
++	  memcpy(encoded_image_._buffer + encoded_image_._length, &p_nal[NALUidx[nal_index].payload_start_offset], currentNaluSize);
 +	  encoded_image_._length += currentNaluSize;
 +
 +	  frag_header.fragmentationOffset[totalNaluIndex] = encoded_image_._length - currentNaluSize;
@@ -640,9 +644,6 @@ index 315d347..f421cc4 100644
 +	  frag_header.fragmentationTimeDiff[totalNaluIndex] = 0;
 +	  totalNaluIndex++;
 +  }
-+  //encoded_image_._length = encoded_buffer_size;
-+
-+  //memcpy(encoded_image_._buffer, p_encoded_buffer, encoded_buffer_size);
 +
 +#endif
 +
