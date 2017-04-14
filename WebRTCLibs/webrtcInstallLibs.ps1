@@ -1,30 +1,36 @@
 Import-Module BitsTransfer
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-function Get-ScriptDirectory
-{
-  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-  Split-Path $Invocation.MyCommand.Path
+function DecompressZip {
+    param( [string] $filename, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
+    
+    if((Test-Path ($PSScriptRoot + "\" + $filename)) -eq $false) {
+        Start-BitsTransfer -Source ($blobUri + $filename) -Destination ($PSScriptRoot + "\" + $filename)   
+        Write-Host ("Downloaded " + $filename + " lib archive")
+    } 
+
+    $extractDir = ""
+
+    if($filename -like "*x64*") {
+        $extractDir = "\x64"
+    } 
+    if($filename -like "*Win32*") {
+        $extractDir = "\Win32"
+    }
+    if($filename -like "*headers*") {
+        $extractDir = "\headers"
+    }
+    if($extractDir -eq "") {
+        return
+    }
+
+    if((Test-Path ($PSScriptRoot + $extractDir)) -eq $false) {
+        Write-Host "Extracting..."
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($PSScriptRoot + "\" + $filename, $PSScriptRoot)
+        Write-Host "Finished"
+    }
 }
 
-Write-Host (Test-Path ($workingDir + "\x64"))
-
-if((Test-Path ((Get-ScriptDirectory) + "\x64.zip")) -eq $false) {
-    Start-BitsTransfer -Source https://3dtoolkitstorage.blob.core.windows.net/libs/x64.zip -Destination ((Get-ScriptDirectory) + "\x64.zip")   
-    Write-Host "Downloaded x64 lib archive"
-} 
-if((Test-Path -Path ((Get-ScriptDirectory) + "\x64")) -eq $false) {
-    Write-Host "Extracting..."
-    [System.IO.Compression.ZipFile]::ExtractToDirectory((Get-ScriptDirectory) + "\x64.zip", (Get-ScriptDirectory))
-    Write-Host "Finished"
-}
-
-if((Test-Path ((Get-ScriptDirectory) + "\Win32.zip")) -eq $false) {
-    Start-BitsTransfer -Source https://3dtoolkitstorage.blob.core.windows.net/libs/Win32.zip -Destination ((Get-ScriptDirectory) + "\Win32.zip")
-    Write-Host "Downloaded Win32 lib archive"
-}
-if((Test-Path -Path ((Get-ScriptDirectory) + "\Win32")) -eq $false) {
-    Write-Host "Extracting..."
-    [System.IO.Compression.ZipFile]::ExtractToDirectory((Get-ScriptDirectory) + "\Win32.zip", (Get-ScriptDirectory))
-    Write-Host "Finished"
-}
+DecompressZip -filename "m58patch_x64.zip"
+DecompressZip -filename "m58patch_Win32.zip"
+DecompressZip -filename "m58patch_headers.zip"
