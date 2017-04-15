@@ -41,6 +41,7 @@
 #include "rapidjson/document.h"
 
 #pragma warning( disable : 4100 )
+#pragma comment(lib, "ws2_32.lib") 
 
 using namespace DirectX;
 using namespace Toolkit3DLibrary;
