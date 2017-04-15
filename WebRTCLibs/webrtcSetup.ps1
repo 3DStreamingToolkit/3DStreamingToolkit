@@ -58,10 +58,10 @@ CMD /C "gclient sync --jobs 16"
 CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\nvencoder.patch")
 CMD /C 'git commit -am "nvencoder patch"'
 
-CMD /C 'gn gen out/Win32/Release --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=true rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
-CMD /C 'gn gen out/Win32/Debug --ide=vs --args="use_rtti=true target_cpu=\"x86\" rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
-CMD /C 'gn gen out/x64/Release --ide=vs --args="use_rtti=true is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
-CMD /C 'gn gen out/x64/Debug --ide=vs --args="use_rtti=true rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
+CMD /C 'gn gen out/Win32/Release  --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
+CMD /C 'gn gen out/Win32/Debug    --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
+CMD /C 'gn gen out/x64/Release    --ide=vs --args="use_rtti=true target_cpu=\"x64\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
+CMD /C 'gn gen out/x64/Debug      --ide=vs --args="use_rtti=true target_cpu=\"x64\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
 CMD /C 'ninja -C out/Win32/Debug'
 CMD /C 'ninja -C out/x64/Debug'
 CMD /C 'ninja -C out/Win32/Release'
@@ -71,7 +71,7 @@ $outPath = New-Item -Path ..\ -Name "dist" -ItemType directory -Force
 Set-Location "webrtc"
 
 Get-ChildItem -Recurse -Filter "*.h" | ForEach-Object {
-    $touchItem = New-Item (Join-Path -Path ($outPath + "\headers\webrtc\") -ChildPath (Resolve-Path -Path $_.FullName -Relative))  -ItemType file -Force
+    $touchItem = New-Item (Join-Path -Path ($outPath.FullName + "\headers\webrtc\") -ChildPath (Resolve-Path -Path $_.FullName -Relative))  -ItemType file -Force
     Copy-Item $_.FullName -Destination $touchItem.FullName -Force
 }
 Set-Location "..\out\"
