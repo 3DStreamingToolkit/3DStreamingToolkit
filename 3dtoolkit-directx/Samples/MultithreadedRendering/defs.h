@@ -1,12 +1,10 @@
 #pragma once
 
-#ifndef TEST_RUNNER
-#define REMOTE_RENDERING
-#ifdef REMOTE_RENDERING
-#define SERVER_APP
+#if defined(REMOTE_RENDERING) || defined(TEST_RUNNER)
+#ifdef SERVER_APP
 #define WEBRTC_RAW_ENCODED_FRAME
+#endif //SERVER_APP
 #endif // REMOTE_RENDERING
-#endif // TEST_RUNNER
 
 //#define STEREO_OUTPUT_MODE
 #ifdef STEREO_OUTPUT_MODE
