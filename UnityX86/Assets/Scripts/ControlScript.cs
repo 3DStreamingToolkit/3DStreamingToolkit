@@ -115,25 +115,40 @@ public class ControlScript : MonoBehaviour
     }
 
     private void UpdateFrame(
-        uint p0,
-        uint p1,
-        byte[] p2,
-        uint p3,
-        byte[] p4,
-        uint p5,
-        byte[] p6,
-        uint p7)
+        uint width,
+        uint height,
+        byte[] yPlane,
+        uint yPitch,
+        byte[] vPlane,
+        uint vPitch,
+        byte[] uPlane,
+        uint uPitch)
     {
         frameCounter++;
         int i = 0;
-        for (int x = 0; x < 640; x++)
+        for (int x = 0; x < width; x++)
         {
-            for (int y = 0; y < 640; y++)
+            for (int y = 0; y < height; y++)
             {
-                float yVal = p2[i] / 255f;
-                Color c = new Color(yVal, 0, 0, 1);
-                i++;
+                float yVal;
+                float uVal;
+                float vVal;
+
+                // 4-pixel group sample for a 640 x 640 frame?
+                // Format seems like a YUV 420 (YV12)?
+                yVal = yPlane[i];
+                var p = y /2 * vPitch + x / 2;      // Assume V,U to have the same index
+                vVal = vPlane[p];
+                uVal = uPlane[p];
+
+                float r = Mathf.Clamp(yVal + (1.4065f * (vVal - 128)), 0f, 255f) / 255f;
+                float g = Mathf.Clamp(yVal - (0.3455f * (uVal - 128)) - (0.7169f * (vVal - 128)), 0f, 255f) / 255f;
+                float b = Mathf.Clamp(yVal + (1.7790f * (uVal - 128)), 0f, 255f) / 255f;
+
+                Color c = new Color(r, g, b, 1.0f);
                 sourceTexture2D.SetPixel(x, y, c);
+
+                i++;
             }
         }
         sourceTexture2D.Apply();
