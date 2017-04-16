@@ -5,9 +5,9 @@
     xmlns:local="using:WebRtcIntegration"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d" Width="1571">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,0,0,19">
         <Border BorderThickness="1" BorderBrush="Black" HorizontalAlignment="Left" VerticalAlignment="Top" Height="200" Width="200" Margin="20,20,0,0">
             <MediaElement 
             Name="PeerVideo"
@@ -30,5 +30,6 @@
         <TextBox x:Name="StatusTextBox" Text="" HorizontalAlignment="Left" Margin="450,20,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="18" Height="530" Width="450" />
         <Button x:Name="ClearPeerMessageButton" Content="Clear Peer Message" HorizontalAlignment="Left" Margin="450,560,0,0" VerticalAlignment="Top" Height="40" Width="200" FontSize="18" Click="ClearPeerMessageButton_Click" />
         <Button x:Name="ClearStatusTextButton" Content="Clear Message" HorizontalAlignment="Left" Margin="700,560,0,0" VerticalAlignment="Top" Height="40" Width="200" FontSize="18" Click="ClearStatusTextButton_Click" />
+        <Image x:Name="VideoImage" HorizontalAlignment="Left" Width ="640"  Height="640" Margin="910,20,0,0" VerticalAlignment="Top" />
     </Grid>
 </Page>

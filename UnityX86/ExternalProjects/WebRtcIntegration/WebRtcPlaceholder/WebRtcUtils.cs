@@ -2,16 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Org.WebRtc;
+//using Org.WebRtc;
 
 // PLACEHOLDER Object for UWP Class
 namespace WebRtcWrapper
 {
     public class WebRtcUtils
     {
+        public delegate void OnRawVideoFrameSendDelegate(uint w, uint h, byte[] yPlane, uint yPitch, byte[] vPlane, uint vPitch, byte[] uPlane, uint uPitch);
+
         public event Action OnInitialized;
         public event Action<int, string> OnPeerMessageDataReceived;
-        public event Action<string> OnStatusMessageUpdate;
+        public event Action<string> OnStatusMessageUpdate;        
+        public event Action<uint, uint, byte[]> OnEncodedFrameReceived;
+        //public event Action<byte[], byte[], byte[]> OnRawFrameReceived2;
+        public event Action OnRawFrameReceived2;
+        public OnRawVideoFrameSendDelegate OnRawVideoFrameSend;
+                
 
         public void Initialize()
         {
@@ -36,6 +43,8 @@ namespace WebRtcWrapper
         public void ConnectToPeerCommandExecute(object obj)
         {
             OnStatusMessageUpdate?.Invoke("Connect Peer");
+            OnRawFrameReceived2?.Invoke();
+
         }
 
         public void SendPeerMessageDataExecute(object obj)
@@ -53,8 +62,8 @@ namespace WebRtcWrapper
         public bool IsMicrophoneEnabled { get; set; }
         public Peer SelectedPeer { get; set; }
 
-        public CodecInfo SelectedVideoCodec { get; set; }
-        public List<CodecInfo> VideoCodecs { get; set; }
+        //public CodecInfo SelectedVideoCodec { get; set; }
+        //public List<CodecInfo> VideoCodecs { get; set; }
         public List<Peer> Peers = new List<Peer>(){ new Peer(){ Id = 1, Name = "peer1" }};
 
         #endregion

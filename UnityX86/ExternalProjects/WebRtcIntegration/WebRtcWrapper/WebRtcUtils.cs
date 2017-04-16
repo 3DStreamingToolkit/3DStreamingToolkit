@@ -25,13 +25,20 @@ namespace WebRtcWrapper
 {
     public class WebRtcUtils : DispatcherBindableBase
     {
+        public delegate void OnRawVideoFrameSendDelegate(uint w, uint h, byte[] yPlane, uint yPitch, byte[] vPlane, uint vPitch, byte[] uPlane, uint uPitch);
+
         public event Action OnInitialized;
         public event Action<int, string> OnPeerMessageDataReceived;
         public event Action<string> OnStatusMessageUpdate;
-        public MediaElement SelfVideo;
-        public MediaElement PeerVideo;        
+        
+        //public event Action<uint, uint, byte[], uint, byte[], uint, byte[], uint> OnRawVideoFrameSend;
+        public OnRawVideoFrameSendDelegate OnRawVideoFrameSend;
+        public event Action<uint, uint, byte[]> OnEncodedFrameReceived;        
+
+        public MediaElement SelfVideo = null;
+        public MediaElement PeerVideo = null;        
         public RawVideoSource rawVideo;
-        public int rawVideoCounter = 0;
+        public EncodedVideoSource encodedVideoSource;        
 
         // Message Data Type
         private static readonly string kMessageDataType = "message";
@@ -157,10 +164,12 @@ namespace WebRtcWrapper
                 });
             };
 
-            Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
+            // TODO: Restore Event Handler in Utility Wrapper
+            // Implemented in Unity Consumer due to Event Handling Issue
+//            Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
+
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
-
             Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
 
             Conductor.Instance.OnPeerConnectionCreated += () =>
@@ -170,6 +179,7 @@ namespace WebRtcWrapper
                     IsReadyToConnect = false;
                     IsConnectedToPeer = true;
                     IsReadyToDisconnect = false;
+                    IsMicrophoneEnabled = false;
                     OnStatusMessageUpdate?.Invoke("Peer Connection Created");
                 });
             };
@@ -184,7 +194,7 @@ namespace WebRtcWrapper
                     _peerVideoTrack = null;
                     _selfVideoTrack = null;
                     GC.Collect(); // Ensure all references are truly dropped.
-                    IsMicrophoneEnabled = true;
+                    IsMicrophoneEnabled = false;
                     IsCameraEnabled = true;
                     OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
                 });
@@ -238,7 +248,7 @@ namespace WebRtcWrapper
 
                 if (VideoCodecs.Count > 0)
                 {
-                    SelectedVideoCodec = VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
+                    SelectedVideoCodec = VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
                 }
             });
 
@@ -709,7 +719,7 @@ namespace WebRtcWrapper
             }
         }
 
-        private bool _videoLoopbackEnabled = true;
+        private bool _videoLoopbackEnabled = false;
         public bool VideoLoopbackEnabled
         {
             get { return _videoLoopbackEnabled; }
@@ -1319,23 +1329,34 @@ namespace WebRtcWrapper
             _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_peerVideoTrack != null)
             {
-                
-                var source = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "PEER");
-                RunOnUiThread(() =>
-                {
-                    PeerVideo.SetMediaStreamSource(source);
-                });
 
-                //var media = Media.CreateMedia().GetUserMedia(new RTCMediaStreamConstraints()
+                // XAML MediaElement Setup
+                //var source = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "PEER");
+                //RunOnUiThread(() =>
                 //{
-                //    videoEnabled = true,
-                //    audioEnabled = false
+                //    PeerVideo.SetMediaStreamSource(source);
                 //});
-                //rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
-                //rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;                
+
+
+                // Raw Video from VP8 Sender Setup
+                rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
+                rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
+
+                //// Get H264 Encoded Frame
+                //encodedVideoSource = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
+                //encodedVideoSource.OnEncodedVideoFrame += Source_OnEncodedVideoFrame;
             }
 
             IsReadyToDisconnect = true;
+        }
+
+        private void Source_OnEncodedVideoFrame(uint width, uint height, byte[] frameData)
+        {
+            RunOnUiThread(() =>
+            {
+                // Pass the Event to Consumer
+                OnEncodedFrameReceived?.Invoke(width, height, frameData);
+            });
         }
 
         private void Source_OnRawVideoFrame(
@@ -1348,21 +1369,22 @@ namespace WebRtcWrapper
             byte[] p6, 
             uint p7)
         {
+
             RunOnUiThread(() =>
             {
-                rawVideoCounter++;
-                OnStatusMessageUpdate?.Invoke(string.Format(
-                    "{0}-{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}",
-                    p0, // Width
-                    p1, // Height
-                    p2 != null ? p2.Length.ToString() : "null",
-                    p3,
-                    p4 != null ? p4.Length.ToString() : "null",
-                    p5,
-                    p6 != null ? p6.Length.ToString() : "null",
-                    p7,
-                    rawVideoCounter
-                ));
+                //OnStatusMessageUpdate?.Invoke(string.Format(
+                //    "{0}-{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}",
+                //    p0, // Width
+                //    p1, // Height
+                //    p2 != null ? p2.Length.ToString() : "null",     // yPlane
+                //    p3,                                             // yPitch
+                //    p4 != null ? p4.Length.ToString() : "null",     // vPlane
+                //    p5,                                             // vPitch
+                //    p6 != null ? p6.Length.ToString() : "null",     // uPlane
+                //    p7,                                             // uPitch
+                //    rawVideoCounter
+                //));
+                OnRawVideoFrameSend?.Invoke(p0, p1, p2, p3, p4, p5, p6, p7);
             });
         }
 
@@ -1379,7 +1401,7 @@ namespace WebRtcWrapper
             _selfVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_selfVideoTrack != null)
             {
-                var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
+             
                 RunOnUiThread(() =>
                 {
                     if (IsCameraEnabled)
@@ -1399,8 +1421,9 @@ namespace WebRtcWrapper
                     {
                         Conductor.Instance.MuteMicrophone();
                     }
-                    if (VideoLoopbackEnabled)
+                    if ((VideoLoopbackEnabled) && (SelfVideo != null))
                     {
+                        var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
                         SelfVideo.SetMediaStreamSource(source);
                     }
                 });
