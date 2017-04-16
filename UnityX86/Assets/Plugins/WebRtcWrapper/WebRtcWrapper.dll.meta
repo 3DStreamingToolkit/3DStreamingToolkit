@@ -144,7 +144,7 @@ PluginImporter:
         settings:
           CPU: AnyCPU
           DontProcess: False
-          PlaceholderPath: Assets/Plugins/WebRtcWrapper/Placeholder/WebRtcWrapper.dll
+          PlaceholderPath: 
           SDK: UWP
           ScriptingBackend: AnyScriptingBackend
     data:
