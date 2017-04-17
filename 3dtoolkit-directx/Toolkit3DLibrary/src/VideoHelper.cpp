@@ -143,8 +143,8 @@ void VideoHelper::GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig)
 
 	//Unused by nvEncode.
 	nvEncodeConfig.endFrameIdx = INT_MAX;
-	nvEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
-	nvEncodeConfig.encoderPreset = "losslessHP";
+	nvEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+	nvEncodeConfig.encoderPreset = "lowLatencyHQ";
 
 	//Infinite needed for low latency encoding.
 	nvEncodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
