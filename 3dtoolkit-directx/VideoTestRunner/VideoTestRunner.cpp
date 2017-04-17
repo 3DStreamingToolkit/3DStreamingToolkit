@@ -79,6 +79,9 @@ void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
 void VideoTestRunner::IncrementTest() {
 	if (!access(m_fileName, 0) == 0) {
 		if (m_encoderInitialized) {
+			//Special casing first run for lossless
+			if (m_currentFrame == 0)
+				IncrementTestSuite();
 			m_videoHelper->Deinitialize();
 			m_encoderInitialized = false;
 		}
@@ -157,23 +160,26 @@ void VideoTestRunner::IncrementTestSuite() {
 	m_maxEncodeConfig.bitrate = 10000000;
 
 	switch (m_currentSuite) {
-	case 0: //Lowlatency CBR
+	case 0:
+		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
+		m_minEncodeConfig.encoderPreset = "losslessHP";
+	case 1: //Lowlatency CBR
 		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
 		m_minEncodeConfig.encoderPreset = "lowLatencyHQ";
 		break;
-	case 1: //VBR HQ
+	case 2: //VBR HQ
 		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
 		m_minEncodeConfig.encoderPreset = "hq";
 		break;
-	case 2: //VBR
+	case 3: //VBR
 		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR;
 		m_minEncodeConfig.encoderPreset = "hq";
 		break;
-	case 3: //VBR BluRay
+	case 4: //VBR BluRay
 		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
 		m_minEncodeConfig.encoderPreset = "bluray";
 		break;
-	case 4: //Constant quality QP
+	case 5: //Constant quality QP
 		m_minEncodeConfig.qp = 21;
 		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
 		m_minEncodeConfig.encoderPreset = "lossless";

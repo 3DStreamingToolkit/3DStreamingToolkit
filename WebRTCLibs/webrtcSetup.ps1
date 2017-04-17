@@ -22,6 +22,7 @@ if((Test-Path ($WebRTCFolder)) -eq $false) {
 }
 $fullPath = (Resolve-Path -Path $WebRTCFolder).path
 Set-Location $fullPath
+<#
 if((Test-Path ($fullPath + "\depot_tools\")) -eq $false) {
     if(-not (Test-Path $PWD\depot_tools.zip)) {
         Start-BitsTransfer -Source https://storage.googleapis.com/chrome-infra/depot_tools.zip -Destination ((Get-ScriptDirectory) + "\depot_tools.zip")
@@ -66,7 +67,7 @@ CMD /C 'ninja -C out/Win32/Debug'
 CMD /C 'ninja -C out/x64/Debug'
 CMD /C 'ninja -C out/Win32/Release'
 CMD /C 'ninja -C out/x64/Release'
-
+#>
 $outPath = New-Item -Path ..\ -Name "dist" -ItemType directory -Force
 Set-Location "webrtc"
 
@@ -85,13 +86,18 @@ Get-ChildItem -Directory | ForEach-Object {
             Copy-Item $_.FullName -Destination $touchItem.FullName -Force
         }
         Get-ChildItem -Path $_.FullName -Recurse -Filter "*.lib" | Where-Object {
-            $_.Name -notmatch ".*exe.*" } | ForEach-Object {
+            $_.Name -match "common_video.lib|ffmpeg.dll.lib|webrtc.lib|boringssl_asm.lib|boringssl.dll.lib|field_trial_default.lib|metrics_default.lib|protobuf_full.lib" } | ForEach-Object {
             $touchItem = New-Item -Path ($libPath.FullName + "\lib") -Name $_.Name  -ItemType file -Force
             Copy-Item $_.FullName -Destination $touchItem.FullName -Force
         }
         Get-ChildItem -Path $_.FullName -Recurse -File | Where-Object {
             $_.Name -match "\.exe|\.exe\.pdb" } | ForEach-Object {
             $touchItem = New-Item -Path ($libPath.FullName + "\exe") -Name $_.Name -ItemType file -Force
+            Copy-Item $_.FullName -Destination $touchItem.FullName -Force
+        }
+        Get-ChildItem -Path $_.FullName -Recurse -Filter "*.dll" | Where-Object {
+            $_.Name -notmatch "api-ms-win.*|API-MS-WIN.*|vc.*"} | ForEach-Object {
+            $touchItem = New-Item -Path ($libPath.FullName + "\dll") -Name $_.Name  -ItemType file -Force
             Copy-Item $_.FullName -Destination $touchItem.FullName -Force
         }
     }
