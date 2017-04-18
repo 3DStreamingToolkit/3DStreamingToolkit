@@ -100,7 +100,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
-    <LibraryPath>$(ProjectDir)\LibBinaries\Debug_x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -109,41 +109,48 @@
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir);</IncludePath>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\TestRunner\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\TestRunner\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>NOMINMAX;_CRT_SECURE_NO_WARNINGS;WEBRTC_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;usp10.lib;imm32.lib;version.lib;winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_proto.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;call.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -151,9 +158,11 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -164,13 +173,15 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;NDEBUG;_WINDOWS;_USRDLL;WIN32;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;_USRDLL;TOOLKIT3DLIBRARY_EXPORTS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <UndefinePreprocessorDefinitions>_DEBUG;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -183,13 +194,16 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;NDEBUG;_USRDLL;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -206,9 +220,11 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -225,9 +241,11 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <UndefinePreprocessorDefinitions>
+      </UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

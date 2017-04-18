@@ -1,4 +1,4 @@
-#include "pch.h"
+//#include "pch.h"
 #include "DeviceResources.h"
 #include "macros.h"
 
