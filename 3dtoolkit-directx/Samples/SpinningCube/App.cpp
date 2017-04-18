@@ -19,6 +19,8 @@
 #include "webrtc/base/win32socketserver.h"
 #endif // REMOTE_RENDERING
 
+#pragma comment(lib, "ws2_32.lib") 
+
 using namespace DX;
 using namespace Toolkit3DLibrary;
 using namespace Toolkit3DSample;
