@@ -22,7 +22,7 @@ if((Test-Path ($WebRTCFolder)) -eq $false) {
 }
 $fullPath = (Resolve-Path -Path $WebRTCFolder).path
 Set-Location $fullPath
-<#
+
 if((Test-Path ($fullPath + "\depot_tools\")) -eq $false) {
     if(-not (Test-Path $PWD\depot_tools.zip)) {
         Start-BitsTransfer -Source https://storage.googleapis.com/chrome-infra/depot_tools.zip -Destination ((Get-ScriptDirectory) + "\depot_tools.zip")
@@ -67,7 +67,7 @@ CMD /C 'ninja -C out/Win32/Debug'
 CMD /C 'ninja -C out/x64/Debug'
 CMD /C 'ninja -C out/Win32/Release'
 CMD /C 'ninja -C out/x64/Release'
-#>
+
 $outPath = New-Item -Path ..\ -Name "dist" -ItemType directory -Force
 Set-Location "webrtc"
 

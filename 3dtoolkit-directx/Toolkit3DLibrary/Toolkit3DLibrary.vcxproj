@@ -182,6 +182,7 @@
     </ClCompile>
     <ClCompile Include="src\VideoHelper.cpp" />
     <ClCompile Include="WebRTC\conductor.cpp" />
+    <ClCompile Include="WebRTC\customvideocapturer.cpp" />
     <ClCompile Include="WebRTC\defaults.cpp" />
     <ClCompile Include="WebRTC\default_main_window.cpp" />
     <ClCompile Include="WebRTC\peer_connection_client.cpp" />
@@ -192,9 +193,9 @@
     <ClInclude Include="inc\VideoHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="WebRTC\conductor.h" />
+    <ClInclude Include="WebRTC\customvideocapturer.h" />
     <ClInclude Include="WebRTC\defaults.h" />
     <ClInclude Include="WebRTC\default_main_window.h" />
-    <ClInclude Include="WebRTC\fakevideocapturer.h" />
     <ClInclude Include="WebRTC\flagdefs.h" />
     <ClInclude Include="WebRTC\main_window.h" />
     <ClInclude Include="WebRTC\peer_connection_client.h" />
