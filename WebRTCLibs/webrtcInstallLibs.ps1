@@ -31,6 +31,6 @@ function DecompressZip {
     }
 }
 
-DecompressZip -filename "m58patch_x64.zip"
-DecompressZip -filename "m58patch_Win32.zip"
+DecompressZip -filename "m58patch_x64_.zip"
+DecompressZip -filename "m58patch_Win32_.zip"
 DecompressZip -filename "m58patch_headers.zip"
