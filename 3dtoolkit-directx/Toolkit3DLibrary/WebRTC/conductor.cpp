@@ -22,7 +22,7 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
-#include "fakevideocapturer.h"
+#include "customvideocapturer.h"
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";
@@ -526,11 +526,11 @@ std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice()
 
 std::unique_ptr<cricket::VideoCapturer> Conductor::OpenFakeVideoCaptureDevice()
 {
-	VideoCapturerFactoryCustom factory;
+	Toolkit3DLibrary::VideoCapturerFactoryCustom factory;
 	std::unique_ptr<cricket::VideoCapturer> capturer;
 	cricket::Device dummyDevice;
 	dummyDevice.name = "custom dummy device";
-	capturer = factory.Create(
+	capturer = factory.Create(webrtc::Clock::GetRealTimeClock(),
 		dummyDevice,
 		is_server_app_ ? frame_update_func_ : nullptr,
 		video_helper_);

@@ -1,0 +1,256 @@
+#include "pch.h"
+#include "customvideocapturer.h"
+
+
+namespace Toolkit3DLibrary
+{
+	class CustomVideoCapturer::InsertFrameTask : public rtc::QueuedTask {
+	public:
+		// Repeats in |repeat_interval_ms|. One-time if |repeat_interval_ms| == 0.
+		InsertFrameTask(
+			CustomVideoCapturer* frame_generator_capturer,
+			uint32_t repeat_interval_ms)
+			: frame_generator_capturer_(frame_generator_capturer),
+			repeat_interval_ms_(repeat_interval_ms),
+			intended_run_time_ms_(-1) {}
+
+	private:
+		bool Run() override {
+			bool task_completed = true;
+			if (repeat_interval_ms_ > 0) {
+				// This is not a one-off frame. Check if the frame interval for this
+				// task queue is the same same as the current configured frame rate.
+				uint32_t current_interval_ms =
+					1000 / frame_generator_capturer_->GetCurrentConfiguredFramerate();
+				if (repeat_interval_ms_ != current_interval_ms) {
+					// Frame rate has changed since task was started, create a new instance.
+					rtc::TaskQueue::Current()->PostDelayedTask(
+						std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(
+							frame_generator_capturer_, current_interval_ms)),
+						current_interval_ms);
+				}
+				else {
+					// Schedule the next frame capture event to happen at approximately the
+					// correct absolute time point.
+					int64_t delay_ms;
+					int64_t time_now_ms = rtc::TimeMillis();
+					if (intended_run_time_ms_ > 0) {
+						delay_ms = time_now_ms - intended_run_time_ms_;
+					}
+					else {
+						delay_ms = 0;
+						intended_run_time_ms_ = time_now_ms;
+					}
+					intended_run_time_ms_ += repeat_interval_ms_;
+					if (delay_ms < repeat_interval_ms_) {
+						rtc::TaskQueue::Current()->PostDelayedTask(
+							std::unique_ptr<rtc::QueuedTask>(this),
+							repeat_interval_ms_ - delay_ms);
+					}
+					else {
+						rtc::TaskQueue::Current()->PostDelayedTask(
+							std::unique_ptr<rtc::QueuedTask>(this), 0);
+					}
+					// Repost of this instance, make sure it is not deleted.
+					task_completed = false;
+				}
+			}
+			frame_generator_capturer_->InsertFrame();
+			// Task should be deleted only if it's not repeating.
+			return task_completed;
+		}
+
+		CustomVideoCapturer* const frame_generator_capturer_;
+		const uint32_t repeat_interval_ms_;
+		int64_t intended_run_time_ms_;
+	};
+
+	CustomVideoCapturer::CustomVideoCapturer(webrtc::Clock* clock,
+		Toolkit3DLibrary::VideoHelper* video_helper,
+		void(*frame_update_func)(),
+		int target_fps) : 
+		clock_(clock),
+		sending_(false),
+		sink_(nullptr),
+		sink_wants_observer_(nullptr),
+		target_fps_(target_fps),
+		frame_update_func_(frame_update_func),
+		video_helper_(video_helper),
+		first_frame_capture_time_(-1),
+		task_queue_("FrameGenCapQ",
+			rtc::TaskQueue::Priority::HIGH)
+	{
+		SetCaptureFormat(NULL);
+		set_enable_video_adapter(false);
+		// Default supported formats. Use ResetSupportedFormats to over write.
+		std::vector<cricket::VideoFormat> formats;
+		formats.push_back(cricket::VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_H264));
+		formats.push_back(cricket::VideoFormat(1280, 720, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_H264));
+		formats.push_back(cricket::VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_H264));
+		formats.push_back(cricket::VideoFormat(1280, 720, cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_H264));
+		SetSupportedFormats(formats);
+	}
+
+	int CustomVideoCapturer::GetCurrentConfiguredFramerate() {
+		rtc::CritScope cs(&lock_);
+		if (wanted_fps_ && *wanted_fps_ < target_fps_)
+			return *wanted_fps_;
+		return target_fps_;
+	}
+
+	bool CustomVideoCapturer::Init() {
+		// This check is added because frame_generator_ might be file based and should
+		// not crash because a file moved.
+
+		if (frame_update_func_)
+		{
+			int framerate_fps = GetCurrentConfiguredFramerate();
+			task_queue_.PostDelayedTask(
+				std::unique_ptr<rtc::QueuedTask>(
+					new InsertFrameTask(this, 1000 / framerate_fps)),
+				1000 / framerate_fps);
+		}
+
+		return true;
+	}
+
+	cricket::CaptureState CustomVideoCapturer::Start(const cricket::VideoFormat& format) {
+		SetCaptureFormat(&format);
+
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+		// Maximum fps currently supported with NVencode+WebRTC(release 58) is 6
+		target_fps_ = 6;
+#else // WEBRTC_RAW_ENCODED_FRAME
+		// We are using a software level encoding, let WebRTC handle throttling
+		target_fps_ = 60;
+#endif // WEBRTC_RAW_ENCODED_FRAME
+
+		Init();
+		running_ = true;
+		sending_ = true;
+		SetCaptureState(cricket::CS_RUNNING);
+		return cricket::CS_RUNNING;
+	}
+
+	void CustomVideoCapturer::InsertFrame() {
+		rtc::CritScope cs(&lock_);
+		if (sending_) {
+			if (frame_update_func_)
+			{
+				frame_update_func_();
+			}
+
+			void* pFrameBuffer = nullptr;
+			int frameSizeInBytes = 0;
+			int width = 0;
+			int height = 0;
+
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+			video_helper_->Capture();
+			video_helper_->GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &width, &height);
+#else // WEBRTC_RAW_ENCODED_FRAME
+			video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
+#endif // WEBRTC_RAW_ENCODED_FRAME
+
+			if (frameSizeInBytes == 0)
+			{
+				return;
+			}
+
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
+				width, height, frameSizeInBytes);
+
+			memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
+#else // WEBRTC_RAW_ENCODED_FRAME
+			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
+				width, height);
+
+			libyuv::ABGRToI420(
+				(uint8_t*)pFrameBuffer,
+				width * 4,
+				buffer.get()->MutableDataY(),
+				buffer.get()->StrideY(),
+				buffer.get()->MutableDataU(),
+				buffer.get()->StrideU(),
+				buffer.get()->MutableDataV(),
+				buffer.get()->StrideV(),
+				width,
+				height);
+#endif // WEBRTC_RAW_ENCODED_FRAME
+
+			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+			auto frame = webrtc::VideoFrame(
+				buffer, fake_rotation_,
+				timeStamp);
+
+			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
+			frame.set_rotation(fake_rotation_);
+			if (first_frame_capture_time_ == -1) {
+				first_frame_capture_time_ = frame.ntp_time_ms();
+			}
+
+			if (sink_) {
+				sink_->OnFrame(frame);
+			}
+			else
+			{
+				OnFrame(frame, width, height);
+			}
+		}
+	}
+
+	void CustomVideoCapturer::Stop() {
+		rtc::CritScope cs(&lock_);
+		sending_ = false;
+	}
+
+	void CustomVideoCapturer::SetSinkWantsObserver(SinkWantsObserver* observer) {
+		rtc::CritScope cs(&lock_);
+		RTC_DCHECK(!sink_wants_observer_);
+		sink_wants_observer_ = observer;
+	}
+
+	void CustomVideoCapturer::AddOrUpdateSink(
+		rtc::VideoSinkInterface<VideoFrame>* sink,
+		const rtc::VideoSinkWants& wants) {
+		rtc::CritScope cs(&lock_);
+		// RTC_CHECK(!sink_ || sink_ == sink);
+		sink_ = sink;
+		if (sink_wants_observer_)
+			sink_wants_observer_->OnSinkWantsChanged(sink, wants);
+	}
+
+	bool CustomVideoCapturer::IsRunning() { return running_; }
+	bool CustomVideoCapturer::IsScreencast() const { return false; }
+
+	bool CustomVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
+		fourccs->push_back(cricket::FOURCC_H264);
+		return true;
+	}
+
+	void CustomVideoCapturer::SetFakeRotation(VideoRotation rotation) {
+		rtc::CritScope cs(&lock_);
+		fake_rotation_ = rotation;
+	}
+
+	void CustomVideoCapturer::ChangeResolution(size_t width, size_t height) {
+		//TODO - change nvencode settings
+	}
+
+	void CustomVideoCapturer::RemoveSink(
+		rtc::VideoSinkInterface<VideoFrame>* sink) {
+		rtc::CritScope cs(&lock_);
+		RTC_CHECK(sink_ == sink);
+		sink_ = nullptr;
+	}
+
+	void CustomVideoCapturer::ForceFrame() {
+		// One-time non-repeating task,
+		// therefore repeat_interval_ms is 0 in InsertFrameTask()
+		task_queue_.PostTask(
+			std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(this, 0)));
+	}
+
+};
