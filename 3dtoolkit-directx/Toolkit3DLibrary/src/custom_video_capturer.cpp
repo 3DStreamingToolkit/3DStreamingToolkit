@@ -216,7 +216,7 @@ namespace Toolkit3DLibrary
 		rtc::VideoSinkInterface<VideoFrame>* sink,
 		const rtc::VideoSinkWants& wants) {
 		rtc::CritScope cs(&lock_);
-		// RTC_CHECK(!sink_ || sink_ == sink);
+		//RTC_CHECK(!sink_ || sink_ == sink);
 		sink_ = sink;
 		if (sink_wants_observer_)
 			sink_wants_observer_->OnSinkWantsChanged(sink, wants);
@@ -242,7 +242,7 @@ namespace Toolkit3DLibrary
 	void CustomVideoCapturer::RemoveSink(
 		rtc::VideoSinkInterface<VideoFrame>* sink) {
 		rtc::CritScope cs(&lock_);
-		RTC_CHECK(sink_ == sink);
+		//RTC_CHECK(sink_ == sink);
 		sink_ = nullptr;
 	}
 
