@@ -2,7 +2,7 @@
 
 #include "pch.h"
 
-#include "VideoHelper.h"
+#include "video_helper.h"
 #include "nvFileIO.h"
 #include "nvUtils.h"
 

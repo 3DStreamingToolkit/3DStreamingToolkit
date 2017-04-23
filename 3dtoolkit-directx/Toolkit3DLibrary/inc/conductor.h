@@ -17,7 +17,7 @@
 #include <set>
 #include <string>
 
-#include "VideoHelper.h"
+#include "video_helper.h"
 #include "peer_connection_client.h"
 #include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"

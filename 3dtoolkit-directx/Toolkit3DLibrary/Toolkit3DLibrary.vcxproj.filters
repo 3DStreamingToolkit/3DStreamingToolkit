@@ -7,62 +7,62 @@
     <Filter Include="Source">
       <UniqueIdentifier>{9842d50a-0500-4f58-9a77-aa5cc85a2907}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\webrtc">
-      <UniqueIdentifier>{71197533-b98a-4f1c-8603-5393ec13092b}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="WebRTC\conductor.cpp">
-      <Filter>Source\webrtc</Filter>
-    </ClCompile>
-    <ClCompile Include="WebRTC\defaults.cpp">
-      <Filter>Source\webrtc</Filter>
-    </ClCompile>
-    <ClCompile Include="WebRTC\peer_connection_client.cpp">
-      <Filter>Source\webrtc</Filter>
-    </ClCompile>
-    <ClCompile Include="WebRTC\default_main_window.cpp">
-      <Filter>Source\webrtc</Filter>
-    </ClCompile>
-    <ClCompile Include="src\VideoHelper.cpp">
+    <ClCompile Include="src\conductor.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="WebRTC\customvideocapturer.cpp">
-      <Filter>Source\webrtc</Filter>
+    <ClCompile Include="src\default_main_window.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\defaults.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\peer_connection_client.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\custom_video_capturer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\video_helper.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="inc\conductor.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\default_main_window.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\defaults.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
     <ClInclude Include="inc\defs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\flagdefs.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\macros.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\VideoHelper.h">
+    <ClInclude Include="inc\main_window.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="WebRTC\conductor.h">
-      <Filter>Source\webrtc</Filter>
+    <ClInclude Include="inc\pch.h">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="WebRTC\default_main_window.h">
-      <Filter>Source\webrtc</Filter>
+    <ClInclude Include="inc\peer_connection_client.h">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="WebRTC\defaults.h">
-      <Filter>Source\webrtc</Filter>
+    <ClInclude Include="inc\custom_video_capturer.h">
+      <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="WebRTC\flagdefs.h">
-      <Filter>Source\webrtc</Filter>
-    </ClInclude>
-    <ClInclude Include="WebRTC\main_window.h">
-      <Filter>Source\webrtc</Filter>
-    </ClInclude>
-    <ClInclude Include="WebRTC\peer_connection_client.h">
-      <Filter>Source\webrtc</Filter>
-    </ClInclude>
-    <ClInclude Include="WebRTC\customvideocapturer.h">
-      <Filter>Source\webrtc</Filter>
+    <ClInclude Include="inc\video_helper.h">
+      <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

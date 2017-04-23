@@ -30,7 +30,7 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "ppltasks.h"
 
-#include "VideoHelper.h"
+#include "video_helper.h"
 #include "libyuv/convert.h"
 
 using namespace Concurrency;

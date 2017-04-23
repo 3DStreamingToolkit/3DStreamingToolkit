@@ -5,7 +5,7 @@
 #ifdef TEST_RUNNER
 #include "VideoTestRunner.h"
 #else // TEST_RUNNER
-#include "VideoHelper.h"
+#include "video_helper.h"
 #endif // TEST_RUNNER
 
 #ifdef REMOTE_RENDERING
