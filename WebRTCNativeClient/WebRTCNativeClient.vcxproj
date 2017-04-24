@@ -298,11 +298,6 @@
     <Image Include="WebRTCNativeClient.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\3dtoolkit-directx\Toolkit3DLibrary\Toolkit3DLibrary.vcxproj">
-      <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <FxCompile Include="directx\PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
