@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="AppCallbacks.cpp" />
+    <ClCompile Include="Common\DeviceResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\VideoRenderer.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoDecoder\VideoDecoder.cpp">
+      <Filter>VideoDecoder</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AppCallbacks.h" />
+    <ClInclude Include="Common\DeviceResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DirectXHelper.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\StepTimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\VideoRenderer.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoDecoder\defs.h">
+      <Filter>VideoDecoder</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoDecoder\macros.h">
+      <Filter>VideoDecoder</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoDecoder\VideoDecoder.h">
+      <Filter>VideoDecoder</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{7333c327-c574-4e4d-a22a-f6d89e277639}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{4230e590-b26b-4fdb-a561-cf05f4186900}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{166f04bb-d849-4120-8f48-f4ecd93cdacd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VideoDecoder">
+      <UniqueIdentifier>{bd21fefe-ec67-48f7-a152-b924bb7a2bdb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\PixelShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\VertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>
