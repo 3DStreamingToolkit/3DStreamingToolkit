@@ -4,6 +4,9 @@
 #include "DeviceResources.h"
 #include "VideoRenderer.h"
 #include "VideoDecoder.h"
+#ifdef HOLOLENS
+#include "HolographicAppMain.h"
+#endif // HOLOLENS
 
 using namespace Platform;
 using namespace Windows::ApplicationModel::Core;
@@ -52,8 +55,14 @@ namespace WebRTCDirectXClientComponent
 			uint8** dataV,
 			int* strideV);
 
-		std::shared_ptr<DX::DeviceResources>				m_deviceResources;
-		VideoRenderer*										m_videoRenderer;
-		VideoDecoder*										m_videoDecoder;
+		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
+		VideoRenderer*											m_videoRenderer;
+		VideoDecoder*											m_videoDecoder;
+#ifdef HOLOLENS
+		std::unique_ptr<HolographicAppMain>						m_main;
+
+		// The holographic space the app will use for rendering.
+		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;
+#endif // HOLOLENS
     };
 }

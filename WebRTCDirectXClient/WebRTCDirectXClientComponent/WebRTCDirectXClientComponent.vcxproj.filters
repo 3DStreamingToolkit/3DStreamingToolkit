@@ -12,6 +12,10 @@
     <ClCompile Include="VideoDecoder\VideoDecoder.cpp">
       <Filter>VideoDecoder</Filter>
     </ClCompile>
+    <ClCompile Include="Common\CameraResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="HolographicAppMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -37,6 +41,13 @@
     <ClInclude Include="VideoDecoder\VideoDecoder.h">
       <Filter>VideoDecoder</Filter>
     </ClInclude>
+    <ClInclude Include="Content\ShaderStructures.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\CameraResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="HolographicAppMain.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -57,6 +68,15 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\VertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\GeometryShaderHoloLens.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PixelShaderHoloLens.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\VertexShaderHoloLens.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
