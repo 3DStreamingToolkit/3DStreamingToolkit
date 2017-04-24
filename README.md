@@ -14,8 +14,21 @@ Chromium m58 release
 .\WebRTCLibs\nvencoder.patch
 ```
 <br>
+
 ### Building WebRTC Libraries from Source
-If you want to build webrtc yourself, run 
+If you want to build webrtc yourself, you will need to install Visual Studio 2015 with Update 3.
+
+[Visual Studio 2015 Update 3 Community Edition ISO](http://download.microsoft.com/download/b/e/d/bedddfc4-55f4-4748-90a8-ffe38a40e89f/vs2015.3.com_enu.iso)
+
+[Visual Studio 2015 Update 3 Professional Edition ISO](http://download.microsoft.com/download/e/b/c/ebc2c43f-3821-4a0b-82b1-d05368af1604/vs2015.3.pro_enu.iso)
+
+[Visual Studio 2015 Update 3 Enterprise Edition ISO](http://download.microsoft.com/download/8/4/3/843ec655-1b67-46c3-a7a4-10a1159cfa84/vs2015.3.ent_enu.iso)
+
+Be sure to install all of the C++ language tools and the Windows Universal Components.
+
+Once finished installing, install the [Windows DDK](https://go.microsoft.com/fwlink/p/?LinkID=845298) as it contains debugging tools needed by WebRTC.
+
+Finally, run 
 ```
 .\WebRTCLibs\webrtcSetup.ps1 -WebRTCFolder C:\path\here
 ```
