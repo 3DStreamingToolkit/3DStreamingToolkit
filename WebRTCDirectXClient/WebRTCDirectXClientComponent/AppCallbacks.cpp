@@ -4,6 +4,9 @@
 
 using namespace WebRTCDirectXClientComponent;
 using namespace Platform;
+#ifdef HOLOLENS
+using namespace Windows::Graphics::Holographic;
+#endif // HOLOLENS
 
 static uint8_t* s_videoYUVFrame = nullptr;
 static uint8_t* s_videoRGBFrame = nullptr;
@@ -13,7 +16,12 @@ static uint8_t* s_videoDataV = nullptr;
 
 AppCallbacks::AppCallbacks() :
 	m_videoRenderer(nullptr),
+#ifndef HOLOLENS
 	m_videoDecoder(nullptr)
+#else // HOLOLENS
+	m_videoDecoder(nullptr),
+	m_holographicSpace(nullptr)
+#endif // HOLOLENS
 {
 }
 
@@ -31,11 +39,31 @@ AppCallbacks::~AppCallbacks()
 void AppCallbacks::Initialize(CoreApplicationView^ appView)
 {
 	m_deviceResources = std::make_shared<DX::DeviceResources>();
+
+#ifdef HOLOLENS
+	m_main = std::make_unique<HolographicAppMain>(m_deviceResources);
+#endif // HOLOLENS
 }
 
 void AppCallbacks::SetWindow(CoreWindow^ window)
 {
+#ifdef HOLOLENS
+	// Create a holographic space for the core window for the current view.
+	// Presenting holographic frames that are created by this holographic space will put
+	// the app into exclusive mode.
+	m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
+
+	// The DeviceResources class uses the preferred DXGI adapter ID from the holographic
+	// space (when available) to create a Direct3D device. The HolographicSpace
+	// uses this ID3D11Device to create and manage device-based resources such as
+	// swap chains.
+	m_deviceResources->SetHolographicSpace(m_holographicSpace);
+
+	// The main class uses the holographic space for updates and rendering.
+	m_main->SetHolographicSpace(m_holographicSpace);
+#else // HOLOLENS
 	m_deviceResources->SetWindow(window);
+#endif // HOLOLENS
 }
 
 void AppCallbacks::Run()
@@ -61,6 +89,9 @@ void AppCallbacks::OnFrame(
 	{
 		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
 		s_videoRGBFrame = new uint8_t[width * height * 4];
+#ifdef HOLOLENS
+		m_main->SetVideoRender(m_videoRenderer);
+#endif // HOLOLENS
 	}
 
 	libyuv::I420ToARGB(
@@ -74,6 +105,21 @@ void AppCallbacks::OnFrame(
 		width * 4,
 		width,
 		height);
+
+	m_videoRenderer->UpdateFrame(s_videoRGBFrame);
+
+#ifdef HOLOLENS
+	HolographicFrame^ holographicFrame = m_main->Update();
+	if (m_main->Render(holographicFrame))
+	{
+		// The holographic frame has an API that presents the swap chain for each
+		// holographic camera.
+		m_deviceResources->Present(holographicFrame);
+	}
+#else // HOLOLENS
+	m_videoRenderer->Render();
+	m_deviceResources->Present();
+#endif // HOLOLENS
 }
 
 void AppCallbacks::OnEncodedFrame(
@@ -86,6 +132,9 @@ void AppCallbacks::OnEncodedFrame(
 	{
 		// Initializes the video renderer.
 		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
+#ifdef HOLOLENS
+		m_main->SetVideoRender(m_videoRenderer);
+#endif // HOLOLENS
 
 		// Initializes the video decoder.
 		m_videoDecoder = new VideoDecoder();
@@ -149,8 +198,20 @@ void AppCallbacks::OnEncodedFrame(
 			width,
 			height);
 
-		m_videoRenderer->Render(s_videoRGBFrame);
+		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
+
+#ifdef HOLOLENS
+		HolographicFrame^ holographicFrame = m_main->Update();
+		if (m_main->Render(holographicFrame))
+		{
+			// The holographic frame has an API that presents the swap chain for each
+			// holographic camera.
+			m_deviceResources->Present(holographicFrame);
+		}
+#else // HOLOLENS
+		m_videoRenderer->Render();
 		m_deviceResources->Present();
+#endif // HOLOLENS
 	}
 }
 
