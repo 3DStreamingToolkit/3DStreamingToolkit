@@ -836,30 +836,27 @@ void DefaultMainWindow::VideoRenderer::SetSize(int width, int height)
 	image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
 }
 
-void DefaultMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame)
-{
-    AutoLock<VideoRenderer> lock(this);
+void DefaultMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) {
 
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(video_frame.video_frame_buffer());
-    if (video_frame.rotation() != webrtc::kVideoRotation_0)
 	{
-		buffer = webrtc::I420Buffer::Rotate(*buffer, video_frame.rotation());
-    }
+		AutoLock<VideoRenderer> lock(this);
 
-    SetSize(buffer->width(), buffer->height());
+		rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
+			video_frame.video_frame_buffer());
+		if (video_frame.rotation() != webrtc::kVideoRotation_0) {
+			buffer = webrtc::I420Buffer::Rotate(*buffer, video_frame.rotation());
+		}
 
-    RTC_DCHECK(image_.get() != NULL);
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-	if (buffer->encoded_length() == 0)
-#endif // WEBRTC_RAW_ENCODED_FRAME
-	{
+		SetSize(buffer->width(), buffer->height());
+
+		RTC_DCHECK(image_.get() != NULL);
 		libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
 			buffer->DataU(), buffer->StrideU(),
 			buffer->DataV(), buffer->StrideV(),
 			image_.get(),
-			bmi_.bmiHeader.biWidth * bmi_.bmiHeader.biBitCount / 8,
+			bmi_.bmiHeader.biWidth *
+			bmi_.bmiHeader.biBitCount / 8,
 			buffer->width(), buffer->height());
 	}
-
 	InvalidateRect(wnd_, NULL, TRUE);
 }

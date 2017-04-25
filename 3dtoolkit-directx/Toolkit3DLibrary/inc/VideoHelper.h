@@ -1,11 +1,11 @@
 ﻿#pragma once
 
-#include <d3d11.h>
+#include <d3d11_4.h>
 
 #include "defs.h"
 #include "nvEncodeAPI.h"
 #include "nvCPUOPSys.h"
-#include "NvHWEncoder.h"
+// #include "NvHWEncoder.h"
 
 namespace Toolkit3DLibrary
 {
@@ -90,36 +90,38 @@ namespace Toolkit3DLibrary
 												~VideoHelper();
 												
 		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, char* outputFile = nullptr, bool initEncoder = false);
-		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
+		// NVENCSTATUS								Initialize(IDXGISwapChain* swapChain, EncodeConfig nvEncodeConfig);
 		NVENCSTATUS                             Deinitialize();
 		NVENCSTATUS								SetEncodeProfile(int profileIndex);
-		void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
+		// void									GetDefaultEncodeConfig(EncodeConfig &nvEncodeConfig);
 		void									Capture();
 		void									Capture(void** buffer, int* size, int* width, int* height);
+		ID3D11Texture2D*						Capture2DTexture(int* width, int* height, void** buffer, int* size);
 		void									GetEncodedFrame(void** buffer, int* size, int* width, int* height);
 
 		// Debug
-		void									PrintConfig(EncodeConfig encodeConfig);
-
-	private:
+		// void									PrintConfig(EncodeConfig encodeConfig);
 		ID3D11Device*							m_d3dDevice;
 		ID3D11DeviceContext*					m_d3dContext;
+
+	private:
+
 		IDXGISwapChain*							m_swapChain;
 
 		// NvEncoder
-		CNvHWEncoder*                           m_pNvHWEncoder;
+		// CNvHWEncoder*                           m_pNvHWEncoder;
 		uint32_t                                m_uEncodeBufferCount;
-		EncodeOutputBuffer						m_stEOSOutputBfr;
-		EncodeBuffer							m_stEncodeBuffer[MAX_ENCODE_QUEUE];
-		CNvQueue<EncodeBuffer>                  m_EncodeBufferQueue;
-		EncodeConfig							m_encodeConfig;
+		// EncodeOutputBuffer						m_stEOSOutputBfr;
+		// EncodeBuffer							m_stEncodeBuffer[MAX_ENCODE_QUEUE];
+		// CNvQueue<EncodeBuffer>                  m_EncodeBufferQueue;
+		// EncodeConfig							m_encodeConfig;
 		bool									m_encoderInitialized;
 		ID3D11Texture2D*						m_stagingFrameBuffer;
 		D3D11_TEXTURE2D_DESC					m_stagingFrameBufferDesc;
 
-		NVENCSTATUS								InitializeEncoder(DXGI_SWAP_CHAIN_DESC swapChainDesc, EncodeConfig nvEncodeConfig);
-		NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc);
-		NVENCSTATUS								ReleaseIOBuffers();
-		NVENCSTATUS                             FlushEncoder();
+		//NVENCSTATUS								InitializeEncoder(DXGI_SWAP_CHAIN_DESC swapChainDesc, EncodeConfig nvEncodeConfig);
+		//NVENCSTATUS								AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight, DXGI_SWAP_CHAIN_DESC swapChainDesc);
+		//NVENCSTATUS								ReleaseIOBuffers();
+		//NVENCSTATUS                             FlushEncoder();
 	};
 }
