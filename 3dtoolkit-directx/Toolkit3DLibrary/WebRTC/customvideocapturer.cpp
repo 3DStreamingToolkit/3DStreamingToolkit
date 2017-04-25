@@ -119,7 +119,7 @@ namespace Toolkit3DLibrary
 
 #ifdef WEBRTC_RAW_ENCODED_FRAME
 		// Maximum fps currently supported with NVencode+WebRTC(release 58) is 6
-		target_fps_ = 6;
+		target_fps_ = 12;
 #else // WEBRTC_RAW_ENCODED_FRAME
 		// We are using a software level encoding, let WebRTC handle throttling
 		target_fps_ = 60;
@@ -128,6 +128,7 @@ namespace Toolkit3DLibrary
 		Init();
 		running_ = true;
 		sending_ = true;
+		first_frame = true;
 		SetCaptureState(cricket::CS_RUNNING);
 		return cricket::CS_RUNNING;
 	}
@@ -149,34 +150,25 @@ namespace Toolkit3DLibrary
 			video_helper_->Capture();
 			video_helper_->GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &width, &height);
 #else // WEBRTC_RAW_ENCODED_FRAME
-			video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
+			// video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
 #endif // WEBRTC_RAW_ENCODED_FRAME
 
-			if (frameSizeInBytes == 0)
-			{
-				return;
-			}
+			//if (frameSizeInBytes == 0)
+			//{
+			//	return;
+			//}
 
 #ifdef WEBRTC_RAW_ENCODED_FRAME
 			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
 				width, height, frameSizeInBytes);
 
 			memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
+
 #else // WEBRTC_RAW_ENCODED_FRAME
+			auto texture = video_helper_->Capture2DTexture(&width, &height, &pFrameBuffer, &frameSizeInBytes);
+
 			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
 				width, height);
-
-			libyuv::ABGRToI420(
-				(uint8_t*)pFrameBuffer,
-				width * 4,
-				buffer.get()->MutableDataY(),
-				buffer.get()->StrideY(),
-				buffer.get()->MutableDataU(),
-				buffer.get()->StrideU(),
-				buffer.get()->MutableDataV(),
-				buffer.get()->StrideV(),
-				width,
-				height);
 #endif // WEBRTC_RAW_ENCODED_FRAME
 
 			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -184,6 +176,11 @@ namespace Toolkit3DLibrary
 			auto frame = webrtc::VideoFrame(
 				buffer, fake_rotation_,
 				timeStamp);
+
+#ifdef WEBRTC_RAW_ENCODED_FRAME
+#else // WEBRTC_RAW_ENCODED_FRAME
+			frame.SetID3D11Texture2D(texture);
+#endif // WEBRTC_RAW_ENCODED_FRAME
 
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 			frame.set_rotation(fake_rotation_);
