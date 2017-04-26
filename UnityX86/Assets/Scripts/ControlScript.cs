@@ -23,8 +23,7 @@ public class ControlScript : MonoBehaviour
     private Transform camTransform;
     private Vector3 prevPos;
     private Quaternion prevRot;
-    private WebRtcUtils _webRtcUtils;
-    private Texture2D sourceTexture2D;
+    private WebRtcUtils _webRtcUtils;    
 
     private int frameCounter = 0;
     private int fpsCounter = 0;
@@ -53,7 +52,7 @@ public class ControlScript : MonoBehaviour
 #else
     [DllImport("TexturesUWP")]
 #endif
-    private static extern unsafe void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
+    private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
         IntPtr vPlane, uint vStride);
 
 #if UNITY_EDITOR
@@ -128,48 +127,7 @@ public class ControlScript : MonoBehaviour
         uP.Free();
         vP.Free();        
     }
-
-    private void ConvertYUVFrame(       // REFERENCE ONLY
-        uint width,
-        uint height,
-        byte[] yPlane,
-        uint yPitch,
-        byte[] vPlane,
-        uint vPitch,
-        byte[] uPlane,
-        uint uPitch)
-    {
-        frameCounter++;
-
-        int i = 0;
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                float yVal;
-                float uVal;
-                float vVal;
-
-                // 4-pixel group sample for a 640 x 640 frame?
-                // Format seems like a YUV 420 (YV12)?
-                yVal = yPlane[i];
-                var p = y /2 * vPitch + x / 2;      // Assume V,U to have the same index
-                vVal = vPlane[p];
-                uVal = uPlane[p];
-
-                float r = Mathf.Clamp(yVal + (1.4065f * (vVal - 128)), 0f, 255f) / 255f;
-                float g = Mathf.Clamp(yVal - (0.3455f * (uVal - 128)) - (0.7169f * (vVal - 128)), 0f, 255f) / 255f;
-                float b = Mathf.Clamp(yVal + (1.7790f * (uVal - 128)), 0f, 255f) / 255f;
-
-                Color c = new Color(r, g, b, 1.0f);
-                sourceTexture2D.SetPixel(x, y, c);
-
-                i++;
-            }
-        }
-        sourceTexture2D.Apply();
-    }
-
+   
     private void _webRtcUtils_OnInitialized()
     {
         EnqueueAction(OnInitialized);
