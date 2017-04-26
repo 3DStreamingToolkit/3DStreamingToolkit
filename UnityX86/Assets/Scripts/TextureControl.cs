@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class TextureControl : MonoBehaviour
 {
-    public Renderer renderer;
+    public Renderer rend;
     private Texture2D sourceTexture2D;
   
     void Start()
     {
         sourceTexture2D = new Texture2D(640, 640, TextureFormat.ARGB32, false);
-        renderer.material.mainTexture = sourceTexture2D;
+        rend = GetComponent<Renderer>();
+        rend.material.mainTexture = sourceTexture2D;
 
 
         for (int x = 0; x < 640; x++)
