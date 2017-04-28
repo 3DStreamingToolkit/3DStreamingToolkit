@@ -37,6 +37,7 @@ public class ControlScript : MonoBehaviour
     #region DLL Setup
 #if !UNITY_EDITOR
     public RawVideoSource rawVideo;
+    public EncodedVideoSource encodedVideo;
     private MediaVideoTrack _peerVideoTrack;
 #endif
 
@@ -54,6 +55,13 @@ public class ControlScript : MonoBehaviour
 #endif
     private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
         IntPtr vPlane, uint vStride);
+
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
+    private static extern void ProcessH264Frame(uint w, uint h, IntPtr data, uint dataSize);
 
 #if UNITY_EDITOR
     [DllImport("TexturesWin32")]
@@ -79,6 +87,7 @@ public class ControlScript : MonoBehaviour
 #endif
         _webRtcUtils.Initialize();
 
+
         // Setup Low-Level Graphics Plugin
         CreateTextureAndPassToPlugin();
         StartCoroutine(CallPluginAtEndOfFrames());
@@ -92,12 +101,31 @@ public class ControlScript : MonoBehaviour
         {
             // Raw Video from VP8 Encoded Sender
             // H264 Encoded Stream does not trigger this event
-            PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
+            
+            // TODO:  Switch between RAW or ENCODED Frame
             rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
+
+//            encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
+//            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
         }        
-    }        
+    }
 #endif
+
+    private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
+    {
+        frameCounter++;
+        fpsCounter++;
+
+        if (frame_ready_receive)
+            frame_ready_receive = false;
+        else
+            return;
+
+        GCHandle buf = GCHandle.Alloc(data, GCHandleType.Pinned);
+        ProcessH264Frame(w, h, buf.AddrOfPinnedObject(), (uint)data.Length);
+        buf.Free();
+    }
 
 
     private void Source_OnRawVideoFrame(
@@ -167,6 +195,7 @@ public class ControlScript : MonoBehaviour
     public void ConnectToServer()
     {
         _webRtcUtils.ConnectToServer(ServerInputTextField.text, "8888", PeerInputTextField.text);
+        
     }
 
     public void DisconnectFromServer()
@@ -177,7 +206,7 @@ public class ControlScript : MonoBehaviour
     public void ConnectToPeer()
     {
         // TODO: Support Peer Selection
-        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
+        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];        
         _webRtcUtils.ConnectToPeerCommandExecute(null);
 
         endTime = (startTime = Time.time) + 10f;

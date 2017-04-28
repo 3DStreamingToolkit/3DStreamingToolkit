@@ -54,7 +54,7 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
 	case kUnityGfxDeviceEventShutdown:
 	{
 		//TODO: user shutdown code
-		s_DeviceType = kUnityGfxRendererNull;
+		s_DeviceType = kUnityGfxRendererNull;		
 		break;
 	}
 	case kUnityGfxDeviceEventBeforeReset:
@@ -107,20 +107,58 @@ void* textureDataPtr;
 int textureRowPitch;
 bool isRawFrameReady = false;
 byte* yDataBuf = NULL;
-unsigned wRawFrame = 0;
-unsigned hRawFrame = 0;
+byte* uDataBuf = NULL;
+byte* vDataBuf = NULL;
+byte* encodedBuf = NULL;
+unsigned int encodedBufLen = 0;
+
+unsigned int wRawFrame = 0;
+unsigned int hRawFrame = 0;
+unsigned int yStrideBuf = 0;
+unsigned int uStrideBuf = 0;
+unsigned int vStrideBuf = 0;
+
+unsigned int wH264Frame = 0;
+unsigned int hH264rame = 0;
+byte* h264DataBuf = NULL;
+
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(unsigned int w, unsigned int h, byte* yPlane, unsigned int yStride, byte* uPlane, unsigned int uStride, byte* vPlane, unsigned int vStride)
 {	
 	wRawFrame = w;
 	hRawFrame = h;
-	unsigned int bufSize = w * h;
+	yStrideBuf = yStride;
+	uStrideBuf = uStride;
+	vStrideBuf = vStride;
+
+	unsigned int bufSize = w * h;			// Assume YUV420 Setup
+	unsigned int bufSize2 = bufSize / 4;	
 	if (yDataBuf == NULL)
 	{
 		yDataBuf = new byte[bufSize];
+		uDataBuf = new byte[bufSize2];
+		vDataBuf = new byte[bufSize2];
 	}
 
 	memcpy(yDataBuf, yPlane, bufSize);
+	memcpy(uDataBuf, uPlane, bufSize2);
+	memcpy(vDataBuf, vPlane, bufSize2);
+}
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsigned int w, unsigned int h, byte* data, unsigned int bufSize)
+{
+	wRawFrame = w;
+	hRawFrame = h;
+	encodedBufLen = bufSize;
+	
+	// Maximum possible size for RGBA
+	unsigned int maxBufSize = w * h * 4;
+
+	if(encodedBuf == NULL)
+	{
+		encodedBuf = new byte[maxBufSize];
+	}
+	memcpy(encodedBuf, data, encodedBufLen);
 }
 
 
@@ -142,6 +180,10 @@ static void ProcessFrameData()
 	byte val1 = 100;
 	byte val2 = 50;
 
+	// TODO: Switch Source either RAWFRAMES or ENCODED FRAME
+	// TODO: DECODE H264 Frame to RAW
+
+	// Process RAW FRAME DAYA
 	byte *yDataPtr = yDataBuf;
 	unsigned char* dst = (unsigned char*)textureDataPtr;	
 	for (int y = 0; y < height; ++y)
@@ -149,8 +191,7 @@ static void ProcessFrameData()
 		unsigned char* ptr = dst;
 		for (int x = 0; x < width; ++x)
 		{
-			// TODO: Convert YUV420 to RGBA
-			//byte dataPoint = yDataBuf[i++];
+			// TODO: Convert YUV420 to RGBA			
 			byte dataPoint = *yDataPtr;
 			yDataPtr++;
 			ptr[0] = dataPoint;
