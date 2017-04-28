@@ -148,8 +148,8 @@ bool Conductor::CreatePeerConnection(bool dtls)
 
 #ifdef DEPLOYED_SERVICE
 	webrtc::PeerConnectionInterface::IceServer turnServer;
-	turnServer.uri = "turn:13.65.204.45:3478";
-	turnServer.username = "anzoloch";
+	turnServer.uri = "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478";
+	turnServer.username = "user";
 	turnServer.password = "3Dstreaming0317";
 	turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck; 
 	config.type = webrtc::PeerConnectionInterface::kRelay;
