@@ -73,7 +73,6 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.15063.0\winrt;C:\Program Files (x86)\Windows Kits\10\Include\10.0.15063.0\um;C:\Program Files (x86)\Windows Kits\10\Include\10.0.15063.0\shared;$(VC_IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -200,11 +199,6 @@
     <ClInclude Include="WebRTC\flagdefs.h" />
     <ClInclude Include="WebRTC\main_window.h" />
     <ClInclude Include="WebRTC\peer_connection_client.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">
-      <Project>{84da0532-9d88-4118-b454-c4801178a330}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
