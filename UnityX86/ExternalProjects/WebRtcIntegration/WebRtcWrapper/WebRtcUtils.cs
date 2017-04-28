@@ -95,6 +95,8 @@ namespace WebRtcWrapper
                 SelectedAudioPlayoutDevice = AudioPlayoutDevices.First();
             }
 
+      
+
             Conductor.Instance.Media.OnMediaDevicesChanged += OnMediaDevicesChanged;
 
             Conductor.Instance.Signaller.OnPeerConnected += (peerId, peerName) =>
@@ -125,8 +127,8 @@ namespace WebRtcWrapper
                 RunOnUiThread(() =>
                 {
                     IsConnected = true;
-                    IsMicrophoneEnabled = true;
-                    IsCameraEnabled = true;
+                    IsMicrophoneEnabled = false;
+                    IsCameraEnabled = false;
                     IsConnecting = false;
 
                     OnStatusMessageUpdate?.Invoke("Signed-In");
@@ -195,7 +197,7 @@ namespace WebRtcWrapper
                     _selfVideoTrack = null;
                     GC.Collect(); // Ensure all references are truly dropped.
                     IsMicrophoneEnabled = false;
-                    IsCameraEnabled = true;
+                    IsCameraEnabled = false;
                     OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
                 });
             };
@@ -530,7 +532,7 @@ namespace WebRtcWrapper
             }
         }
 
-        private bool _cameraEnabled = true;
+        private bool _cameraEnabled = false;
         public bool CameraEnabled
         {
             get { return _cameraEnabled; }
@@ -555,7 +557,7 @@ namespace WebRtcWrapper
             }
         }
 
-        private bool _microphoneIsOn = true;
+        private bool _microphoneIsOn = false;
         public bool MicrophoneIsOn
         {
             get { return _microphoneIsOn; }
@@ -580,14 +582,14 @@ namespace WebRtcWrapper
             }
         }
 
-        private bool _isMicrophoneEnabled = true;
+        private bool _isMicrophoneEnabled = false;
         public bool IsMicrophoneEnabled
         {
             get { return _isMicrophoneEnabled; }
             set { SetProperty(ref _isMicrophoneEnabled, value); }
         }
 
-        private bool _isCameraEnabled = true;
+        private bool _isCameraEnabled = false;
         public bool IsCameraEnabled
         {
             get { return _isCameraEnabled; }
@@ -950,7 +952,7 @@ namespace WebRtcWrapper
             set { SetProperty(ref _showPeerConnectionHealthStats, value); }
         }
 
-        private bool _showLoopbackVideo;
+        private bool _showLoopbackVideo = false;
         public bool ShowLoopbackVideo
         {
             get { return _showLoopbackVideo; }
