@@ -72,6 +72,7 @@ namespace Toolkit3DLibrary
 		clock_(clock),
 		sending_(false),
 		sink_(nullptr),
+		m_useSoftwareEncoder(false),
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		frame_update_func_(frame_update_func),
@@ -80,6 +81,8 @@ namespace Toolkit3DLibrary
 		task_queue_("FrameGenCapQ",
 			rtc::TaskQueue::Priority::HIGH)
 	{
+		// TODO: Implement encoder config file parser 
+
 		SetCaptureFormat(NULL);
 		set_enable_video_adapter(false);
 		// Default supported formats. Use ResetSupportedFormats to over write.
@@ -99,9 +102,6 @@ namespace Toolkit3DLibrary
 	}
 
 	bool CustomVideoCapturer::Init() {
-		// This check is added because frame_generator_ might be file based and should
-		// not crash because a file moved.
-
 		if (frame_update_func_)
 		{
 			int framerate_fps = GetCurrentConfiguredFramerate();
@@ -117,13 +117,7 @@ namespace Toolkit3DLibrary
 	cricket::CaptureState CustomVideoCapturer::Start(const cricket::VideoFormat& format) {
 		SetCaptureFormat(&format);
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-		// Maximum fps currently supported with NVencode+WebRTC(release 58) is 6
-		target_fps_ = 12;
-#else // WEBRTC_RAW_ENCODED_FRAME
-		// We are using a software level encoding, let WebRTC handle throttling
 		target_fps_ = 60;
-#endif // WEBRTC_RAW_ENCODED_FRAME
 
 		Init();
 		running_ = true;
@@ -141,35 +135,34 @@ namespace Toolkit3DLibrary
 				frame_update_func_();
 			}
 
-			void* pFrameBuffer = nullptr;
-			int frameSizeInBytes = 0;
 			int width = 0;
 			int height = 0;
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-			video_helper_->Capture();
-			video_helper_->GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-#else // WEBRTC_RAW_ENCODED_FRAME
-			// video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-#endif // WEBRTC_RAW_ENCODED_FRAME
+			video_helper_->GetHeightAndWidth(&width, &height);
+			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(width, height);
 
-			//if (frameSizeInBytes == 0)
-			//{
-			//	return;
-			//}
+			if (m_useSoftwareEncoder)
+			{
+				void* pFrameBuffer = nullptr;
+				int frameSizeInBytes = 0;
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-				width, height, frameSizeInBytes);
+				video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
 
-			memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
+				if (frameSizeInBytes == 0)
+					return;
 
-#else // WEBRTC_RAW_ENCODED_FRAME
-			auto texture = video_helper_->Capture2DTexture(&width, &height, &pFrameBuffer, &frameSizeInBytes);
-
-			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-				width, height);
-#endif // WEBRTC_RAW_ENCODED_FRAME
+				libyuv::ABGRToI420(
+					(uint8_t*)pFrameBuffer,
+					width * 4,
+					buffer.get()->MutableDataY(),
+					buffer.get()->StrideY(),
+					buffer.get()->MutableDataU(),
+					buffer.get()->StrideU(),
+					buffer.get()->MutableDataV(),
+					buffer.get()->StrideV(),
+					width,
+					height);
+			}
 
 			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -177,10 +170,13 @@ namespace Toolkit3DLibrary
 				buffer, fake_rotation_,
 				timeStamp);
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-#else // WEBRTC_RAW_ENCODED_FRAME
-			frame.SetID3D11Texture2D(texture);
-#endif // WEBRTC_RAW_ENCODED_FRAME
+#ifdef USE_WEBRTC_NVENCODE
+			if (!m_useSoftwareEncoder)
+			{
+				auto texture = video_helper_->Capture2DTexture(&width, &height);
+				frame.SetID3D11Texture2D(texture);
+			}
+#endif
 
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 			frame.set_rotation(fake_rotation_);

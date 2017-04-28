@@ -1,10 +1,11 @@
 #pragma once
 
 // This requires DirectX 11.4
-//#define MULTITHREAD_PROTECTION
+#define MULTITHREAD_PROTECTION
 
 #define MAX_ENCODE_QUEUE 32
 #define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
-// #define WEBRTC_RAW_ENCODED_FRAME
 #define DEPLOYED_SERVICE
-#define MULTITHREAD_PROTECTION
+
+// Un-check flag for Test Runner
+#define USE_WEBRTC_NVENCODE
