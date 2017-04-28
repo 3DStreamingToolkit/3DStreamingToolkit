@@ -91,6 +91,9 @@ public class ControlScript : MonoBehaviour
         // Setup Low-Level Graphics Plugin
         CreateTextureAndPassToPlugin();
         StartCoroutine(CallPluginAtEndOfFrames());
+
+        ConnectToServer();
+        ConnectToPeer();
     }
 
 #if !UNITY_EDITOR
@@ -164,7 +167,7 @@ public class ControlScript : MonoBehaviour
     private void OnInitialized()
     {
 #if !UNITY_EDITOR
-        // _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
+        _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
         // _webRtcUtils.IsMicrophoneEnabled = false;
         PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
 #endif
@@ -194,8 +197,19 @@ public class ControlScript : MonoBehaviour
 
     public void ConnectToServer()
     {
-        _webRtcUtils.ConnectToServer(ServerInputTextField.text, "8888", PeerInputTextField.text);
-        
+        //RTCIceServer turnServer = new RTCIceServer();
+#if !UNITY_EDITOR
+        PeerConnectionClient.Model.IceServer turnServer = new PeerConnectionClient.Model.IceServer()
+        {
+            Host = new PeerConnectionClient.Utilities.ValidableNonEmptyString("13.65.204.45:3478"),
+            Type = PeerConnectionClient.Model.IceServer.ServerType.TURN,
+            Username = "anzoloch",
+            Credential = "3Dstreaming0317"
+        };
+        _webRtcUtils.IceServers.Clear();
+        _webRtcUtils.IceServers.Add(turnServer);
+        _webRtcUtils.ConnectToServer("13.65.196.240", "8888", PeerInputTextField.text);
+#endif
     }
 
     public void DisconnectFromServer()
@@ -280,7 +294,7 @@ public class ControlScript : MonoBehaviour
 
     private void CreateTextureAndPassToPlugin()
     {        
-        Texture2D tex = new Texture2D(640, 640, TextureFormat.ARGB32, false);
+        Texture2D tex = new Texture2D(1280, 720, TextureFormat.ARGB32, false);
         tex.filterMode = FilterMode.Point;       
         tex.Apply();
         RenderTexture.material.mainTexture = tex;
