@@ -10,6 +10,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="TexturesUWP.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="VideoDecoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TexturesUWP.h" />
@@ -22,6 +23,29 @@
     <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D12.h" />
     <ClInclude Include="UnityPluginAPI\IUnityGraphicsMetal.h" />
     <ClInclude Include="UnityPluginAPI\IUnityInterface.h" />
+    <ClInclude Include="defs.h" />
+    <ClInclude Include="macros.h" />
+    <ClInclude Include="VideoDecoder.h" />
+    <ClInclude Include="libyuv\basic_types.h" />
+    <ClInclude Include="libyuv\compare.h" />
+    <ClInclude Include="libyuv\compare_row.h" />
+    <ClInclude Include="libyuv\convert.h" />
+    <ClInclude Include="libyuv\convert_argb.h" />
+    <ClInclude Include="libyuv\convert_from.h" />
+    <ClInclude Include="libyuv\convert_from_argb.h" />
+    <ClInclude Include="libyuv\cpu_id.h" />
+    <ClInclude Include="libyuv\mjpeg_decoder.h" />
+    <ClInclude Include="libyuv\planar_functions.h" />
+    <ClInclude Include="libyuv\rotate.h" />
+    <ClInclude Include="libyuv\rotate_argb.h" />
+    <ClInclude Include="libyuv\rotate_row.h" />
+    <ClInclude Include="libyuv\row.h" />
+    <ClInclude Include="libyuv\scale.h" />
+    <ClInclude Include="libyuv\scale_argb.h" />
+    <ClInclude Include="libyuv\scale_row.h" />
+    <ClInclude Include="libyuv\version.h" />
+    <ClInclude Include="libyuv\video_common.h" />
+    <ClInclude Include="libyuv\libyuv.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TexturesUWP.def" />
