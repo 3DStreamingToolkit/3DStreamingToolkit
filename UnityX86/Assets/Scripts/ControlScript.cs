@@ -34,6 +34,8 @@ public class ControlScript : MonoBehaviour
     private static readonly Queue<Action> _executionQueue = new Queue<Action>();    
     private bool frame_ready_receive = true;
 
+    private string messageText;
+
     #region DLL Setup
 #if !UNITY_EDITOR
     public RawVideoSource rawVideo;
@@ -101,21 +103,29 @@ public class ControlScript : MonoBehaviour
         {
             // Raw Video from VP8 Encoded Sender
             // H264 Encoded Stream does not trigger this event
-            
+
             // TODO:  Switch between RAW or ENCODED Frame
+#if HACK_VP8
             rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
+#else
 
-//            encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
-//            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
+            encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
+            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;            
+#endif
         }        
     }
 #endif
 
-    private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
+            private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
     {
         frameCounter++;
         fpsCounter++;
+
+        messageText = data.Length.ToString();
+
+        if (data.Length == 0)
+            return;
 
         if (frame_ready_receive)
             frame_ready_receive = false;
@@ -133,14 +143,22 @@ public class ControlScript : MonoBehaviour
         uint h,
         byte[] yPlane,
         uint yStride,
-        byte[] uPlane,
-        uint uStride,
         byte[] vPlane,
-        uint vStride)
+        uint vStride,
+        byte[] uPlane,
+        uint uStride)
     {
         frameCounter++;
         fpsCounter++;
-        
+
+        messageText = string.Format("{0}-{1}\n{2}-{3}\n{4}-{5}", 
+            yPlane != null ? yPlane.Length.ToString() : "X", yStride,
+            vPlane != null ? vPlane.Length.ToString() : "X", vStride,
+            uPlane != null ? uPlane.Length.ToString() : "X", uStride);
+
+        if ((yPlane == null) || (uPlane == null) || (vPlane == null))
+            return;
+
         if (frame_ready_receive)
             frame_ready_receive = false;
         else
@@ -167,6 +185,11 @@ public class ControlScript : MonoBehaviour
         // _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
         // _webRtcUtils.IsMicrophoneEnabled = false;
         PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
+#if HACK_VP8
+        _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
+#else
+        _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
+#endif
 #endif
         StatusText.text += "WebRTC Initialized\n";
     }
@@ -268,7 +291,7 @@ public class ControlScript : MonoBehaviour
             endTime = (startTime = Time.time) + 3;
         }
 
-        MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}", frameCounter, fpsCount);
+        MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
         lock (_executionQueue)
         {
             while (_executionQueue.Count > 0)

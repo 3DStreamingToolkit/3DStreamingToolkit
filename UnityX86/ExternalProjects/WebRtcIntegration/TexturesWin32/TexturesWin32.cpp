@@ -94,7 +94,7 @@ void* BeginModifyTexture(void* textureHandle, int textureWidth, int textureHeigh
 }
 
 
-void EndModifyTexture(void* textureHandle, int textureWidth, int textureHeight, int rowPitch, void* dataPtr)
+void UpdateUnityTexture(void* textureHandle, int textureWidth, int textureHeight, int rowPitch, void* dataPtr)
 {
 	ID3D11Texture2D* d3dtex = (ID3D11Texture2D*)textureHandle;
 	assert(d3dtex);
@@ -158,7 +158,7 @@ static void ProcessTexture()
 		dst += textureRowPitch;
 	}
 
-	EndModifyTexture(textureHandle, width, height, textureRowPitch, textureDataPtr);
+	UpdateUnityTexture(textureHandle, width, height, textureRowPitch, textureDataPtr);
 	return;
 }
 
@@ -208,13 +208,13 @@ static void ProcessTexture2()
 		dst += textureRowPitch;
 	}
 
-	EndModifyTexture(textureHandle, width, height, textureRowPitch, textureDataPtr);
+	UpdateUnityTexture(textureHandle, width, height, textureRowPitch, textureDataPtr);
 	return;
 }
 
 void* textureDataPtr;
 int textureRowPitch;
-bool isRawFrameReady = false;
+bool isARGBFrameReady = false;
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(int w, int h, byte* yPlane, int yStride, byte* uPlane, int uStride, byte* vPlane, int vStride)
 {
@@ -254,7 +254,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(int w
 		dst += textureRowPitch;
 	}
 
-	isRawFrameReady = true;
+	isARGBFrameReady = true;
 	//EndModifyTexture(textureHandle, width, height, textureRowPitch, textureDataPtr);
 	return;
 }
