@@ -250,7 +250,7 @@ namespace WebRtcWrapper
 
                 if (VideoCodecs.Count > 0)
                 {
-                    SelectedVideoCodec = VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
+                    SelectedVideoCodec = VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
                 }
             });
 
@@ -265,8 +265,8 @@ namespace WebRtcWrapper
         void LoadSettings()
         {
             // Default values:
-            var configTraceServerIp = "127.0.0.1";
-            var configTraceServerPort = "55000";
+//            var configTraceServerIp = "127.0.0.1";
+//            var configTraceServerPort = "55000";
 
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
             var peerCcServerIp = new ValidableNonEmptyString("127.0.0.1");
@@ -1341,12 +1341,12 @@ namespace WebRtcWrapper
 
 
                 // Raw Video from VP8 Sender Setup
-                rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
-                rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
+//                rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
+//                rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
 
                 //// Get H264 Encoded Frame
-                //encodedVideoSource = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
-                //encodedVideoSource.OnEncodedVideoFrame += Source_OnEncodedVideoFrame;
+//                encodedVideoSource = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
+//                encodedVideoSource.OnEncodedVideoFrame += Source_OnEncodedVideoFrame;
             }
 
             IsReadyToDisconnect = true;

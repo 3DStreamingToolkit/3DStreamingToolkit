@@ -10,33 +10,96 @@
 #include "UnityPluginAPI/IUnityGraphics.h"
 #include "UnityPluginAPI/IUnityInterface.h"
 #include "UnityPluginAPI/IUnityGraphicsD3D11.h"
+#include "VideoDecoder.h"
+#include "libyuv/convert_argb.h"
+
+
+// Decoder Namespace
+using namespace WebRTCDirectXClientComponent;
+int const textureWidth = 1280;
+int const textureHeight = 720;
 
 static void* g_TextureHandle = NULL;
-static int   g_TextureWidth = 0;
-static int   g_TextureHeight = 0;
+static int   g_TextureWidth = textureWidth;
+static int   g_TextureHeight = textureHeight;
 static float g_Time = 0;
 
-
+static VideoDecoder* videoDecoder = NULL;
 static IUnityInterfaces* s_UnityInterfaces = NULL;
 static IUnityGraphics* s_Graphics = NULL;
 static UnityGfxRenderer s_DeviceType = kUnityGfxRendererNull;
 static ID3D11Device* m_Device;
 
+void* textureDataPtr;
+bool isARGBFrameReady = false;
+
+byte* yuvDataBuf = NULL;
+byte* yDataBuf = NULL;
+byte* uDataBuf = NULL;
+byte* vDataBuf = NULL;
+int yuvDataBufLen = 0;
+unsigned int wRawFrame = textureWidth;
+unsigned int hRawFrame = textureHeight;
+unsigned int pixelSize = 4;
+unsigned int yStrideBuf = 0;
+unsigned int uStrideBuf = 0;
+unsigned int vStrideBuf = 0;
+
+byte* h264DataBuf = NULL;
+unsigned int h264DataBufLen = 0;
+unsigned int wH264Frame = textureWidth;
+unsigned int hH264Frame = textureHeight;
+byte* argbDataBuf = NULL;
+
+
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType);
+
+void InitializeVideoProcessing()
+{
+	// Setup Video Decoder
+	videoDecoder = new VideoDecoder();
+	videoDecoder->Initialize(hH264Frame, wH264Frame);
+
+	// Pre-Allocate Buffers instead of dynamic allocation and release
+	int bufSize = g_TextureWidth * g_TextureHeight * pixelSize;
+	yuvDataBuf = new byte[bufSize];
+	memset(yuvDataBuf, 0, bufSize);
+	h264DataBuf = new byte[bufSize];
+	memset(h264DataBuf, 0, bufSize);
+	argbDataBuf = new byte[bufSize];
+	memset(argbDataBuf, 0, bufSize);
+}
+
+void ShutdownVideoProcessing()
+{
+	// Release Byte Buffers
+	if (yuvDataBuf != NULL)
+		delete[] yuvDataBuf;
+	if (h264DataBuf != NULL)
+		delete[] h264DataBuf;
+	if (argbDataBuf != NULL)
+		delete[] argbDataBuf;
+
+	// Cleanup Video Decoder
+	if (videoDecoder != NULL)
+		videoDecoder->Deinitialize();
+}
 
 extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
 	s_UnityInterfaces = unityInterfaces;
 	s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
 	s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
-
+	
 	// Run OnGraphicsDeviceEvent(initialize) manually on plugin load
-	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
+	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);	
+	InitializeVideoProcessing();	
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
 	s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
+	ShutdownVideoProcessing();
 }
 
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType)
@@ -78,17 +141,8 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(v
 	g_TextureHeight = h;
 }
 
-void* BeginModifyTexture(void* textureHandle, int textureWidth, int textureHeight, int* outRowPitch)
-{
-	const int rowPitch = textureWidth * 4;
-	// Just allocate a system memory buffer here for simplicity
-	unsigned char* data = new unsigned char[rowPitch * textureHeight];
-	*outRowPitch = rowPitch;
-	return data;
-}
 
-
-void EndModifyTexture(void* textureHandle, int textureWidth, int textureHeight, int rowPitch, void* dataPtr)
+void UpdateUnityTexture(void* textureHandle, int rowPitch, void* dataPtr)
 {
 	ID3D11Texture2D* d3dtex = (ID3D11Texture2D*)textureHandle;
 	assert(d3dtex);
@@ -96,73 +150,140 @@ void EndModifyTexture(void* textureHandle, int textureWidth, int textureHeight, 
 	ID3D11DeviceContext* ctx = NULL;
 	m_Device->GetImmediateContext(&ctx);
 
-	// Update texture data, and free the memory buffer
 	ctx->UpdateSubresource(d3dtex, 0, NULL, dataPtr, rowPitch, 0);
-	delete[](unsigned char*)dataPtr;
-	dataPtr = NULL;
 	ctx->Release();
 }
-
-void* textureDataPtr;
-int textureRowPitch;
-bool isRawFrameReady = false;
-byte* yDataBuf = NULL;
-byte* uDataBuf = NULL;
-byte* vDataBuf = NULL;
-byte* encodedBuf = NULL;
-unsigned int encodedBufLen = 0;
-
-unsigned int wRawFrame = 0;
-unsigned int hRawFrame = 0;
-unsigned int yStrideBuf = 0;
-unsigned int uStrideBuf = 0;
-unsigned int vStrideBuf = 0;
-
-unsigned int wH264Frame = 0;
-unsigned int hH264rame = 0;
-byte* h264DataBuf = NULL;
 
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(unsigned int w, unsigned int h, byte* yPlane, unsigned int yStride, byte* uPlane, unsigned int uStride, byte* vPlane, unsigned int vStride)
 {	
+	if ((yPlane == NULL) || (vPlane == NULL) || (uPlane == NULL))
+		return;
+
 	wRawFrame = w;
 	hRawFrame = h;
-	yStrideBuf = yStride;
-	uStrideBuf = uStride;
-	vStrideBuf = vStride;
 
-	unsigned int bufSize = w * h;			// Assume YUV420 Setup
-	unsigned int bufSize2 = bufSize / 4;	
-	if (yDataBuf == NULL)
-	{
-		yDataBuf = new byte[bufSize];
-		uDataBuf = new byte[bufSize2];
-		vDataBuf = new byte[bufSize2];
-	}
+// TODO: Remove Byte Buffers - Consume parameter data directly	
+//	yStrideBuf = yStride;
+//	uStrideBuf = uStride;
+//	vStrideBuf = vStride;
+//	unsigned int bufSize = w * h;							// Assume YUV420 Setup
+//	unsigned int bufSize2 = (w + 1) / 2 * (h + 1) /2;	
 
-	memcpy(yDataBuf, yPlane, bufSize);
-	memcpy(uDataBuf, uPlane, bufSize2);
-	memcpy(vDataBuf, vPlane, bufSize2);
+//	if (yDataBuf == NULL)
+//	{
+//		yDataBuf = new byte[bufSize];
+//		uDataBuf = new byte[bufSize2];
+//		vDataBuf = new byte[bufSize2];
+//	}
+//
+//	memcpy(yDataBuf, yPlane, bufSize);
+//	memcpy(uDataBuf, uPlane, bufSize2);
+//	memcpy(vDataBuf, vPlane, bufSize2);
+
+	// TODO:  Test VP8 RawFrame Event Setup
+	// Process YUV to ARGB	
+	int half_width = (wRawFrame + 1) / 2;
+	int half_height = (hRawFrame + 1) / 2;
+	int bufSize2 = half_width * half_height;
+
+//	yStrideBuf = wRawFrame;
+//	uStrideBuf = half_width;
+//	vStrideBuf = half_width;
+
+// TODO: Remove Byte Buffers Usage
+//	yDataBuf = yuvDataBuf;
+//	vDataBuf = yuvDataBuf + yStrideBuf * hRawFrame;
+//	uDataBuf = vDataBuf + vStrideBuf * half_height;	
+//	memcpy(yDataBuf, yPlane, bufSize);	
+//	memcpy(vDataBuf, vPlane, bufSize2);
+//	memcpy(uDataBuf, uPlane, bufSize2);
+//	isARGBFrameReady = !libyuv::I420ToARGB(
+//		yDataBuf,
+//		yStrideBuf,
+//		uDataBuf,
+//		uStrideBuf,
+//		vDataBuf,
+//		vStrideBuf,
+//		argbDataBuf,
+//		wRawFrame * pixelSize,
+//		wRawFrame,
+//		hRawFrame);	
+
+	isARGBFrameReady = !libyuv::I420ToARGB(
+		yPlane,
+		yStride,
+		uPlane,
+		uStride,
+		vPlane,
+		vStride,
+		argbDataBuf,
+		wRawFrame * pixelSize,
+		wRawFrame,
+		hRawFrame);
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsigned int w, unsigned int h, byte* data, unsigned int bufSize)
 {
 	wRawFrame = w;
 	hRawFrame = h;
-	encodedBufLen = bufSize;
-	
-	// Maximum possible size for RGBA
-	unsigned int maxBufSize = w * h * 4;
+	wH264Frame = w;
+	hH264Frame = h;
+	isARGBFrameReady = false;
 
-	if(encodedBuf == NULL)
-	{
-		encodedBuf = new byte[maxBufSize];
-	}
-	memcpy(encodedBuf, data, encodedBufLen);
+	// TODO: remove h264DataBuf -- not used
+	//h264DataBufLen = bufSize;
+	//memcpy(h264DataBuf, data, h264DataBufLen);
+
+	if (!videoDecoder->DecodeH264VideoFrame(
+		data,
+		bufSize,
+		wH264Frame,
+		hH264Frame,
+		&yuvDataBuf,
+		&yuvDataBufLen))
+	{				
+		
+		int half_width = (wH264Frame + 1) / 2;
+		int half_height = (hH264Frame + 1) / 2;
+	
+		yStrideBuf = wH264Frame;
+		uStrideBuf = half_width;
+		vStrideBuf = half_width;
+
+		// Note: Decode Information is in YVU ordering instead YUV
+		yDataBuf = yuvDataBuf;
+		vDataBuf = yuvDataBuf + yStrideBuf * hH264Frame;
+		uDataBuf = vDataBuf + vStrideBuf * half_height;		
+
+		isARGBFrameReady = !libyuv::I420ToARGB(
+			yDataBuf,
+			yStrideBuf,
+			uDataBuf,
+			uStrideBuf,
+			vDataBuf,
+			vStrideBuf,
+			argbDataBuf,
+			wH264Frame * pixelSize,
+			wH264Frame,
+			hH264Frame);				
+	}	
 }
 
+static void ProcessARGBFrameData()
+{
+	if (!g_TextureHandle)
+		return;
 
-static void ProcessFrameData()
+	if (!isARGBFrameReady)
+		return;
+
+	UpdateUnityTexture(g_TextureHandle, g_TextureWidth * pixelSize, argbDataBuf);
+	isARGBFrameReady = false;
+}
+
+/*
+static void ProcessRawFrameData()
 {
 	void* textureHandle = g_TextureHandle;
 	int width = g_TextureWidth;
@@ -207,12 +328,13 @@ static void ProcessFrameData()
 		dst += textureRowPitch;
 	}
 
-	EndModifyTexture(textureHandle, width, height, textureRowPitch, textureDataPtr);
+	UpdateUnityTexture(textureHandle, width * pixelSize , textureDataPtr);
 }
+*/
 
 static void UNITY_INTERFACE_API OnRenderEvent(int eventID)
-{
-	ProcessFrameData();
+{		
+	ProcessARGBFrameData();
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()

@@ -131,6 +131,9 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>S:\GitHub\ritchielozada\3dtoolkit\UnityX86\ExternalProjects\WebRtcIntegration\TexturesUWP\libyuv\libs\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
@@ -147,6 +150,9 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>S:\GitHub\ritchielozada\3dtoolkit\UnityX86\ExternalProjects\WebRtcIntegration\TexturesUWP\libyuv\libs\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86
@@ -202,6 +208,28 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="defs.h" />
+    <ClInclude Include="libyuv\libyuv.h" />
+    <ClInclude Include="libyuv\basic_types.h" />
+    <ClInclude Include="libyuv\compare.h" />
+    <ClInclude Include="libyuv\compare_row.h" />
+    <ClInclude Include="libyuv\convert.h" />
+    <ClInclude Include="libyuv\convert_argb.h" />
+    <ClInclude Include="libyuv\convert_from.h" />
+    <ClInclude Include="libyuv\convert_from_argb.h" />
+    <ClInclude Include="libyuv\cpu_id.h" />
+    <ClInclude Include="libyuv\mjpeg_decoder.h" />
+    <ClInclude Include="libyuv\planar_functions.h" />
+    <ClInclude Include="libyuv\rotate.h" />
+    <ClInclude Include="libyuv\rotate_argb.h" />
+    <ClInclude Include="libyuv\rotate_row.h" />
+    <ClInclude Include="libyuv\row.h" />
+    <ClInclude Include="libyuv\scale.h" />
+    <ClInclude Include="libyuv\scale_argb.h" />
+    <ClInclude Include="libyuv\scale_row.h" />
+    <ClInclude Include="libyuv\version.h" />
+    <ClInclude Include="libyuv\video_common.h" />
+    <ClInclude Include="macros.h" />
     <ClInclude Include="TexturesUWP.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="targetver.h" />
@@ -212,6 +240,7 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
     <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D9.h" />
     <ClInclude Include="UnityPluginAPI\IUnityGraphicsMetal.h" />
     <ClInclude Include="UnityPluginAPI\IUnityInterface.h" />
+    <ClInclude Include="VideoDecoder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -224,6 +253,7 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="VideoDecoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TexturesUWP.def" />
