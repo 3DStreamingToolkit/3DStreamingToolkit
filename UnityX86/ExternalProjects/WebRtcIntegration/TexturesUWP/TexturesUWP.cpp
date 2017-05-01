@@ -16,10 +16,12 @@
 
 // Decoder Namespace
 using namespace WebRTCDirectXClientComponent;
+int const textureWidth = 1280;
+int const textureHeight = 720;
 
 static void* g_TextureHandle = NULL;
-static int   g_TextureWidth = 640;
-static int   g_TextureHeight = 640;
+static int   g_TextureWidth = textureWidth;
+static int   g_TextureHeight = textureHeight;
 static float g_Time = 0;
 
 static VideoDecoder* videoDecoder = NULL;
@@ -36,8 +38,8 @@ byte* yDataBuf = NULL;
 byte* uDataBuf = NULL;
 byte* vDataBuf = NULL;
 int yuvDataBufLen = 0;
-unsigned int wRawFrame = 640;
-unsigned int hRawFrame = 640;
+unsigned int wRawFrame = textureWidth;
+unsigned int hRawFrame = textureHeight;
 unsigned int pixelSize = 4;
 unsigned int yStrideBuf = 0;
 unsigned int uStrideBuf = 0;
@@ -45,8 +47,8 @@ unsigned int vStrideBuf = 0;
 
 byte* h264DataBuf = NULL;
 unsigned int h264DataBufLen = 0;
-unsigned int wH264Frame = 640;
-unsigned int hH264Frame = 640;
+unsigned int wH264Frame = textureWidth;
+unsigned int hH264Frame = textureHeight;
 byte* argbDataBuf = NULL;
 
 
@@ -160,11 +162,12 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(unsig
 
 	wRawFrame = w;
 	hRawFrame = h;
-	yStrideBuf = yStride;
-	uStrideBuf = uStride;
-	vStrideBuf = vStride;
 
-	unsigned int bufSize = w * h;							// Assume YUV420 Setup
+// TODO: Remove Byte Buffers - Consume parameter data directly	
+//	yStrideBuf = yStride;
+//	uStrideBuf = uStride;
+//	vStrideBuf = vStride;
+//	unsigned int bufSize = w * h;							// Assume YUV420 Setup
 //	unsigned int bufSize2 = (w + 1) / 2 * (h + 1) /2;	
 
 //	if (yDataBuf == NULL)
@@ -188,26 +191,36 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(unsig
 //	uStrideBuf = half_width;
 //	vStrideBuf = half_width;
 
-	yDataBuf = yuvDataBuf;
-	vDataBuf = yuvDataBuf + yStrideBuf * hRawFrame;
-	uDataBuf = vDataBuf + vStrideBuf * half_height;	
-
-	memcpy(yDataBuf, yPlane, bufSize);	
-	memcpy(vDataBuf, vPlane, bufSize2);
-	memcpy(uDataBuf, uPlane, bufSize2);
-	
+// TODO: Remove Byte Buffers Usage
+//	yDataBuf = yuvDataBuf;
+//	vDataBuf = yuvDataBuf + yStrideBuf * hRawFrame;
+//	uDataBuf = vDataBuf + vStrideBuf * half_height;	
+//	memcpy(yDataBuf, yPlane, bufSize);	
+//	memcpy(vDataBuf, vPlane, bufSize2);
+//	memcpy(uDataBuf, uPlane, bufSize2);
+//	isARGBFrameReady = !libyuv::I420ToARGB(
+//		yDataBuf,
+//		yStrideBuf,
+//		uDataBuf,
+//		uStrideBuf,
+//		vDataBuf,
+//		vStrideBuf,
+//		argbDataBuf,
+//		wRawFrame * pixelSize,
+//		wRawFrame,
+//		hRawFrame);	
 
 	isARGBFrameReady = !libyuv::I420ToARGB(
-		yDataBuf,
-		yStrideBuf,
-		uDataBuf,
-		uStrideBuf,
-		vDataBuf,
-		vStrideBuf,
+		yPlane,
+		yStride,
+		uPlane,
+		uStride,
+		vPlane,
+		vStride,
 		argbDataBuf,
 		wRawFrame * pixelSize,
 		wRawFrame,
-		hRawFrame);	
+		hRawFrame);
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsigned int w, unsigned int h, byte* data, unsigned int bufSize)
@@ -216,13 +229,15 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsi
 	hRawFrame = h;
 	wH264Frame = w;
 	hH264Frame = h;
-	h264DataBufLen = bufSize;
 	isARGBFrameReady = false;
 
-	memcpy(h264DataBuf, data, h264DataBufLen);	
+	// TODO: remove h264DataBuf -- not used
+	//h264DataBufLen = bufSize;
+	//memcpy(h264DataBuf, data, h264DataBufLen);
+
 	if (!videoDecoder->DecodeH264VideoFrame(
-		h264DataBuf,
-		h264DataBufLen,
+		data,
+		bufSize,
 		wH264Frame,
 		hH264Frame,
 		&yuvDataBuf,
