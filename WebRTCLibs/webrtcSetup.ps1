@@ -69,7 +69,13 @@ CMD /C 'ninja -C out/Win32/Release'
 CMD /C 'ninja -C out/x64/Release'
 
 $outPath = New-Item -Path ..\ -Name "dist" -ItemType directory -Force
-Set-Location "webrtc"
+Set-Location "third_party"
+
+Get-ChildItem -Recurse -Filter "*.h" | ForEach-Object {
+    $touchItem = New-Item (Join-Path -Path ($outPath.FullName + "\headers\third_party\") -ChildPath (Resolve-Path -Path $_.FullName -Relative))  -ItemType file -Force
+    Copy-Item $_.FullName -Destination $touchItem.FullName -Force
+}
+Set-Location "../webrtc"
 
 Get-ChildItem -Recurse -Filter "*.h" | ForEach-Object {
     $touchItem = New-Item (Join-Path -Path ($outPath.FullName + "\headers\webrtc\") -ChildPath (Resolve-Path -Path $_.FullName -Relative))  -ItemType file -Force

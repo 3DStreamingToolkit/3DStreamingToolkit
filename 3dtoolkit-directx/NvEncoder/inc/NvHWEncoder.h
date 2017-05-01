@@ -21,7 +21,7 @@
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
 
 #if defined (NV_WINDOWS)
-    #include "d3d11_1.h"
+    #include "d3d11_4.h"
     #define NVENCAPI __stdcall
     #pragma warning(disable : 4996)
 #elif defined (NV_UNIX)

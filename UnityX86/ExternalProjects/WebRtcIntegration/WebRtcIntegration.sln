@@ -1,13 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+VisualStudioVersion = 15.0.26403.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcIntegration", "WebRtcIntegration\WebRtcIntegration.csproj", "{8687DEB8-CA66-437A-B514-492AB56E3BC0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcWrapper", "WebRtcWrapper\WebRtcWrapper.csproj", "{1857162F-96CC-451F-A4E2-3616207943AB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcPlaceholder", "WebRtcPlaceholder\WebRtcPlaceholder.csproj", "{D2C4953A-9F99-425A-AD2C-8A7ED6DD6091}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TexturesWin32", "TexturesWin32\TexturesWin32.vcxproj", "{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TexturesUWP", "TexturesUWP\TexturesUWP.vcxproj", "{F4485146-5735-4743-8C0B-7EDE73BCB1FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -73,6 +77,32 @@ Global
 		{D2C4953A-9F99-425A-AD2C-8A7ED6DD6091}.Release|x64.Build.0 = Release|Any CPU
 		{D2C4953A-9F99-425A-AD2C-8A7ED6DD6091}.Release|x86.ActiveCfg = Release|Any CPU
 		{D2C4953A-9F99-425A-AD2C-8A7ED6DD6091}.Release|x86.Build.0 = Release|Any CPU
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Debug|ARM.ActiveCfg = Debug|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Debug|x64.ActiveCfg = Debug|x64
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Debug|x64.Build.0 = Debug|x64
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Debug|x86.ActiveCfg = Debug|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Debug|x86.Build.0 = Debug|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Release|Any CPU.ActiveCfg = Release|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Release|ARM.ActiveCfg = Release|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Release|x64.ActiveCfg = Release|x64
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Release|x64.Build.0 = Release|x64
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Release|x86.ActiveCfg = Release|Win32
+		{C324D092-BA59-4C9A-BF4B-9D2E74ED9FEB}.Release|x86.Build.0 = Release|Win32
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|ARM.ActiveCfg = Debug|ARM
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|ARM.Build.0 = Debug|ARM
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|x64.ActiveCfg = Debug|x64
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|x64.Build.0 = Debug|x64
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|x86.ActiveCfg = Debug|Win32
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Debug|x86.Build.0 = Debug|Win32
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|Any CPU.ActiveCfg = Release|Win32
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|ARM.ActiveCfg = Release|ARM
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|ARM.Build.0 = Release|ARM
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|x64.ActiveCfg = Release|x64
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|x64.Build.0 = Release|x64
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|x86.ActiveCfg = Release|Win32
+		{F4485146-5735-4743-8C0B-7EDE73BCB1FC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
