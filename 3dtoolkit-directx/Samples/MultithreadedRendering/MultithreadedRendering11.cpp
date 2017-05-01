@@ -24,7 +24,7 @@
 #ifdef TEST_RUNNER
 #include "VideoTestRunner.h"
 #else // TEST_RUNNER
-#include "VideoHelper.h"
+#include "video_helper.h"
 #endif // TEST_RUNNER
 
 #ifdef REMOTE_RENDERING
@@ -41,7 +41,28 @@
 #include "rapidjson/document.h"
 
 #pragma warning( disable : 4100 )
+//Required app libs
 #pragma comment(lib, "ws2_32.lib") 
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "imm32.lib")
+#pragma comment(lib, "version.lib")
+#pragma comment(lib, "usp10.lib")
+#pragma comment(lib, "secur32.lib")
+#pragma comment(lib, "dmoguids.lib")
+#pragma comment(lib, "wmcodecdspuuid.lib")
+#pragma comment(lib, "msdmo.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "strmiids.lib")
+//Required webrtc static libs
+#pragma comment(lib, "common_video.lib")
+#pragma comment(lib, "webrtc.lib")
+#pragma comment(lib, "boringssl_asm.lib")
+#pragma comment(lib, "field_trial_default.lib")
+#pragma comment(lib, "metrics_default.lib")
+#pragma comment(lib, "protobuf_full.lib")
 
 using namespace DirectX;
 using namespace Toolkit3DLibrary;

@@ -22,7 +22,7 @@
     <ProjectGuid>{6BC9C817-FD14-4540-A9C0-63CF16F770A6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Toolkit3DLibrary</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -134,7 +134,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCNativeClient\;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>
@@ -156,7 +156,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCNativeClient\;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -180,25 +180,26 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\VideoHelper.cpp" />
-    <ClCompile Include="WebRTC\conductor.cpp" />
-    <ClCompile Include="WebRTC\customvideocapturer.cpp" />
-    <ClCompile Include="WebRTC\defaults.cpp" />
-    <ClCompile Include="WebRTC\default_main_window.cpp" />
-    <ClCompile Include="WebRTC\peer_connection_client.cpp" />
+    <ClCompile Include="src\conductor.cpp" />
+    <ClCompile Include="src\custom_video_capturer.cpp" />
+    <ClCompile Include="src\defaults.cpp" />
+    <ClCompile Include="src\default_main_window.cpp" />
+    <ClCompile Include="src\peer_connection_client.cpp" />
+    <ClCompile Include="src\video_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\conductor.h" />
+    <ClInclude Include="inc\custom_video_capturer.h" />
+    <ClInclude Include="inc\defaults.h" />
+    <ClInclude Include="inc\default_main_window.h" />
     <ClInclude Include="inc\defs.h" />
+    <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
-    <ClInclude Include="inc\VideoHelper.h" />
+    <ClInclude Include="inc\main_window.h" />
+    <ClInclude Include="inc\pch.h" />
+    <ClInclude Include="inc\peer_connection_client.h" />
+    <ClInclude Include="inc\video_helper.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="WebRTC\conductor.h" />
-    <ClInclude Include="WebRTC\customvideocapturer.h" />
-    <ClInclude Include="WebRTC\defaults.h" />
-    <ClInclude Include="WebRTC\default_main_window.h" />
-    <ClInclude Include="WebRTC\flagdefs.h" />
-    <ClInclude Include="WebRTC\main_window.h" />
-    <ClInclude Include="WebRTC\peer_connection_client.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

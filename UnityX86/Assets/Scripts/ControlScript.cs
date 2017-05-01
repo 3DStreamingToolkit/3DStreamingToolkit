@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
 using WebRtcWrapper;
@@ -18,22 +18,58 @@ public class ControlScript : MonoBehaviour
     public InputField ServerInputTextField;
     public InputField PeerInputTextField;
     public InputField MessageInputField;
-    public Renderer renderer;
+    public Renderer RenderTexture;
 
     private Transform camTransform;
     private Vector3 prevPos;
     private Quaternion prevRot;
-    private WebRtcUtils _webRtcUtils;
-    private Texture2D sourceTexture2D;
+    private WebRtcUtils _webRtcUtils;    
 
     private int frameCounter = 0;
+    private int fpsCounter = 0;
+    private float fpsCount = 0f;
+    private float startTime = 0;
+    private float endTime = 0;
+    
+    private static readonly Queue<Action> _executionQueue = new Queue<Action>();    
+    private bool frame_ready_receive = true;
 
-    private static readonly Queue<Action> _executionQueue = new Queue<Action>();
-
+    #region DLL Setup
 #if !UNITY_EDITOR
     public RawVideoSource rawVideo;
+    public EncodedVideoSource encodedVideo;
     private MediaVideoTrack _peerVideoTrack;
 #endif
+
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
+    private static extern void SetTextureFromUnity(System.IntPtr texture, int w, int h);
+
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
+    private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
+        IntPtr vPlane, uint vStride);
+
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
+    private static extern void ProcessH264Frame(uint w, uint h, IntPtr data, uint dataSize);
+
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
+    private static extern IntPtr GetRenderEventFunc();
+    #endregion
 
     void Start()
     {
@@ -49,28 +85,12 @@ public class ControlScript : MonoBehaviour
 #if !UNITY_EDITOR
         PeerConnectionClient.Signalling.Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
 #endif
-
-
         _webRtcUtils.Initialize();
 
-        sourceTexture2D = new Texture2D(640, 640, TextureFormat.ARGB32, false);
-        renderer.material.mainTexture = sourceTexture2D;
 
-        for (int x = 0; x < 640; x++)
-        {
-            for (int y = 0; y < 640; y++)
-            {
-                if (Mathf.Abs(x - y) < 50)
-                {
-                    sourceTexture2D.SetPixel(x, y, Color.yellow);
-                }
-                else
-                {
-                    sourceTexture2D.SetPixel(x, y, Color.blue);
-                }
-            }
-        }
-        sourceTexture2D.Apply();
+        // Setup Low-Level Graphics Plugin
+        CreateTextureAndPassToPlugin();
+        StartCoroutine(CallPluginAtEndOfFrames());
     }
 
 #if !UNITY_EDITOR
@@ -81,79 +101,61 @@ public class ControlScript : MonoBehaviour
         {
             // Raw Video from VP8 Encoded Sender
             // H264 Encoded Stream does not trigger this event
-            PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
+            
+            // TODO:  Switch between RAW or ENCODED Frame
             rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
+
+//            encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
+//            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
         }        
-    }        
+    }
 #endif
+
+    private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
+    {
+        frameCounter++;
+        fpsCounter++;
+
+        if (frame_ready_receive)
+            frame_ready_receive = false;
+        else
+            return;
+
+        GCHandle buf = GCHandle.Alloc(data, GCHandleType.Pinned);
+        ProcessH264Frame(w, h, buf.AddrOfPinnedObject(), (uint)data.Length);
+        buf.Free();
+    }
 
 
     private void Source_OnRawVideoFrame(
-        uint p0,
-        uint p1,
-        byte[] p2,
-        uint p3,
-        byte[] p4,
-        uint p5,
-        byte[] p6,
-        uint p7)
-    {       
-//        int i = 0;
-//        for (int x = 0; x < 640; x++)
-//        {
-//            for (int y = 0; y < 640; y++)
-//            {
-//                float yVal = p2[i] / 255f;
-//                Color c = new Color(yVal, 0, 0, 1);
-//                i++;
-//                sourceTexture2D.SetPixel(x, y, c);
-//            }
-//        }        
-
-        EnqueueAction(() => UpdateFrame(p0,p1,p2,p3,p4,p5,p6,p7));
-    }
-
-    private void UpdateFrame(
-        uint width,
-        uint height,
+        uint w,
+        uint h,
         byte[] yPlane,
-        uint yPitch,
-        byte[] vPlane,
-        uint vPitch,
+        uint yStride,
         byte[] uPlane,
-        uint uPitch)
+        uint uStride,
+        byte[] vPlane,
+        uint vStride)
     {
         frameCounter++;
-        int i = 0;
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                float yVal;
-                float uVal;
-                float vVal;
+        fpsCounter++;
+        
+        if (frame_ready_receive)
+            frame_ready_receive = false;
+        else
+            return;
 
-                // 4-pixel group sample for a 640 x 640 frame?
-                // Format seems like a YUV 420 (YV12)?
-                yVal = yPlane[i];
-                var p = y /2 * vPitch + x / 2;      // Assume V,U to have the same index
-                vVal = vPlane[p];
-                uVal = uPlane[p];
-
-                float r = Mathf.Clamp(yVal + (1.4065f * (vVal - 128)), 0f, 255f) / 255f;
-                float g = Mathf.Clamp(yVal - (0.3455f * (uVal - 128)) - (0.7169f * (vVal - 128)), 0f, 255f) / 255f;
-                float b = Mathf.Clamp(yVal + (1.7790f * (uVal - 128)), 0f, 255f) / 255f;
-
-                Color c = new Color(r, g, b, 1.0f);
-                sourceTexture2D.SetPixel(x, y, c);
-
-                i++;
-            }
-        }
-        sourceTexture2D.Apply();
+        GCHandle yP = GCHandle.Alloc(yPlane, GCHandleType.Pinned);
+        GCHandle uP = GCHandle.Alloc(uPlane, GCHandleType.Pinned);
+        GCHandle vP = GCHandle.Alloc(vPlane, GCHandleType.Pinned);
+        ProcessRawFrame(w, h, yP.AddrOfPinnedObject(), yStride, uP.AddrOfPinnedObject(), uStride,
+            vP.AddrOfPinnedObject(), vStride);
+        yP.Free();
+        uP.Free();
+        vP.Free();        
     }
-
+   
     private void _webRtcUtils_OnInitialized()
     {
         EnqueueAction(OnInitialized);
@@ -193,6 +195,7 @@ public class ControlScript : MonoBehaviour
     public void ConnectToServer()
     {
         _webRtcUtils.ConnectToServer(ServerInputTextField.text, "8888", PeerInputTextField.text);
+        
     }
 
     public void DisconnectFromServer()
@@ -203,8 +206,10 @@ public class ControlScript : MonoBehaviour
     public void ConnectToPeer()
     {
         // TODO: Support Peer Selection
-        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
+        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];        
         _webRtcUtils.ConnectToPeerCommandExecute(null);
+
+        endTime = (startTime = Time.time) + 10f;
     }
 
     public void DisconnectFromPeer()
@@ -255,7 +260,15 @@ public class ControlScript : MonoBehaviour
             _webRtcUtils.SendPeerMessageDataExecute(camMsg);
         }
 
-        MessageText.text = string.Format("Raw Frame: {0}", frameCounter);
+        
+        if (Time.time > endTime)
+        {
+            fpsCount = (float)fpsCounter / (Time.time - startTime);
+            fpsCounter = 0;
+            endTime = (startTime = Time.time) + 3;
+        }
+
+        MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}", frameCounter, fpsCount);
         lock (_executionQueue)
         {
             while (_executionQueue.Count > 0)
@@ -263,6 +276,34 @@ public class ControlScript : MonoBehaviour
                 _executionQueue.Dequeue().Invoke();
             }
         }
+    }
 
+    private void CreateTextureAndPassToPlugin()
+    {        
+        Texture2D tex = new Texture2D(640, 640, TextureFormat.ARGB32, false);
+        tex.filterMode = FilterMode.Point;       
+        tex.Apply();
+        RenderTexture.material.mainTexture = tex;
+        SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
+    }
+
+    private IEnumerator CallPluginAtEndOfFrames()
+    {
+        while (true)
+        {
+            // Wait until all frame rendering is done
+            yield return new WaitForEndOfFrame();
+
+            // Issue a plugin event with arbitrary integer identifier.
+            // The plugin can distinguish between different
+            // things it needs to do based on this ID.
+            // For our simple plugin, it does not matter which ID we pass here.
+
+            if (!frame_ready_receive)
+            {
+                GL.IssuePluginEvent(GetRenderEventFunc(), 1);              
+                frame_ready_receive = true;               
+            }
+        }
     }
 }
