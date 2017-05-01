@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define HACK_VP8
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +15,9 @@ using Org.WebRtc;
 
 public class ControlScript : MonoBehaviour
 {
+    private const int textureWidth = 1280;
+    private const int textureHeight = 720
+        ;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
@@ -108,8 +113,7 @@ public class ControlScript : MonoBehaviour
 #if HACK_VP8
             rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
-#else
-
+#else            
             encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
             encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;            
 #endif
@@ -302,8 +306,10 @@ public class ControlScript : MonoBehaviour
     }
 
     private void CreateTextureAndPassToPlugin()
-    {        
-        Texture2D tex = new Texture2D(640, 640, TextureFormat.ARGB32, false);
+    {
+        RenderTexture.transform.localScale = new Vector3(-1f, (float) textureHeight / textureWidth, 1f) * 2f;
+
+        Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.ARGB32, false);
         tex.filterMode = FilterMode.Point;       
         tex.Apply();
         RenderTexture.material.mainTexture = tex;
