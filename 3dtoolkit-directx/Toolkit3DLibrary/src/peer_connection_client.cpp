@@ -64,7 +64,7 @@ void PeerConnectionClient::InitSocketSignals()
 	RTC_DCHECK(control_socket_.get() != NULL);
 	RTC_DCHECK(hanging_get_.get() != NULL);
 	control_socket_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
-	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
+	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnSignalingServerClose);
 	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
 	hanging_get_->SignalConnectEvent.connect(this,
 		&PeerConnectionClient::OnHangingGetConnect);
@@ -590,6 +590,12 @@ bool PeerConnectionClient::ParseServerResponse(const std::string& response,
 	GetHeaderValue(response, *eoh, "\r\nPragma: ", peer_id);
 
 	return true;
+}
+
+
+void PeerConnectionClient::OnSignalingServerClose(rtc::AsyncSocket* socket, int err) 
+{
+	Close();
 }
 
 void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err) 
