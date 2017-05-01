@@ -39,7 +39,7 @@ namespace WebRtcIntegration
             _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
             _webRtcUtils.OnRawVideoFrameSend += _webRtcUtils_OnRawVideoFrameSend;
             _webRtcUtils.OnEncodedFrameReceived += _webRtcUtils_OnEncodedFrameReceived;
-            _webRtcUtils.OnRawFrameReceived2 += _webRtcUtils_OnRawFrameReceived2;
+            //_webRtcUtils.OnRawFrameReceived2 += _webRtcUtils_OnRawFrameReceived2;
             _webRtcUtils.PeerVideo = PeerVideo;
             _webRtcUtils.SelfVideo = SelfVideo;
             _webRtcUtils.Initialize();
