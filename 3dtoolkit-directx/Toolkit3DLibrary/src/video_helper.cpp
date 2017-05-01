@@ -1,14 +1,9 @@
 ﻿#pragma once
 
 #include "pch.h"
-
-<<<<<<< HEAD:3dtoolkit-directx/Toolkit3DLibrary/src/VideoHelper.cpp
-#include "VideoHelper.h"
-=======
 #include "video_helper.h"
 #include "nvFileIO.h"
 #include "nvUtils.h"
->>>>>>> refs/remotes/origin/master:3dtoolkit-directx/Toolkit3DLibrary/src/video_helper.cpp
 
 using namespace Toolkit3DLibrary;
 
