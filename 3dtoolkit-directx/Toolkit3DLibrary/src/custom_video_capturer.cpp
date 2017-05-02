@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "custom_video_capturer.h"
-
+#include <fstream>
 
 namespace Toolkit3DLibrary
 {
@@ -72,7 +72,7 @@ namespace Toolkit3DLibrary
 		clock_(clock),
 		sending_(false),
 		sink_(nullptr),
-		m_useSoftwareEncoder(false),
+		m_useSoftwareEncoder(true),
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		frame_update_func_(frame_update_func),
@@ -117,7 +117,24 @@ namespace Toolkit3DLibrary
 	cricket::CaptureState CustomVideoCapturer::Start(const cricket::VideoFormat& format) {
 		SetCaptureFormat(&format);
 
-		target_fps_ = 60;
+		Json::Reader reader;
+		Json::Value root = NULL;
+
+		auto encoderConfigPath = ExePath("webrtcEncoderConfig.json");
+		std::ifstream file(encoderConfigPath);
+		if (file.good())
+		{
+			file >> root;
+			reader.parse(file, root, true);
+
+			if (root.isMember("serverFrameCaptureFPS")) {
+				target_fps_ = root.get("serverFrameCaptureFPS", 60).asInt();
+			}
+
+			if (root.isMember("useSoftwareEncoding")) {
+				m_useSoftwareEncoder = root.get("useSoftwareEncoding", false).asBool();
+			}
+		}
 
 		Init();
 		running_ = true;

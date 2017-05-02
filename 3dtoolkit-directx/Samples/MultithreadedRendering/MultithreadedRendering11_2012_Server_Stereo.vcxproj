@@ -179,7 +179,7 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; copy /y /d  "$(SolutionDir)webrtcEncoderConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
     <ProjectReference />
     <ProjectReference>
@@ -227,7 +227,7 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; copy /y /d  "$(SolutionDir)webrtcEncoderConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
