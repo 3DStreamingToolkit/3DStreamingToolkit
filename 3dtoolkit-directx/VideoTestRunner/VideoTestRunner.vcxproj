@@ -92,6 +92,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir)inc;$(ProjectDir)..\Toolkit3DLibrary\inc;$(ProjectDir)..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <UndefinePreprocessorDefinitions>USE_WEBRTC_NVENCODE</UndefinePreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -138,13 +139,14 @@
     <ClCompile Include="VideoTestRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Toolkit3DLibrary\Toolkit3DLibrary.vcxproj">
-      <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="inc\macros.h" />
     <ClInclude Include="inc\pch.h" />
     <ClInclude Include="inc\VideoTestRunner.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">
+      <Project>{84da0532-9d88-4118-b454-c4801178a330}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
