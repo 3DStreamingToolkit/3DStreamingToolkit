@@ -12,7 +12,6 @@ VideoHelper::VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context) :
 	m_d3dDevice(device),
 	m_d3dContext(context)
 {
-
 #ifdef MULTITHREAD_PROTECTION
 	// Enables multithread protection.
 	ID3D11Multithread* multithread;
@@ -64,16 +63,16 @@ NVENCSTATUS VideoHelper::Deinitialize()
 	return NV_ENC_SUCCESS;
 }
 
-void VideoHelper::GetHeightAndWidth(int* width, int* height)
+void VideoHelper::GetWidthAndHeight(int* width, int* height)
 {
 	*width = m_stagingFrameBufferDesc.Width;
 	*height = m_stagingFrameBufferDesc.Height;
 }
 
+// Captures frame buffer from the swap chain and returns texture.
 ID3D11Texture2D* VideoHelper::Capture2DTexture(int* width, int* height)
 {
-	// Try to process the pending input buffers.
-	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
 	HRESULT hr = m_swapChain->GetBuffer(0,
 		__uuidof(ID3D11Texture2D),
@@ -94,7 +93,7 @@ void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 		__uuidof(ID3D11Texture2D),
 		reinterpret_cast<void**>(&frameBuffer)));
 
-	// Copies the frame buffer to the encode input buffer.
+	// Copies the frame buffer to the staging frame buffer.
 	m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
 	frameBuffer->Release();
 

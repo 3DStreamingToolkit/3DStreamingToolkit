@@ -1,10 +1,5 @@
 #pragma once
 
-#if defined(REMOTE_RENDERING) || defined(TEST_RUNNER)
-#ifdef SERVER_APP
-#endif //SERVER_APP
-#endif // REMOTE_RENDERING
-
 //#define STEREO_OUTPUT_MODE
 #ifdef STEREO_OUTPUT_MODE
 #define IPD 2.0f
