@@ -780,7 +780,7 @@ index 388a3dd..cc6fb8d 100644
 +
 +#endif  // WEBRTC_API_VIDEO_I420_BUFFER_H_
 diff --git a/webrtc/api/video/video_frame.h b/webrtc/api/video/video_frame.h
-index 8840782..45b0645 100644
+index 8840782..439cfbb 100644
 --- a/webrtc/api/video/video_frame.h
 +++ b/webrtc/api/video/video_frame.h
 @@ -12,7 +12,8 @@
@@ -793,29 +793,10 @@ index 8840782..45b0645 100644
  #include "webrtc/api/video/video_rotation.h"
  #include "webrtc/api/video/video_frame_buffer.h"
  
-@@ -105,6 +106,36 @@ class VideoFrame {
+@@ -104,6 +105,16 @@ class VideoFrame {
+   // Return true if the frame is stored in a texture.
    bool is_texture() const {
      return video_frame_buffer()->native_handle() != nullptr;
-   }
-+
-+  void SetID3D11Device(ID3D11Device* device)
-+  {
-+	  m_d3dDevice = device;
-+  }
-+
-+  ID3D11Device* GetID3D11Device() const
-+  {
-+	  return m_d3dDevice;
-+  }
-+
-+  void SetID3D11DeviceContext(ID3D11DeviceContext* context)
-+  {
-+	  m_d3dContext = context;
-+  }
-+
-+  ID3D11DeviceContext* GetID3D11DeviceContext() const
-+  {
-+	  return m_d3dContext;
 +  }
 +
 +  void SetID3D11Texture2D(ID3D11Texture2D* texture)
@@ -826,19 +807,16 @@ index 8840782..45b0645 100644
 +  ID3D11Texture2D* GetID3D11Texture2D() const
 +  {
 +	  return m_stagingFrameBuffer;
-+  }
+   }
  
   private:
-   // An opaque reference counted handle that stores the pixel data.
-@@ -112,7 +143,10 @@ class VideoFrame {
+@@ -112,7 +123,8 @@ class VideoFrame {
    uint32_t timestamp_rtp_;
    int64_t ntp_time_ms_;
    int64_t timestamp_us_;
 -  VideoRotation rotation_;
 +  VideoRotation rotation_;
-+  ID3D11Device*			m_d3dDevice;
-+  ID3D11DeviceContext*	m_d3dContext;
-+  ID3D11Texture2D*		m_stagingFrameBuffer;
++  ID3D11Texture2D* m_stagingFrameBuffer;
  };
  
  }  // namespace webrtc
@@ -8148,10 +8126,10 @@ index 0000000..fad4bda
 +    return NV_ENC_SUCCESS;
 +}
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 84bfafb..8ebd456 100644
+index 84bfafb..f24fe8f 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-@@ -1,503 +1,956 @@
+@@ -1,503 +1,932 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -8834,7 +8812,7 @@ index 84bfafb..8ebd456 100644
 +      max_bps_(0),
 +      mode_(kRealtimeVideo),
 +      frame_dropping_on_(false),
-+	  m_useSoftwareEncoding(true),
++	  m_useSoftwareEncoding(false),
 +      key_frame_interval_(0),
 +      packetization_mode_(H264PacketizationMode::SingleNalUnit),
 +      max_payload_size_(0),
@@ -8848,16 +8826,6 @@ index 84bfafb..8ebd456 100644
 +
 +H264EncoderImpl::~H264EncoderImpl() {
 +  Release();
-+}
-+
-+std::string ExePath() {
-+	TCHAR buffer[MAX_PATH];
-+	GetModuleFileName(NULL, buffer, MAX_PATH);
-+	char charPath[MAX_PATH];
-+	wcstombs(charPath, buffer, wcslen(buffer) + 1);
-+
-+	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
-+	return std::string(charPath).substr(0, pos);
 +}
 +
 +int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
@@ -8885,22 +8853,20 @@ index 84bfafb..8ebd456 100644
 +  }
 +	RTC_DCHECK(!encoder_);
 +
-+	// TODO: Finish JSON config file integration
-+	//Json::Reader reader;
-+	//Json::Value root;
++	Json::Reader reader;
++	Json::Value root = NULL;
 +
-+	//auto path = ExePath();
-+	//std::string fileName = "\\webrtcEncoderConfig.json";
-+	//path.append(fileName);
++	auto encoderConfigPath = ExePath("webrtcEncoderConfig.json");
++	std::ifstream file(encoderConfigPath);
++	if (file.good())
++	{
++		file >> root;
++		reader.parse(file, root, true);
 +
-+	//std::ifstream file(path);
-+	//file >> root;
-+
-+	//if (reader.parse(file, root, true) && root.isMember("useSoftwareEncoding")) {
-+	//	m_useSoftwareEncoding = root["useSoftwareEncoding"].asBool();
-+	//}
-+
-+	m_useSoftwareEncoding = false;
++		if (root.isMember("useSoftwareEncoding")) {
++			m_useSoftwareEncoding = root.get("useSoftwareEncoding", false).asBool();
++		}
++	}
 +
 +	if (m_useSoftwareEncoding)
 +	{
@@ -8959,7 +8925,7 @@ index 84bfafb..8ebd456 100644
 +
 +		memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
 +
-+		GetDefaultNvencodeConfig(m_encodeConfig);
++		GetDefaultNvencodeConfig(m_encodeConfig, root);
 +		m_encodeConfig.width = codec_settings->width;
 +		m_encodeConfig.height = codec_settings->height;
 +		m_pNvHWEncoder = new CNvHWEncoder();
@@ -9081,7 +9047,7 @@ index 84bfafb..8ebd456 100644
 +	return NV_ENC_SUCCESS;
 +}
 +
-+void H264EncoderImpl::GetDefaultNvencodeConfig(EncodeConfig &nvEncodeConfig)
++void H264EncoderImpl::GetDefaultNvencodeConfig(EncodeConfig &nvEncodeConfig, Json::Value rootValue = NULL)
 +{
 +	//Populate with default values
 +	{
@@ -9100,7 +9066,7 @@ index 84bfafb..8ebd456 100644
 +
 +		//Only supported codec for WebRTC.
 +		nvEncodeConfig.codec = NV_ENC_H264;
-+		nvEncodeConfig.fps = 30;
++		nvEncodeConfig.fps = 60;
 +
 +		//Quantization Parameter - must be 0 for lossless.
 +		nvEncodeConfig.qp = 5;
@@ -9113,9 +9079,9 @@ index 84bfafb..8ebd456 100644
 +		nvEncodeConfig.b_quant_factor = DEFAULT_B_QFACTOR;
 +		nvEncodeConfig.i_quant_offset = DEFAULT_I_QOFFSET;
 +		nvEncodeConfig.b_quant_offset = DEFAULT_B_QOFFSET;
-+		nvEncodeConfig.intraRefreshPeriod = 30;
++		nvEncodeConfig.intraRefreshPeriod = 60;
 +		nvEncodeConfig.intraRefreshEnableFlag = true;
-+		nvEncodeConfig.intraRefreshDuration = 3;
++		nvEncodeConfig.intraRefreshDuration = 6;
 +
 +		// Enable temporal Adaptive Quantization
 +		// Shifts quantization matrix based on complexity of frame over time
@@ -9129,75 +9095,63 @@ index 84bfafb..8ebd456 100644
 +		SetNvencodeProfile(2);
 +	}
 +
-+	// TODO: Finish JSON config file integration
-+	/*if (rootValue.isMember("NvencodeSettings"))
++	if (rootValue != NULL && rootValue.isMember("NvencodeSettings"))
 +	{
-+		if (rootValue["NvencodeSettings"].isMember("startFrameIdx"))
++		auto nvencodeRoot = rootValue.get("NvencodeSettings", NULL);
++		if (nvencodeRoot == NULL)
++			return;
++
++		if (nvencodeRoot.isMember("bitrate"))
 +		{
-+			nvEncodeConfig.startFrameIdx = rootValue["NvencodeSettings"]["startFrameIdx"].asInt();
++			nvEncodeConfig.bitrate = nvencodeRoot.get("bitrate", nvEncodeConfig.bitrate).asInt();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("encoderPreset"))
++		if (nvencodeRoot.isMember("minBitrate"))
 +		{
-+			nvEncodeConfig.encoderPreset = (char*)rootValue["NvencodeSettings"]["encoderPreset"].asCString();
++			nvEncodeConfig.minBitrate = nvencodeRoot.get("minBitrate", nvEncodeConfig.minBitrate).asInt();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("rcMode"))
++		if (nvencodeRoot.isMember("fps"))
 +		{
-+			nvEncodeConfig.rcMode = rootValue["NvencodeSettings"]["rcMode"].asInt();
++			nvEncodeConfig.fps = nvencodeRoot.get("fps", nvEncodeConfig.fps).asInt();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("bitrate"))
++		if (nvencodeRoot.isMember("qp"))
 +		{
-+			nvEncodeConfig.bitrate = rootValue["NvencodeSettings"]["bitrate"].asInt();
++			nvEncodeConfig.qp = nvencodeRoot.get("qp", nvEncodeConfig.qp).asInt();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("minBitrate"))
++		if (nvencodeRoot.isMember("intraRefreshPeriod"))
 +		{
-+			nvEncodeConfig.minBitrate = rootValue["NvencodeSettings"]["minBitrate"].asInt();
++			nvEncodeConfig.intraRefreshPeriod = nvencodeRoot.get("intraRefreshPeriod", nvEncodeConfig.intraRefreshPeriod).asInt();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("fps"))
++		if (nvencodeRoot.isMember("intraRefreshEnableFlag"))
 +		{
-+			nvEncodeConfig.fps = rootValue["NvencodeSettings"]["fps"].asInt();
++			nvEncodeConfig.intraRefreshEnableFlag = nvencodeRoot.get("intraRefreshEnableFlag", nvEncodeConfig.intraRefreshEnableFlag).asBool();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("qp"))
++		if (nvencodeRoot.isMember("intraRefreshDuration"))
 +		{
-+			nvEncodeConfig.qp = rootValue["NvencodeSettings"]["qp"].asInt();
++			nvEncodeConfig.intraRefreshDuration = nvencodeRoot.get("intraRefreshDuration", nvEncodeConfig.intraRefreshDuration).asInt();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("intraRefreshPeriod"))
++		if (nvencodeRoot.isMember("enableTemporalAQ"))
 +		{
-+			nvEncodeConfig.intraRefreshPeriod = rootValue["NvencodeSettings"]["intraRefreshPeriod"].asInt();
++			nvEncodeConfig.enableTemporalAQ = nvencodeRoot.get("enableTemporalAQ", nvEncodeConfig.enableTemporalAQ).asBool();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("intraRefreshEnableFlag"))
++		if (nvencodeRoot.isMember("invalidateRefFramesEnableFlag"))
 +		{
-+			nvEncodeConfig.intraRefreshEnableFlag = rootValue["NvencodeSettings"]["intraRefreshEnableFlag"].asBool();
++			nvEncodeConfig.invalidateRefFramesEnableFlag = nvencodeRoot.get("invalidateRefFramesEnableFlag", nvEncodeConfig.invalidateRefFramesEnableFlag).asBool();
 +		}
 +
-+		if (rootValue["NvencodeSettings"].isMember("intraRefreshDuration"))
++		if (nvencodeRoot.isMember("nvEncodeProfile"))
 +		{
-+			nvEncodeConfig.intraRefreshDuration = rootValue["NvencodeSettings"]["intraRefreshDuration"].asInt();
-+		}
-+
-+		if (rootValue["NvencodeSettings"].isMember("enableTemporalAQ"))
-+		{
-+			nvEncodeConfig.enableTemporalAQ = rootValue["NvencodeSettings"]["enableTemporalAQ"].asBool();
-+		}
-+
-+		if (rootValue["NvencodeSettings"].isMember("invalidateRefFramesEnableFlag"))
-+		{
-+			nvEncodeConfig.invalidateRefFramesEnableFlag = rootValue["NvencodeSettings"]["invalidateRefFramesEnableFlag"].asBool();
-+		}
-+
-+		if (rootValue["NvencodeSettings"].isMember("nvEncodeProfile"))
-+		{
-+			auto profile = rootValue["NvencodeSettings"]["nvEncodeProfile"].asInt();
++			auto profile = nvencodeRoot.get("nvEncodeProfile", 2).asInt();
 +			SetNvencodeProfile(profile);
 +		}
-+	}*/
++	}
 +}
 +
 +void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
@@ -9612,10 +9566,10 @@ index 84bfafb..8ebd456 100644
 +
 +}  // namespace webrtc
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
-index a455259..43a509b 100644
+index a455259..9773c53 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
-@@ -1,104 +1,211 @@
+@@ -1,104 +1,221 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -9749,6 +9703,16 @@ index a455259..43a509b 100644
 +
 +namespace webrtc {
 +
++	static std::string ExePath(std::string fileName) {
++		TCHAR buffer[MAX_PATH];
++		GetModuleFileName(NULL, buffer, MAX_PATH);
++		char charPath[MAX_PATH];
++		wcstombs(charPath, buffer, wcslen(buffer) + 1);
++
++		std::string::size_type pos = std::string(charPath).find_last_of("\\/");
++		return std::string(charPath).substr(0, pos + 1) + fileName;
++	}
++
 +	template<class T>
 +	class CNvQueue
 +	{
@@ -9878,7 +9842,7 @@ index a455259..43a509b 100644
 +  SEncParamExt CreateEncoderParams() const;
 +
 +  NVENCSTATUS SetNvencodeProfile(int profileIndex);
-+  void GetDefaultNvencodeConfig(EncodeConfig &nvEncodeConfig);
++  void GetDefaultNvencodeConfig(EncodeConfig &nvEncodeConfig, Json::Value rootValue);
 +
 +  void Capture(ID3D11Texture2D* frameBuffer, bool forceIntra);
 +  void GetEncodedFrame(void** buffer, int* size);
