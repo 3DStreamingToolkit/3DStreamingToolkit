@@ -105,11 +105,7 @@ int InitWebRTC()
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext());
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), nullptr, true);
-#else // WEBRTC_RAW_ENCODED_FRAME
 	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
-#endif // WEBRTC_RAW_ENCODED_FRAME
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;

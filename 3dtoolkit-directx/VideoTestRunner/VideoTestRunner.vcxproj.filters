@@ -16,6 +16,9 @@
     <ClInclude Include="inc\VideoTestRunner.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="inc\macros.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />

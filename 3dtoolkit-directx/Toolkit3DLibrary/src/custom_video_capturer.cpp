@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "custom_video_capturer.h"
-
+#include <fstream>
 
 namespace Toolkit3DLibrary
 {
@@ -72,6 +72,7 @@ namespace Toolkit3DLibrary
 		clock_(clock),
 		sending_(false),
 		sink_(nullptr),
+		use_software_encoder_(false),
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		frame_update_func_(frame_update_func),
@@ -82,6 +83,7 @@ namespace Toolkit3DLibrary
 	{
 		SetCaptureFormat(NULL);
 		set_enable_video_adapter(false);
+
 		// Default supported formats. Use ResetSupportedFormats to over write.
 		std::vector<cricket::VideoFormat> formats;
 		formats.push_back(cricket::VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_H264));
@@ -99,9 +101,6 @@ namespace Toolkit3DLibrary
 	}
 
 	bool CustomVideoCapturer::Init() {
-		// This check is added because frame_generator_ might be file based and should
-		// not crash because a file moved.
-
 		if (frame_update_func_)
 		{
 			int framerate_fps = GetCurrentConfiguredFramerate();
@@ -117,13 +116,31 @@ namespace Toolkit3DLibrary
 	cricket::CaptureState CustomVideoCapturer::Start(const cricket::VideoFormat& format) {
 		SetCaptureFormat(&format);
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-		// Maximum fps currently supported with NVencode+WebRTC(release 58) is 6
-		target_fps_ = 6;
-#else // WEBRTC_RAW_ENCODED_FRAME
-		// We are using a software level encoding, let WebRTC handle throttling
-		target_fps_ = 60;
-#endif // WEBRTC_RAW_ENCODED_FRAME
+		Json::Reader reader;
+		Json::Value root = NULL;
+
+		auto encoderConfigPath = ExePath("webrtcEncoderConfig.json");
+		std::ifstream file(encoderConfigPath);
+		if (file.good())
+		{
+			file >> root;
+			reader.parse(file, root, true);
+
+			if (root.isMember("serverFrameCaptureFPS")) 
+			{
+				target_fps_ = root.get("serverFrameCaptureFPS", 60).asInt();
+			}
+
+			if (root.isMember("useSoftwareEncoding")) 
+			{
+				use_software_encoder_ = root.get("useSoftwareEncoding", false).asBool();
+			}
+		}
+		else // default to 60 fps and hardward encoder in case of missing config file.
+		{
+			target_fps_ = 60;
+			use_software_encoder_ = false;
+		}
 
 		Init();
 		running_ = true;
@@ -140,50 +157,48 @@ namespace Toolkit3DLibrary
 				frame_update_func_();
 			}
 
-			void* pFrameBuffer = nullptr;
-			int frameSizeInBytes = 0;
 			int width = 0;
 			int height = 0;
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-			video_helper_->Capture();
-			video_helper_->GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-#else // WEBRTC_RAW_ENCODED_FRAME
-			video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-#endif // WEBRTC_RAW_ENCODED_FRAME
+			video_helper_->GetWidthAndHeight(&width, &height);
+			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(width, height);
 
-			if (frameSizeInBytes == 0)
+			if (use_software_encoder_)
 			{
-				return;
+				void* pFrameBuffer = nullptr;
+				int frameSizeInBytes = 0;
+
+				video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
+
+				if (frameSizeInBytes == 0)
+					return;
+
+				libyuv::ABGRToI420(
+					(uint8_t*)pFrameBuffer,
+					width * 4,
+					buffer.get()->MutableDataY(),
+					buffer.get()->StrideY(),
+					buffer.get()->MutableDataU(),
+					buffer.get()->StrideU(),
+					buffer.get()->MutableDataV(),
+					buffer.get()->StrideV(),
+					width,
+					height);
 			}
-
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-				width, height, frameSizeInBytes);
-
-			memcpy(buffer.get()->MutableDataY(), pFrameBuffer, frameSizeInBytes);
-#else // WEBRTC_RAW_ENCODED_FRAME
-			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(
-				width, height);
-
-			libyuv::ABGRToI420(
-				(uint8_t*)pFrameBuffer,
-				width * 4,
-				buffer.get()->MutableDataY(),
-				buffer.get()->StrideY(),
-				buffer.get()->MutableDataU(),
-				buffer.get()->StrideU(),
-				buffer.get()->MutableDataV(),
-				buffer.get()->StrideV(),
-				width,
-				height);
-#endif // WEBRTC_RAW_ENCODED_FRAME
 
 			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
 			auto frame = webrtc::VideoFrame(
 				buffer, fake_rotation_,
 				timeStamp);
+
+#ifdef USE_WEBRTC_NVENCODE
+			if (!use_software_encoder_)
+			{
+				auto texture = video_helper_->Capture2DTexture(&width, &height);
+				frame.SetID3D11Texture2D(texture);
+			}
+#endif
 
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 			frame.set_rotation(fake_rotation_);

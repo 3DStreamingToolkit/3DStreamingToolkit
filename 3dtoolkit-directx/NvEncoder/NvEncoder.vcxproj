@@ -25,7 +25,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="src\NvHWEncoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\cudaModuleMgr.h" />

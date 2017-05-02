@@ -534,11 +534,7 @@ int InitWebRTC()
 		DXUTGetD3D11Device(),
 		DXUTGetD3D11DeviceContext());
 
-#ifdef WEBRTC_RAW_ENCODED_FRAME
-	g_videoHelper->Initialize(DXUTGetDXGISwapChain(), nullptr, true);
-#else // WEBRTC_RAW_ENCODED_FRAME
 	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
-#endif // WEBRTC_RAW_ENCODED_FRAME
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
@@ -635,7 +631,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
 #else // TEST_RUNNER
 	// Initializes the video helper
-	g_videoHelper->Initialize(DXUTGetDXGISwapChain(), "output.h264");
+	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
 #endif // TEST_RUNNER
 
     DXUTMainLoop(); // Enter into the DXUT render loop
