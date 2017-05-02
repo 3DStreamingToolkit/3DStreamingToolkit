@@ -72,7 +72,7 @@ namespace Toolkit3DLibrary
 		clock_(clock),
 		sending_(false),
 		sink_(nullptr),
-		m_useSoftwareEncoder(false),
+		use_software_encoder_(false),
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		frame_update_func_(frame_update_func),
@@ -81,10 +81,9 @@ namespace Toolkit3DLibrary
 		task_queue_("FrameGenCapQ",
 			rtc::TaskQueue::Priority::HIGH)
 	{
-		// TODO: Implement encoder config file parser 
-
 		SetCaptureFormat(NULL);
 		set_enable_video_adapter(false);
+
 		// Default supported formats. Use ResetSupportedFormats to over write.
 		std::vector<cricket::VideoFormat> formats;
 		formats.push_back(cricket::VideoFormat(640, 480, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_H264));
@@ -127,19 +126,25 @@ namespace Toolkit3DLibrary
 			file >> root;
 			reader.parse(file, root, true);
 
-			if (root.isMember("serverFrameCaptureFPS")) {
+			if (root.isMember("serverFrameCaptureFPS")) 
+			{
 				target_fps_ = root.get("serverFrameCaptureFPS", 60).asInt();
 			}
 
-			if (root.isMember("useSoftwareEncoding")) {
-				m_useSoftwareEncoder = root.get("useSoftwareEncoding", false).asBool();
+			if (root.isMember("useSoftwareEncoding")) 
+			{
+				use_software_encoder_ = root.get("useSoftwareEncoding", false).asBool();
 			}
+		}
+		else // default to 60 fps and hardward encoder in case of missing config file.
+		{
+			target_fps_ = 60;
+			use_software_encoder_ = false;
 		}
 
 		Init();
 		running_ = true;
 		sending_ = true;
-		first_frame = true;
 		SetCaptureState(cricket::CS_RUNNING);
 		return cricket::CS_RUNNING;
 	}
@@ -155,10 +160,10 @@ namespace Toolkit3DLibrary
 			int width = 0;
 			int height = 0;
 
-			video_helper_->GetHeightAndWidth(&width, &height);
+			video_helper_->GetWidthAndHeight(&width, &height);
 			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(width, height);
 
-			if (m_useSoftwareEncoder)
+			if (use_software_encoder_)
 			{
 				void* pFrameBuffer = nullptr;
 				int frameSizeInBytes = 0;
@@ -188,7 +193,7 @@ namespace Toolkit3DLibrary
 				timeStamp);
 
 #ifdef USE_WEBRTC_NVENCODE
-			if (!m_useSoftwareEncoder)
+			if (!use_software_encoder_)
 			{
 				auto texture = video_helper_->Capture2DTexture(&width, &height);
 				frame.SetID3D11Texture2D(texture);

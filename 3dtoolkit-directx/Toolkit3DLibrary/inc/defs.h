@@ -7,5 +7,6 @@
 #define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
 #define DEPLOYED_SERVICE
 
-// Un-check flag for Test Runner
+#ifndef TEST_RUNNER
 #define USE_WEBRTC_NVENCODE
+#endif // TEST_RUNNER

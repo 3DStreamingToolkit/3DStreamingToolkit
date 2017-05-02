@@ -140,8 +140,7 @@ namespace Toolkit3DLibrary
 		void InsertFrame();
 		int GetCurrentConfiguredFramerate();
 		Clock* const clock_;
-		bool first_frame;
-		bool m_useSoftwareEncoder;
+		bool use_software_encoder_;
 		int target_fps_ GUARDED_BY(&lock_);
 		rtc::Optional<int> wanted_fps_ GUARDED_BY(&lock_);
 		VideoRotation fake_rotation_ = kVideoRotation_0;

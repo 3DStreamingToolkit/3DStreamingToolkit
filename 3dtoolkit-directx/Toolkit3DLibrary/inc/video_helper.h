@@ -24,14 +24,12 @@ namespace Toolkit3DLibrary
 		NVENCSTATUS                             Deinitialize(); 
 		void									Capture(void** buffer, int* size, int* width, int* height);
 		ID3D11Texture2D*						Capture2DTexture(int* width, int* height);
-		void									GetHeightAndWidth(int* width, int* height);
+		void									GetWidthAndHeight(int* width, int* height);
 
-		// Debug
 		ID3D11Device*							m_d3dDevice;
 		ID3D11DeviceContext*					m_d3dContext;
 
 	private:
-
 		IDXGISwapChain*							m_swapChain;
 
 		// NvEncoder
