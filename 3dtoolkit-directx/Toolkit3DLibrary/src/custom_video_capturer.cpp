@@ -72,7 +72,7 @@ namespace Toolkit3DLibrary
 		clock_(clock),
 		sending_(false),
 		sink_(nullptr),
-		m_useSoftwareEncoder(true),
+		m_useSoftwareEncoder(false),
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		frame_update_func_(frame_update_func),
