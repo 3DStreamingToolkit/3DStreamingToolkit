@@ -202,6 +202,9 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\webrtcEncoderConfig.json">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">
       <Project>{84da0532-9d88-4118-b454-c4801178a330}</Project>
     </ProjectReference>
