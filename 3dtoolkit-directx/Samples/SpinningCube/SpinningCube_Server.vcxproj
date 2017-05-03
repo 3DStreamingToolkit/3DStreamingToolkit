@@ -111,7 +111,7 @@
       <ObjectFileOutput>$(OutDir)%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; copy /y /d  "$(SolutionDir)webrtcEncoderConfig.json" "$(OutDir)"</Command>
+      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; copy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,7 +132,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; copy /y /d  "$(SolutionDir)webrtcEncoderConfig.json" "$(OutDir)"</Command>
+      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; copy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -157,7 +157,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; copy /y /d  "$(SolutionDir)webrtcEncoderConfig.json" "$(OutDir)"</Command>
+      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; copy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -182,7 +182,7 @@
       <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; copy /y /d  "$(SolutionDir)webrtcEncoderConfig.json" "$(OutDir)"</Command>
+      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; copy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

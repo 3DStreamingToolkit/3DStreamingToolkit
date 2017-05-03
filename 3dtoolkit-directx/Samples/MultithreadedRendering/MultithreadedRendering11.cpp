@@ -18,8 +18,12 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
+#include <stdlib.h>
+#include <shellapi.h>
+#include <fstream>
 
 #include "MultiDeviceContextDXUTMesh.h"
+#include "custom_video_capturer.h"
 
 #ifdef TEST_RUNNER
 #include "VideoTestRunner.h"
@@ -40,8 +44,9 @@
 
 #include "rapidjson/document.h"
 
-#pragma warning( disable : 4100 )
-//Required app libs
+#pragma warning(disable : 4100)
+
+// Required app libs
 #pragma comment(lib, "ws2_32.lib") 
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -56,7 +61,8 @@
 #pragma comment(lib, "msdmo.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "strmiids.lib")
-//Required webrtc static libs
+
+// Required webrtc static libs
 #pragma comment(lib, "common_video.lib")
 #pragma comment(lib, "webrtc.lib")
 #pragma comment(lib, "boringssl_asm.lib")
@@ -506,18 +512,22 @@ void InputUpdate(const std::string& message)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC()
+int InitWebRTC(char* server, int port)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 #ifdef SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
-		true, 1280, 720);
+#ifdef NO_UI
+	DefaultMainWindow wnd(server, port, true, false, true, true);
+#else // NO_UI
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall,
+		true, false, 1280, 720);
+#endif // NO_UI
 #else // SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
-		false, 1280, 720);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall,
+		false, false, 1280, 720);
 #endif // SERVER_APP
 
 	if (!wnd.Create())
@@ -528,6 +538,12 @@ int InitWebRTC()
 
 	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+
+#ifdef SERVER_APP
+#ifdef NO_UI
+	ShowWindow(wnd.handle(), SW_HIDE);
+#endif // NO_UI
+#endif // SERVER_APP
 
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
@@ -638,7 +654,41 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     return DXUTGetExitCode();
 #else // REMOTE_RENDERING
-	return InitWebRTC();
+	int nArgs;
+	char server[1024];
+	strcpy(server, FLAG_server);
+	int port = FLAG_port;
+	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+
+	// Try parsing command line arguments.
+	if (szArglist && nArgs == 2)
+	{
+		wcstombs(server, szArglist[0], sizeof(server));
+		port = _wtoi(szArglist[1]);
+	}
+	else // Try parsing config file.
+	{
+		std::string configFilePath = ExePath("webrtcConfig.json");
+		std::ifstream configFile(configFilePath);
+		Json::Reader reader;
+		Json::Value root = NULL;
+		if (configFile.good())
+		{
+			configFile >> root;
+			reader.parse(configFile, root, true);
+			if (root.isMember("server"))
+			{
+				strcpy(server, root.get("server", FLAG_server).asCString());
+			}
+
+			if (root.isMember("port"))
+			{
+				port = root.get("port", FLAG_port).asInt();
+			}
+		}
+	}
+
+	return InitWebRTC(server, port);
 #endif // REMOTE_RENDERING
 }
 

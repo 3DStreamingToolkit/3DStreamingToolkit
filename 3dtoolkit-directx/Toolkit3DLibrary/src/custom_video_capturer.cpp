@@ -119,7 +119,7 @@ namespace Toolkit3DLibrary
 		Json::Reader reader;
 		Json::Value root = NULL;
 
-		auto encoderConfigPath = ExePath("webrtcEncoderConfig.json");
+		auto encoderConfigPath = ExePath("webrtcConfig.json");
 		std::ifstream file(encoderConfigPath);
 		if (file.good())
 		{

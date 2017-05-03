@@ -1,9 +1,11 @@
 {
+  "server": "127.0.0.1",
+  "port": 8888,
   "useSoftwareEncoding": false,
   "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
     "bitrate": 3000000,
-	"minBitrate": 3000000,
+    "minBitrate": 3000000,
     "fps": 60,
     "qp": 5,
     "intraRefreshPeriod": 60,
@@ -11,7 +13,7 @@
     "intraRefreshDuration": 6,
     "enableTemporalAQ": false,
     "invalidateRefFramesEnableFlag": true,
-	"nvEncodeProfile": 2,
-	"nvEncodeProfile_comment": "nvEncodeProfile enums: 1 - NV_ENC_H264_PROFILE_MAIN_GUID; 2 - NV_ENC_PRESET_LOW_LATENCY_HQ_GUID; 3 - NV_ENC_H264_PROFILE_STEREO_GUID; 0 - NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID"
+    "nvEncodeProfile": 2,
+    "nvEncodeProfile_comment": "nvEncodeProfile enums: 1 - NV_ENC_H264_PROFILE_MAIN_GUID; 2 - NV_ENC_PRESET_LOW_LATENCY_HQ_GUID; 3 - NV_ENC_H264_PROFILE_STEREO_GUID; 0 - NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID"
   }
 }
