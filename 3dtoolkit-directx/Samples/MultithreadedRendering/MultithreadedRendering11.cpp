@@ -674,7 +674,6 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 		Json::Value root = NULL;
 		if (configFile.good())
 		{
-			configFile >> root;
 			reader.parse(configFile, root, true);
 			if (root.isMember("server"))
 			{

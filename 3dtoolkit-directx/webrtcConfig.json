@@ -1,4 +1,9 @@
 {
+  "turnServer": {
+    "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
+    "username": "user",
+    "password": "3Dstreaming0317"
+  },
   "server": "127.0.0.1",
   "port": 8888,
   "useSoftwareEncoding": false,
