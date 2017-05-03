@@ -80,10 +80,10 @@ int InitWebRTC()
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 #ifdef SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+	DefaultMainWindow wnd(FLAG_server, FLAG_port, true, FLAG_autocall,
 		true, 1280, 720);
 #else // SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+	DefaultMainWindow wnd(FLAG_server, FLAG_port, true, true,
 		false, 1280, 720);
 #endif // SERVER_APP
 

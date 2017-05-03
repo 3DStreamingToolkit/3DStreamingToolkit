@@ -700,7 +700,7 @@ void DefaultMainWindow::LayoutConnectUI(bool show)
 	} windows[] =
 	{
 		{ label1_, L"Server" },
-		{ edit1_, L"XXXyyyYYYgggXXXyyyYYYggg" },
+		{ edit1_, L"XXXyyyYYYgggXXXyyyYYYgggXXXyyyYYYggg" },
 		{ label2_, L":" },
 		{ edit2_, L"XyXyX" },
 		{ button_, L"Connect" },
