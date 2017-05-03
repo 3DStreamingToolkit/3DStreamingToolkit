@@ -72,8 +72,15 @@ void AddListBoxItem(HWND listbox, const std::string& str, LPARAM item_data)
 
 }  // namespace
 
-DefaultMainWindow::DefaultMainWindow(const char* server, int port,
-	bool auto_connect, bool auto_call, bool is_server_app, int width, int height) : 
+DefaultMainWindow::DefaultMainWindow(
+	const char* server,
+	int port,
+	bool auto_connect,
+	bool auto_call,
+	bool is_server_app,
+	bool has_no_UI,
+	int width,
+	int height) : 
 		ui_(CONNECT_TO_SERVER),
 		wnd_(NULL),
 		edit1_(NULL),
@@ -89,6 +96,7 @@ DefaultMainWindow::DefaultMainWindow(const char* server, int port,
 		auto_connect_(auto_connect),
 		auto_call_(auto_call),
 		is_server_app_(is_server_app),
+		has_no_UI_(has_no_UI),
 		width_(width),
 		height_(height)
 {
@@ -111,9 +119,10 @@ bool DefaultMainWindow::Create()
 	}
 
 	ui_thread_id_ = ::GetCurrentThreadId();
+	int visibleFlag = (has_no_UI_) ? 0 : WS_VISIBLE;
 	wnd_ = ::CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, kClassName,
 		is_server_app_ ? L"Server" : L"Client",
-		WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN,
+		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | visibleFlag,
 		CW_USEDEFAULT, CW_USEDEFAULT, width_, height_,
 		NULL, NULL, GetModuleHandle(NULL), this);
 
