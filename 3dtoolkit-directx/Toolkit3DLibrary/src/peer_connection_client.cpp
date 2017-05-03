@@ -94,6 +94,10 @@ void PeerConnectionClient::RegisterObserver(PeerConnectionClientObserver* callba
 	callback_ = callback;
 }
 
+void PeerConnectionClient::SetRenderingServerFlag(bool is_server_app) {
+	is_server_app_ = is_server_app;
+}
+
 void PeerConnectionClient::Connect(const std::string& server, int port, 
 	const std::string& client_name)
 {
@@ -157,10 +161,11 @@ void PeerConnectionClient::DoConnect()
 	hanging_get_.reset(CreateClientSocket(server_address_.ipaddr().family()));
 	InitSocketSignals();
 	char buffer[1024];
+	std::string clientName = (is_server_app_ ? "renderingserver_" : "renderingclient_") + client_name_;
 	sprintfn(
 		buffer,
 		sizeof(buffer),
-		"GET /sign_in?%s HTTP/1.0\r\n\r\n", client_name_.c_str());
+		"GET /sign_in?%s HTTP/1.0\r\n\r\n", clientName.c_str());
 
 	onconnect_data_ = buffer;
 
