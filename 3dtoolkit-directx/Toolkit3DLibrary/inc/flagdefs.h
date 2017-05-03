@@ -22,7 +22,7 @@ extern const uint16_t kDefaultServerPort;  // From defaults.[h|cc]
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(autoconnect, false, "Connect to the server without user "
                                 "intervention.");
-DEFINE_string(server, "localhost", "The server to connect to.");
+DEFINE_string(server, "signalingserver.centralus.cloudapp.azure.com", "The server to connect to.");
 DEFINE_int(port, kDefaultServerPort,
            "The port on which the server is listening.");
 DEFINE_bool(autocall, false, "Call the first available other client on "
