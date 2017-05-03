@@ -360,7 +360,6 @@ int WINAPI wWinMain(
 		Json::Value root = NULL;
 		if (configFile.good())
 		{
-			configFile >> root;
 			reader.parse(configFile, root, true);
 			if (root.isMember("server"))
 			{
