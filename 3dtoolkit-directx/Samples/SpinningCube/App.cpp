@@ -27,6 +27,12 @@ static std::string ExePath(std::string fileName) {
 #endif // TEST_RUNNER
 
 // Required app libs
+#pragma comment(lib, "d3dcompiler.lib")
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "imm32.lib")
+#pragma comment(lib, "version.lib")
+#pragma comment(lib, "usp10.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "winmm.lib")
 
@@ -68,14 +74,12 @@ int InitWebRTC(char* server, int port)
 
 #ifdef SERVER_APP
 #ifdef NO_UI
-	DefaultMainWindow wnd(server, port, true, true, true, true);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, true, true);
 #else // NO_UI
-	DefaultMainWindow wnd(server, port, true, true,
-		true, 1280, 720);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, true, false, 1280, 720);
 #endif // NO_UI
 #else // SERVER_APP
-	DefaultMainWindow wnd(server, port, true, true,
-		false, 1280, 720);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, false, 1280, 720);
 #endif // SERVER_APP
 
 	if (!wnd.Create())

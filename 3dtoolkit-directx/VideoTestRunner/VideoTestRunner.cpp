@@ -16,19 +16,25 @@ VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* cont
 	m_d3dDevice(device),
 	m_d3dContext(context)
 {
-
-	#ifdef MULTITHREAD_PROTECTION
+	if (m_initialized == false) {
+		m_initialized = true;
+#ifdef MULTITHREAD_PROTECTION
 		// Enables multithread protection.
 		ID3D11Multithread* multithread;
 		m_d3dDevice->QueryInterface(IID_PPV_ARGS(&multithread));
 		multithread->SetMultithreadProtected(true);
 		multithread->Release();
-	#endif // MULTITHREAD_PROTECTION
+#endif // MULTITHREAD_PROTECTION
 
-	m_pNvHWEncoder = new CNvHWEncoder();
-	
-	m_encoderCreated = false;
-	m_lastTest = false;
+
+		m_pNvHWEncoder = new CNvHWEncoder();
+
+		m_encoderCreated = false;
+		m_lastTest = false;
+	}
+	else {
+		return;
+	}
 }
 
 // Destructor for VideoHelper.
@@ -36,6 +42,7 @@ VideoTestRunner::~VideoTestRunner()
 {
 	if (m_pNvHWEncoder)
 	{
+		m_initialized = false;
 		Deinitialize();
 		delete m_pNvHWEncoder;
 		m_pNvHWEncoder = NULL;
@@ -53,6 +60,10 @@ NVENCSTATUS VideoTestRunner::Deinitialize()
 }
 
 void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
+	//Simple check to allow TestRunner to act as singleton for multithreaded renderers
+	if (m_initialized)
+		return;
+	m_initialized = true;
 	m_testSuiteComplete = false;
 	m_testRunComplete = false;
 	m_currentSuite = 0;
@@ -74,8 +85,8 @@ void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
 void VideoTestRunner::InitializeTest()
 {
 	m_encodeConfig.outputFileName = m_fileName;
-
-	InitializeEncoder();
+	if(m_encoderCreated == false)
+		InitializeEncoder();
 	m_encoderCreated = true;
 }
 
@@ -90,10 +101,11 @@ NVENCSTATUS VideoTestRunner::InitializeEncoder()
 		}
 	}
 
-	m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
-
 	//NV_ENC_H264_PROFILE_HIGH_444_GUID
 	SetEncodeProfile(1);
+
+	m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
+
 	
 	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
 
@@ -396,22 +408,24 @@ NVENCSTATUS VideoTestRunner::FlushEncoder()
 }
 
 void VideoTestRunner::TestCapture() {
+	if (m_encoderCreated) {
 		if (m_currentFrame >= m_encodeConfig.startFrameIdx)
-	{
-		if (m_currentFrame < m_encodeConfig.endFrameIdx) {
-			Capture();
-		}
-		else {
-			m_currentFrame = 0;
-			if (m_lastTest) {
-				IncrementTestSuite();
+		{
+			if (m_currentFrame < m_encodeConfig.endFrameIdx) {
+				Capture();
+			}
+			else {
+				m_currentFrame = 0;
+				if (m_lastTest) {
+					IncrementTestSuite();
+					return;
+				}
+				IncrementTest();
 				return;
 			}
-			IncrementTest();
-			return;
 		}
-	} 
-	m_currentFrame++;
+		m_currentFrame++;
+	}
 }
 
 void VideoTestRunner::IncrementTest() {
