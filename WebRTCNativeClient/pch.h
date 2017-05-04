@@ -11,10 +11,4 @@
 #include <memory.h>
 #include <tchar.h>
 
-// DirectX Header Files
-#include <d3d11_4.h>
-#include <d3dcompiler.h>
-#include <directxmath.h>
-#include <directxcolors.h>
-
 #include "defs.h"

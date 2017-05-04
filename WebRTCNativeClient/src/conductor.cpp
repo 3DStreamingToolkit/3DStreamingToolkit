@@ -17,6 +17,7 @@
 
 #include "conductor.h"
 #include "defaults.h"
+#include "custom_video_capturer.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/json.h"
@@ -493,6 +494,18 @@ void Conductor::ConnectToPeer(int peer_id)
 	}
 }
 
+std::unique_ptr<cricket::VideoCapturer> Conductor::OpenFakeVideoCaptureDevice()
+{
+	webrtc::VideoCapturerFactoryCustom factory;
+	std::unique_ptr<cricket::VideoCapturer> capturer;
+	cricket::Device dummyDevice;
+	dummyDevice.name = "custom dummy device";
+	capturer = factory.Create(webrtc::Clock::GetRealTimeClock(),
+		dummyDevice);
+
+	return capturer;
+}
+
 void Conductor::AddStreams()
 {
 	if (active_streams_.find(kStreamLabel) != active_streams_.end())
@@ -500,19 +513,19 @@ void Conductor::AddStreams()
 		return;  // Already added.
 	}
 
-	//rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-	//	peer_connection_factory_->CreateVideoTrack(
-	//		kVideoLabel,
-	//		peer_connection_factory_->CreateVideoSource(
-	//			NULL,
-	//			NULL)));
+	rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+		peer_connection_factory_->CreateVideoTrack(
+			kVideoLabel,
+			peer_connection_factory_->CreateVideoSource(
+				OpenFakeVideoCaptureDevice(),
+				NULL)));
 
-	//main_window_->StartLocalRenderer(video_track);
+	main_window_->StartLocalRenderer(video_track);
 
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
 		peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
-	//stream->AddTrack(video_track);
+	stream->AddTrack(video_track);
 	if (!peer_connection_->AddStream(stream))
 	{
 		LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
