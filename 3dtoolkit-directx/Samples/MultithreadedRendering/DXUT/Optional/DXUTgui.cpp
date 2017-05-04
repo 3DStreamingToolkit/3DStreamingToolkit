@@ -6644,9 +6644,9 @@ void DXUTBlendColor::SetCurrent( DWORD color )
 
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void CDXUTElement::SetTexture( UINT iTexture, RECT* prcTexture, DWORD defaultTextureColor )
+void CDXUTElement::SetTexture( UINT iTextureInput, RECT* prcTexture, DWORD defaultTextureColor )
 {
-    this->iTexture = iTexture;
+    this->iTexture = iTextureInput;
 
     if( prcTexture )
         rcTexture = *prcTexture;
@@ -6659,10 +6659,10 @@ void CDXUTElement::SetTexture( UINT iTexture, RECT* prcTexture, DWORD defaultTex
 
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void CDXUTElement::SetFont( UINT iFont, DWORD defaultFontColor, DWORD dwTextFormat )
+void CDXUTElement::SetFont( UINT iFontInput, DWORD defaultFontColor, DWORD dwTextFormatInput )
 {
-    this->iFont = iFont;
-    this->dwTextFormat = dwTextFormat;
+    this->iFont = iFontInput;
+    this->dwTextFormat = dwTextFormatInput;
 
     FontColor.Init( defaultFontColor );
 }

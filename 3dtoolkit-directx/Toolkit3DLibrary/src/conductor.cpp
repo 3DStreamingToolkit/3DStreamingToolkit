@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <fstream>
 
 #include "conductor.h"
 #include "defaults.h"
@@ -149,9 +150,30 @@ bool Conductor::CreatePeerConnection(bool dtls)
 
 #ifdef DEPLOYED_SERVICE
 	webrtc::PeerConnectionInterface::IceServer turnServer;
-	turnServer.uri = "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478";
-	turnServer.username = "user";
-	turnServer.password = "3Dstreaming0317";
+	turnServer.uri = "";
+	turnServer.username = "";
+	turnServer.password = "";
+
+	// Try parsing config file.
+	std::string configFilePath = ExePath("webrtcConfig.json");
+	std::ifstream configFile(configFilePath);
+	Json::Reader reader;
+	Json::Value root = NULL;
+	if (configFile.good())
+	{
+		reader.parse(configFile, root, true);
+		if (root.isMember("turnServer"))
+		{
+			Json::Value jsonTurnServer = root.get("turnServer", NULL);
+			if (!jsonTurnServer.isNull())
+			{
+				turnServer.uri = jsonTurnServer["uri"].asString();
+				turnServer.username = jsonTurnServer["username"].asString();
+				turnServer.password = jsonTurnServer["password"].asString();
+			}
+		}
+	}
+
 	turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck; 
 	config.type = webrtc::PeerConnectionInterface::kRelay;
 	config.servers.push_back(turnServer);
@@ -160,7 +182,6 @@ bool Conductor::CreatePeerConnection(bool dtls)
 	stunServer.urls.push_back(GetPeerConnectionString());
 	config.servers.push_back(stunServer);
 #endif // DEPLOYED_SERVICE
-
 
 	webrtc::FakeConstraints constraints;
 	if (dtls) 

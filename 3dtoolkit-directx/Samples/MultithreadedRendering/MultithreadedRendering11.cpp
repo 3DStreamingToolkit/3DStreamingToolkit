@@ -6,6 +6,7 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //--------------------------------------------------------------------------------------
+
 #include "resource.h"
 #include "DXUT.h"
 #include "DXUTcamera.h"
@@ -18,31 +19,32 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
+#include <stdlib.h>
+#include <shellapi.h>
+#include <fstream>
 
 #include "MultiDeviceContextDXUTMesh.h"
 
 #ifdef TEST_RUNNER
-#include "VideoTestRunner.h"
+#include "test_runner.h"
 #else // TEST_RUNNER
-#include "video_helper.h"
+#ifdef SERVER_APP
+#include "server_renderer.h"
+#else
+static std::string ExePath(std::string fileName) {
+	TCHAR buffer[MAX_PATH];
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	char charPath[MAX_PATH];
+	wcstombs(charPath, buffer, wcslen(buffer) + 1);
+
+	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
+	return std::string(charPath).substr(0, pos + 1) + fileName;
+}
+#endif // SERVER_APP
+#include "webrtc.h"
 #endif // TEST_RUNNER
 
-#ifdef REMOTE_RENDERING
-#include "conductor.h"
-#include "default_main_window.h"
-#include "flagdefs.h"
-#include "peer_connection_client.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/win32socketinit.h"
-#include "webrtc/base/win32socketserver.h"
-#endif // REMOTE_RENDERING
-
-#include "rapidjson/document.h"
-
-#pragma warning( disable : 4100 )
-//Required app libs
-#pragma comment(lib, "ws2_32.lib") 
+// Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "winmm.lib")
@@ -50,23 +52,9 @@
 #pragma comment(lib, "imm32.lib")
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "usp10.lib")
-#pragma comment(lib, "secur32.lib")
-#pragma comment(lib, "dmoguids.lib")
-#pragma comment(lib, "wmcodecdspuuid.lib")
-#pragma comment(lib, "msdmo.lib")
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "strmiids.lib")
-//Required webrtc static libs
-#pragma comment(lib, "common_video.lib")
-#pragma comment(lib, "webrtc.lib")
-#pragma comment(lib, "boringssl_asm.lib")
-#pragma comment(lib, "field_trial_default.lib")
-#pragma comment(lib, "metrics_default.lib")
-#pragma comment(lib, "protobuf_full.lib")
 
 using namespace DirectX;
 using namespace Toolkit3DLibrary;
-using namespace rapidjson;
 
 // #defines for compile-time Debugging switches:
 //#define ADJUSTABLE_LIGHT          // The 0th light is adjustable with the mouse (right mouse button down)
@@ -458,12 +446,13 @@ void FrameUpdate()
 	DXUTRender3DEnvironment();
 }
 
+#ifdef REMOTE_RENDERING
+
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
 	Document jmessage;
 	jmessage.Parse(message.c_str());
-	const char* messageType = "message";
 	if (jmessage.HasMember("type") && 
 		!strcmp(jmessage["type"].GetString(), "message") &&
 		jmessage.HasMember("camera-transform"))
@@ -501,22 +490,24 @@ void InputUpdate(const std::string& message)
 	}
 }
 
-#ifdef REMOTE_RENDERING
-
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC()
+int InitWebRTC(char* server, int port)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 #ifdef SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
-		true, 1280, 720);
+#ifdef NO_UI
+	DefaultMainWindow wnd(server, port, true, true, true, true);
+#else // NO_UI
+	DefaultMainWindow wnd(server, port, true, true,
+		true, false, 1280, 720);
+#endif // NO_UI
 #else // SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, true, true,
+	DefaultMainWindow wnd(server, port, true, true,
 		false, 1280, 720);
 #endif // SERVER_APP
 
@@ -528,6 +519,12 @@ int InitWebRTC()
 
 	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+
+#ifdef SERVER_APP
+#ifdef NO_UI
+	ShowWindow(wnd.handle(), SW_HIDE);
+#endif // NO_UI
+#endif // SERVER_APP
 
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
@@ -617,7 +614,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     
-#ifndef REMOTE_RENDERING
+#ifdef TEST_RUNNER
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 #ifdef STEREO_OUTPUT_MODE
@@ -626,20 +623,48 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
 #endif // STEREO_OUTPUT_MODE
 
-#ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
-#else // TEST_RUNNER
-	// Initializes the video helper
-	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
-#endif // TEST_RUNNER
 
-    DXUTMainLoop(); // Enter into the DXUT render loop
+	DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
-#else // REMOTE_RENDERING
-	return InitWebRTC();
-#endif // REMOTE_RENDERING
+#else // TEST_RUNNER
+	int nArgs;
+	char server[1024];
+	strcpy(server, FLAG_server);
+	int port = FLAG_port;
+	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+
+	// Try parsing command line arguments.
+	if (szArglist && nArgs == 2)
+	{
+		wcstombs(server, szArglist[0], sizeof(server));
+		port = _wtoi(szArglist[1]);
+	}
+	else // Try parsing config file.
+	{
+		std::string configFilePath = ExePath("webrtcConfig.json");
+		std::ifstream webrtcConfigFile(configFilePath);
+		Json::Reader reader;
+		Json::Value root = NULL;
+		if (webrtcConfigFile.good())
+		{
+			reader.parse(webrtcConfigFile, root, true);
+			if (root.isMember("server"))
+			{
+				strcpy(server, root.get("server", FLAG_server).asCString());
+			}
+
+			if (root.isMember("port"))
+			{
+				port = root.get("port", FLAG_port).asInt();
+			}
+		}
+	}
+
+	return InitWebRTC(server, port);
+#endif // TEST_RUNNER
 }
 
 
@@ -947,8 +972,8 @@ HRESULT InitializeShadows( ID3D11Device* pd3dDevice )
 
         // The shadow map, along with depth-stencil and texture view
         D3D11_TEXTURE2D_DESC ShadowDesc = {
-            ( int) g_fShadowResolutionX[iShadow],   // UINT Width;
-            ( int) g_fShadowResolutionY[iShadow],   // UINT Height;
+			UINT(g_fShadowResolutionX[iShadow]),    // UINT Width;
+			UINT(g_fShadowResolutionY[iShadow]),    // UINT Height;
             1,                                      // UINT MipLevels;
             1,                                      // UINT ArraySize;
             DXGI_FORMAT_R32_TYPELESS,               // DXGI_FORMAT Format;

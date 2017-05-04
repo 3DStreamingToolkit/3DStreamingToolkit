@@ -1,46 +1,34 @@
 #include "pch.h"
+
+#include <stdlib.h>
+#include <shellapi.h>
+#include <fstream>
+
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
 
 #ifdef TEST_RUNNER
-#include "VideoTestRunner.h"
+#include "test_runner.h"
 #else // TEST_RUNNER
-#include "video_helper.h"
+#ifdef SERVER_APP
+#include "server_renderer.h"
+#else
+static std::string ExePath(std::string fileName) {
+	TCHAR buffer[MAX_PATH];
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	char charPath[MAX_PATH];
+	wcstombs(charPath, buffer, wcslen(buffer) + 1);
+
+	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
+	return std::string(charPath).substr(0, pos + 1) + fileName;
+}
+#endif // SERVER_APP
+#include "webrtc.h"
 #endif // TEST_RUNNER
 
-#ifdef REMOTE_RENDERING
-#include "conductor.h"
-#include "default_main_window.h"
-#include "flagdefs.h"
-#include "peer_connection_client.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/win32socketinit.h"
-#include "webrtc/base/win32socketserver.h"
-#endif // REMOTE_RENDERING
-
-//Required app libs
-#pragma comment(lib, "ws2_32.lib") 
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "imm32.lib")
-#pragma comment(lib, "version.lib")
-#pragma comment(lib, "usp10.lib")
-#pragma comment(lib, "secur32.lib")
-#pragma comment(lib, "dmoguids.lib")
-#pragma comment(lib, "wmcodecdspuuid.lib")
-#pragma comment(lib, "msdmo.lib")
+// Required app libs
 #pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "strmiids.lib")
-//Required webrtc static libs
-#pragma comment(lib, "common_video.lib")
-#pragma comment(lib, "webrtc.lib")
-#pragma comment(lib, "boringssl_asm.lib")
-#pragma comment(lib, "field_trial_default.lib")
-#pragma comment(lib, "metrics_default.lib")
-#pragma comment(lib, "protobuf_full.lib")
+#pragma comment(lib, "winmm.lib")
 
 using namespace DX;
 using namespace Toolkit3DLibrary;
@@ -58,7 +46,6 @@ VideoTestRunner*	g_videoTestRunner = nullptr;
 VideoHelper*		g_videoHelper = nullptr;
 #endif // TESTRUNNER
 
-
 //--------------------------------------------------------------------------------------
 // Global Methods
 //--------------------------------------------------------------------------------------
@@ -73,17 +60,21 @@ void FrameUpdate()
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC()
+int InitWebRTC(char* server, int port)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 #ifdef SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, true, FLAG_autocall,
+#ifdef NO_UI
+	DefaultMainWindow wnd(server, port, true, true, true, true);
+#else // NO_UI
+	DefaultMainWindow wnd(server, port, true, true,
 		true, 1280, 720);
+#endif // NO_UI
 #else // SERVER_APP
-	DefaultMainWindow wnd(FLAG_server, FLAG_port, true, true,
+	DefaultMainWindow wnd(server, port, true, true,
 		false, 1280, 720);
 #endif // SERVER_APP
 
@@ -330,7 +321,39 @@ int WINAPI wWinMain(
 
 	return (int)msg.wParam;
 #else // REMOTE_RENDERING
-	return InitWebRTC();
+	int nArgs;
+	char server[1024];
+	strcpy(server, FLAG_server);
+	int port = FLAG_port;
+	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+
+	// Try parsing command line arguments.
+	if (szArglist && nArgs == 2)
+	{
+		wcstombs(server, szArglist[0], sizeof(server));
+		port = _wtoi(szArglist[1]);
+	}
+	else // Try parsing config file.
+	{
+		std::string configFilePath = ExePath("webrtcConfig.json");
+		std::ifstream configFile(configFilePath);
+		Json::Reader reader;
+		Json::Value root = NULL;
+		if (configFile.good())
+		{
+			reader.parse(configFile, root, true);
+			if (root.isMember("server"))
+			{
+				strcpy(server, root.get("server", FLAG_server).asCString());
+			}
+
+			if (root.isMember("port"))
+			{
+				port = root.get("port", FLAG_port).asInt();
+			}
+		}
+	}
+
+	return InitWebRTC(server, port);
 #endif // REMOTE_RENDERING
 }
-

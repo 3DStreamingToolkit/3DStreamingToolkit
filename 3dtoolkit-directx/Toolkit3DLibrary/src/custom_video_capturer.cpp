@@ -119,7 +119,7 @@ namespace Toolkit3DLibrary
 		Json::Reader reader;
 		Json::Value root = NULL;
 
-		auto encoderConfigPath = ExePath("webrtcEncoderConfig.json");
+		auto encoderConfigPath = ExePath("nvEncConfig.json");
 		std::ifstream file(encoderConfigPath);
 		if (file.good())
 		{
@@ -192,13 +192,11 @@ namespace Toolkit3DLibrary
 				buffer, fake_rotation_,
 				timeStamp);
 
-#ifdef USE_WEBRTC_NVENCODE
 			if (!use_software_encoder_)
 			{
 				auto texture = video_helper_->Capture2DTexture(&width, &height);
 				frame.SetID3D11Texture2D(texture);
 			}
-#endif
 
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 			frame.set_rotation(fake_rotation_);
