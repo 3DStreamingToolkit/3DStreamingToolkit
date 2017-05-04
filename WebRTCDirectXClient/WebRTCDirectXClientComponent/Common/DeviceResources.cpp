@@ -33,7 +33,11 @@ void DX::DeviceResources::CreateDeviceResources()
 
 	// Init device and device context
 	D3D11CreateDevice(
+#ifdef HOLOLENS
+		m_dxgiAdapter.Get(),
+#else // HOLOLENS
 		nullptr,
+#endif // HOLOLENS
 		D3D_DRIVER_TYPE_HARDWARE,
 		0,
 #ifdef HOLOLENS
@@ -121,6 +125,7 @@ void DX::DeviceResources::InitializeUsingHolographicSpace()
 				IID_PPV_ARGS(&dxgiFactory)
 			)
 		);
+
 		ComPtr<IDXGIFactory4> dxgiFactory4;
 		DX::ThrowIfFailed(dxgiFactory.As(&dxgiFactory4));
 

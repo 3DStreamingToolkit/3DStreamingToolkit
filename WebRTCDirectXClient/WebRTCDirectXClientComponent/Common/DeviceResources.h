@@ -77,12 +77,14 @@ namespace DX
 }
 
 #ifdef HOLOLENS
-// Device-based resources for holographic cameras are stored in a std::map. Access this list by providing a
-// callback to this function, and the std::map will be guarded from add and remove
-// events until the callback returns. The callback is processed immediately and must
-// not contain any nested calls to UseHolographicCameraResources.
-// The callback takes a parameter of type std::map<UINT32, std::unique_ptr<DX::CameraResources>>&
-// through which the list of cameras will be accessed.
+// Device-based resources for holographic cameras are stored in a std::map.
+// Access this list by providing a callback to this function, and the std::map
+// will be guarded from add and remove events until the callback returns.
+// The callback is processed immediately and must not contain any nested calls
+// to UseHolographicCameraResources.
+// The callback takes a parameter of type
+// std::map<UINT32,std::unique_ptr<DX::CameraResources>>& through which the list
+// of cameras will be accessed.
 template<typename RetType, typename LCallback>
 RetType DX::DeviceResources::UseHolographicCameraResources(const LCallback& callback)
 {

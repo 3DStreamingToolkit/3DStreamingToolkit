@@ -49,14 +49,14 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 {
 #ifdef HOLOLENS
 	// Create a holographic space for the core window for the current view.
-	// Presenting holographic frames that are created by this holographic space will put
-	// the app into exclusive mode.
+	// Presenting holographic frames that are created by this holographic
+	// space will put the app into exclusive mode.
 	m_holographicSpace = HolographicSpace::CreateForCoreWindow(window);
 
-	// The DeviceResources class uses the preferred DXGI adapter ID from the holographic
-	// space (when available) to create a Direct3D device. The HolographicSpace
-	// uses this ID3D11Device to create and manage device-based resources such as
-	// swap chains.
+	// The DeviceResources class uses the preferred DXGI adapter ID from
+	// the holographic space (when available) to create a Direct3D device.
+	// The HolographicSpace uses this ID3D11Device to create and manage
+	// device-based resources such as swap chains.
 	m_deviceResources->SetHolographicSpace(m_holographicSpace);
 
 	// The main class uses the holographic space for updates and rendering.
