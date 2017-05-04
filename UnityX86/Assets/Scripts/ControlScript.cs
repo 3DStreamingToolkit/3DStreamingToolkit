@@ -125,7 +125,8 @@ public class ControlScript : MonoBehaviour
             encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
             encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;            
 #endif
-        }        
+        }
+        _webRtcUtils.IsReadyToDisconnect = true;
     }
 
     private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
@@ -304,7 +305,8 @@ public class ControlScript : MonoBehaviour
                 Action qa;
                 if (_executionQueue.TryDequeue(out qa))
                 {
-                    qa?.Invoke();
+                    if(qa != null)
+                        qa.Invoke();
                 }
             }
         }
