@@ -1,111 +1,59 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Source">
+      <UniqueIdentifier>{d03f06a0-8a48-44b0-bc16-c7999cea4745}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="DirectX">
-      <UniqueIdentifier>{a4f4b7de-2ba8-4d53-8611-5728038dd76f}</UniqueIdentifier>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{bb64e837-aed6-41b4-82c0-1e0cdf062a3c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="WebRTCNativeClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="client\conductor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="client\defaults.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="client\flagdefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="client\main_wnd.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="client\peer_connection_client.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="fakevideocapturer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="directx\DeviceResources.h">
-      <Filter>DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="directx\CubeRenderer.h">
-      <Filter>DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="directx\DirectXHelper.h">
-      <Filter>DirectX</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="src\conductor.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="client\conductor.cc">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\default_main_window.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="client\defaults.cc">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\defaults.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="client\main.cc">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="client\main_wnd.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="client\peer_connection_client.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="directx\DeviceResources.cpp">
-      <Filter>DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="directx\CubeRenderer.cpp">
-      <Filter>DirectX</Filter>
+    <ClCompile Include="src\peer_connection_client.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="WebRTCNativeClient.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="WebRTCNativeClient.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="directx\PixelShader.hlsl">
-      <Filter>DirectX</Filter>
-    </FxCompile>
-    <FxCompile Include="directx\VertexShader.hlsl">
-      <Filter>DirectX</Filter>
-    </FxCompile>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="inc\conductor.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\default_main_window.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\defaults.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\defs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\flagdefs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\macros.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\main_window.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\peer_connection_client.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\webrtc.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -21,9 +21,8 @@ bld/
 [Bb]in/
 [Oo]bj/
 [Ll]og/
-
-# Lib Binaries -> unzip to compile
-LibBinaries/
+[Ii]ntermediate
+[Bb]uild
 
 # Visual Studio 2015 cache/options directory
 .vs/
@@ -254,13 +253,7 @@ paket-files/
 .idea/
 *.sln.iml
 
-# CodeRush
-.cr/
-
-# Python Tools for Visual Studio (PTVS)
-__pycache__/
-*.pyc
-
-# Local generated files
-*.cso
+# 3DStreaming 
 *.h264
+*.log
+*.cso
