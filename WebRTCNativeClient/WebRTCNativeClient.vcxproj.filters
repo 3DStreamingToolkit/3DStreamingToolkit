@@ -25,6 +25,9 @@
     <ClCompile Include="src\peer_connection_client.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\custom_video_capturer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -53,6 +56,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\webrtc.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\custom_video_capturer.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

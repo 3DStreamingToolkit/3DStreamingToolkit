@@ -68,6 +68,8 @@ protected:
 
 	void AddStreams();
 
+	std::unique_ptr<cricket::VideoCapturer> OpenFakeVideoCaptureDevice();
+
 	//-------------------------------------------------------------------------
 	// PeerConnectionObserver implementation.
 	//-------------------------------------------------------------------------
