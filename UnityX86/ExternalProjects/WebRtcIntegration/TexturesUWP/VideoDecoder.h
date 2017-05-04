@@ -10,6 +10,7 @@
 #include <wmcodecdsp.h>
 #include <fstream>
 #include <iostream>
+#include <codecapi.h>
 
 #include "macros.h"
 #include "defs.h"

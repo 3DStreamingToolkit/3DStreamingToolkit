@@ -73,6 +73,7 @@ Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_window,
 		is_server_app_(is_server_app)
 {
 	client_->RegisterObserver(this);
+	client_->SetRenderingServerFlag(is_server_app);
 	main_window->RegisterObserver(this);
 }
 

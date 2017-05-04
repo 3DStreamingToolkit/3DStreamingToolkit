@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -11,13 +12,16 @@ using WebRtcWrapper;
 
 #if !UNITY_EDITOR
 using Org.WebRtc;
+using PeerConnectionClient.Model;
+using PeerConnectionClient.Signalling;
+using PeerConnectionClient.MVVM;
+using PeerConnectionClient.Utilities;
 #endif
 
 public class ControlScript : MonoBehaviour
 {
     private const int textureWidth = 1280;
-    private const int textureHeight = 720
-        ;
+    private const int textureHeight = 720;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
@@ -36,12 +40,11 @@ public class ControlScript : MonoBehaviour
     private float startTime = 0;
     private float endTime = 0;
     
-    private static readonly Queue<Action> _executionQueue = new Queue<Action>();    
+    private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();    
     private bool frame_ready_receive = true;
-
     private string messageText;
 
-    #region DLL Setup
+    #region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
     public RawVideoSource rawVideo;
     public EncodedVideoSource encodedVideo;
@@ -78,6 +81,12 @@ public class ControlScript : MonoBehaviour
     private static extern IntPtr GetRenderEventFunc();
     #endregion
 
+    void Awake()
+    {
+        //ServerInputTextField.text = "13.65.196.240";
+        ServerInputTextField.text = "127.0.0.1";
+    }
+
     void Start()
     {
         camTransform = Camera.main.transform;
@@ -90,10 +99,9 @@ public class ControlScript : MonoBehaviour
         _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
 
 #if !UNITY_EDITOR
-        PeerConnectionClient.Signalling.Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
+        Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
 #endif
         _webRtcUtils.Initialize();
-
 
         // Setup Low-Level Graphics Plugin
         CreateTextureAndPassToPlugin();
@@ -117,11 +125,11 @@ public class ControlScript : MonoBehaviour
             encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
             encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;            
 #endif
-        }        
+        }
+        _webRtcUtils.IsReadyToDisconnect = true;
     }
-#endif
 
-            private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
+    private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
     {
         frameCounter++;
         fpsCounter++;
@@ -141,16 +149,7 @@ public class ControlScript : MonoBehaviour
         buf.Free();
     }
 
-
-    private void Source_OnRawVideoFrame(
-        uint w,
-        uint h,
-        byte[] yPlane,
-        uint yStride,
-        byte[] vPlane,
-        uint vStride,
-        byte[] uPlane,
-        uint uStride)
+    private void Source_OnRawVideoFrame(uint w, uint h, byte[] yPlane, uint yStride, byte[] vPlane, uint vStride, byte[] uPlane, uint uStride)
     {
         frameCounter++;
         fpsCounter++;
@@ -177,18 +176,20 @@ public class ControlScript : MonoBehaviour
         uP.Free();
         vP.Free();        
     }
-   
+#endif
+    
     private void _webRtcUtils_OnInitialized()
     {
         EnqueueAction(OnInitialized);
     }
+
 
     private void OnInitialized()
     {
 #if !UNITY_EDITOR
         // _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
         // _webRtcUtils.IsMicrophoneEnabled = false;
-        PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
+//      //  PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
 #if HACK_VP8
         _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
 #else
@@ -296,11 +297,17 @@ public class ControlScript : MonoBehaviour
         }
 
         MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
-        lock (_executionQueue)
+
+        lock (_executionQueue)            
         {
-            while (_executionQueue.Count > 0)
+            while (!_executionQueue.IsEmpty)
             {
-                _executionQueue.Dequeue().Invoke();
+                Action qa;
+                if (_executionQueue.TryDequeue(out qa))
+                {
+                    if(qa != null)
+                        qa.Invoke();
+                }
             }
         }
     }
