@@ -18,3 +18,6 @@
 #endif
 
 #include "macros.h"
+
+// WebRTC conversion from 'uint64_t' to 'uint32_t', possible loss of data
+#pragma warning(disable : 4244)

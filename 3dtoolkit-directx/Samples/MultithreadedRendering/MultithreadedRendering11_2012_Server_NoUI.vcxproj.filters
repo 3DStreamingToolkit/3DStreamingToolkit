@@ -160,6 +160,4 @@
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-  </ItemGroup>
 </Project>

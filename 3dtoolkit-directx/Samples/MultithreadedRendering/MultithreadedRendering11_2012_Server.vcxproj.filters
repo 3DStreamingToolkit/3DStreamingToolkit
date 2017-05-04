@@ -20,16 +20,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\DXUT11\Optional\directx.ico">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="DXUT\Core\DXUT_2012.vcxproj">
       <Filter>DXUT</Filter>
     </None>
     <None Include="DXUT\Optional\DXUTOpt_2012.vcxproj">
       <Filter>DXUT</Filter>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DXUT\Core\DDSTextureLoader.cpp">
@@ -151,6 +147,15 @@
       <Filter>Headers</Filter>
     </CLInclude>
     <ClInclude Include="defs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="webrtc.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="server_renderer.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="test_runner.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
