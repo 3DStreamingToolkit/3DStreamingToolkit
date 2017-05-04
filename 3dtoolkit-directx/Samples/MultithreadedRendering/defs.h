@@ -1,5 +1,7 @@
 #pragma once
 
+#pragma warning(disable : 4100)
+
 //#define STEREO_OUTPUT_MODE
 #ifdef STEREO_OUTPUT_MODE
 #define IPD 2.0f

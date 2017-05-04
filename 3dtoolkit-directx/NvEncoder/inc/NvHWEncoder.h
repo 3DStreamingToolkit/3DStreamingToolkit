@@ -21,7 +21,7 @@
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
 
 #if defined (NV_WINDOWS)
-    #include "d3d11_4.h"
+    #include "d3d11_1.h"
     #define NVENCAPI __stdcall
     #pragma warning(disable : 4996)
 #elif defined (NV_UNIX)
@@ -42,6 +42,7 @@ typedef struct _EncodeConfig
     int              maxWidth;
     int              maxHeight;
     int              fps;
+    int				 minBitrate;
     int              bitrate;
     int              vbvMaxBitrate;
     int              vbvSize;

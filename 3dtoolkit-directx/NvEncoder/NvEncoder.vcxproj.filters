@@ -10,7 +10,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="src\NvHWEncoder.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\cudaModuleMgr.h">
@@ -85,8 +90,10 @@
     <ClInclude Include="inc\nvUtils.h">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h" />
     <ClInclude Include="inc\macros.h">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

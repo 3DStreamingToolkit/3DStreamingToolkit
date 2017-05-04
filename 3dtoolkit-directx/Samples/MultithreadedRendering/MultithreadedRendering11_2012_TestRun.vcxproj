@@ -95,7 +95,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <ReferencePath>$(VC_ReferencesPath_x86);</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|X64'">
@@ -104,7 +104,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -112,7 +112,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|X64'">
     <LinkIncremental>false</LinkIncremental>
@@ -120,7 +120,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -128,7 +128,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|X64'">
     <LinkIncremental>false</LinkIncremental>
@@ -136,7 +136,7 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -148,10 +148,10 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\WebRTC;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;RAPIDJSON_HAS_STDSTRING;_DEBUG;_WINDOWS;WEBRTC_WIN;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;RAPIDJSON_HAS_STDSTRING;_DEBUG;_WINDOWS;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
@@ -160,7 +160,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
@@ -169,7 +169,8 @@
       <TargetMachine>MachineX86</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -196,9 +197,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\WebRTC;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;RAPIDJSON_HAS_STDSTRING;_DEBUG;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;RAPIDJSON_HAS_STDSTRING;_DEBUG;_WINDOWS;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
@@ -208,7 +209,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
@@ -217,7 +218,8 @@
       <TargetMachine>MachineX64</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -245,9 +247,9 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\WebRTC;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;RAPIDJSON_HAS_STDSTRING;_WINDOWS;WEBRTC_WIN;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;RAPIDJSON_HAS_STDSTRING;_WINDOWS;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -266,7 +268,8 @@
       <TargetMachine>MachineX86</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -293,9 +296,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\WebRTC;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;RAPIDJSON_HAS_STDSTRING;_WINDOWS;WEBRTC_WIN;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;RAPIDJSON_HAS_STDSTRING;_WINDOWS;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -314,7 +317,8 @@
       <TargetMachine>MachineX64</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -342,9 +346,9 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\WebRTC;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;RAPIDJSON_HAS_STDSTRING;_DEBUG;PROFILE;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;RAPIDJSON_HAS_STDSTRING;_DEBUG;PROFILE;_WINDOWS;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -352,7 +356,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;usp10.lib;imm32.lib;version.lib;secur32.lib;msdmo.lib;dmoguids.lib;wmcodecdspuuid.lib;common_video.lib;ffmpeg.dll.lib;webrtc.lib;boringssl_asm.lib;boringssl.dll.lib;field_trial_default.lib;metrics_default.lib;protobuf_full.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -363,7 +367,8 @@
       <TargetMachine>MachineX86</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -390,9 +395,9 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\WebRTC;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;RAPIDJSON_HAS_STDSTRING;_DEBUG;PROFILE;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;RAPIDJSON_HAS_STDSTRING;_DEBUG;PROFILE;_WINDOWS;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -400,7 +405,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;usp10.lib;imm32.lib;version.lib;secur32.lib;msdmo.lib;dmoguids.lib;wmcodecdspuuid.lib;common_video.lib;ffmpeg.dll.lib;webrtc.lib;boringssl_asm.lib;boringssl.dll.lib;field_trial_default.lib;metrics_default.lib;protobuf_full.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -411,7 +416,8 @@
       <TargetMachine>MachineX64</TargetMachine>
       <UACExecutionLevel>AsInvoker</UACExecutionLevel>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
@@ -429,7 +435,6 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\..\DXUT11\Optional\directx.ico" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -475,6 +480,9 @@
     <ClInclude Include="DXUT\Optional\SDKmesh.h" />
     <ClInclude Include="DXUT\Optional\SDKmisc.h" />
     <CLInclude Include="MultiDeviceContextDXUTMesh.h" />
+    <ClInclude Include="server_renderer.h" />
+    <ClInclude Include="test_runner.h" />
+    <ClInclude Include="webrtc.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DXUT\Core\DXUT_2012.vcxproj" />

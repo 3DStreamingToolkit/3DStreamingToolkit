@@ -2,8 +2,8 @@
 
 #include "pch.h"
 #include "video_helper.h"
-#include "nvFileIO.h"
-#include "nvUtils.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/nvFileIO.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/nvUtils.h"
 
 using namespace Toolkit3DLibrary;
 
@@ -20,10 +20,8 @@ VideoHelper::VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context) :
 	multithread->Release();
 #endif // MULTITHREAD_PROTECTION
 
-#ifdef USE_WEBRTC_NVENCODE
 	webrtc::H264EncoderImpl::SetDevice(device);
 	webrtc::H264EncoderImpl::SetContext(context);
-#endif // USE_WEBRTC_NVENCODE
 }
 
 // Destructor for VideoHelper.

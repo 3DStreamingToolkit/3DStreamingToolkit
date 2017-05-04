@@ -6,48 +6,29 @@
 
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
-#include "custom_video_capturer.h"
 
 #ifdef TEST_RUNNER
-#include "VideoTestRunner.h"
+#include "test_runner.h"
 #else // TEST_RUNNER
-#include "video_helper.h"
+#ifdef SERVER_APP
+#include "server_renderer.h"
+#else
+static std::string ExePath(std::string fileName) {
+	TCHAR buffer[MAX_PATH];
+	GetModuleFileName(NULL, buffer, MAX_PATH);
+	char charPath[MAX_PATH];
+	wcstombs(charPath, buffer, wcslen(buffer) + 1);
+
+	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
+	return std::string(charPath).substr(0, pos + 1) + fileName;
+}
+#endif // SERVER_APP
+#include "webrtc.h"
 #endif // TEST_RUNNER
 
-#ifdef REMOTE_RENDERING
-#include "conductor.h"
-#include "default_main_window.h"
-#include "flagdefs.h"
-#include "peer_connection_client.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/win32socketinit.h"
-#include "webrtc/base/win32socketserver.h"
-#endif // REMOTE_RENDERING
-
 // Required app libs
-#pragma comment(lib, "ws2_32.lib") 
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "imm32.lib")
-#pragma comment(lib, "version.lib")
-#pragma comment(lib, "usp10.lib")
-#pragma comment(lib, "secur32.lib")
-#pragma comment(lib, "dmoguids.lib")
-#pragma comment(lib, "wmcodecdspuuid.lib")
-#pragma comment(lib, "msdmo.lib")
 #pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "strmiids.lib")
-
-// Required webrtc static libs
-#pragma comment(lib, "common_video.lib")
-#pragma comment(lib, "webrtc.lib")
-#pragma comment(lib, "boringssl_asm.lib")
-#pragma comment(lib, "field_trial_default.lib")
-#pragma comment(lib, "metrics_default.lib")
-#pragma comment(lib, "protobuf_full.lib")
+#pragma comment(lib, "winmm.lib")
 
 using namespace DX;
 using namespace Toolkit3DLibrary;
