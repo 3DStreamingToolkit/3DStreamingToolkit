@@ -28,6 +28,7 @@ public class ControlScript : MonoBehaviour
     public InputField PeerInputTextField;
     public InputField MessageInputField;
     public Renderer RenderTexture;
+    public Transform VirtualCamera;
 
     private Transform camTransform;
     private Vector3 prevPos;
@@ -282,11 +283,33 @@ public class ControlScript : MonoBehaviour
     
     void Update()
     {
-        if (Vector3.Distance(prevPos, camTransform.position) > 0.05f ||
-    Quaternion.Angle(prevRot, camTransform.rotation) > 2f)
+        #region Main Camera Control
+//        if (Vector3.Distance(prevPos, camTransform.position) > 0.05f ||
+//    Quaternion.Angle(prevRot, camTransform.rotation) > 2f)
+//        {
+//            prevPos = camTransform.position;
+//            prevRot = camTransform.rotation;
+//            var eulerRot = prevRot.eulerAngles;
+//            var camMsg = string.Format(
+//                @"{{""camera-transform"":""{0},{1},{2},{3},{4},{5}""}}",
+//                prevPos.x,
+//                prevPos.y,
+//                prevPos.z,
+//                eulerRot.x,
+//                eulerRot.y,
+//                eulerRot.z);
+//
+//            _webRtcUtils.SendPeerMessageDataExecute(camMsg);
+//        }
+        #endregion
+
+
+        #region Virtual Camera Control
+        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
+            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
         {
-            prevPos = camTransform.position;
-            prevRot = camTransform.rotation;
+            prevPos = VirtualCamera.position;
+            prevRot = VirtualCamera.rotation;
             var eulerRot = prevRot.eulerAngles;
             var camMsg = string.Format(
                 @"{{""camera-transform"":""{0},{1},{2},{3},{4},{5}""}}",
@@ -299,8 +322,9 @@ public class ControlScript : MonoBehaviour
 
             _webRtcUtils.SendPeerMessageDataExecute(camMsg);
         }
+        #endregion
 
-        
+
         if (Time.time > endTime)
         {
             fpsCount = (float)fpsCounter / (Time.time - startTime);
