@@ -73,7 +73,6 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Test_Runner\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Test_Runner\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -95,17 +94,19 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;WIN32;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <FxCompile>
       <ObjectFileOutput>$(OutDir)%(Filename).cso</ObjectFileOutput>
@@ -119,17 +120,19 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
@@ -142,10 +145,10 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;WIN32;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -154,7 +157,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y $(OutDir)*.cso $(ProjectDir)</Command>
@@ -167,10 +171,10 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\Toolkit3DLibrary\inc;..\..\NvEncoder\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;..\..\VideoTestRunner\inc;..\..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -179,7 +183,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y $(OutDir)*.cso $(ProjectDir)</Command>
@@ -217,6 +222,7 @@
   <ItemGroup>
     <ClInclude Include="defs.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="test_runner.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\VideoTestRunner\VideoTestRunner.vcxproj">

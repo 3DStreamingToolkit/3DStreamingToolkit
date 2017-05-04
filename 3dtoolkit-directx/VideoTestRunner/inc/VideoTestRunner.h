@@ -103,7 +103,7 @@ namespace Toolkit3DLibrary
 
 		// NvEncoder
 		EncodeConfig							m_encodeConfig;
-		bool									m_encoderInitialized;
+		bool									m_encoderCreated;
 
 		CNvHWEncoder*                           m_pNvHWEncoder;
 		uint32_t                                m_uEncodeBufferCount;

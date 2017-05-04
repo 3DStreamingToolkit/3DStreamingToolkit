@@ -96,16 +96,21 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib />
+    <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -114,16 +119,20 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -134,7 +143,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>
@@ -146,6 +155,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -156,7 +168,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;..\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -168,6 +180,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -202,12 +217,17 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\webrtcConfig.json">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
     <ProjectReference Include="..\NvEncoder\NvEncoder.vcxproj">
       <Project>{84da0532-9d88-4118-b454-c4801178a330}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="nvEncConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="webrtcConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

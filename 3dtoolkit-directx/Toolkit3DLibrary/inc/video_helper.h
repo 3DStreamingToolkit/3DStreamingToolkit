@@ -3,14 +3,10 @@
 #include <d3d11_4.h>
 
 #include "defs.h"
-#include "nvEncodeAPI.h"
-#include "nvCPUOPSys.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/nvEncodeAPI.h"
+#include "webrtc/modules/video_coding/codecs/h264/include/nvCPUOPSys.h"
 
-#ifdef USE_WEBRTC_NVENCODE
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
-#else
-#include "NvHWEncoder.h"
-#endif
 
 namespace Toolkit3DLibrary
 {

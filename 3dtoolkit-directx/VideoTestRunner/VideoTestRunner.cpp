@@ -1,5 +1,8 @@
 #pragma once
 
+// Unreferenced formal parameters in headers
+#pragma warning(disable : 4100)
+
 #include "pch.h"
 #include "nvFileIO.h"
 #include "nvUtils.h"
@@ -13,8 +16,6 @@ VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* cont
 	m_d3dDevice(device),
 	m_d3dContext(context)
 {
-	m_pNvHWEncoder = new CNvHWEncoder();
-	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
 
 	#ifdef MULTITHREAD_PROTECTION
 		// Enables multithread protection.
@@ -24,12 +25,9 @@ VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* cont
 		multithread->Release();
 	#endif // MULTITHREAD_PROTECTION
 
-	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
-	memset(&m_minEncodeConfig, 0, sizeof(EncodeConfig));
-	memset(&m_stepEncodeConfig, 0, sizeof(EncodeConfig));
-	memset(&m_maxEncodeConfig, 0, sizeof(EncodeConfig));
-	m_initialized = false;
-	m_encoderInitialized = false;
+	m_pNvHWEncoder = new CNvHWEncoder();
+	
+	m_encoderCreated = false;
 	m_lastTest = false;
 }
 
@@ -55,22 +53,19 @@ NVENCSTATUS VideoTestRunner::Deinitialize()
 }
 
 void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
-	//Simple check to allow TestRunner to act as singleton for multithreaded renderers
-	if (m_initialized)
-		return;
-	m_initialized = true;
 	m_testSuiteComplete = false;
 	m_testRunComplete = false;
 	m_currentSuite = 0;
 	m_swapChain = swapChain;
-	m_fileName = "lossless.h264";
+
+	memset(&m_encodeConfig, 0, sizeof(EncodeConfig));
+	memset(&m_minEncodeConfig, 0, sizeof(EncodeConfig));
+	memset(&m_stepEncodeConfig, 0, sizeof(EncodeConfig));
+	memset(&m_maxEncodeConfig, 0, sizeof(EncodeConfig));
 
 	m_currentFrame = 0;
 	m_lastTest = false;
 	GetDefaultEncodeConfig();
-	SetEncodeProfile(1);
-	m_encodeConfig.endFrameIdx = 300;
-	m_encodeConfig.enableTemporalAQ = true;
 	m_minEncodeConfig = m_encodeConfig;
 
 	IncrementTest();
@@ -81,7 +76,7 @@ void VideoTestRunner::InitializeTest()
 	m_encodeConfig.outputFileName = m_fileName;
 
 	InitializeEncoder();
-	m_encoderInitialized = true;
+	m_encoderCreated = true;
 }
 
 NVENCSTATUS VideoTestRunner::InitializeEncoder()
@@ -95,8 +90,11 @@ NVENCSTATUS VideoTestRunner::InitializeEncoder()
 		}
 	}
 
-	CHECK_NV_FAILED(m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX));
+	m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
 
+	//NV_ENC_H264_PROFILE_HIGH_444_GUID
+	SetEncodeProfile(1);
+	
 	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
 
 	//H264 level sets maximum bitrate limits.  4.1 supported by almost all mobile devices.
@@ -112,40 +110,49 @@ NVENCSTATUS VideoTestRunner::InitializeEncoder()
 	}
 
 	// Creates the encoder.
-	CHECK_NV_FAILED(m_pNvHWEncoder->CreateEncoder(&m_encodeConfig));
+	m_pNvHWEncoder->CreateEncoder(&m_encodeConfig);
 
 	m_uEncodeBufferCount = m_encodeConfig.numB + 4;
 
-	CHECK_NV_FAILED(AllocateIOBuffers());
+	AllocateIOBuffers();
 
 	return NV_ENC_SUCCESS;
 }
 
 void VideoTestRunner::GetDefaultEncodeConfig()
 {
-	//In bits per second - ignored for lossless presets.
-	m_encodeConfig.bitrate = 1032517;
+	m_encodeConfig.outputFileName = m_fileName = "lossless.h264";
+
+	// Gets the swap chain desc.
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	m_swapChain->GetDesc(&swapChainDesc);
+	m_encodeConfig.width = swapChainDesc.BufferDesc.Width;
+	m_encodeConfig.height = swapChainDesc.BufferDesc.Height;
 
 	//Unused by nvEncode.
 	m_encodeConfig.endFrameIdx = INT_MAX;
 	m_encodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
-	m_encodeConfig.encoderPreset = "lowLatencyHQ";
+	m_encodeConfig.encoderPreset = "lossless";
 
 	//Infinite needed for low latency encoding.
 	m_encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
 
 	//Unused by nvEncode.
 	m_encodeConfig.startFrameIdx = 0;
+	m_encodeConfig.endFrameIdx = 300;
 
 	//DeviceType 1 = Force CUDA.
 	m_encodeConfig.deviceType = 0;
 
 	//Only supported codec for WebRTC.
 	m_encodeConfig.codec = NV_ENC_H264;
-	m_encodeConfig.fps = 30;
+	m_encodeConfig.fps = 60;
+
+	//In bits per second - ignored for lossless presets.
+	m_encodeConfig.bitrate = 1032517;
 
 	//Quantization Parameter - must be 0 for lossless.
-	m_encodeConfig.qp = 34;
+	m_encodeConfig.qp = 0;
 
 	//Must be set to frame.
 	m_encodeConfig.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
@@ -161,15 +168,13 @@ void VideoTestRunner::GetDefaultEncodeConfig()
 
 	// Enable temporal Adaptive Quantization
 	// Shifts quantization matrix based on complexity of frame over time
-	m_encodeConfig.enableTemporalAQ = false;
+	m_encodeConfig.enableTemporalAQ = true;
 
 	//Need this to be able to recover from stream drops
 	//Client needs to send back a last good timestamp, and we call
 	//NvEncInvalidateRefFrames(encoder,timestamp) to reissue I frame
 	m_encodeConfig.invalidateRefFramesEnableFlag = true;
 
-	//NV_ENC_H264_PROFILE_HIGH_444_GUID
-	SetEncodeProfile(2);
 }
 
 // Captures frame buffer from the swap chain.
@@ -222,14 +227,11 @@ void VideoTestRunner::Capture()
 
 NVENCSTATUS VideoTestRunner::AllocateIOBuffers()
 {
-	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 	ID3D11Texture2D* pVPSurfaces[16];
+
 	// Gets the swap chain desc.
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 	m_swapChain->GetDesc(&swapChainDesc);
-
-	m_encodeConfig.width = swapChainDesc.BufferDesc.Width;
-	m_encodeConfig.height = swapChainDesc.BufferDesc.Height;
 
 	// Initializes the encode buffer queue.
 	m_EncodeBufferQueue.Initialize(m_stEncodeBuffer, m_uEncodeBufferCount);
@@ -414,12 +416,9 @@ void VideoTestRunner::TestCapture() {
 
 void VideoTestRunner::IncrementTest() {
 	if (!access(m_fileName, 0) == 0) {
-		if (m_encoderInitialized) {
-			//Special casing first run for lossless
-			if (m_currentFrame == 0)
-				IncrementTestSuite();
+		if (m_encoderCreated) {
 			Deinitialize();
-			m_encoderInitialized = false;
+			m_encoderCreated = false;
 		}
 		InitializeTest();
 		return;
@@ -428,15 +427,21 @@ void VideoTestRunner::IncrementTest() {
 		return;
 	}
 	//Test to see if we are incrementing from lossless to the runner iterations
-	if (m_fileName == "lossless.h264") {
+	if (strcmp(m_fileName,"lossless.h264") == 0) {
 		//Need to reset to runner config
 		m_encodeConfig = m_minEncodeConfig;
 	}
 
 	m_fileName = new char[255];
-	strcpy(m_fileName, std::to_string(m_encodeConfig.bitrate / 1000).c_str());
-	strcat(m_fileName, "kbps-");
-	strcat(m_fileName, m_encodeConfig.encoderPreset);
+	if (m_encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP) {
+		strcpy(m_fileName, m_encodeConfig.encoderPreset);
+	}
+	else {
+		strcpy(m_fileName, std::to_string(m_encodeConfig.bitrate / 1000).c_str());
+		strcat(m_fileName, "kbps-");
+		strcat(m_fileName, m_encodeConfig.encoderPreset);
+	}
+	
 	switch (m_encodeConfig.rcMode) {
 		case NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ:  strcat(m_fileName, "-CBRLLHQ.h264"); break;
 		case NV_ENC_PARAMS_RC_CBR:				strcat(m_fileName, "-CBR.h264"); break;

@@ -66,6 +66,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\webrtcConfig.json" />
+    <None Include="nvEncConfig.json" />
+    <None Include="webrtcConfig.json" />
   </ItemGroup>
 </Project>
