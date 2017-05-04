@@ -11,22 +11,23 @@ namespace DX
     };
 
     // Assert that the constant buffer remains 16-byte aligned (best practice).
-    static_assert((sizeof(ViewProjectionConstantBuffer) % (sizeof(float) * 4)) == 0, "ViewProjection constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
+    static_assert(
+		(sizeof(ViewProjectionConstantBuffer) % (sizeof(float) * 4)) == 0,
+		"ViewProjection constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
     // Manages DirectX device resources that are specific to a holographic camera, such as the
     // back buffer, ViewProjection constant buffer, and viewport.
     class CameraResources
     {
     public:
-        CameraResources(Windows::Graphics::Holographic::HolographicCamera^ holographicCamera);
+        CameraResources(
+			Windows::Graphics::Holographic::HolographicCamera^ holographicCamera);
 
         void CreateResourcesForBackBuffer(
             DX::DeviceResources* pDeviceResources,
-            Windows::Graphics::Holographic::HolographicCameraRenderingParameters^ cameraParameters
-            );
-        void ReleaseResourcesForBackBuffer(
-            DX::DeviceResources* pDeviceResources
-            );
+            Windows::Graphics::Holographic::HolographicCameraRenderingParameters^ cameraParameters);
+
+        void ReleaseResourcesForBackBuffer(DX::DeviceResources* pDeviceResources);
 
         void UpdateViewProjectionBuffer(
             std::shared_ptr<DX::DeviceResources> deviceResources,
