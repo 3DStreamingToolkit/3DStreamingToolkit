@@ -82,6 +82,8 @@ public:
 	// implements the MessageHandler interface
 	void OnMessage(rtc::Message* msg);
 
+	void SetRenderingServerFlag(bool is_server_app);
+
 protected:
 	void DoConnect();
 
@@ -139,6 +141,7 @@ protected:
 	Peers peers_;
 	State state_;
 	int my_id_;
+	bool is_server_app_;
 };
 
 #endif  // WEBRTC_PEER_CONNECTION_CLIENT_H_

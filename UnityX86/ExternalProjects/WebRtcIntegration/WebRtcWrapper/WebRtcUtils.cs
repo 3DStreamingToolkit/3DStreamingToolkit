@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Based on PeerConnection Client Sample
+
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,6 +17,7 @@ using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+
 using Org.WebRtc;
 using PeerConnectionClient.Model;
 using PeerConnectionClient.Signalling;
@@ -25,16 +28,10 @@ namespace WebRtcWrapper
 {
     public class WebRtcUtils : DispatcherBindableBase
     {
-        public delegate void OnRawVideoFrameSendDelegate(uint w, uint h, byte[] yPlane, uint yPitch, byte[] vPlane, uint vPitch, byte[] uPlane, uint uPitch);
-
         public event Action OnInitialized;
         public event Action<int, string> OnPeerMessageDataReceived;
         public event Action<string> OnStatusMessageUpdate;
         
-        //public event Action<uint, uint, byte[], uint, byte[], uint, byte[], uint> OnRawVideoFrameSend;
-        public OnRawVideoFrameSendDelegate OnRawVideoFrameSend;
-        public event Action<uint, uint, byte[]> OnEncodedFrameReceived;        
-
         public MediaElement SelfVideo = null;
         public MediaElement PeerVideo = null;        
         public RawVideoSource rawVideo;
@@ -93,12 +90,9 @@ namespace WebRtcWrapper
             if (SelectedAudioPlayoutDevice == null && AudioPlayoutDevices.Count > 0)
             {
                 SelectedAudioPlayoutDevice = AudioPlayoutDevices.First();
-            }
-
-      
+            }      
 
             Conductor.Instance.Media.OnMediaDevicesChanged += OnMediaDevicesChanged;
-
             Conductor.Instance.Signaller.OnPeerConnected += (peerId, peerName) =>
             {
                 RunOnUiThread(() =>
@@ -137,11 +131,10 @@ namespace WebRtcWrapper
 
             Conductor.Instance.Signaller.OnServerConnectionFailure += () =>
             {
-                RunOnUiThread(async () =>
+                RunOnUiThread(() =>
                 {
                     IsConnecting = false;
-                    MessageDialog msgDialog = new MessageDialog("Failed to connect to server!");
-                    await msgDialog.ShowAsync();
+                    OnStatusMessageUpdate?.Invoke("Server Connection Failure");
                 });
             };
 
@@ -168,12 +161,11 @@ namespace WebRtcWrapper
 
             // TODO: Restore Event Handler in Utility Wrapper
             // Implemented in Unity Consumer due to Event Handling Issue
-//            Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
+            // Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream does not propagate
 
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
             Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
-
             Conductor.Instance.OnPeerConnectionCreated += () =>
             {
                 RunOnUiThread(() =>
@@ -211,7 +203,6 @@ namespace WebRtcWrapper
 
             IceServers = new ObservableCollection<IceServer>();
             NewIceServer = new IceServer();
-
             AudioCodecs = new ObservableCollection<CodecInfo>();
             var audioCodecList = WebRTC.GetAudioCodecs();
 
@@ -265,8 +256,8 @@ namespace WebRtcWrapper
         void LoadSettings()
         {
             // Default values:
-//            var configTraceServerIp = "127.0.0.1";
-//            var configTraceServerPort = "55000";
+            var configTraceServerIp = "127.0.0.1";
+            var configTraceServerPort = "55000";
 
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
             var peerCcServerIp = new ValidableNonEmptyString("127.0.0.1");
@@ -279,6 +270,14 @@ namespace WebRtcWrapper
             {
                 // Default values:
                 configIceServers.Clear();
+                configIceServers.Add(new IceServer()
+                {
+                    Host = new ValidableNonEmptyString("13.65.204.45:3478"),
+                    Type = IceServer.ServerType.TURN,
+                    Username = "anzoloch",
+                    Credential = "3Dstreaming0317"
+                });
+
                 configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
                 configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
                 configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
@@ -825,7 +824,7 @@ namespace WebRtcWrapper
             set { SetProperty(ref _allCapRes, value); }
         }
 
-        private String _selectedCapResItem;
+        private String _selectedCapResItem = null;
         public String SelectedCapResItem
         {
             get { return _selectedCapResItem; }
@@ -839,32 +838,36 @@ namespace WebRtcWrapper
                 {
                     AllCapFps.Clear();
                 }
-                var opCap = SelectedCamera.GetVideoCaptureCapabilities();
-                opCap.AsTask().ContinueWith(caps =>
+                if (SelectedCamera != null)
                 {
-                    var fpsList = from cap in caps.Result where cap.ResolutionDescription == value select cap;
-                    var t = CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    var opCap = SelectedCamera.GetVideoCaptureCapabilities();
+                    opCap.AsTask().ContinueWith(caps =>
                     {
-                        CaptureCapability defaultFps = null;
-                        uint selectedCapFpsFrameRate = 0;
+                        var fpsList = from cap in caps.Result where cap.ResolutionDescription == value select cap;
+                        var t = CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                            () =>
+                            {
+                                CaptureCapability defaultFps = null;
+                                uint selectedCapFpsFrameRate = 0;
 
-                        foreach (var fps in fpsList)
-                        {
-                            if (selectedCapFpsFrameRate != 0 && fps.FrameRate == selectedCapFpsFrameRate)
-                            {
-                                defaultFps = fps;
-                            }
-                            AllCapFps.Add(fps);
-                            if (defaultFps == null)
-                            {
-                                defaultFps = fps;
-                            }
-                        }
-                        SelectedCapFpsItem = defaultFps;
+                                foreach (var fps in fpsList)
+                                {
+                                    if (selectedCapFpsFrameRate != 0 && fps.FrameRate == selectedCapFpsFrameRate)
+                                    {
+                                        defaultFps = fps;
+                                    }
+                                    AllCapFps.Add(fps);
+                                    if (defaultFps == null)
+                                    {
+                                        defaultFps = fps;
+                                    }
+                                }
+                                SelectedCapFpsItem = defaultFps;
+                            });
+                        OnPropertyChanged("AllCapFps");
                     });
-                    OnPropertyChanged("AllCapFps");
-                });
-                SetProperty(ref _selectedCapResItem, value);
+                    SetProperty(ref _selectedCapResItem, value);
+                }
             }
         }
 
@@ -1221,8 +1224,6 @@ namespace WebRtcWrapper
         }
 
         private DispatcherTimer _appPerfTimer;
-
-
         private void OnMediaDevicesChanged(MediaDeviceType mediaType)
         {
             switch (mediaType)
@@ -1320,75 +1321,6 @@ namespace WebRtcWrapper
             });
         }
 
-
-        private void Conductor_OnAddRemoteStream(MediaStreamEvent evt)
-        {
-            if (PeerVideo == null)
-            {
-                return;
-            }
-
-            _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
-            if (_peerVideoTrack != null)
-            {
-
-                // XAML MediaElement Setup
-                //var source = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "PEER");
-                //RunOnUiThread(() =>
-                //{
-                //    PeerVideo.SetMediaStreamSource(source);
-                //});
-
-
-                // Raw Video from VP8 Sender Setup
-//                rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
-//                rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
-
-                //// Get H264 Encoded Frame
-//                encodedVideoSource = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
-//                encodedVideoSource.OnEncodedVideoFrame += Source_OnEncodedVideoFrame;
-            }
-
-            IsReadyToDisconnect = true;
-        }
-
-        private void Source_OnEncodedVideoFrame(uint width, uint height, byte[] frameData)
-        {
-            RunOnUiThread(() =>
-            {
-                // Pass the Event to Consumer
-                OnEncodedFrameReceived?.Invoke(width, height, frameData);
-            });
-        }
-
-        private void Source_OnRawVideoFrame(
-            uint p0, 
-            uint p1, 
-            byte[] p2, 
-            uint p3, 
-            byte[] p4, 
-            uint p5, 
-            byte[] p6, 
-            uint p7)
-        {
-
-            RunOnUiThread(() =>
-            {
-                //OnStatusMessageUpdate?.Invoke(string.Format(
-                //    "{0}-{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}",
-                //    p0, // Width
-                //    p1, // Height
-                //    p2 != null ? p2.Length.ToString() : "null",     // yPlane
-                //    p3,                                             // yPitch
-                //    p4 != null ? p4.Length.ToString() : "null",     // vPlane
-                //    p5,                                             // vPitch
-                //    p6 != null ? p6.Length.ToString() : "null",     // uPlane
-                //    p7,                                             // uPitch
-                //    rawVideoCounter
-                //));
-                OnRawVideoFrameSend?.Invoke(p0, p1, p2, p3, p4, p5, p6, p7);
-            });
-        }
 
         private void Conductor_OnRemoveRemoteStream(MediaStreamEvent evt)
         {

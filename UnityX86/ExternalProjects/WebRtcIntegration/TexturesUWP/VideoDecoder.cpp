@@ -83,6 +83,19 @@ void VideoDecoder::Initialize(int width, int height)
 		IID_PPV_ARGS(&m_pDecoderTransform)),
 		"Failed to get IMFTransform interface from H264 decoder MFT object.\n");
 
+	IMFAttributes* decoderAttributes;
+	CHECK_HR(m_pDecoderTransform->GetAttributes(&decoderAttributes),
+		"Can't get attributes.");
+
+	CHECK_HR(decoderAttributes->SetUINT32(CODECAPI_AVDecVideoAcceleration_H264, TRUE),
+		"Failed to enable CODECAPI_AVDecVideoAcceleration_H264");
+
+	CHECK_HR(decoderAttributes->SetUINT32(CODECAPI_AVLowLatencyMode, TRUE),
+		"Failed to enable CODECAPI_AVLowLatencyMode");
+
+	decoderAttributes->Release();
+
+
 	MFCreateMediaType(&m_pDecInputMediaType);
 	m_pDecInputMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
 	m_pDecInputMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
