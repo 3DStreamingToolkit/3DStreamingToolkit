@@ -222,8 +222,20 @@ public class ControlScript : MonoBehaviour
 
     public void ConnectToServer()
     {
-        _webRtcUtils.ConnectToServer(ServerInputTextField.text, "8888", PeerInputTextField.text);
-        
+        var signalhost = ServerInputTextField.text.Split(':');
+        var host = string.Empty;
+        var port = string.Empty;
+        if (signalhost.Length > 1)
+        {
+            host = signalhost[0];
+            port = signalhost[1];
+        }
+        else
+        {
+            host = signalhost[0];
+            port = "8888";
+        }
+        _webRtcUtils.ConnectToServer(host, port, PeerInputTextField.text);
     }
 
     public void DisconnectFromServer()
