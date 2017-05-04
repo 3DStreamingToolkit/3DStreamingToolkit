@@ -272,9 +272,9 @@ namespace WebRtcWrapper
                 configIceServers.Clear();
                 configIceServers.Add(new IceServer()
                 {
-                    Host = new ValidableNonEmptyString("13.65.204.45:3478"),
+                    Host = new ValidableNonEmptyString("turnserver3dstreaming.centralus.cloudapp.azure.com:3478"),
                     Type = IceServer.ServerType.TURN,
-                    Username = "anzoloch",
+                    Username = "user",
                     Credential = "3Dstreaming0317"
                 });
 
