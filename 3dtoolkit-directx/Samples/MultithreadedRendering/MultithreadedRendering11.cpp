@@ -451,14 +451,19 @@ void FrameUpdate()
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	Document jmessage;
-	jmessage.Parse(message.c_str());
-	if (jmessage.HasMember("type") && 
-		!strcmp(jmessage["type"].GetString(), "message") &&
-		jmessage.HasMember("camera-transform"))
+	Json::Reader reader;
+	Json::Value jmessage;
+	if (!reader.parse(message, jmessage))
+	{
+		return;
+	}
+
+	if (jmessage.isMember("type") && 
+		!strcmp(jmessage["type"].asCString(), "message") &&
+		jmessage.isMember("camera-transform"))
 	{
 		// Parses the camera transformation data.
-		const char* data = jmessage["camera-transform"].GetString();
+		const char* data = jmessage["camera-transform"].asCString();
 		std::istringstream datastream(data);
 		std::string token;
 		getline(datastream, token, ',');
@@ -476,6 +481,7 @@ void InputUpdate(const std::string& message)
 
 		// Initializes the eye position vector.
 		const XMVECTORF32 eye = { x, y, z, 0.f };
+		const XMVECTORF32 lookAt = { x, y, z + 1.0f, 0.f };
 
 		// Initializes the camera rotation matrix.
 		DirectX::XMMATRIX cameraRotation = XMMatrixRotationRollPitchYaw(
@@ -483,8 +489,8 @@ void InputUpdate(const std::string& message)
 
 		// Updates the camera view.
 		g_Camera.SetViewParams(
-			DirectX::XMVector3Transform(eye, cameraRotation),
-			g_Camera.GetLookAtPt());
+			eye,
+			lookAt);
 
 		g_Camera.FrameMove(0);
 	}
@@ -556,8 +562,9 @@ int InitWebRTC(char* server, int port)
 				::TranslateMessage(&msg);
 				::DispatchMessage(&msg);
 			}
-			catch (const std::exception& e) { // reference to the base of a polymorphic object
-				std::cout << e.what(); // information from length_error printed
+			catch (int errorCode) 
+			{
+				printf("Error: %d", errorCode);
 			}
 		}
 	}

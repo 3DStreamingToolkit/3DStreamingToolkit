@@ -183,6 +183,8 @@ protected:
 	void HandleTabbing();
 
 private:
+	void ResetCamera();
+
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;
 	UI ui_;
@@ -204,6 +206,13 @@ private:
 	bool auto_call_;
 	int width_;
 	int height_;
+	int inputUpdateTick;
+	DirectX::SimpleMath::Matrix world_;
+	DirectX::SimpleMath::Vector3 camera_focus_;
+	DirectX::SimpleMath::Vector3 last_camera_pos_;
+	DirectX::SimpleMath::Quaternion camera_rot_;
+	float zoom_;
+	float distance_;
 };
 
 #endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_

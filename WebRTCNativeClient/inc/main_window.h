@@ -33,6 +33,8 @@ public:
 
 	virtual void DisconnectFromCurrentPeer() = 0;
 
+	virtual void ProcessInput(const std::string& message) = 0;
+
 	virtual void UIThreadCallback(int msg_id, void* data) = 0;
 
 	virtual void Close() = 0;

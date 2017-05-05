@@ -128,6 +128,8 @@ protected:
 
 	void DisconnectFromCurrentPeer() override;
 
+	void ProcessInput(const std::string& message) override;
+
 	void UIThreadCallback(int msg_id, void* data) override;
 
 	// CreateSessionDescriptionObserver implementation.

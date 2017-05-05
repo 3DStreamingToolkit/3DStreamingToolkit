@@ -553,6 +553,15 @@ void Conductor::DisconnectFromCurrentPeer()
 	}
 }
 
+void Conductor::ProcessInput(const std::string& message)
+{
+	Json::StyledWriter writer;
+	Json::Value jmessage;
+	jmessage["type"] = "message";
+	jmessage["camera-transform"] = message;
+	SendMessage(writer.write(jmessage));
+}
+
 void Conductor::UIThreadCallback(int msg_id, void* data)
 {
 	switch (msg_id)

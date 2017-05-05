@@ -20,10 +20,14 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
-ATOM DefaultMainWindow::wnd_class_ = 0;
-const wchar_t DefaultMainWindow::kClassName[] = L"WebRTC_MainWindow";
+using namespace DirectX;
+using namespace DirectX::SimpleMath;
 
 using rtc::sprintfn;
+using Microsoft::WRL::ComPtr;
+
+ATOM DefaultMainWindow::wnd_class_ = 0;
+const wchar_t DefaultMainWindow::kClassName[] = L"WebRTC_MainWindow";
 
 namespace
 {
@@ -96,7 +100,8 @@ DefaultMainWindow::DefaultMainWindow(
 		auto_connect_(auto_connect),
 		auto_call_(auto_call),
 		width_(width),
-		height_(height)
+		height_(height),
+		inputUpdateTick(0)
 {
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
@@ -127,6 +132,7 @@ bool DefaultMainWindow::Create()
 
 	CreateChildWindows();
 	SwitchToConnectUI();
+	ResetCamera();
 
 	return wnd_ != NULL;
 }
@@ -155,19 +161,21 @@ bool DefaultMainWindow::IsWindow()
 bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 {
 	bool ret = false;
-	if (msg->message == WM_CHAR)
+	if (msg->message == WM_CHAR || msg->message == WM_KEYDOWN)
 	{
-		if (msg->wParam == VK_TAB)
+		WPARAM wParam = msg->wParam;
+
+		if (wParam == VK_TAB)
 		{
 			HandleTabbing();
 			ret = true;
 		} 
-		else if (msg->wParam == VK_RETURN)
+		else if (wParam == VK_RETURN)
 		{
 			OnDefaultAction();
 			ret = true;
 		}
-		else if (msg->wParam == VK_ESCAPE)
+		else if (wParam == VK_ESCAPE)
 		{
 			if (callback_)
 			{
@@ -181,11 +189,65 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 				}
 			}
 		}
+		else if (ui_ == STREAMING && callback_)
+		{
+			Vector3 move = Vector3::Zero;
+			float scale = CAMERA_MOVEMENT_SPEED;
+			bool sendMessage = false;
+			if (wParam == VK_SHIFT)
+			{
+				scale *= CAMERA_MOVEMENT_SCALE;
+			}
+
+			if (wParam == VK_UP)
+			{
+				move.z += scale;
+			}
+
+			if (wParam == VK_DOWN)
+			{
+				move.z -= scale;
+			}
+
+			if (wParam == VK_RIGHT || (char)wParam == 'D')
+			{
+				move.x += scale;
+			}
+
+			if (wParam == VK_LEFT || (char)wParam == 'A')
+			{
+				move.x -= scale;
+			}
+
+			if ((char)wParam == 'W')
+			{
+				move.y += scale;
+			}
+
+			if ((char)wParam == 'S')
+			{
+				move.y -= scale;
+			}
+
+			if (move != Vector3::Zero)
+			{
+				camera_focus_ += move;
+				
+				if (++inputUpdateTick == MESSAGE_SEND_DELAY)
+				{
+					char buffer[1024];
+					sprintf(buffer, "%f, %f, %f, 0.0, 0.0, 0.0", camera_focus_.x, camera_focus_.y, camera_focus_.z);
+					callback_->ProcessInput(std::string(buffer));
+					inputUpdateTick = 0;
+				}
+			}
+		}
 	}
 	else if (msg->hwnd == NULL && msg->message == UI_THREAD_CALLBACK)
 	{
 		callback_->UIThreadCallback(static_cast<int>(msg->wParam), 
 			reinterpret_cast<void*>(msg->lParam));
+
 		ret = true;
 	}
 
@@ -696,6 +758,13 @@ void DefaultMainWindow::HandleTabbing()
 	while (true);
 
 	::SetFocus(next);
+}
+
+void DefaultMainWindow::ResetCamera()
+{
+	zoom_ = 1.f;
+	camera_rot_ = Quaternion::Identity;
+	camera_focus_ = Vector3::Zero;
 }
 
 //
