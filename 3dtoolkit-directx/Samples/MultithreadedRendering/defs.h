@@ -12,6 +12,4 @@
 #define FRAME_BUFFER_HEIGHT	720
 
 //#define MOVING_CAMERA
-#ifdef MOVING_CAMERA
 #define CAMERA_SPEED 5
-#endif // MOVING_CAMERA
