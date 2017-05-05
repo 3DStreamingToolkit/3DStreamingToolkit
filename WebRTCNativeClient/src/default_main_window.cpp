@@ -101,7 +101,9 @@ DefaultMainWindow::DefaultMainWindow(
 		auto_call_(auto_call),
 		width_(width),
 		height_(height),
-		inputUpdateTick(0)
+		inputUpdateTick(0),
+		zoom_(DEFAULT_ZOOM),
+		distance_(DEFAULT_DISTANCE)
 {
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
@@ -132,6 +134,10 @@ bool DefaultMainWindow::Create()
 
 	CreateChildWindows();
 	SwitchToConnectUI();
+
+	mouse_ = std::make_unique<Mouse>();
+	mouse_->SetWindow(wnd_);
+
 	ResetCamera();
 
 	return wnd_ != NULL;
@@ -161,10 +167,14 @@ bool DefaultMainWindow::IsWindow()
 bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 {
 	bool ret = false;
+	WPARAM wParam = msg->wParam;
+	Vector3 move = Vector3::Zero;
+	float scale = distance_;
+	bool sendMessage = false;
+
+	// Keyboard
 	if (msg->message == WM_CHAR || msg->message == WM_KEYDOWN)
 	{
-		WPARAM wParam = msg->wParam;
-
 		if (wParam == VK_TAB)
 		{
 			HandleTabbing();
@@ -191,59 +201,105 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 		}
 		else if (ui_ == STREAMING && callback_)
 		{
-			Vector3 move = Vector3::Zero;
-			float scale = CAMERA_MOVEMENT_SPEED;
-			bool sendMessage = false;
-			if (wParam == VK_SHIFT)
+			switch (wParam)
 			{
-				scale *= CAMERA_MOVEMENT_SCALE;
-			}
+				case VK_SHIFT:
+					scale *= CAMERA_MOVEMENT_SCALE;
+					break;
 
-			if (wParam == VK_UP)
-			{
-				move.z += scale;
-			}
+				case VK_UP:
+					move.y += scale;
+					break;
 
-			if (wParam == VK_DOWN)
-			{
-				move.z -= scale;
-			}
+				case VK_DOWN:
+					move.y -= scale;
+					break;
 
-			if (wParam == VK_RIGHT || (char)wParam == 'D')
-			{
-				move.x += scale;
-			}
+				case VK_RIGHT:
+				case 'D':
+					move.x += scale;
+					break;
 
-			if (wParam == VK_LEFT || (char)wParam == 'A')
-			{
-				move.x -= scale;
-			}
+				case VK_LEFT:
+				case 'A':
+					move.x -= scale;
+					break;
 
-			if ((char)wParam == 'W')
-			{
-				move.y += scale;
-			}
+				case 'W':
+					move.z += scale;
+					break;
 
-			if ((char)wParam == 'S')
-			{
-				move.y -= scale;
+				case 'S':
+					move.z -= scale;
+					break;
+
+				case VK_HOME:
+					ResetCamera();
+					break;
 			}
 
 			if (move != Vector3::Zero)
 			{
+				Matrix im;
+				view_.Invert(im);
+				move = Vector3::TransformNormal(move, im);
 				camera_focus_ += move;
-				
-				if (++inputUpdateTick == MESSAGE_SEND_DELAY)
-				{
-					char buffer[1024];
-					sprintf(buffer, "%f, %f, %f, 0.0, 0.0, 0.0", camera_focus_.x, camera_focus_.y, camera_focus_.z);
-					callback_->ProcessInput(std::string(buffer));
-					inputUpdateTick = 0;
-				}
+				sendMessage = true;
 			}
 		}
 	}
-	else if (msg->hwnd == NULL && msg->message == UI_THREAD_CALLBACK)
+
+	if (ui_ == STREAMING && callback_)
+	{
+		// Mouse
+		auto mouse = mouse_->GetState();
+		mouse_button_tracker_.Update(mouse);
+		if (ball_camera_.IsDragging())
+		{
+			// Rotate camera
+			ball_camera_.OnMove(mouse.x, mouse.y);
+			Quaternion q = ball_camera_.GetQuat();
+			q.Inverse(camera_rot_);
+			sendMessage = true;
+		}
+		else
+		{
+			// Zoom with scroll wheel
+			float newZoom = 1.f + float(mouse.scrollWheelValue) / float(120 * 10);
+			newZoom = std::max(newZoom, 0.01f);
+			sendMessage |= newZoom != zoom_;
+			zoom_ = newZoom;
+
+			if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::PRESSED)
+			{
+				ball_camera_.OnBegin(mouse.x, mouse.y);
+			}
+		}
+
+		if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::RELEASED)
+		{
+			ball_camera_.OnEnd();
+		}
+
+		// Update camera
+		Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
+		Vector3 up = Vector3::Transform(Vector3::Up, camera_rot_);
+		last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
+		view_ = XMMatrixLookAtLH(last_camera_pos_, camera_focus_, up);
+		if (sendMessage && ++inputUpdateTick == MESSAGE_SEND_DELAY)
+		{
+			char buffer[1024];
+			sprintf(buffer, "%f, %f, %f, %f, %f, %f",
+				last_camera_pos_.x, last_camera_pos_.y, last_camera_pos_.z,
+				camera_focus_.x, camera_focus_.y, camera_focus_.z);
+
+			callback_->ProcessInput(std::string(buffer));
+			inputUpdateTick = 0;
+		}
+	}
+
+	// UI callback
+	if (msg->hwnd == NULL && msg->message == UI_THREAD_CALLBACK)
 	{
 		callback_->UIThreadCallback(static_cast<int>(msg->wParam), 
 			reinterpret_cast<void*>(msg->lParam));
@@ -514,6 +570,10 @@ bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* resul
 			{
 				LayoutPeerListUI(true);
 			}
+			else
+			{
+				ball_camera_.SetWindow(LOWORD(lp), HIWORD(lp));
+			}
 
 			break;
 
@@ -538,6 +598,28 @@ bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* resul
 			}
 
 			return true;
+
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			Keyboard::ProcessMessage(msg, wp, lp);
+			break;
+
+		case WM_INPUT:
+		case WM_MOUSEMOVE:
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_MOUSEWHEEL:
+		case WM_XBUTTONDOWN:
+		case WM_XBUTTONUP:
+		case WM_MOUSEHOVER:
+			Mouse::ProcessMessage(msg, wp, lp);
+			break;
 
 		case WM_CLOSE:
 			if (callback_)
@@ -765,6 +847,12 @@ void DefaultMainWindow::ResetCamera()
 	zoom_ = 1.f;
 	camera_rot_ = Quaternion::Identity;
 	camera_focus_ = Vector3::Zero;
+	ball_camera_.Reset();
+	mouse_->ResetScrollWheelValue();
+	mouse_button_tracker_.Reset();
+	Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
+	Vector3 up = Vector3::Transform(Vector3::Up, camera_rot_);
+	last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
 }
 
 //

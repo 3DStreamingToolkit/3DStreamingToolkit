@@ -18,6 +18,7 @@
 #include "defs.h"
 #include "main_window.h"
 #include "peer_connection_client.h"
+#include "arc_ball.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/win32.h"
@@ -207,7 +208,10 @@ private:
 	int width_;
 	int height_;
 	int inputUpdateTick;
-	DirectX::SimpleMath::Matrix world_;
+	std::unique_ptr<DirectX::Mouse> mouse_;
+	DirectX::Mouse::ButtonStateTracker mouse_button_tracker_;
+	ArcBall ball_camera_;
+	DirectX::SimpleMath::Matrix view_;
 	DirectX::SimpleMath::Vector3 camera_focus_;
 	DirectX::SimpleMath::Vector3 last_camera_pos_;
 	DirectX::SimpleMath::Quaternion camera_rot_;
