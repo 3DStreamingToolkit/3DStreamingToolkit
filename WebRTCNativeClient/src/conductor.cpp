@@ -37,6 +37,9 @@ const char kSessionDescriptionSdpName[] = "sdp";
 #define DTLS_ON  true
 #define DTLS_OFF false
 
+// From main.cpp
+extern std::string GetAbsolutePath(std::string fileName);
+
 class DummySetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObserver
 {
 public:
@@ -148,7 +151,7 @@ bool Conductor::CreatePeerConnection(bool dtls)
 	turnServer.password = "";
 
 	// Try parsing config file.
-	std::string configFilePath = ExePath("webrtcConfig.json");
+	std::string configFilePath = GetAbsolutePath("webrtcConfig.json");
 	std::ifstream configFile(configFilePath);
 	Json::Reader reader;
 	Json::Value root = NULL;

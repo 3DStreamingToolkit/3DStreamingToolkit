@@ -22,7 +22,7 @@
 //--------------------------------------------------------------------------------------
 // Global Methods
 //--------------------------------------------------------------------------------------
-static std::string GetAbsolutePath(std::string fileName)
+std::string GetAbsolutePath(std::string fileName)
 {
 	TCHAR buffer[MAX_PATH];
 	GetModuleFileName(NULL, buffer, MAX_PATH);
