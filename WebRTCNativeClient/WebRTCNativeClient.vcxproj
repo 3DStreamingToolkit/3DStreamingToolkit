@@ -217,6 +217,7 @@
     <ClCompile Include="src\peer_connection_client.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\arc_ball.h" />
     <ClInclude Include="inc\conductor.h" />
     <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\defaults.h" />

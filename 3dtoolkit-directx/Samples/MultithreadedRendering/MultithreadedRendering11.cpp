@@ -467,25 +467,21 @@ void InputUpdate(const std::string& message)
 		std::istringstream datastream(data);
 		std::string token;
 		getline(datastream, token, ',');
-		float x = stof(token);
+		float eyeX = stof(token);
 		getline(datastream, token, ',');
-		float y = stof(token);
+		float eyeY = stof(token);
 		getline(datastream, token, ',');
-		float z = stof(token);
+		float eyeZ = stof(token);
 		getline(datastream, token, ',');
-		float pitch = XMConvertToRadians(stof(token));
+		float focusX = stof(token);
 		getline(datastream, token, ',');
-		float yaw = XMConvertToRadians(stof(token));
+		float focusY = stof(token);
 		getline(datastream, token, ',');
-		float roll = XMConvertToRadians(stof(token));
+		float focusZ = stof(token);
 
 		// Initializes the eye position vector.
-		const XMVECTORF32 eye = { x, y, z, 0.f };
-		const XMVECTORF32 lookAt = { x, y, z + 1.0f, 0.f };
-
-		// Initializes the camera rotation matrix.
-		DirectX::XMMATRIX cameraRotation = XMMatrixRotationRollPitchYaw(
-			pitch, yaw, roll);
+		const XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+		const XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
 
 		// Updates the camera view.
 		g_Camera.SetViewParams(
