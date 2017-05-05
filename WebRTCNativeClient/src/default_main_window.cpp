@@ -101,7 +101,8 @@ DefaultMainWindow::DefaultMainWindow(
 		auto_call_(auto_call),
 		width_(width),
 		height_(height),
-		inputUpdateTick(0),
+		keyboardTick(0),
+		mouseTick(0),
 		zoom_(DEFAULT_ZOOM),
 		distance_(DEFAULT_DISTANCE)
 {
@@ -234,6 +235,7 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 					break;
 
 				case VK_HOME:
+					sendMessage = true;
 					ResetCamera();
 					break;
 			}
@@ -244,7 +246,11 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 				view_.Invert(im);
 				move = Vector3::TransformNormal(move, im);
 				camera_focus_ += move;
-				sendMessage = true;
+				if (++keyboardTick == KEYBOARD_DELAY)
+				{
+					sendMessage = true;
+					keyboardTick = 0;
+				}
 			}
 		}
 	}
@@ -260,7 +266,16 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 			ball_camera_.OnMove(mouse.x, mouse.y);
 			Quaternion q = ball_camera_.GetQuat();
 			q.Inverse(camera_rot_);
-			sendMessage = true;
+			if (++mouseTick == MOUSE_DELAY)
+			{
+				sendMessage = true;
+				mouseTick = 0;
+			}
+
+			if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::RELEASED)
+			{
+				ball_camera_.OnEnd();
+			}
 		}
 		else
 		{
@@ -276,17 +291,12 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 			}
 		}
 
-		if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::RELEASED)
-		{
-			ball_camera_.OnEnd();
-		}
-
 		// Update camera
 		Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
 		Vector3 up = Vector3::Transform(Vector3::Up, camera_rot_);
 		last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
 		view_ = XMMatrixLookAtLH(last_camera_pos_, camera_focus_, up);
-		if (sendMessage && ++inputUpdateTick == MESSAGE_SEND_DELAY)
+		if (sendMessage)
 		{
 			char buffer[1024];
 			sprintf(buffer, "%f, %f, %f, %f, %f, %f",
@@ -294,7 +304,6 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 				camera_focus_.x, camera_focus_.y, camera_focus_.z);
 
 			callback_->ProcessInput(std::string(buffer));
-			inputUpdateTick = 0;
 		}
 	}
 

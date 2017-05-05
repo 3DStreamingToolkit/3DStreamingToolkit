@@ -207,7 +207,8 @@ private:
 	bool auto_call_;
 	int width_;
 	int height_;
-	int inputUpdateTick;
+	int keyboardTick;
+	int mouseTick;
 	std::unique_ptr<DirectX::Mouse> mouse_;
 	DirectX::Mouse::ButtonStateTracker mouse_button_tracker_;
 	ArcBall ball_camera_;
