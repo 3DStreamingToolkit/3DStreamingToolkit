@@ -329,7 +329,8 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Closes a peer connection.
         /// </summary>
-        private void ClosePeerConnection()
+        private async Task ClosePeerConnection()
+        //private void ClosePeerConnection()
         {
             lock (MediaLock)
             {
@@ -339,11 +340,16 @@ namespace PeerConnectionClient.Signalling
                     if (_mediaStream != null)
                     {
                         foreach (var track in _mediaStream.GetTracks())
-                        {
-                            track.Stop();
-                            _mediaStream.RemoveTrack(track);
+                        {         
+                            // Check Track Status before action to avoid reference errors
+                            // CRASH condition previously on non-XAML usage
+                            if(track.Enabled)
+                            {
+                                track.Stop();
+                                _mediaStream.RemoveTrack(track);
+                            }
                         }
-                    }
+                    }                    
                     _mediaStream = null;
 
                     OnPeerConnectionClosed?.Invoke();
@@ -786,10 +792,10 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Calls to disconnect from peer.
         /// </summary>
-        public async Task DisconnectFromPeer()
+        public async Task DisconnectFromPeer()        
         {
             await SendHangupMessage();
-            ClosePeerConnection();
+            await ClosePeerConnection();
         }
 
         /// <summary>
