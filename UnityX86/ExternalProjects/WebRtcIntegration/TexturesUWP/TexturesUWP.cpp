@@ -266,7 +266,16 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsi
 			argbDataBuf,
 			wH264Frame * pixelSize,
 			wH264Frame,
-			hH264Frame);				
+			hH264Frame);
+
+		// YUY2 Output Processing
+//		isARGBFrameReady = !libyuv::YUY2ToARGB(
+//			yuvDataBuf,
+//			wH264Frame * 2,
+//			argbDataBuf,
+//			wH264Frame * pixelSize,
+//			wH264Frame,
+//			hH264Frame);
 	}	
 }
 

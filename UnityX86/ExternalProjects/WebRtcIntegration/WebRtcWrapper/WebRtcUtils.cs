@@ -102,7 +102,8 @@ namespace WebRtcWrapper
                         Peers = new ObservableCollection<Peer>();
                         Conductor.Instance.Peers = Peers;
                     }
-                    Peers.Add(SelectedPeer = new Peer { Id = peerId, Name = peerName });
+                    //Peers.Add(SelectedPeer = new Peer { Id = peerId, Name = peerName });
+                    Peers.Add(new Peer { Id = peerId, Name = peerName });
                 });
             };
 
@@ -986,27 +987,30 @@ namespace WebRtcWrapper
         {
             new Task(async () =>
             {
-                string msg = (string) obj;
-                JsonObject jsonMessage;
-
-                if (!JsonObject.TryParse(msg, out jsonMessage))
+                if (IsConnectedToPeer)
                 {
-                    jsonMessage = new JsonObject()
+                    string msg = (string) obj;
+                    JsonObject jsonMessage;
+
+                    if (!JsonObject.TryParse(msg, out jsonMessage))
                     {
-                        {"data", JsonValue.CreateStringValue(msg) }
+                        jsonMessage = new JsonObject()
+                        {
+                            {"data", JsonValue.CreateStringValue(msg)}
+                        };
+                    }
+
+                    var jsonPackage = new JsonObject
+                    {
+                        {"type", JsonValue.CreateStringValue(kMessageDataType)}
                     };
+                    foreach (var o in jsonMessage)
+                    {
+                        jsonPackage.Add(o.Key, o.Value);
+                    }
+                    await Conductor.Instance.Signaller.SendToPeer(SelectedPeer.Id, jsonPackage);
                 }
 
-                var jsonPackage = new JsonObject
-                {
-                    {"type", JsonValue.CreateStringValue(kMessageDataType)}
-                };
-                foreach (var o in jsonMessage)
-                {
-                    jsonPackage.Add(o.Key, o.Value);
-                }
-                await Conductor.Instance.Signaller.SendToPeer(SelectedPeer.Id, jsonPackage);
-                
             }).Start();            
         }
 
@@ -1032,7 +1036,7 @@ namespace WebRtcWrapper
             {
                 IsConnecting = true;                
                 Conductor.Instance.StartLogin(host, port, peerName);
-            }).Start();
+            }).Start();    
         }
 
         private bool ConnectToPeerCommandCanExecute(object obj)
@@ -1334,7 +1338,7 @@ namespace WebRtcWrapper
         {
             RunOnUiThread(() =>
             {
-                PeerVideo.SetMediaStreamSource(null);
+                PeerVideo?.SetMediaStreamSource(null);
             });
         }
 

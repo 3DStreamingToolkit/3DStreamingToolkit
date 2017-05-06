@@ -119,8 +119,8 @@ namespace PeerConnectionClient.Signalling
         readonly List<RTCIceServer> _iceServers;
 
         private int _peerId = -1;
-        protected bool VideoEnabled = true;
-        protected bool AudioEnabled = true;
+        protected bool VideoEnabled;
+        protected bool AudioEnabled;
         protected string SessionId;
 
         bool _etwStatsEnabled;
