@@ -345,9 +345,9 @@ namespace PeerConnectionClient.Signalling
                             // CRASH condition previously on non-XAML usage
                             if(track.Enabled)
                             {
-                                track.Stop();
-                                _mediaStream.RemoveTrack(track);
-                            }
+                                track.Stop();                                
+                            }                            
+                            _mediaStream.RemoveTrack(track);
                         }
                     }                    
                     _mediaStream = null;
