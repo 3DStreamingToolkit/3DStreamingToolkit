@@ -84,8 +84,8 @@ public class ControlScript : MonoBehaviour
 
     void Awake()
     {
-        //ServerInputTextField.text = "13.65.196.240";
-        ServerInputTextField.text = "127.0.0.1";
+        //ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        ServerInputTextField.text = "127.0.0.1:8888";
     }
 
     void Start()
@@ -97,7 +97,7 @@ public class ControlScript : MonoBehaviour
         _webRtcUtils = new WebRtcUtils();
         _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
         _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
-        _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
+        //_webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
 
 #if !UNITY_EDITOR
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
@@ -124,7 +124,7 @@ public class ControlScript : MonoBehaviour
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
 #else            
             encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
-            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;            
+            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
 #endif
         }
         _webRtcUtils.IsReadyToDisconnect = true;
@@ -240,21 +240,32 @@ public class ControlScript : MonoBehaviour
     }
 
     public void DisconnectFromServer()
-    {
+    {        
         _webRtcUtils.DisconnectFromServerExecute(null);
     }
 
     public void ConnectToPeer()
     {
         // TODO: Support Peer Selection
-        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];        
-        _webRtcUtils.ConnectToPeerCommandExecute(null);
-
-        endTime = (startTime = Time.time) + 10f;
+        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
+#if !UNITY_EDITOR
+        if(_webRtcUtils.Peers.Count > 0)
+        {
+            _webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
+            _webRtcUtils.ConnectToPeerCommandExecute(null);
+            endTime = (startTime = Time.time) + 10f;
+        }
+#endif
     }
 
     public void DisconnectFromPeer()
     {
+#if !UNITY_EDITOR
+        if(encodedVideo != null)
+        {
+            encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;                    
+        }
+#endif
         _webRtcUtils.DisconnectFromPeerCommandExecute(null);
     }
 
@@ -270,7 +281,7 @@ public class ControlScript : MonoBehaviour
 
     public void ClearMessageText()
     {
-        MessageText.text = string.Empty;
+        MessageText.text = string.Empty;        
     }
 
     public void EnqueueAction(Action action)
@@ -283,7 +294,7 @@ public class ControlScript : MonoBehaviour
     
     void Update()
     {
-        #region Main Camera Control
+#region Main Camera Control
 //        if (Vector3.Distance(prevPos, camTransform.position) > 0.05f ||
 //    Quaternion.Angle(prevRot, camTransform.rotation) > 2f)
 //        {
@@ -301,10 +312,10 @@ public class ControlScript : MonoBehaviour
 //
 //            _webRtcUtils.SendPeerMessageDataExecute(camMsg);
 //        }
-        #endregion
+#endregion
 
 
-        #region Virtual Camera Control
+#region Virtual Camera Control
         if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
             Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
         {
@@ -320,9 +331,10 @@ public class ControlScript : MonoBehaviour
                 eulerRot.y,
                 eulerRot.z);
 
+
             _webRtcUtils.SendPeerMessageDataExecute(camMsg);
         }
-        #endregion
+#endregion
 
 
         if (Time.time > endTime)
@@ -353,6 +365,7 @@ public class ControlScript : MonoBehaviour
         RenderTexture.transform.localScale = new Vector3(-1f, (float) textureHeight / textureWidth, 1f) * 2f;
 
         Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.ARGB32, false);
+        //Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.BGRA32, false);
         tex.filterMode = FilterMode.Point;       
         tex.Apply();
         RenderTexture.material.mainTexture = tex;
