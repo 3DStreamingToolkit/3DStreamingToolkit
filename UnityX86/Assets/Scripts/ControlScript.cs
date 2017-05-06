@@ -97,7 +97,7 @@ public class ControlScript : MonoBehaviour
         _webRtcUtils = new WebRtcUtils();
         _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
         _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
-        //_webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
+        _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
 
 #if !UNITY_EDITOR
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
@@ -240,8 +240,8 @@ public class ControlScript : MonoBehaviour
     }
 
     public void DisconnectFromServer()
-    {        
-        _webRtcUtils.DisconnectFromServerExecute(null);
+    {
+        _webRtcUtils.DisconnectFromServerExecute(null);        
     }
 
     public void ConnectToPeer()
@@ -263,10 +263,10 @@ public class ControlScript : MonoBehaviour
 #if !UNITY_EDITOR
         if(encodedVideo != null)
         {
-            encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;                    
+            encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;            
         }
-#endif
-        _webRtcUtils.DisconnectFromPeerCommandExecute(null);
+#endif        
+        _webRtcUtils.DisconnectFromPeerCommandExecute(null);        
     }
 
     public void SendMessageToPeer()

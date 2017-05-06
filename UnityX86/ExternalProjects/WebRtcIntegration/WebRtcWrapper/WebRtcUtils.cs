@@ -1,4 +1,5 @@
 ﻿// Based on PeerConnection Client Sample
+// https://github.com/webrtc-uwp/PeerCC
 
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,10 @@ using Windows.Data.Json;
 using Windows.Media.Core;
 using Windows.Storage;
 using Windows.UI.Core;
-using Windows.UI.Popups;
-using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
+//using Windows.UI.Popups;
+
+//using Windows.UI.Xaml;
+//using Windows.UI.Xaml.Controls;
 
 using Org.WebRtc;
 using PeerConnectionClient.Model;
@@ -32,8 +34,9 @@ namespace WebRtcWrapper
         public event Action<int, string> OnPeerMessageDataReceived;
         public event Action<string> OnStatusMessageUpdate;
         
-        public MediaElement SelfVideo = null;
-        public MediaElement PeerVideo = null;        
+        //public MediaElement SelfVideo = null;
+        //public MediaElement PeerVideo = null;        
+
         public RawVideoSource rawVideo;
         public EncodedVideoSource encodedVideoSource;        
 
@@ -184,8 +187,8 @@ namespace WebRtcWrapper
                 RunOnUiThread(() =>
                 {
                     IsConnectedToPeer = false;
-                    PeerVideo.Source = null;
-                    SelfVideo.Source = null;
+//                    PeerVideo.Source = null;
+//                    SelfVideo.Source = null;
                     _peerVideoTrack = null;
                     _selfVideoTrack = null;
                     GC.Collect(); // Ensure all references are truly dropped.
@@ -637,7 +640,7 @@ namespace WebRtcWrapper
                 var opRes = value.GetVideoCaptureCapabilities();
                 opRes.AsTask().ContinueWith(resolutions =>
                 {
-                    RunOnUiThread(async () =>
+                    RunOnUiThread(() =>
                     {
                         if (resolutions.IsFaulted)
                         {
@@ -645,17 +648,19 @@ namespace WebRtcWrapper
                             while (ex is AggregateException && ex.InnerException != null)
                                 ex = ex.InnerException;
                             String errorMsg = "SetSelectedCamera: Failed to GetVideoCaptureCapabilities (Error: " + ex.Message + ")";
-                            Debug.WriteLine("[Error] " + errorMsg);
-                            var msgDialog = new MessageDialog(errorMsg);
-                            await msgDialog.ShowAsync();
+                            OnStatusMessageUpdate?.Invoke(errorMsg);
+//                            Debug.WriteLine("[Error] " + errorMsg);
+//                            var msgDialog = new MessageDialog(errorMsg);
+//                            await msgDialog.ShowAsync();
                             return;
                         }
                         if (resolutions.Result == null)
                         {
                             String errorMsg = "SetSelectedCamera: Failed to GetVideoCaptureCapabilities (Result is null)";
-                            Debug.WriteLine("[Error] " + errorMsg);
-                            var msgDialog = new MessageDialog(errorMsg);
-                            await msgDialog.ShowAsync();
+                            OnStatusMessageUpdate?.Invoke(errorMsg);
+//                            Debug.WriteLine("[Error] " + errorMsg);
+//                            var msgDialog = new MessageDialog(errorMsg);
+//                            await msgDialog.ShowAsync();
                             return;
                         }
                         var uniqueRes = resolutions.Result.GroupBy(test => test.ResolutionDescription).Select(grp => grp.First()).ToList();
@@ -746,11 +751,12 @@ namespace WebRtcWrapper
                             var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
                             RunOnUiThread(() =>
                             {
-                                if(SelfVideo != null)
-                                {
-                                    SelfVideo.SetMediaStreamSource(source);
-                                    Debug.WriteLine("Video loopback enabled");
-                                }
+                                // TODO: Setup Local Video Display
+//                                if (SelfVideo != null)
+//                                {                                    
+//                                    SelfVideo.SetMediaStreamSource(source);
+//                                    Debug.WriteLine("Video loopback enabled");
+//                                }
                             });
                         }
                     }
@@ -764,9 +770,9 @@ namespace WebRtcWrapper
                         // internal stream source is destroyed.
                         // Apparently, with webrtc package version < 1.1.175, the internal stream source was destroyed
                         // corectly, only by setting SelfVideo.Source to null.
-                        SelfVideo.Source = null;
-                        SelfVideo.Stop();
-                        SelfVideo.Source = null;
+//                        SelfVideo.Source = null;
+//                        SelfVideo.Stop();
+//                        SelfVideo.Source = null;
                         GC.Collect(); // Ensure all references are truly dropped.
                     }
                 }
@@ -1056,7 +1062,11 @@ namespace WebRtcWrapper
 
         public void DisconnectFromPeerCommandExecute(object obj)
         {
-            new Task(() => { var task = Conductor.Instance.DisconnectFromPeer(); }).Start();
+            new Task(async () =>
+            {
+                //var task = Conductor.Instance.DisconnectFromPeer();
+                await Conductor.Instance.DisconnectFromPeer();
+            }).Start();
         }
 
         private bool DisconnectFromServerCanExecute(object obj)
@@ -1235,7 +1245,8 @@ namespace WebRtcWrapper
             }
         }
 
-        private DispatcherTimer _appPerfTimer;
+        //private DispatcherTimer _appPerfTimer;
+
         private void OnMediaDevicesChanged(MediaDeviceType mediaType)
         {
             switch (mediaType)
@@ -1338,7 +1349,8 @@ namespace WebRtcWrapper
         {
             RunOnUiThread(() =>
             {
-                PeerVideo?.SetMediaStreamSource(null);
+                // TODO: Setup Remote Video Stream
+                //PeerVideo.SetMediaStreamSource(null);
             });
         }
 
@@ -1346,8 +1358,7 @@ namespace WebRtcWrapper
         {
             _selfVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_selfVideoTrack != null)
-            {
-             
+            {             
                 RunOnUiThread(() =>
                 {
                     if (IsCameraEnabled)
@@ -1367,11 +1378,13 @@ namespace WebRtcWrapper
                     {
                         Conductor.Instance.MuteMicrophone();
                     }
-                    if ((VideoLoopbackEnabled) && (SelfVideo != null))
-                    {
-                        var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
-                        SelfVideo.SetMediaStreamSource(source);
-                    }
+
+                    // TODO: Handle Video Loopback
+//                    if ((VideoLoopbackEnabled) && (SelfVideo != null))
+//                    {
+//                        var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
+//                        SelfVideo.SetMediaStreamSource(source);
+//                    }
                 });
             }
         }

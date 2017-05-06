@@ -127,6 +127,7 @@
     <Compile Include="Utilities\ValidableNonEmptyString.cs" />
     <Compile Include="Utilities\VideoCaptureFormat.cs" />
     <Compile Include="Utilities\XmlSerializer.cs" />
+    <Compile Include="WebRtcControl.cs" />
     <Compile Include="WebRtcUtils.cs" />
     <EmbeddedResource Include="Properties\WebRtcWrapper.rd.xml" />
   </ItemGroup>
