@@ -114,7 +114,7 @@
       <ObjectFileOutput>$(OutDir)%(Filename).cso</ObjectFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -136,7 +136,7 @@
       <AdditionalLibraryDirectories>libs\x64\Debug</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -161,8 +161,7 @@
       <AdditionalLibraryDirectories>libs\Win32\Release</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -187,8 +186,7 @@
       <AdditionalLibraryDirectories>libs\x64\Release</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>xcopy /y /d  "$(SolutionDir)webrtcConfig.json" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
