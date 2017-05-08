@@ -136,12 +136,11 @@
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y $(TargetDir)$(TargetName)$(TargetExt) $(SolutionDir)..\..\Assets\Plugins\WebRtcWrapper
-copy /Y $(TargetDir)$(TargetName).pdb $(SolutionDir)..\..\Assets\Plugins\WebRtcWrapper
+    <PostBuildEvent>xcopy /R /I /Y $(TargetDir)$(TargetName)$(TargetExt) $(SolutionDir)..\..\Assets\Plugins\WebRtcWrapper\
+xcopy /R /I /Y $(TargetDir)$(TargetName).pdb $(SolutionDir)..\..\Assets\Plugins\WebRtcWrapper\
 
-copy /Y $(TargetDir)$(TargetName)$(TargetExt) $(SolutionDir)..\..\Build\UWP\UnityX86\Unprocessed
-copy /Y $(TargetDir)$(TargetName).pdb $(SolutionDir)..\..\Build\UWP\UnityX86\Unprocessed
-</PostBuildEvent>
+xcopy /R /I /Y $(TargetDir)$(TargetName)$(TargetExt) $(SolutionDir)..\..\Build\UWP\UnityX86\Unprocessed\
+xcopy /R /I /Y $(TargetDir)$(TargetName).pdb $(SolutionDir)..\..\Build\UWP\UnityX86\Unprocessed\</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
