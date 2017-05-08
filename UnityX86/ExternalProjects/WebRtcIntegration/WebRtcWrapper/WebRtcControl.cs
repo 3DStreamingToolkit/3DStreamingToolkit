@@ -17,12 +17,12 @@ using Windows.UI.Core;
 using Org.WebRtc;
 using PeerConnectionClient.Model;
 using PeerConnectionClient.Signalling;
-using PeerConnectionClient.MVVM;
 using PeerConnectionClient.Utilities;
 
 namespace WebRtcWrapper
 {
-    public class WebRtcControl : DispatcherBindableBase
+    //public class WebRtcControl : DispatcherBindableBase
+    public class WebRtcControl
     {
         public event Action OnInitialized;
         public event Action<int, string> OnPeerMessageDataReceived;
@@ -42,7 +42,8 @@ namespace WebRtcWrapper
 
         private readonly CoreDispatcher _uiDispatcher;
 
-        public WebRtcControl() : base(CoreApplication.MainView.CoreWindow.Dispatcher)
+        //public WebRtcControl() : base(CoreApplication.MainView.CoreWindow.Dispatcher)
+        public WebRtcControl()
         {
             _uiDispatcher = CoreApplication.MainView.CoreWindow.Dispatcher;
         }
@@ -349,14 +350,22 @@ namespace WebRtcWrapper
 
         public void ConnectToPeer()
         {
-            new Task(() => { Conductor.Instance.ConnectToPeer(SelectedPeer); }).Start();
+            if (SelectedPeer != null)
+            {
+                new Task(() => { Conductor.Instance.ConnectToPeer(SelectedPeer); }).Start();
+            }
+            else
+            {
+                OnStatusMessageUpdate?.Invoke("SelectedPeer not set");
+            }
         }
 
         public void DisconnectFromPeer()
         {
-            new Task(async () =>
+            new Task(() =>
             {                
-                await Conductor.Instance.DisconnectFromPeer();
+                //await Conductor.Instance.DisconnectFromPeer();
+                var task = Conductor.Instance.DisconnectFromPeer();
             }).Start();
         }
 
@@ -750,7 +759,7 @@ namespace WebRtcWrapper
                 if (_newIceServer != value)
                 {
                     _newIceServer = value;
-                    _newIceServer.PropertyChanged += NewIceServer_PropertyChanged;
+                    // TODO: Validate Entry                    
                 }
             }
         }
@@ -1096,6 +1105,11 @@ namespace WebRtcWrapper
         private void ReevaluateHasServer()
         {
             HasServer = Ip != null && Ip.Valid && Port != null && Port.Valid;
+        }
+
+        protected void RunOnUiThread(Action fn)
+        {
+            var asyncOp = _uiDispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(fn));
         }
         #endregion
     }
