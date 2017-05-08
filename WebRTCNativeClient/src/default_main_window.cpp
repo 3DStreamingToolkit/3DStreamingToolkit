@@ -299,9 +299,10 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 		if (sendMessage)
 		{
 			char buffer[1024];
-			sprintf(buffer, "%f, %f, %f, %f, %f, %f",
+			sprintf(buffer, "%f, %f, %f, %f, %f, %f, %f, %f, %f",
 				last_camera_pos_.x, last_camera_pos_.y, last_camera_pos_.z,
-				camera_focus_.x, camera_focus_.y, camera_focus_.z);
+				camera_focus_.x, camera_focus_.y, camera_focus_.z,
+				up.x, up.y, up.z);
 
 			callback_->ProcessInput(std::string(buffer));
 		}

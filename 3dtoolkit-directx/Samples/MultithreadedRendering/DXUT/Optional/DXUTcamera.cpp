@@ -231,7 +231,7 @@ CBaseCamera::CBaseCamera() :
 // Client can call this to change the position and direction of camera
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void CBaseCamera::SetViewParams( FXMVECTOR vEyePt, FXMVECTOR vLookatPt )
+void CBaseCamera::SetViewParams( FXMVECTOR vEyePt, FXMVECTOR vLookatPt, FXMVECTOR pvUpPt )
 {
     XMStoreFloat3( &m_vEye, vEyePt );
     XMStoreFloat3( &m_vDefaultEye, vEyePt );
@@ -240,7 +240,7 @@ void CBaseCamera::SetViewParams( FXMVECTOR vEyePt, FXMVECTOR vLookatPt )
     XMStoreFloat3( &m_vDefaultLookAt , vLookatPt );
 
     // Calc the view matrix
-    XMMATRIX mView = XMMatrixLookAtLH( vEyePt, vLookatPt, g_XMIdentityR1 );
+    XMMATRIX mView = XMMatrixLookAtLH( vEyePt, vLookatPt, pvUpPt );
     XMStoreFloat4x4( &m_mView, mView );
 
     XMMATRIX mInvView = XMMatrixInverse( nullptr, mView );
@@ -959,12 +959,12 @@ void CModelViewerCamera::Reset()
 // Override for setting the view parameters
 //--------------------------------------------------------------------------------------
 _Use_decl_annotations_
-void CModelViewerCamera::SetViewParams( FXMVECTOR vEyePt, FXMVECTOR vLookatPt )
+void CModelViewerCamera::SetViewParams( FXMVECTOR vEyePt, FXMVECTOR vLookatPt, FXMVECTOR pvUpPt )
 {
     CBaseCamera::SetViewParams( vEyePt, vLookatPt );
 
     // Propogate changes to the member arcball
-    XMMATRIX mRotation = XMMatrixLookAtLH( vEyePt, vLookatPt, g_XMIdentityR1 );
+    XMMATRIX mRotation = XMMatrixLookAtLH( vEyePt, vLookatPt, pvUpPt );
     XMVECTOR quat = XMQuaternionRotationMatrix( mRotation );
     m_ViewArcBall.SetQuatNow( quat );
 
