@@ -65,4 +65,7 @@
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="webrtcConfig.json" />
+  </ItemGroup>
 </Project>
