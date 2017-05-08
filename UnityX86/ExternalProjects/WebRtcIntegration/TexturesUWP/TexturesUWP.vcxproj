@@ -136,8 +136,8 @@
       <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
-copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Command>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,8 +155,8 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86
-copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Command>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|arm'">
@@ -196,6 +196,10 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <AdditionalLibraryDirectories>$(ProjectDir)libyuv\libs\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>libyuv_win10_x64.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -210,6 +214,10 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <AdditionalDependencies>libyuv_win10_x64.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)libyuv\libs\Release</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="defs.h" />
