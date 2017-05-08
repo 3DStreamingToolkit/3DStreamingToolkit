@@ -14,7 +14,6 @@ using WebRtcWrapper;
 using Org.WebRtc;
 using PeerConnectionClient.Model;
 using PeerConnectionClient.Signalling;
-using PeerConnectionClient.MVVM;
 using PeerConnectionClient.Utilities;
 #endif
 
@@ -32,10 +31,9 @@ public class ControlScript : MonoBehaviour
 
     private Transform camTransform;
     private Vector3 prevPos;
-    private Quaternion prevRot;
-    //private WebRtcUtils _webRtcUtils;
+    private Quaternion prevRot;    
 
-    private WebRtcControl _webRtcUtils;
+    private WebRtcControl _webRtcControl;
 
     private int frameCounter = 0;
     private int fpsCounter = 0;
@@ -100,15 +98,15 @@ public class ControlScript : MonoBehaviour
         prevRot = camTransform.rotation;
 
         //_webRtcUtils = new WebRtcUtils();
-        _webRtcUtils = new WebRtcControl();
-        _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
-        _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
-        _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
+        _webRtcControl = new WebRtcControl();
+        _webRtcControl.OnInitialized += WebRtcControlOnInitialized;
+        _webRtcControl.OnPeerMessageDataReceived += WebRtcControlOnPeerMessageDataReceived;
+        _webRtcControl.OnStatusMessageUpdate += WebRtcControlOnStatusMessageUpdate;
 
 #if !UNITY_EDITOR
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
 #endif
-        _webRtcUtils.Initialize();
+        _webRtcControl.Initialize();
 
         // Setup Low-Level Graphics Plugin
         CreateTextureAndPassToPlugin();
@@ -133,7 +131,7 @@ public class ControlScript : MonoBehaviour
             encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
 #endif
         }
-        _webRtcUtils.IsReadyToDisconnect = true;
+        _webRtcControl.IsReadyToDisconnect = true;
     }
 
     private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
@@ -185,7 +183,7 @@ public class ControlScript : MonoBehaviour
     }
 #endif
     
-    private void _webRtcUtils_OnInitialized()
+    private void WebRtcControlOnInitialized()
     {
         EnqueueAction(OnInitialized);
     }
@@ -200,19 +198,19 @@ public class ControlScript : MonoBehaviour
 #if HACK_VP8
         _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
 #else
-        _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
+        _webRtcControl.SelectedVideoCodec = _webRtcControl.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
 #endif
 #endif
         StatusText.text += "WebRTC Initialized\n";
     }
 
-    private void _webRtcUtils_OnPeerMessageDataReceived(int peerId, string message)
+    private void WebRtcControlOnPeerMessageDataReceived(int peerId, string message)
     {        
         EnqueueAction(() => UpdateMessageText(string.Format("{0}-{1}", peerId, message)));
     }
 
 
-    private void _webRtcUtils_OnStatusMessageUpdate(string msg)
+    private void WebRtcControlOnStatusMessageUpdate(string msg)
     {        
         EnqueueAction(() => UpdateStatusText(string.Format("{0}\n", msg)));
     }
@@ -242,25 +240,22 @@ public class ControlScript : MonoBehaviour
             host = signalhost[0];
             port = "8888";
         }
-        _webRtcUtils.ConnectToServer(host, port, PeerInputTextField.text);
+        _webRtcControl.ConnectToServer(host, port, PeerInputTextField.text);
     }
 
     public void DisconnectFromServer()
-    {
-        //_webRtcUtils.DisconnectFromServerExecute(null);
-        _webRtcUtils.DisconnectFromServer();
+    {        
+        _webRtcControl.DisconnectFromServer();
     }
 
     public void ConnectToPeer()
     {
-        // TODO: Support Peer Selection
-        //_webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
+        // TODO: Support Peer Selection        
 #if !UNITY_EDITOR
-        if(_webRtcUtils.Peers.Count > 0)
+        if(_webRtcControl.Peers.Count > 0)
         {
-            _webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
-            //_webRtcUtils.ConnectToPeerCommandExecute(null);
-            _webRtcUtils.ConnectToPeer();
+            _webRtcControl.SelectedPeer = _webRtcControl.Peers[0];
+            _webRtcControl.ConnectToPeer();
             endTime = (startTime = Time.time) + 10f;
         }
 #endif
@@ -273,15 +268,13 @@ public class ControlScript : MonoBehaviour
         {
             encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;            
         }
-#endif        
-        //_webRtcUtils.DisconnectFromPeerCommandExecute(null);
-        _webRtcUtils.DisconnectFromPeer();
+#endif                
+        _webRtcControl.DisconnectFromPeer();
     }
 
     public void SendMessageToPeer()
-    {
-        //_webRtcUtils.SendPeerMessageDataExecute(MessageInputField.text);
-        _webRtcUtils.SendPeerMessageData(MessageInputField.text);
+    {        
+        _webRtcControl.SendPeerMessageData(MessageInputField.text);
     }
 
     public void ClearStatusText()
@@ -342,7 +335,7 @@ public class ControlScript : MonoBehaviour
                 eulerRot.z);
 
             //_webRtcUtils.SendPeerMessageDataExecute(camMsg);
-            _webRtcUtils.SendPeerMessageData(camMsg);
+            _webRtcControl.SendPeerMessageData(camMsg);
         }
 #endregion
 
@@ -375,6 +368,7 @@ public class ControlScript : MonoBehaviour
         RenderTexture.transform.localScale = new Vector3(-1f, (float) textureHeight / textureWidth, 1f) * 2f;
 
         Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.ARGB32, false);
+        // Workaround for Unity Color Space Shift issue
         //Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.BGRA32, false);
         tex.filterMode = FilterMode.Point;       
         tex.Apply();

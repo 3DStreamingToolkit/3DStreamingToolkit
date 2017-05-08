@@ -125,6 +125,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,6 +140,9 @@
       <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
 xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
     </PostBuildEvent>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
