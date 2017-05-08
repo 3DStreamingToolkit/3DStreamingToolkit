@@ -33,7 +33,9 @@ public class ControlScript : MonoBehaviour
     private Transform camTransform;
     private Vector3 prevPos;
     private Quaternion prevRot;
-    private WebRtcUtils _webRtcUtils;    
+    //private WebRtcUtils _webRtcUtils;
+
+    private WebRtcControl _webRtcUtils;
 
     private int frameCounter = 0;
     private int fpsCounter = 0;
@@ -84,7 +86,10 @@ public class ControlScript : MonoBehaviour
 
     void Awake()
     {
+        // Azure Host Details
         //ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        
+        // Local Dev Setup
         ServerInputTextField.text = "127.0.0.1:8888";
     }
 
@@ -94,7 +99,8 @@ public class ControlScript : MonoBehaviour
         prevPos = camTransform.position;
         prevRot = camTransform.rotation;
 
-        _webRtcUtils = new WebRtcUtils();
+        //_webRtcUtils = new WebRtcUtils();
+        _webRtcUtils = new WebRtcControl();
         _webRtcUtils.OnInitialized += _webRtcUtils_OnInitialized;
         _webRtcUtils.OnPeerMessageDataReceived += _webRtcUtils_OnPeerMessageDataReceived;
         _webRtcUtils.OnStatusMessageUpdate += _webRtcUtils_OnStatusMessageUpdate;
@@ -241,7 +247,8 @@ public class ControlScript : MonoBehaviour
 
     public void DisconnectFromServer()
     {
-        _webRtcUtils.DisconnectFromServerExecute(null);        
+        //_webRtcUtils.DisconnectFromServerExecute(null);
+        _webRtcUtils.DisconnectFromServer();
     }
 
     public void ConnectToPeer()
@@ -252,7 +259,8 @@ public class ControlScript : MonoBehaviour
         if(_webRtcUtils.Peers.Count > 0)
         {
             _webRtcUtils.SelectedPeer = _webRtcUtils.Peers[0];
-            _webRtcUtils.ConnectToPeerCommandExecute(null);
+            //_webRtcUtils.ConnectToPeerCommandExecute(null);
+            _webRtcUtils.ConnectToPeer();
             endTime = (startTime = Time.time) + 10f;
         }
 #endif
@@ -266,12 +274,14 @@ public class ControlScript : MonoBehaviour
             encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;            
         }
 #endif        
-        _webRtcUtils.DisconnectFromPeerCommandExecute(null);        
+        //_webRtcUtils.DisconnectFromPeerCommandExecute(null);
+        _webRtcUtils.DisconnectFromPeer();
     }
 
     public void SendMessageToPeer()
     {
-        _webRtcUtils.SendPeerMessageDataExecute(MessageInputField.text);
+        //_webRtcUtils.SendPeerMessageDataExecute(MessageInputField.text);
+        _webRtcUtils.SendPeerMessageData(MessageInputField.text);
     }
 
     public void ClearStatusText()
@@ -331,8 +341,8 @@ public class ControlScript : MonoBehaviour
                 eulerRot.y,
                 eulerRot.z);
 
-
-            _webRtcUtils.SendPeerMessageDataExecute(camMsg);
+            //_webRtcUtils.SendPeerMessageDataExecute(camMsg);
+            _webRtcUtils.SendPeerMessageData(camMsg);
         }
 #endregion
 
