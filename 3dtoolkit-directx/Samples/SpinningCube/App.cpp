@@ -289,7 +289,7 @@ int WINAPI wWinMain(
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext());
 
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain(), "output.h264");
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
 #endif // TEST_RUNNER
 	
 	// Main message loop.

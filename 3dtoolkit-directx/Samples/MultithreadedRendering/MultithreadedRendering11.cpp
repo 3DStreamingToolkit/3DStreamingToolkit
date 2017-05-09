@@ -630,7 +630,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     
-#ifdef TEST_RUNNER
+#ifndef REMOTE_RENDERING
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 #ifdef STEREO_OUTPUT_MODE
@@ -639,13 +639,15 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
 #endif // STEREO_OUTPUT_MODE
 
+#ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
+#endif// TEST_RUNNER
 
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
-#else // TEST_RUNNER
+#else // REMOTE_RENDERING
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
