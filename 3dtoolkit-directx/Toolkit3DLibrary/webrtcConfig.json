@@ -1,9 +1,16 @@
 {
-  "turnServer": {
-    "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
-    "username": "user",
-    "password": "3Dstreaming0317"
-  },
+  "stunServers": [
+    {
+      "uri": "stun:stun.l.google.com:19302"
+    }
+  ],
+  "turnServers": [
+    {
+      "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
+      "username": "user",
+      "password": "3Dstreaming0317"
+    }
+  ],
   "server": "signalingserver.centralus.cloudapp.azure.com",
   "port": 3000
 }
