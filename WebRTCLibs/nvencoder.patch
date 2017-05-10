@@ -8856,7 +8856,7 @@ index 84bfafb..f24fe8f 100644
 +	Json::Reader reader;
 +	Json::Value root = NULL;
 +
-+	auto encoderConfigPath = ExePath("webrtcEncoderConfig.json");
++	auto encoderConfigPath = ExePath("nvEncConfig.json");
 +	std::ifstream file(encoderConfigPath);
 +	if (file.good())
 +	{
