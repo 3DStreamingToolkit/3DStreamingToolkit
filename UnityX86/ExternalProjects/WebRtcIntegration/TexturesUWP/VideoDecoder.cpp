@@ -114,6 +114,8 @@ void VideoDecoder::Initialize(int width, int height)
 	MFCreateMediaType(&m_pDecOutputMediaType);
 	m_pDecOutputMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
 	m_pDecOutputMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_I420);
+//	m_pDecOutputMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YUY2);
+
 	CHECK_HR(MFSetAttributeSize(m_pDecOutputMediaType, MF_MT_FRAME_SIZE, width, height),
 		"Failed to set frame size on H264 MFT out type.\n");
 

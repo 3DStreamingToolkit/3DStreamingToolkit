@@ -518,7 +518,7 @@ int InitWebRTC(char* server, int port)
 
 #ifdef SERVER_APP
 #ifdef NO_UI
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, true, true);
+	DefaultMainWindow wnd(server, port, true, true, true, true);
 #else // NO_UI
 	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, true, false, 1280, 720);
 #endif // NO_UI
