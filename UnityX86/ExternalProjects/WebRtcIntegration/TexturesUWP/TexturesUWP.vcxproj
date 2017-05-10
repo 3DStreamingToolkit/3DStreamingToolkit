@@ -125,20 +125,24 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>S:\GitHub\ritchielozada\3dtoolkit\UnityX86\ExternalProjects\WebRtcIntegration\TexturesUWP\libyuv\libs\Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libyuv\libs\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
-copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Command>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
     </PostBuildEvent>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -150,13 +154,13 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>S:\GitHub\ritchielozada\3dtoolkit\UnityX86\ExternalProjects\WebRtcIntegration\TexturesUWP\libyuv\libs\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libyuv\libs\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86
-copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Command>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|arm'">
@@ -193,7 +197,13 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>$(ProjectDir)libyuv\libs\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libyuv_win10_x64.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -205,7 +215,13 @@ copy /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86</Comman
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalDependencies>libyuv_win10_x64.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libyuv\libs\Release</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86\
+xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="defs.h" />

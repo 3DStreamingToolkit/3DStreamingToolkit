@@ -13,7 +13,6 @@ using System;
 using System.Diagnostics;
 using Windows.UI.Popups;
 using Windows.UI.Core;
-using PeerConnectionClient.MVVM;
 
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.UI.Xaml;
@@ -21,12 +20,14 @@ using Windows.Networking.Sockets;
 
 namespace PeerConnectionClient.Utilities
 {
-    public class NtpService : DispatcherBindableBase
+    //public class NtpService : DispatcherBindableBase
+    public class NtpService
     {
 
         public event Action<long> OnNTPTimeAvailable;
         public event Action OnNTPSyncFailed;
 
+        private readonly CoreDispatcher _uiDispatcher;
         private Stopwatch ntpResponseMonitor = new Stopwatch();
         private DispatcherTimer ntpQueryTimer = null;
         private DatagramSocket ntpSocket = null;
@@ -40,8 +41,10 @@ namespace PeerConnectionClient.Utilities
         private const int MaxNtpProbeFaileCount = 5;
         private const int MaxNtpRTTProbeQuery = 100; // the attempt to get average RTT for NTP query/response
 
-        public NtpService(CoreDispatcher uiDispatcher) : base(uiDispatcher)
+        //public NtpService(CoreDispatcher uiDispatcher) : base(uiDispatcher)
+        public NtpService(CoreDispatcher uiDispatcher)
         {
+            _uiDispatcher = uiDispatcher;
         }
 
         /// <summary>
@@ -270,6 +273,11 @@ namespace PeerConnectionClient.Utilities
                           ((x & 0x0000ff00) << 8) +
                           ((x & 0x00ff0000) >> 8) +
                           ((x & 0xff000000) >> 24));
+        }
+
+        protected void RunOnUiThread(Action fn)
+        {
+            var asyncOp = _uiDispatcher.RunAsync(CoreDispatcherPriority.Normal, new DispatchedHandler(fn));
         }
 
     }

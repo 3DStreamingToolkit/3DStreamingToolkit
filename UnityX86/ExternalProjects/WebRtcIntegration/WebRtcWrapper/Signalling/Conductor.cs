@@ -119,8 +119,8 @@ namespace PeerConnectionClient.Signalling
         readonly List<RTCIceServer> _iceServers;
 
         private int _peerId = -1;
-        protected bool VideoEnabled = true;
-        protected bool AudioEnabled = true;
+        protected bool VideoEnabled;
+        protected bool AudioEnabled;
         protected string SessionId;
 
         bool _etwStatsEnabled;
@@ -329,38 +329,44 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Closes a peer connection.
         /// </summary>
+        //private async Task ClosePeerConnection()
         private void ClosePeerConnection()
-        {
+        {                
             lock (MediaLock)
-            {
-                if (_peerConnection != null)
-                {
-                    _peerId = -1;
-                    if (_mediaStream != null)
                     {
-                        foreach (var track in _mediaStream.GetTracks())
+                        if (_peerConnection != null)
                         {
-                            track.Stop();
-                            _mediaStream.RemoveTrack(track);
-                        }
-                    }
-                    _mediaStream = null;
+                            _peerId = -1;
+                            if (_mediaStream != null)
+                            {
+                                foreach (var track in _mediaStream.GetTracks())
+                                {
+                                    // Check Track Status before action to avoid reference errors
+                                    // CRASH condition previously on non-XAML usage
+                                    if (track.Enabled)
+                                    {
+                                        track.Stop();
+                                    }
+                                    _mediaStream.RemoveTrack(track);
+                                }
+                            }
+                            _mediaStream = null;
 
-                    OnPeerConnectionClosed?.Invoke();
+                            OnPeerConnectionClosed?.Invoke();
 
-                    _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
+                            _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
 
-                    SessionId = null;
+                            SessionId = null;
 #if ORTCLIB
                     OrtcStatsManager.Instance.CallEnded();
 #endif
-                    _peerConnection = null;
+                            _peerConnection = null;
 
-                    OnReadyToConnect?.Invoke();
+                            OnReadyToConnect?.Invoke();
 
-                    GC.Collect(); // Ensure all references are truly dropped.
-                }
-            }
+                            GC.Collect(); // Ensure all references are truly dropped.
+                        }
+                    }                
         }
 
         /// <summary>
@@ -786,7 +792,7 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Calls to disconnect from peer.
         /// </summary>
-        public async Task DisconnectFromPeer()
+        public async Task DisconnectFromPeer()        
         {
             await SendHangupMessage();
             ClosePeerConnection();
