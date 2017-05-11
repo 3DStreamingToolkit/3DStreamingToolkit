@@ -34,6 +34,9 @@ const char kCandidateSdpName[] = "candidate";
 const char kSessionDescriptionTypeName[] = "type";
 const char kSessionDescriptionSdpName[] = "sdp";
 
+// Names used for data channels
+const char kInputDataChannelName[] = "inputDataChannel";
+
 #define DTLS_ON  true
 #define DTLS_OFF false
 
@@ -240,6 +243,13 @@ void Conductor::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> 
 	main_window_->QueueUIThreadCallback(STREAM_REMOVED, stream.release());
 }
 
+void Conductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
+{
+	data_channel_ = channel;
+	data_channel_observer_.reset(
+		new DefaultDataChannelObserver(channel, input_update_func_));
+}
+
 void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 {
 	LOG(INFO) << __FUNCTION__ << " " << candidate->sdp_mline_index();
@@ -344,12 +354,6 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 		LOG(WARNING) << "Received a message from unknown peer while already in a "
 						"conversation with a different peer.";
 		return;
-	}
-
-	// Passes the message to server.
-	if (input_update_func_)
-	{
-		input_update_func_(message);
 	}
 
 	Json::Reader reader;
@@ -499,6 +503,10 @@ void Conductor::ConnectToPeer(int peer_id)
 	if (InitializePeerConnection())
 	{
 		peer_id_ = peer_id;
+		data_channel_ = peer_connection_->CreateDataChannel(kInputDataChannelName, nullptr);
+		data_channel_observer_.reset(
+			new DefaultDataChannelObserver(data_channel_, input_update_func_));
+
 		peer_connection_->CreateOffer(this, NULL);
 	}
 	else

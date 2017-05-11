@@ -34,6 +34,9 @@ const char kCandidateSdpName[] = "candidate";
 const char kSessionDescriptionTypeName[] = "type";
 const char kSessionDescriptionSdpName[] = "sdp";
 
+// Names used for data channels
+const char kInputDataChannelName[] = "inputDataChannel";
+
 #define DTLS_ON  true
 #define DTLS_OFF false
 
@@ -234,6 +237,11 @@ void Conductor::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> 
 {
 	LOG(INFO) << __FUNCTION__ << " " << stream->label();
 	main_window_->QueueUIThreadCallback(STREAM_REMOVED, stream.release());
+}
+
+void Conductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
+{
+	data_channel_ = channel;
 }
 
 void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
@@ -489,6 +497,7 @@ void Conductor::ConnectToPeer(int peer_id)
 	if (InitializePeerConnection())
 	{
 		peer_id_ = peer_id;
+		data_channel_ = peer_connection_->CreateDataChannel(kInputDataChannelName, nullptr);
 		peer_connection_->CreateOffer(this, NULL);
 	}
 	else
@@ -558,11 +567,11 @@ void Conductor::DisconnectFromCurrentPeer()
 
 void Conductor::ProcessInput(const std::string& message)
 {
-	Json::StyledWriter writer;
-	Json::Value jmessage;
-	jmessage["type"] = "message";
-	jmessage["camera-transform"] = message;
-	SendMessage(writer.write(jmessage));
+	if (data_channel_ && data_channel_->state() == webrtc::DataChannelInterface::kOpen)
+	{
+		webrtc::DataBuffer buffer(message);
+		data_channel_->Send(buffer);
+	}
 }
 
 void Conductor::UIThreadCallback(int msg_id, void* data)

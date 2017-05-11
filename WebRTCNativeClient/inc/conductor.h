@@ -84,7 +84,7 @@ protected:
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
 	void OnDataChannel(
-		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
+		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override;
 
 	void OnRenegotiationNeeded() override {}
 
@@ -148,6 +148,7 @@ protected:
 		peer_connection_factory_;
 
 	PeerConnectionClient* client_;
+	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 	MainWindow* main_window_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
