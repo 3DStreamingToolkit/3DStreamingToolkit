@@ -39,7 +39,6 @@ public:
 		int port,
 		bool auto_connect,
 		bool auto_call,
-		bool is_server_app,
 		bool has_no_UI = false,
 		int width = CW_USEDEFAULT,
 		int height = CW_USEDEFAULT);
@@ -159,9 +158,7 @@ protected:
 		LISTBOX_ID,
 	};
 
-	void OnClientAppPaint();
-
-	void OnServerAppPaint();
+	void OnPaint();
 
 	void OnDestroyed();
 
@@ -185,7 +182,6 @@ protected:
 	void HandleTabbing();
 
 private:
-	bool is_server_app_;
 	bool has_no_UI_;
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;

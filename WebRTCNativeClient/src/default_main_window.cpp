@@ -81,7 +81,6 @@ DefaultMainWindow::DefaultMainWindow(
 	int port,
 	bool auto_connect,
 	bool auto_call,
-	bool is_server_app,
 	bool has_no_UI,
 	int width,
 	int height) : 

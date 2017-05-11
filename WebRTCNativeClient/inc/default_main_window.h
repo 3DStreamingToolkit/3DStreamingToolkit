@@ -40,7 +40,6 @@ public:
 		int port,
 		bool auto_connect,
 		bool auto_call,
-		bool is_server_app,
 		bool has_no_UI = false,
 		int width = CW_USEDEFAULT,
 		int height = CW_USEDEFAULT);

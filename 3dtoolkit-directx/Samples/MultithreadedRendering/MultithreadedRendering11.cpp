@@ -28,19 +28,7 @@
 #ifdef TEST_RUNNER
 #include "test_runner.h"
 #else // TEST_RUNNER
-#ifdef SERVER_APP
 #include "server_renderer.h"
-#else
-static std::string ExePath(std::string fileName) {
-	TCHAR buffer[MAX_PATH];
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	char charPath[MAX_PATH];
-	wcstombs(charPath, buffer, wcslen(buffer) + 1);
-
-	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
-	return std::string(charPath).substr(0, pos + 1) + fileName;
-}
-#endif // SERVER_APP
 #include "webrtc.h"
 #endif // TEST_RUNNER
 
@@ -503,15 +491,11 @@ int InitWebRTC(char* server, int port)
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-#ifdef SERVER_APP
 #ifdef NO_UI
-	DefaultMainWindow wnd(server, port, true, true, true, true);
+	DefaultMainWindow wnd(server, port, true, true, true);
 #else // NO_UI
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, true, false, 1280, 720);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
 #endif // NO_UI
-#else // SERVER_APP
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, false, 1280, 720);
-#endif // SERVER_APP
 
 	if (!wnd.Create())
 	{
@@ -522,11 +506,9 @@ int InitWebRTC(char* server, int port)
 	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
-#ifdef SERVER_APP
 #ifdef NO_UI
 	ShowWindow(wnd.handle(), SW_HIDE);
 #endif // NO_UI
-#endif // SERVER_APP
 
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
@@ -538,15 +520,9 @@ int InitWebRTC(char* server, int port)
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 
-#ifdef SERVER_APP
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, true));
-#else // SERVER_APP
-	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, false));
-#endif // SERVER_APP
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;
