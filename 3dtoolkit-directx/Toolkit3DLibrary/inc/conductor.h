@@ -19,6 +19,7 @@
 
 #include "video_helper.h"
 #include "peer_connection_client.h"
+#include "default_data_channel_observer.h"
 #include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
@@ -88,7 +89,7 @@ protected:
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
 	void OnDataChannel(
-		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
+		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override;
 
 	void OnRenegotiationNeeded() override {}
 
@@ -150,6 +151,8 @@ protected:
 		peer_connection_factory_;
 
 	PeerConnectionClient* client_;
+	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
+	std::unique_ptr<DefaultDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;
 	void (*frame_update_func_)();
 	void (*input_update_func_)(const std::string&);

@@ -456,55 +456,42 @@ void FrameUpdate()
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	Json::Reader reader;
-	Json::Value jmessage;
-	if (!reader.parse(message, jmessage))
-	{
-		return;
-	}
+	// Parses the camera transformation data.
+	std::istringstream datastream(message);
+	std::string token;
 
-	if (jmessage.isMember("type") && 
-		!strcmp(jmessage["type"].asCString(), "message") &&
-		jmessage.isMember("camera-transform"))
-	{
-		// Parses the camera transformation data.
-		const char* data = jmessage["camera-transform"].asCString();
-		std::istringstream datastream(data);
-		std::string token;
+	// Eye point.
+	getline(datastream, token, ',');
+	float eyeX = stof(token);
+	getline(datastream, token, ',');
+	float eyeY = stof(token);
+	getline(datastream, token, ',');
+	float eyeZ = stof(token);
 
-		// Eye point.
-		getline(datastream, token, ',');
-		float eyeX = stof(token);
-		getline(datastream, token, ',');
-		float eyeY = stof(token);
-		getline(datastream, token, ',');
-		float eyeZ = stof(token);
+	// Focus point.
+	getline(datastream, token, ',');
+	float focusX = stof(token);
+	getline(datastream, token, ',');
+	float focusY = stof(token);
+	getline(datastream, token, ',');
+	float focusZ = stof(token);
 
-		// Focus point.
-		getline(datastream, token, ',');
-		float focusX = stof(token);
-		getline(datastream, token, ',');
-		float focusY = stof(token);
-		getline(datastream, token, ',');
-		float focusZ = stof(token);
+	// Up vector.
+	getline(datastream, token, ',');
+	float upX = stof(token);
+	getline(datastream, token, ',');
+	float upY = stof(token);
+	getline(datastream, token, ',');
+	float upZ = stof(token);
 
-		// Up vector.
-		getline(datastream, token, ',');
-		float upX = stof(token);
-		getline(datastream, token, ',');
-		float upY = stof(token);
-		getline(datastream, token, ',');
-		float upZ = stof(token);
+	// Initializes the eye position vector.
+	const XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+	const XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+	const XMVECTORF32 up = { upX, upY, upZ, 0.f };
 
-		// Initializes the eye position vector.
-		const XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-		const XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-		const XMVECTORF32 up = { upX, upY, upZ, 0.f };
-
-		// Updates the camera view.
-		g_Camera.SetViewParams(eye, lookAt, up);
-		g_Camera.FrameMove(0);
-	}
+	// Updates the camera view.
+	g_Camera.SetViewParams(eye, lookAt, up);
+	g_Camera.FrameMove(0);
 }
 
 //--------------------------------------------------------------------------------------
