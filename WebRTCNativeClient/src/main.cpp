@@ -42,7 +42,7 @@ int InitWebRTC(char* server, int port)
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, false, 1280, 720);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
 
 	if (!wnd.Create())
 	{
