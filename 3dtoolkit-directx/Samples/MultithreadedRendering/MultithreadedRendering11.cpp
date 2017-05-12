@@ -248,13 +248,13 @@ bool                        g_bWireFrame = false;
 //--------------------------------------------------------------------------------------
 CModelViewerCamera          g_Camera;               // A model viewing camera
 
-#if defined(MOVING_CAMERA) || defined(TEST_RUNNER)
+#if defined(TEST_RUNNER)
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
-#else // MOVING_CAMERA || TEST_RUNNER
+#else // TEST_RUNNER
 static const XMVECTORF32    s_vDefaultEye = { 0.0f, 0.0f, 0.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 0.0f, 1.0f, 0.f };
-#endif // MOVING_CAMERA || TEST_RUNNER
+#endif // TEST_RUNNER
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
 static const FLOAT          s_fFOV = XM_PI / 4.0f;
