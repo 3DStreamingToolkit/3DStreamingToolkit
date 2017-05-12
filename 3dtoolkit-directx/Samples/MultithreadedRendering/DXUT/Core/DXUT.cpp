@@ -2833,11 +2833,7 @@ void WINAPI DXUTRender3DEnvironment()
         dwFlags = GetDXUTState().GetCurrentDeviceSettings()->d3d11.PresentFlags;
 
 	// Show the frame on the primary surface.
-#ifdef NO_UI
 	hr = S_OK;
-#else // NO_UI
-	hr = pSwapChain->Present(GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval, dwFlags );
-#endif // NO_UI
 
     if( DXGI_STATUS_OCCLUDED == hr )
     {
