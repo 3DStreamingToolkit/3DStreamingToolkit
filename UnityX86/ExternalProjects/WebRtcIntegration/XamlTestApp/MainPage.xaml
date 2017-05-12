@@ -1,0 +1,35 @@
+﻿<Page
+    x:Class="XamlTestApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:XamlTestApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Page.Resources>
+        <Style TargetType="TextBlock">
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,4,0,-4">
+        <Border BorderBrush="Black" BorderThickness="2" HorizontalAlignment="Left" Height="300" Margin="10,10,0,0" VerticalAlignment="Top" Width="400">
+            <TextBlock x:Name ="StatusTextBlock" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Status" VerticalAlignment="Top" Height="300" Width="400" Margin="0"/>
+        </Border>
+        <Border BorderBrush="Black" BorderThickness="2" HorizontalAlignment="Left" Height="300" Margin="420,10,0,0" VerticalAlignment="Top" Width="400">
+            <TextBlock x:Name ="MessagesTextBlock" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Messages" VerticalAlignment="Top" Height="300" Width="400" Margin="0"/>
+        </Border>
+        <Border BorderBrush="Black" BorderThickness="2" HorizontalAlignment="Left" Height="300" Margin="830,10,0,0" VerticalAlignment="Top" Width="400">
+            <TextBlock x:Name ="VideoTextBlock" HorizontalAlignment="Left" TextWrapping="Wrap" Text="Video" VerticalAlignment="Top" Height="300" Width="400" Margin="0"/>
+        </Border>
+        <TextBox x:Name="MessageInputText" HorizontalAlignment="Left" Margin="10,315,0,0" TextWrapping="Wrap" Text="Message" VerticalAlignment="Top" Height="40" Width="810"/>
+        <Button x:Name="ConnectServerBtn" Content="Connect Server" HorizontalAlignment="Left" Margin="10,360,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="ConnectServerBtn_Click" />
+        <Button x:Name="ConnectPeerBtn" Content="Connect Peer" HorizontalAlignment="Left" Margin="170,360,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="ConnectPeerBtn_Click" />
+        <Button x:Name="DisconnectPeerBtn" Content="Disconnect Peer" HorizontalAlignment="Left" Margin="330,360,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="DisconnectPeerBtn_Click" />
+        <Button x:Name="DisconnectServerBtn" Content="Disconnect Server" HorizontalAlignment="Left" Margin="490,360,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="DisconnectServerBtn_Click" />
+
+        <Button x:Name="ClearStatusBtn" Content="Clear Status" HorizontalAlignment="Left" Margin="10,410,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="ClearStatusBtn_Click" />
+        <Button x:Name="ClearMessagesBtn" Content="Clear Messages" HorizontalAlignment="Left" Margin="170,410,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="ClearMessagesBtn_Click" />
+        <Button x:Name="ClearVideoBtn" Content="Clear Video" HorizontalAlignment="Left" Margin="330,410,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="ClearVideoBtn_Click" />
+        <Button x:Name="SendMessagesBtn" Content="Send Message" HorizontalAlignment="Left" Margin="830,315,0,0" VerticalAlignment="Top" Width="150" Height="40" Click="SendMessagesBtn_Click" />
+    </Grid>
+</Page>
