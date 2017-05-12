@@ -160,12 +160,13 @@ BOOL WINAPI DXUT_Dynamic_D3DPERF_QueryRepeatFrame( void );
 void WINAPI DXUT_Dynamic_D3DPERF_SetOptions( _In_ DWORD dwOptions );
 DWORD WINAPI DXUT_Dynamic_D3DPERF_GetStatus();
 HRESULT WINAPI DXUT_Dynamic_CreateDXGIFactory1( _In_ REFIID rInterface, _Out_ void** ppOut );
+HRESULT WINAPI DXUT_Dynamic_DXGIGetDebugInterface( _In_ REFIID rInterface, _Out_ void** ppOut );
 
 HRESULT WINAPI DXUT_Dynamic_D3D11CreateDevice( _In_opt_ IDXGIAdapter* pAdapter,
                                                _In_ D3D_DRIVER_TYPE DriverType,
                                                _In_opt_ HMODULE Software,
                                                _In_ UINT32 Flags,
-                                               _In_reads_(FeatureLevels) D3D_FEATURE_LEVEL* pFeatureLevels,
+                                               _In_reads_(FeatureLevels) const D3D_FEATURE_LEVEL* pFeatureLevels,
                                                _In_ UINT FeatureLevels,
                                                _In_ UINT32 SDKVersion,
                                                _Deref_out_ ID3D11Device** ppDevice,

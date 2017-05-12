@@ -213,7 +213,7 @@ void CDXUTTimer::LimitThreadAffinityToCurrentProc()
 _Use_decl_annotations_
 LPCWSTR WINAPI DXUTDXGIFormatToString( DXGI_FORMAT format, bool bWithPrefix )
 {
-    WCHAR* pstr = nullptr;
+    const WCHAR* pstr = nullptr;
     switch( format )
     {
         DXUTDXGIFMTSTR(DXGI_FORMAT_R32G32B32A32_TYPELESS)
@@ -319,9 +319,7 @@ LPCWSTR WINAPI DXUTDXGIFormatToString( DXGI_FORMAT format, bool bWithPrefix )
         DXUTDXGIFMTSTR(DXGI_FORMAT_BC7_UNORM_SRGB)
 
         // DXGI 1.2
-#ifdef DXGI_1_2_FORMATS
         DXUTDXGIFMTSTR(DXGI_FORMAT_B4G4R4A4_UNORM)
-#endif
 
         default:
             pstr = L"Unknown format"; break;
@@ -393,7 +391,7 @@ typedef BOOL        (WINAPI * LPD3DPERF_QUERYREPEATFRAME)(void);
 typedef VOID        (WINAPI * LPD3DPERF_SETOPTIONS)( DWORD dwOptions );
 typedef DWORD       (WINAPI * LPD3DPERF_GETSTATUS)();
 typedef HRESULT     (WINAPI * LPCREATEDXGIFACTORY)(REFIID, void ** );
-typedef HRESULT     (WINAPI * LPD3D11CREATEDEVICE)( IDXGIAdapter*, D3D_DRIVER_TYPE, HMODULE, UINT32, D3D_FEATURE_LEVEL*, UINT, UINT32, ID3D11Device**, D3D_FEATURE_LEVEL*, ID3D11DeviceContext** );
+typedef HRESULT     (WINAPI * LPDXGIGETDEBUGINTERFACE)(REFIID, void ** );
 
 // Module and function pointers
 static HMODULE                              s_hModD3D9 = nullptr;
@@ -405,9 +403,11 @@ static LPD3DPERF_QUERYREPEATFRAME           s_DynamicD3DPERF_QueryRepeatFrame = 
 static LPD3DPERF_SETOPTIONS                 s_DynamicD3DPERF_SetOptions = nullptr;
 static LPD3DPERF_GETSTATUS                  s_DynamicD3DPERF_GetStatus = nullptr;
 static HMODULE                              s_hModDXGI = nullptr;
+static HMODULE                              s_hModDXGIDebug = nullptr;
 static LPCREATEDXGIFACTORY                  s_DynamicCreateDXGIFactory = nullptr;
+static LPDXGIGETDEBUGINTERFACE              s_DynamicDXGIGetDebugInterface = nullptr;
 static HMODULE                              s_hModD3D11 = nullptr;
-static LPD3D11CREATEDEVICE                  s_DynamicD3D11CreateDevice = nullptr;
+static PFN_D3D11_CREATE_DEVICE              s_DynamicD3D11CreateDevice = nullptr;
 
 // Ensure function pointers are initialized
 static bool DXUT_EnsureD3D9APIs()
@@ -418,17 +418,17 @@ static bool DXUT_EnsureD3D9APIs()
         return true;
 
     // This could fail in theory, but not on any modern version of Windows
-    s_hModD3D9 = LoadLibrary( L"d3d9.dll" );
+    s_hModD3D9 = LoadLibraryEx( L"d3d9.dll", nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
     if( s_hModD3D9 )
     {
         // TODO - Use 11.1 perf APIs instead?
-        s_DynamicD3DPERF_BeginEvent = (LPD3DPERF_BEGINEVENT)GetProcAddress( s_hModD3D9, "D3DPERF_BeginEvent" );
-        s_DynamicD3DPERF_EndEvent = (LPD3DPERF_ENDEVENT)GetProcAddress( s_hModD3D9, "D3DPERF_EndEvent" );
-        s_DynamicD3DPERF_SetMarker = (LPD3DPERF_SETMARKER)GetProcAddress( s_hModD3D9, "D3DPERF_SetMarker" );
-        s_DynamicD3DPERF_SetRegion = (LPD3DPERF_SETREGION)GetProcAddress( s_hModD3D9, "D3DPERF_SetRegion" );
-        s_DynamicD3DPERF_QueryRepeatFrame = (LPD3DPERF_QUERYREPEATFRAME)GetProcAddress( s_hModD3D9, "D3DPERF_QueryRepeatFrame" );
-        s_DynamicD3DPERF_SetOptions = (LPD3DPERF_SETOPTIONS)GetProcAddress( s_hModD3D9, "D3DPERF_SetOptions" );
-        s_DynamicD3DPERF_GetStatus = (LPD3DPERF_GETSTATUS)GetProcAddress( s_hModD3D9, "D3DPERF_GetStatus" );
+        s_DynamicD3DPERF_BeginEvent = reinterpret_cast<LPD3DPERF_BEGINEVENT>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_BeginEvent" ) ) );
+        s_DynamicD3DPERF_EndEvent = reinterpret_cast<LPD3DPERF_ENDEVENT>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_EndEvent" ) ) );
+        s_DynamicD3DPERF_SetMarker = reinterpret_cast<LPD3DPERF_SETMARKER>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_SetMarker" ) ) );
+        s_DynamicD3DPERF_SetRegion = reinterpret_cast<LPD3DPERF_SETREGION>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_SetRegion" ) ) );
+        s_DynamicD3DPERF_QueryRepeatFrame = reinterpret_cast<LPD3DPERF_QUERYREPEATFRAME>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_QueryRepeatFrame" ) ) );
+        s_DynamicD3DPERF_SetOptions = reinterpret_cast<LPD3DPERF_SETOPTIONS>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_SetOptions" ) ) );
+        s_DynamicD3DPERF_GetStatus = reinterpret_cast<LPD3DPERF_GETSTATUS>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D9, "D3DPERF_GetStatus" ) ) );
     }
 
     return s_hModD3D9 != nullptr;
@@ -442,18 +442,27 @@ bool DXUT_EnsureD3D11APIs()
         return true;
 
     // This may fail if Direct3D 11 isn't installed
-    s_hModD3D11 = LoadLibrary( L"d3d11.dll" );
+    s_hModD3D11 = LoadLibraryEx( L"d3d11.dll", nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
     if( s_hModD3D11 )
     {
-        s_DynamicD3D11CreateDevice = ( LPD3D11CREATEDEVICE )GetProcAddress( s_hModD3D11, "D3D11CreateDevice" );
+        s_DynamicD3D11CreateDevice = reinterpret_cast<PFN_D3D11_CREATE_DEVICE>( reinterpret_cast<void*>( GetProcAddress( s_hModD3D11, "D3D11CreateDevice" ) ) );
     }
 
     if( !s_DynamicCreateDXGIFactory )
     {
-        s_hModDXGI = LoadLibrary( L"dxgi.dll" );
+        s_hModDXGI = LoadLibraryEx( L"dxgi.dll", nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
         if( s_hModDXGI )
         {
-            s_DynamicCreateDXGIFactory = ( LPCREATEDXGIFACTORY )GetProcAddress( s_hModDXGI, "CreateDXGIFactory1" );
+            s_DynamicCreateDXGIFactory = reinterpret_cast<LPCREATEDXGIFACTORY>( reinterpret_cast<void*>( GetProcAddress( s_hModDXGI, "CreateDXGIFactory1" ) ) );
+        }
+
+        if ( !s_DynamicDXGIGetDebugInterface )
+        {
+            s_hModDXGIDebug = LoadLibraryEx( L"dxgidebug.dll", nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
+            if ( s_hModDXGIDebug )
+            {
+                s_DynamicDXGIGetDebugInterface = reinterpret_cast<LPDXGIGETDEBUGINTERFACE>( reinterpret_cast<void*>( GetProcAddress( s_hModDXGIDebug, "DXGIGetDebugInterface" ) ) );
+            }
         }
 
         return ( s_hModDXGI ) && ( s_hModD3D11 );
@@ -522,11 +531,20 @@ HRESULT WINAPI DXUT_Dynamic_CreateDXGIFactory1( REFIID rInterface, void** ppOut 
 }
 
 _Use_decl_annotations_
+HRESULT WINAPI DXUT_Dynamic_DXGIGetDebugInterface( REFIID rInterface, void** ppOut )
+{
+    if( DXUT_EnsureD3D11APIs() && s_DynamicDXGIGetDebugInterface )
+        return s_DynamicDXGIGetDebugInterface( rInterface, ppOut );
+    else
+        return E_NOTIMPL;
+}
+
+_Use_decl_annotations_
 HRESULT WINAPI DXUT_Dynamic_D3D11CreateDevice( IDXGIAdapter* pAdapter,
                                                D3D_DRIVER_TYPE DriverType,
                                                HMODULE Software,
                                                UINT32 Flags,
-                                               D3D_FEATURE_LEVEL* pFeatureLevels,
+                                               const D3D_FEATURE_LEVEL* pFeatureLevels,
                                                UINT FeatureLevels,
                                                UINT32 SDKVersion,
                                                ID3D11Device** ppDevice,
@@ -787,7 +805,7 @@ BOOL WINAPI DXUTGetMonitorInfo( HMONITOR hMonitor, LPMONITORINFO lpMonitorInfo )
         HMODULE hUser32 = GetModuleHandle( L"USER32" );
         if( hUser32 )
         {
-            s_pFnGetMonitorInfo = ( LPGETMONITORINFO )GetProcAddress( hUser32, "GetMonitorInfoW" );
+            s_pFnGetMonitorInfo = reinterpret_cast<LPGETMONITORINFO>( reinterpret_cast<void*>( GetProcAddress( hUser32, "GetMonitorInfoW" ) ) );
         }
     }
 
@@ -819,8 +837,8 @@ HMONITOR WINAPI DXUTMonitorFromWindow( HWND hWnd, DWORD dwFlags )
     {
         s_bInited = true;
         HMODULE hUser32 = GetModuleHandle( L"USER32" );
-        if( hUser32 ) s_pFnGetMonitorFromWindow = ( LPMONITORFROMWINDOW )GetProcAddress( hUser32,
-                                                                                         "MonitorFromWindow" );
+        if( hUser32 ) s_pFnGetMonitorFromWindow = reinterpret_cast<LPMONITORFROMWINDOW>( reinterpret_cast<void*>( GetProcAddress( hUser32,
+                                                                                         "MonitorFromWindow" ) ) );
     }
 
     if( s_pFnGetMonitorFromWindow )
@@ -839,7 +857,7 @@ HMONITOR WINAPI DXUTMonitorFromRect( LPCRECT lprcScreenCoords, DWORD dwFlags )
     {
         s_bInited = true;
         HMODULE hUser32 = GetModuleHandle( L"USER32" );
-        if( hUser32 ) s_pFnGetMonitorFromRect = ( LPMONITORFROMRECT )GetProcAddress( hUser32, "MonitorFromRect" );
+        if( hUser32 ) s_pFnGetMonitorFromRect = reinterpret_cast<LPMONITORFROMRECT>( reinterpret_cast<void*>( GetProcAddress( hUser32, "MonitorFromRect" ) ) );
     }
 
     if( s_pFnGetMonitorFromRect )
@@ -856,17 +874,17 @@ HMONITOR WINAPI DXUTMonitorFromRect( LPCRECT lprcScreenCoords, DWORD dwFlags )
 _Use_decl_annotations_
 void WINAPI DXUTGetDesktopResolution( UINT AdapterOrdinal, UINT* pWidth, UINT* pHeight )
 {
-    DXUTDeviceSettings DeviceSettings = DXUTGetDeviceSettings();
+    auto DeviceSettings = DXUTGetDeviceSettings();
 
     WCHAR strDeviceName[256] = {0};
     DEVMODE devMode;
     ZeroMemory( &devMode, sizeof( DEVMODE ) );
     devMode.dmSize = sizeof( DEVMODE );
 
-    CD3D11Enumeration* pd3dEnum = DXUTGetD3D11Enumeration();
+    auto pd3dEnum = DXUTGetD3D11Enumeration();
     assert( pd3dEnum );
     _Analysis_assume_( pd3dEnum );
-    CD3D11EnumOutputInfo* pOutputInfo = pd3dEnum->GetOutputInfo( AdapterOrdinal, DeviceSettings.d3d11.Output );
+    auto pOutputInfo = pd3dEnum->GetOutputInfo( AdapterOrdinal, DeviceSettings.d3d11.Output );
     if( pOutputInfo )
     {
         wcscpy_s( strDeviceName, 256, pOutputInfo->Desc.DeviceName );
@@ -927,11 +945,11 @@ HRESULT DXUTGetGamepadState( DWORD dwPort, DXUT_GAMEPAD* pGamePad, bool bThumbst
     static LPXINPUTGETCAPABILITIES s_pXInputGetCapabilities = nullptr;
     if( !s_pXInputGetState || !s_pXInputGetCapabilities )
     {
-        HINSTANCE hInst = LoadLibrary( XINPUT_DLL );
+        HINSTANCE hInst = LoadLibraryEx( XINPUT_DLL, nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
         if( hInst )
         {
-            s_pXInputGetState = ( LPXINPUTGETSTATE )GetProcAddress( hInst, "XInputGetState" );
-            s_pXInputGetCapabilities = ( LPXINPUTGETCAPABILITIES )GetProcAddress( hInst, "XInputGetCapabilities" );
+            s_pXInputGetState = reinterpret_cast<LPXINPUTGETSTATE>( reinterpret_cast<void*>( GetProcAddress( hInst, "XInputGetState" ) ) );
+            s_pXInputGetCapabilities = reinterpret_cast<LPXINPUTGETCAPABILITIES>( reinterpret_cast<void*>( GetProcAddress( hInst, "XInputGetCapabilities" ) ) );
         }
     }
     if( !s_pXInputGetState )
@@ -1034,9 +1052,9 @@ void DXUTEnableXInput( _In_ bool bEnable )
     static LPXINPUTENABLE s_pXInputEnable = nullptr;
     if( !s_pXInputEnable )
     {
-        HINSTANCE hInst = LoadLibrary( XINPUT_DLL );
+        HINSTANCE hInst = LoadLibraryEx( XINPUT_DLL, nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
         if( hInst )
-            s_pXInputEnable = ( LPXINPUTENABLE )GetProcAddress( hInst, "XInputEnable" );
+            s_pXInputEnable = reinterpret_cast<LPXINPUTENABLE>( reinterpret_cast<void*>( GetProcAddress( hInst, "XInputEnable" ) ) );
     }
 
     if( s_pXInputEnable )
@@ -1053,9 +1071,9 @@ HRESULT DXUTStopRumbleOnAllControllers()
     static LPXINPUTSETSTATE s_pXInputSetState = nullptr;
     if( !s_pXInputSetState )
     {
-        HINSTANCE hInst = LoadLibrary( XINPUT_DLL );
+        HINSTANCE hInst = LoadLibraryEx( XINPUT_DLL, nullptr, 0x00000800 /* LOAD_LIBRARY_SEARCH_SYSTEM32 */ );
         if( hInst )
-            s_pXInputSetState = ( LPXINPUTSETSTATE )GetProcAddress( hInst, "XInputSetState" );
+            s_pXInputSetState = reinterpret_cast<LPXINPUTSETSTATE>( reinterpret_cast<void*>( GetProcAddress( hInst, "XInputSetState" ) ) );
     }
     if( !s_pXInputSetState )
         return E_FAIL;
@@ -1240,7 +1258,7 @@ HRESULT DXUTSnapD3D11Screenshot( _In_z_ LPCWSTR szFileName, _In_ bool usedds )
     if (hr != S_OK)
         return hr;
 
-    ID3D11DeviceContext *dc  = DXUTGetD3D11DeviceContext();
+    auto dc  = DXUTGetD3D11DeviceContext();
     if (!dc) {
         SAFE_RELEASE(pBackBuffer);
         return E_FAIL;
