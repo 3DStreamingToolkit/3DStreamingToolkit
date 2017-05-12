@@ -1,3 +1,20 @@
+//*********************************************************
+//
+// Copyright (c) Microsoft. All rights reserved.
+// This code is licensed under the MIT License (MIT).
+// THIS CODE IS PROVIDED *AS IS* WITHOUT WARRANTY OF
+// ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING ANY
+// IMPLIED WARRANTIES OF FITNESS FOR A PARTICULAR
+// PURPOSE, MERCHANTABILITY, OR NON-INFRINGEMENT.
+//
+//*********************************************************
+
+// A constant buffer that stores the model transform.
+cbuffer ModelConstantBuffer : register(b0)
+{
+	float4x4 model;
+};
+
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
@@ -32,10 +49,13 @@ VertexShaderOutput main(VertexShaderInput input)
 	// instance would be drawn, one for left and one for right.
 	int idx = input.instId % 2;
 
+	// Transform the vertex position into world space.
+	pos = mul(pos, model);
+
 	// Correct for perspective and project the vertex position onto the screen.
 	pos = mul(pos, viewProjection[idx]);
 
-	output.position = input.position;
+	output.position = (min16float4)pos;
 	output.textureUV = input.textureUV;
 
 	// Set the instance ID. The pass-through geometry shader will set the

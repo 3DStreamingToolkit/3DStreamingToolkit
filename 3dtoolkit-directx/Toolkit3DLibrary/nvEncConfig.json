@@ -1,6 +1,6 @@
 {
   "useSoftwareEncoding": false,
-  "serverFrameCaptureFPS": 60,
+  "serverFrameCaptureFPS": 30,
   "NvencodeSettings": {
     "bitrate": 3000000,
     "minBitrate": 3000000,
