@@ -499,14 +499,4 @@
       <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\..\packages\rapidjson.1.0.2\build\native\rapidjson.targets" Condition="Exists('..\..\packages\rapidjson.1.0.2\build\native\rapidjson.targets')" />
-  </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\packages\rapidjson.1.0.2\build\native\rapidjson.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\rapidjson.1.0.2\build\native\rapidjson.targets'))" />
-  </Target>
-</Project>
+  <ImportGroup Label="ExtensionTargets" />

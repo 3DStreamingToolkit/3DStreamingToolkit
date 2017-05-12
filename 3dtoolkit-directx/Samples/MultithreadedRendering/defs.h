@@ -10,5 +10,7 @@
 #endif // STEREO_OUTPUT_MODE
 #define FRAME_BUFFER_HEIGHT	720
 
-//#define MOVING_CAMERA
+#ifdef TEST_RUNNER
 #define CAMERA_SPEED 5
+#endif // TEST_RUNNER
+
