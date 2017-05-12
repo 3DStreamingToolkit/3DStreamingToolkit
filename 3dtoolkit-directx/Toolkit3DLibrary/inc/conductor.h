@@ -19,6 +19,7 @@
 
 #include "video_helper.h"
 #include "peer_connection_client.h"
+#include "default_data_channel_observer.h"
 #include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
@@ -50,7 +51,7 @@ public:
 
 	Conductor(PeerConnectionClient* client, MainWindow* main_window,
 		void (*frame_update_func)(), void (*input_update_func)(const std::string&), 
-		Toolkit3DLibrary::VideoHelper* video_helper, bool is_server_app);
+		Toolkit3DLibrary::VideoHelper* video_helper);
 
 	bool connection_active() const;
 
@@ -88,7 +89,7 @@ protected:
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
 	void OnDataChannel(
-		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
+		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override;
 
 	void OnRenegotiationNeeded() override {}
 
@@ -150,11 +151,12 @@ protected:
 		peer_connection_factory_;
 
 	PeerConnectionClient* client_;
+	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
+	std::unique_ptr<DefaultDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;
 	void (*frame_update_func_)();
 	void (*input_update_func_)(const std::string&);
 	Toolkit3DLibrary::VideoHelper* video_helper_;
-	bool is_server_app_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
 		active_streams_;

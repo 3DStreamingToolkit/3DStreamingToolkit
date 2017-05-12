@@ -5,7 +5,6 @@
 //WebRTC conversion from 'uint64_t' to 'uint32_t', possible loss of data
 #pragma warning(disable : 4244)
 
-#include "rapidjson/document.h"
 #include "conductor.h"
 #include "default_main_window.h"
 #include "flagdefs.h"
@@ -30,5 +29,4 @@
 #pragma comment(lib, "metrics_default.lib")
 #pragma comment(lib, "protobuf_full.lib")
 
-using namespace rapidjson;
 

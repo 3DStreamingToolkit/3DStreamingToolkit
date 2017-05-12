@@ -17,17 +17,9 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="TestRunner|Win32">
-      <Configuration>TestRunner</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="TestRunner|x64">
-      <Configuration>TestRunner</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3584A64E-FEEC-402B-9D3C-21A6930FF32B}</ProjectGuid>
+    <ProjectGuid>{DB35DAB6-614D-4097-B739-EF71326EFB05}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>WebRTCNativeClient</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
@@ -40,13 +32,6 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
@@ -66,25 +51,14 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -93,125 +67,108 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir)</IncludePath>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Client\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Client\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(ProjectDir);</IncludePath>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Client\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Client\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\TestRunner\;$(LibraryPath)</LibraryPath>
+    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Client\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Client\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">
-    <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\</IntDir>
-    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\TestRunner\;$(LibraryPath)</LibraryPath>
+    <OutDir>$(ProjectDir)Build\$(Platform)\$(Configuration)\Client\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Client\</IntDir>
+    <LibraryPath>$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;inc\json;inc\libyuv;inc\directxtk;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;usp10.lib;imm32.lib;version.lib;winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_proto.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;call.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>libs\Win32\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <FxCompile>
+      <ObjectFileOutput>$(OutDir)%(Filename).cso</ObjectFileOutput>
+    </FxCompile>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;inc\json;inc\libyuv;inc\directxtk;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>libs\x64\Debug</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(SolutionDir)..\WebRTCLibs\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_DEBUG;NDEBUG;_WINDOWS;_USRDLL;WIN32;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;_USRDLL;TOOLKIT3DLIBRARY_EXPORTS;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;inc\json;inc\libyuv;inc\directxtk;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <UndefinePreprocessorDefinitions>_DEBUG;</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <AdditionalDependencies>DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>libs\Win32\Release</AdditionalLibraryDirectories>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;NDEBUG;_USRDLL;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -220,102 +177,60 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir);inc;inc\json;inc\libyuv;inc\directxtk;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
+      <AdditionalDependencies>DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>libs\x64\Release</AdditionalLibraryDirectories>
     </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\3dtoolkit-directx\NvEncoder\inc;..\3dtoolkit-directx\Toolkit3DLibrary\inc;..\3dtoolkit-directx\Toolkit3DLibrary;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winsdk_samples.lib;webrtc_vp9.lib;webrtc_vp8.lib;webrtc_opus.lib;webrtc_i420.lib;webrtc_h264.lib;webrtc_common.lib;webrtc.lib;voice_engine.lib;video_quality_analysis.lib;video_processing_sse2.lib;video_processing.lib;video_coding_utility.lib;video_coding.lib;video_capture_module.lib;video_capture_internal_impl.lib;video_capture.lib;video.lib;utility.lib;usrsctp.lib;system_wrappers.lib;simd_asm.lib;simd.lib;rtp_rtcp.lib;rtc_task_queue.lib;rtc_stats.lib;rtc_pc.lib;rtc_p2p.lib;rtc_numerics.lib;rtc_media_base.lib;rtc_media.lib;rtc_event_log_source.lib;rtc_event_log_proto.lib;rtc_event_log_parser.lib;rtc_event_log_impl.lib;rtc_base_approved.lib;rtc_base.lib;rent_a_codec.lib;remote_bitrate_estimator.lib;reference_less_video_analysis_lib.lib;red.lib;protoc_lib.lib;protobuf_lite.lib;protobuf_full.lib;primitives.lib;pcm16b.lib;pacing.lib;ortc.lib;opus.lib;neteq_unittest_proto.lib;neteq.lib;metrics_default.lib;media_file.lib;libyuv_internal.lib;libvpx_yasm.lib;libvpx.lib;libstunprober.lib;libsrtp.lib;libjpeg.lib;libjingle_peerconnection_api.lib;libjingle_peerconnection.lib;legacy_encoded_audio_frame.lib;isac_fix.lib;isac_common.lib;isac_c.lib;isac.lib;ilbc.lib;gtest.lib;gmock.lib;g722.lib;g711.lib;frame_editing_lib.lib;file_recorder.lib;file_player.lib;field_trial_default.lib;expat.lib;event_log_visualizer_utils.lib;dl.lib;desktop_capture_differ_sse2.lib;desktop_capture.lib;congestion_controller.lib;common_video.lib;common_audio_sse2.lib;common_audio.lib;command_line_parser.lib;cng.lib;chart_proto.lib;call.lib;bwe_simulator_lib.lib;builtin_audio_decoder_factory_internal.lib;builtin_audio_decoder_factory.lib;boringssl_asm.lib;boringssl.lib;bitrate_controller.lib;audioproc_unittest_proto.lib;audioproc_protobuf_utils.lib;audioproc_debug_proto.lib;audio_processing_sse2.lib;audio_processing.lib;audio_network_adaptor.lib;audio_mixer_impl.lib;audio_level.lib;audio_frame_operations.lib;audio_frame_manipulator.lib;audio_format_conversion.lib;audio_encoder_interface.lib;audio_device.lib;audio_conference_mixer.lib;audio_coding.lib;audio_coder.lib;audio.lib;ana_debug_dump_proto.lib;ana_config_proto.lib;yasm_utils.lib;winmm.lib;dmoguids.lib;wmcodecdspuuid.lib;amstrmid.lib;msdmo.lib;crypt32.lib;iphlpapi.lib;secur32.lib;strmiids.lib;d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="client\conductor.h" />
-    <ClInclude Include="client\defaults.h" />
-    <ClInclude Include="client\flagdefs.h" />
-    <ClInclude Include="client\main_wnd.h" />
-    <ClInclude Include="client\peer_connection_client.h" />
-    <ClInclude Include="directx\CubeRenderer.h" />
-    <ClInclude Include="directx\DeviceResources.h" />
-    <ClInclude Include="directx\DirectXHelper.h" />
-    <ClInclude Include="fakevideocapturer.h" />
-    <ClInclude Include="Resource.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
-    <ClInclude Include="WebRTCNativeClient.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="client\conductor.cc" />
-    <ClCompile Include="client\defaults.cc" />
-    <ClCompile Include="client\main.cc" />
-    <ClCompile Include="client\main_wnd.cc" />
-    <ClCompile Include="client\peer_connection_client.cc" />
-    <ClCompile Include="directx\CubeRenderer.cpp" />
-    <ClCompile Include="directx\DeviceResources.cpp" />
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\conductor.cpp" />
+    <ClCompile Include="src\custom_video_capturer.cpp" />
+    <ClCompile Include="src\defaults.cpp" />
+    <ClCompile Include="src\default_main_window.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\peer_connection_client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="WebRTCNativeClient.rc" />
+    <ClInclude Include="inc\arc_ball.h" />
+    <ClInclude Include="inc\conductor.h" />
+    <ClInclude Include="inc\custom_video_capturer.h" />
+    <ClInclude Include="inc\defaults.h" />
+    <ClInclude Include="inc\default_main_window.h" />
+    <ClInclude Include="inc\defs.h" />
+    <ClInclude Include="inc\flagdefs.h" />
+    <ClInclude Include="inc\macros.h" />
+    <ClInclude Include="inc\main_window.h" />
+    <ClInclude Include="inc\peer_connection_client.h" />
+    <ClInclude Include="inc\webrtc.h" />
+    <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico" />
-    <Image Include="WebRTCNativeClient.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="directx\PixelShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="directx\VertexShader.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='TestRunner|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='TestRunner|x64'">Vertex</ShaderType>
-    </FxCompile>
+    <None Include="webrtcConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
 </Project>

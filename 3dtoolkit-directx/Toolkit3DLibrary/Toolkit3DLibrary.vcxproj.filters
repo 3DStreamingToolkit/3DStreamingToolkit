@@ -28,6 +28,9 @@
     <ClCompile Include="src\video_helper.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\default_data_channel_observer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -62,6 +65,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\video_helper.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\default_data_channel_observer.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

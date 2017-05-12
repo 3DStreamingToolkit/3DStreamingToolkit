@@ -28,19 +28,7 @@
 #ifdef TEST_RUNNER
 #include "test_runner.h"
 #else // TEST_RUNNER
-#ifdef SERVER_APP
 #include "server_renderer.h"
-#else
-static std::string ExePath(std::string fileName) {
-	TCHAR buffer[MAX_PATH];
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	char charPath[MAX_PATH];
-	wcstombs(charPath, buffer, wcslen(buffer) + 1);
-
-	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
-	return std::string(charPath).substr(0, pos + 1) + fileName;
-}
-#endif // SERVER_APP
 #include "webrtc.h"
 #endif // TEST_RUNNER
 
@@ -260,8 +248,13 @@ bool                        g_bWireFrame = false;
 //--------------------------------------------------------------------------------------
 CModelViewerCamera          g_Camera;               // A model viewing camera
 
+#if defined(TEST_RUNNER)
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
+#else // TEST_RUNNER
+static const XMVECTORF32    s_vDefaultEye = { 0.0f, 0.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 0.0f, 1.0f, 0.f };
+#endif // TEST_RUNNER
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
 static const FLOAT          s_fFOV = XM_PI / 4.0f;
@@ -451,43 +444,42 @@ void FrameUpdate()
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	Document jmessage;
-	jmessage.Parse(message.c_str());
-	if (jmessage.HasMember("type") && 
-		!strcmp(jmessage["type"].GetString(), "message") &&
-		jmessage.HasMember("camera-transform"))
-	{
-		// Parses the camera transformation data.
-		const char* data = jmessage["camera-transform"].GetString();
-		std::istringstream datastream(data);
-		std::string token;
-		getline(datastream, token, ',');
-		float x = stof(token);
-		getline(datastream, token, ',');
-		float y = stof(token);
-		getline(datastream, token, ',');
-		float z = stof(token);
-		getline(datastream, token, ',');
-		float pitch = XMConvertToRadians(stof(token));
-		getline(datastream, token, ',');
-		float yaw = XMConvertToRadians(stof(token));
-		getline(datastream, token, ',');
-		float roll = XMConvertToRadians(stof(token));
+	// Parses the camera transformation data.
+	std::istringstream datastream(message);
+	std::string token;
 
-		// Initializes the eye position vector.
-		const XMVECTORF32 eye = { x, y, z, 0.f };
+	// Eye point.
+	getline(datastream, token, ',');
+	float eyeX = stof(token);
+	getline(datastream, token, ',');
+	float eyeY = stof(token);
+	getline(datastream, token, ',');
+	float eyeZ = stof(token);
 
-		// Initializes the camera rotation matrix.
-		DirectX::XMMATRIX cameraRotation = XMMatrixRotationRollPitchYaw(
-			pitch, yaw, roll);
+	// Focus point.
+	getline(datastream, token, ',');
+	float focusX = stof(token);
+	getline(datastream, token, ',');
+	float focusY = stof(token);
+	getline(datastream, token, ',');
+	float focusZ = stof(token);
 
-		// Updates the camera view.
-		g_Camera.SetViewParams(
-			DirectX::XMVector3Transform(eye, cameraRotation),
-			g_Camera.GetLookAtPt());
+	// Up vector.
+	getline(datastream, token, ',');
+	float upX = stof(token);
+	getline(datastream, token, ',');
+	float upY = stof(token);
+	getline(datastream, token, ',');
+	float upZ = stof(token);
 
-		g_Camera.FrameMove(0);
-	}
+	// Initializes the eye position vector.
+	const XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+	const XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+	const XMVECTORF32 up = { upX, upY, upZ, 0.f };
+
+	// Updates the camera view.
+	g_Camera.SetViewParams(eye, lookAt, up);
+	g_Camera.FrameMove(0);
 }
 
 //--------------------------------------------------------------------------------------
@@ -499,15 +491,11 @@ int InitWebRTC(char* server, int port)
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-#ifdef SERVER_APP
 #ifdef NO_UI
-	DefaultMainWindow wnd(server, port, true, true, true, true);
+	DefaultMainWindow wnd(server, port, true, true, true);
 #else // NO_UI
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, true, false, 1280, 720);
+	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
 #endif // NO_UI
-#else // SERVER_APP
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, false, 1280, 720);
-#endif // SERVER_APP
 
 	if (!wnd.Create())
 	{
@@ -518,11 +506,9 @@ int InitWebRTC(char* server, int port)
 	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
-#ifdef SERVER_APP
 #ifdef NO_UI
 	ShowWindow(wnd.handle(), SW_HIDE);
 #endif // NO_UI
-#endif // SERVER_APP
 
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
@@ -534,15 +520,9 @@ int InitWebRTC(char* server, int port)
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 
-#ifdef SERVER_APP
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, true));
-#else // SERVER_APP
-	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper, false));
-#endif // SERVER_APP
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;
@@ -556,8 +536,9 @@ int InitWebRTC(char* server, int port)
 				::TranslateMessage(&msg);
 				::DispatchMessage(&msg);
 			}
-			catch (const std::exception& e) { // reference to the base of a polymorphic object
-				std::cout << e.what(); // information from length_error printed
+			catch (int errorCode) 
+			{
+				printf("Error: %d", errorCode);
 			}
 		}
 	}
@@ -612,7 +593,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     
-#ifdef TEST_RUNNER
+#ifndef REMOTE_RENDERING
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 #ifdef STEREO_OUTPUT_MODE
@@ -621,13 +602,15 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
 #endif // STEREO_OUTPUT_MODE
 
+#ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
+#endif// TEST_RUNNER
 
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
-#else // TEST_RUNNER
+#else // REMOTE_RENDERING
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);

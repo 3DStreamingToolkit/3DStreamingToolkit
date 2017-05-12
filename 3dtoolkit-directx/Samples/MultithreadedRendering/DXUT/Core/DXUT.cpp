@@ -2833,12 +2833,11 @@ void WINAPI DXUTRender3DEnvironment()
         dwFlags = GetDXUTState().GetCurrentDeviceSettings()->d3d11.PresentFlags;
 
 #ifdef REMOTE_RENDERING
-    // Show the frame on the primary surface.
-    hr = S_OK;
-#else
+	hr = S_OK;
+#else // REMOTE_RENDERING
 	// Show the frame on the primary surface.
-	hr = pSwapChain->Present(GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval, dwFlags );
-#endif
+	hr = pSwapChain->Present(GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval, dwFlags);
+#endif // REMOTE_RENDERING
 
     if( DXGI_STATUS_OCCLUDED == hr )
     {

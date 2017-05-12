@@ -24,9 +24,11 @@ namespace WebRTCDirectXClientComponent
 
 		void UpdateFrame(const uint8_t* data);
 
+#ifdef HOLOLENS
 		// Property accessors.
 		void SetPosition(Windows::Foundation::Numerics::float3 pos)		{ m_position = pos; }
 		Windows::Foundation::Numerics::float3 GetPosition()				{ return m_position; }
+#endif // HOLOLENS
 
 	private:
 		std::shared_ptr<DX::DeviceResources>		m_deviceResources;
@@ -45,7 +47,14 @@ namespace WebRTCDirectXClientComponent
 		ComPtr<ID3D11ShaderResourceView>			m_textureView;
 		ComPtr<ID3D11SamplerState>					m_sampler;
 
+#ifdef HOLOLENS
+		ComPtr<ID3D11Buffer>						m_modelConstantBuffer;
+
+		// System resources for geometry.
+		ModelConstantBuffer                         m_modelConstantBufferData;
+
 		// Variables used with the rendering loop.
 		Windows::Foundation::Numerics::float3		m_position;
+#endif // HOLOLENS
 	};
 }
