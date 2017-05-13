@@ -26,8 +26,9 @@ namespace WebRtcWrapper
     public class WebRtcControl
     {
         public event Action OnInitialized;
-        public event Action<int, string> OnPeerMessageDataReceived;
+        public event Action<int, string> OnPeerMessageDataReceived;        
         public event Action<string> OnStatusMessageUpdate;
+        public event Action<int, IDataChannelMessage> OnPeerDataChannelReceived;
 
         public RawVideoSource rawVideo;
         public EncodedVideoSource encodedVideoSource;
@@ -163,6 +164,7 @@ namespace WebRtcWrapper
                 RunOnUiThread(() =>
                 {
                     SelectedPeer = Peers.First(x => x.Id == id);
+                    OnStatusMessageUpdate?.Invoke(string.Format("Connected Peer: {0}-{1}", SelectedPeer.Id, SelectedPeer.Name));
                 });
             };
 
@@ -206,6 +208,13 @@ namespace WebRtcWrapper
             {
                 OnPeerMessageDataReceived?.Invoke(peerId, message);
             };
+
+            // DATA Channel Setup
+            Conductor.Instance.OnPeerMessageDataReceived += (i, s) =>
+            {
+                
+            };
+            
 
             Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
 
@@ -316,6 +325,12 @@ namespace WebRtcWrapper
         #endregion
 
         #region COMMANDS
+
+        public void SeedPeerDataChannelMessage(string msg)
+        {
+            Conductor.Instance.SeedPeerDataChannelMessage(msg);
+        }
+
         public void SendPeerMessageData(string msg)
         {
             new Task(async () =>
