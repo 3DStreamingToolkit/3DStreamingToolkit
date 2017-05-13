@@ -504,7 +504,10 @@ void Conductor::ConnectToPeer(int peer_id)
 	if (InitializePeerConnection())
 	{
 		peer_id_ = peer_id;
-		data_channel_ = peer_connection_->CreateDataChannel(kInputDataChannelName, nullptr);
+		webrtc::DataChannelInit config;
+		config.ordered = false;
+		config.maxRetransmits = 0;
+		data_channel_ = peer_connection_->CreateDataChannel(kInputDataChannelName, &config);
 		data_channel_observer_.reset(
 			new DefaultDataChannelObserver(data_channel_, input_update_func_));
 
