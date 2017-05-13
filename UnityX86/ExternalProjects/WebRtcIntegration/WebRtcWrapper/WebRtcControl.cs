@@ -154,7 +154,15 @@ namespace WebRtcWrapper
             {
                 RunOnUiThread(() =>
                 {
-                    // TODO: Handle All Peer Messages
+                    // TODO: Handles All Peer Messages (Signal Channel)
+                });
+            };
+
+            Conductor.Instance.Signaller.OnPeerConnected += (id, name) =>
+            {
+                RunOnUiThread(() =>
+                {
+                    SelectedPeer = Peers.First(x => x.Id == id);
                 });
             };
 
@@ -162,6 +170,7 @@ namespace WebRtcWrapper
             // Implemented in Unity Consumer due to Event Handling Issue
             // Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream does not propagate
 
+            
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
             Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
