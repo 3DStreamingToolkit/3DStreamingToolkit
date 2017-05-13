@@ -262,7 +262,7 @@ public:
         m_state.m_HandleEscape = true;
         m_state.m_HandleAltEnter = true;
         m_state.m_HandlePause = true;
-        m_state.m_IsInGammaCorrectMode = true;
+        m_state.m_IsInGammaCorrectMode = false;
         m_state.m_FPS = 1.0f;
         m_state.m_MessageWhenD3D11NotAvailable = true;
     }
