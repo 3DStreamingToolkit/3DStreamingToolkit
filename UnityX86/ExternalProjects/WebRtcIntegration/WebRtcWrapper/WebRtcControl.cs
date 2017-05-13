@@ -350,7 +350,9 @@ namespace WebRtcWrapper
             new Task(() =>
             {
                 IsConnecting = true;
-                Conductor.Instance.StartLogin(host, port, peerName);
+                Ip = new ValidableNonEmptyString(host);
+                Port = new ValidableIntegerString(port);
+                ConnectToServer(peerName);                
             }).Start();
         }
 
