@@ -14,6 +14,7 @@
 //#define NO_SHADOW_MAP
 
 #define SHADOW_DEPTH_BIAS 0.0005f
+#define APPLY_GAMMA_CORRECTION
 
 //--------------------------------------------------------------------------------------
 // Globals
@@ -196,5 +197,17 @@ float4 PSMain( PS_INPUT Input ) : SV_TARGET
 	}
 #endif  // #ifndef NO_DYNAMIC_LIGHTING
 
+#ifdef APPLY_GAMMA_CORRECTION
+	float4 color = vDiffuse * g_vTintColor * g_vObjectColor * vTotalLightingColor;
+
+	// Gamma correction
+	float exponent = 1 / 2.2f;
+	color.x = pow(color.x, exponent);
+	color.y = pow(color.y, exponent);
+	color.z = pow(color.z, exponent);
+
+	return color;
+#else // APPLY_GAMMA_CORRECTION
 	return vDiffuse * g_vTintColor * g_vObjectColor * vTotalLightingColor;
+#endif // APPLY_GAMMA_CORRECTION
 }
