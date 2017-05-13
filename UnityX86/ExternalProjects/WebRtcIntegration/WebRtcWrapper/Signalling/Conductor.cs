@@ -189,7 +189,7 @@ namespace PeerConnectionClient.Signalling
 
         // Specialized Message Handling Messages
         public event Action<int, string> OnPeerMessageDataReceived;
-        public event Action<int, IDataChannelMessage> OnPeerDataChannelReceived;
+        public event Action<int, string> OnPeerDataChannelReceived;
 
 
 
@@ -364,8 +364,15 @@ namespace PeerConnectionClient.Signalling
         }
 
         private void _peerReceiveDataChannel_OnMessage(RTCDataChannelMessageEvent rtcMessage)
-        {            
-            OnPeerDataChannelReceived?.Invoke(_peerId, rtcMessage.Data);
+        {
+            var msg = ((StringDataChannelMessage) rtcMessage.Data).StringData;
+            OnPeerDataChannelReceived?.Invoke(_peerId, msg);
+            Debug.WriteLine("DataChannel: {0}-{1}", _peerId, msg);
+        }
+
+        public void SeedPeerDataChannelMessage(string msg)
+        {
+            _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
         }
 
         private void PeerSendDataChannelOnClose()

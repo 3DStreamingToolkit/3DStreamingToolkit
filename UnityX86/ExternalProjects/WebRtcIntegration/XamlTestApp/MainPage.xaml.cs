@@ -51,9 +51,18 @@ namespace XamlTestApp
             _webRtcControl.OnPeerMessageDataReceived += _webRtcControl_OnPeerMessageDataReceived;
             _webRtcControl.OnStatusMessageUpdate += _webRtcControl_OnStatusMessageUpdate;
             Conductor.Instance.OnAddRemoteStream += Instance_OnAddRemoteStream;
+            Conductor.Instance.OnPeerDataChannelReceived += Instance_OnPeerDataChannelReceived;
             _webRtcControl.Initialize();            
         }
 
+        private void Instance_OnPeerDataChannelReceived(int arg1, string arg2)
+        {
+            RunOnUiThread(() =>
+            {                
+                MessagesTextBlock.Text += string.Format("Conductor-PeerDataChannel:{0}-{1}\n", arg1, arg2);
+            });
+        }
+        
         private void _webRtcControl_OnInitialized()
         {
             RunOnUiThread(() =>
@@ -68,7 +77,7 @@ namespace XamlTestApp
         {
             RunOnUiThread(() =>
             {
-                MessagesTextBlock.Text += string.Format("{0}-{1}\n", arg1, arg2);
+                MessagesTextBlock.Text += string.Format("Signal:{0}-{1}\n", arg1, arg2);
             });
         }
 
@@ -139,7 +148,7 @@ namespace XamlTestApp
                         host = signalhost[0];
                         port = "8888";
                     }
-                    _webRtcControl.ConnectToServer(host, port, "WebRTC Wrapper");
+                    _webRtcControl.ConnectToServer(host, port, "WebRTCWrapper");
                 }
             );
         }
@@ -210,7 +219,8 @@ namespace XamlTestApp
         {
             RunOnUiThread(() =>
             {
-                _webRtcControl.SendPeerMessageData(MessageInputText.Text);
+                //_webRtcControl.SendPeerMessageData(MessageInputText.Text);
+                _webRtcControl.SeedPeerDataChannelMessage(MessageInputText.Text);
             });
         }
 
