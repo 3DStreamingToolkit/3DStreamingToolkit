@@ -106,6 +106,9 @@ namespace PeerConnectionClient.Signalling
         private static readonly string kSessionDescriptionJsonName = "session";
 #endif
         RTCPeerConnection _peerConnection;
+        private RTCDataChannel _peerSendDataChannel;
+        private RTCDataChannel _peerReceiveDataChannel;
+
         readonly Media _media;
 
         /// <summary>
@@ -186,6 +189,9 @@ namespace PeerConnectionClient.Signalling
 
         // Specialized Message Handling Messages
         public event Action<int, string> OnPeerMessageDataReceived;
+        public event Action<int, string> OnPeerDataChannelReceived;
+
+
 
         /// <summary>
         /// Updates the preferred video frame rate and resolution.
@@ -241,7 +247,7 @@ namespace PeerConnectionClient.Signalling
             _peerConnection.EtwStatsEnabled = _etwStatsEnabled;
             _peerConnection.ConnectionHealthStatsEnabled = _peerConnectionStatsEnabled;
 #endif
-                if (cancelationToken.IsCancellationRequested)
+            if (cancelationToken.IsCancellationRequested)
             {
                 return false;
             }
@@ -260,12 +266,25 @@ namespace PeerConnectionClient.Signalling
             _peerConnection.OnRemoveStream += PeerConnection_OnRemoveStream;
             _peerConnection.OnConnectionHealthStats += PeerConnection_OnConnectionHealthStats;
 #endif
+
+            // Setup Data Channel            
+            _peerSendDataChannel = _peerConnection.CreateDataChannel(
+                "SendDataChannel", 
+                new RTCDataChannelInit(){
+                    Ordered = true
+                });
+            _peerSendDataChannel.OnOpen += PeerSendDataChannelOnOpen;
+            _peerSendDataChannel.OnClose += PeerSendDataChannelOnClose;
+            _peerSendDataChannel.OnError += _peerSendDataChannel_OnError;
+            _peerConnection.OnDataChannel += _peerConnection_OnDataChannel;     // DataChannel Setup Completed            
+
             Debug.WriteLine("Conductor: Getting user media.");
             RTCMediaStreamConstraints mediaStreamConstraints = new RTCMediaStreamConstraints
             {
                 // Always include audio/video enabled in the media stream,
                 // so it will be possible to enable/disable audio/video if 
                 // the call was initiated without microphone/camera
+
                 audioEnabled = true,
                 videoEnabled = true
             };
@@ -304,10 +323,9 @@ namespace PeerConnectionClient.Signalling
                         _peerConnection.AddTrack(mediaStreamTrack, mediaStreamList, configuration);
                 }
             }
-#else
+#else            
             _mediaStream = await _media.GetUserMedia(mediaStreamConstraints);
 #endif
-
             if (cancelationToken.IsCancellationRequested)
             {
                 return false;
@@ -315,15 +333,56 @@ namespace PeerConnectionClient.Signalling
 
 #if !ORTCLIB
             Debug.WriteLine("Conductor: Adding local media stream.");
-            _peerConnection.AddStream(_mediaStream);
+            // HACK
+            if (_mediaStream == null)
+            {
+                Debug.WriteLine("CONDUCTOR: LOCAL MEDIA STREAM NULL");
+            }
+            _peerConnection.AddStream(_mediaStream);                       
 #endif
-            OnAddLocalStream?.Invoke(new MediaStreamEvent() { Stream = _mediaStream });
 
+            OnAddLocalStream?.Invoke(new MediaStreamEvent() { Stream = _mediaStream });
             if (cancelationToken.IsCancellationRequested)
             {
                 return false;
             }
             return true;
+        }
+
+        private void _peerSendDataChannel_OnError()
+        {
+            // TODO: _peerSendDataChannel_OnError()
+            Debug.WriteLine("Peer Data Channel Error");
+        }
+
+        private void _peerConnection_OnDataChannel(RTCDataChannelEvent rtcDataChannel)
+        {
+            _peerReceiveDataChannel = rtcDataChannel.Channel;
+            _peerReceiveDataChannel.OnMessage += _peerReceiveDataChannel_OnMessage;
+        }
+
+        private void _peerReceiveDataChannel_OnMessage(RTCDataChannelMessageEvent rtcMessage)
+        {
+            var msg = ((StringDataChannelMessage) rtcMessage.Data).StringData;
+            OnPeerDataChannelReceived?.Invoke(_peerId, msg);
+            Debug.WriteLine("DataChannel: {0}-{1}", _peerId, msg);
+        }
+
+        public void SendPeerDataChannelMessage(string msg)
+        {
+            _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
+        }
+
+        private void PeerSendDataChannelOnClose()
+        {
+            // TODO: PeerSendDataChannelOnClose()            
+            Debug.WriteLine("Peer Data Channel OnClose()");
+        }
+
+        private void PeerSendDataChannelOnOpen()
+        {
+            // TODO: PeerSendDataChannelOnOpen()
+            Debug.WriteLine("Peer Data Channel Close");
         }
 
         /// <summary>
@@ -333,40 +392,57 @@ namespace PeerConnectionClient.Signalling
         private void ClosePeerConnection()
         {                
             lock (MediaLock)
+            {                
+                if (_peerConnection != null)
+                {
+                    _peerId = -1;
+                    if (_mediaStream != null)
                     {
-                        if (_peerConnection != null)
+                        foreach (var track in _mediaStream.GetTracks())
                         {
-                            _peerId = -1;
-                            if (_mediaStream != null)
+                            // Check Track Status before action to avoid reference errors
+                            // CRASH condition previously on non-XAML usage
+                            if (track != null)
                             {
-                                foreach (var track in _mediaStream.GetTracks())
+                                if (track.Enabled)
                                 {
-                                    // Check Track Status before action to avoid reference errors
-                                    // CRASH condition previously on non-XAML usage
-                                    if (track.Enabled)
-                                    {
-                                        track.Stop();
-                                    }
-                                    _mediaStream.RemoveTrack(track);
-                                }
+                                    track.Stop();
+                                }                                        
+                                _mediaStream.RemoveTrack(track);
                             }
-                            _mediaStream = null;
-
-                            OnPeerConnectionClosed?.Invoke();
-
-                            _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
-
-                            SessionId = null;
-#if ORTCLIB
-                    OrtcStatsManager.Instance.CallEnded();
-#endif
-                            _peerConnection = null;
-
-                            OnReadyToConnect?.Invoke();
-
-                            GC.Collect(); // Ensure all references are truly dropped.
                         }
-                    }                
+                    }
+                    _mediaStream = null;
+                    
+                    // TODO: Cleanup DataChannel
+                    if(_peerSendDataChannel != null)
+                    {                        
+                        _peerSendDataChannel.Close();
+                        _peerSendDataChannel = null;
+                    }
+
+                    if(_peerReceiveDataChannel != null)
+                    {
+                        _peerReceiveDataChannel.Close();
+                        _peerReceiveDataChannel = null;
+                    }
+
+                    OnPeerConnectionClosed?.Invoke();
+
+                    _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
+
+                    SessionId = null;
+    #if ORTCLIB
+            OrtcStatsManager.Instance.CallEnded();
+    #endif
+                    _peerConnection = null;
+
+                    OnReadyToConnect?.Invoke();
+
+                    // TODO: handle GC
+                    //GC.Collect(); // Ensure all references are truly dropped.
+                }
+            }                
         }
 
         /// <summary>
@@ -752,7 +828,7 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         /// <param name="peer">Peer to connect to.</param>
         public async void ConnectToPeer(Peer peer)
-        {
+        {            
             Debug.Assert(peer != null);
             Debug.Assert(_peerId == -1);
 
@@ -897,7 +973,7 @@ namespace PeerConnectionClient.Signalling
                 if (_mediaStream != null)
                 {
                     foreach (MediaVideoTrack videoTrack in _mediaStream.GetVideoTracks())
-                    {
+                    {                        
                         videoTrack.Enabled = true;
                     }
                 }

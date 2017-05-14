@@ -116,9 +116,14 @@ public class ControlScript : MonoBehaviour
 #if !UNITY_EDITOR
     private void Conductor_OnAddRemoteStream(MediaStreamEvent evt)
     {        
+        System.Diagnostics.Debug.WriteLine("Conductor_OnAddRemoteStream()");
+
         _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
         if (_peerVideoTrack != null)
         {
+            System.Diagnostics.Debug.WriteLine(
+                "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
+                evt.Stream.GetVideoTracks().Count);
             // Raw Video from VP8 Encoded Sender
             // H264 Encoded Stream does not trigger this event
 
@@ -126,10 +131,14 @@ public class ControlScript : MonoBehaviour
 #if HACK_VP8
             rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
-#else            
+#else
             encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
             encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
 #endif
+        }
+        else
+        {
+            System.Diagnostics.Debug.WriteLine("Conductor_OnAddRemoteStream() - peerVideoTrack NULL");
         }
         _webRtcControl.IsReadyToDisconnect = true;
     }
