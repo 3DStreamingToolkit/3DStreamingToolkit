@@ -267,7 +267,7 @@ namespace PeerConnectionClient.Signalling
             _peerConnection.OnConnectionHealthStats += PeerConnection_OnConnectionHealthStats;
 #endif
 
-            // TODO:  Setup Data Channel
+            // Setup Data Channel
             var dcInit = new RTCDataChannelInit()
             {
                 Ordered = true
@@ -276,9 +276,7 @@ namespace PeerConnectionClient.Signalling
             _peerSendDataChannel.OnOpen += PeerSendDataChannelOnOpen;
             _peerSendDataChannel.OnClose += PeerSendDataChannelOnClose;
             _peerSendDataChannel.OnError += _peerSendDataChannel_OnError;
-            _peerConnection.OnDataChannel += _peerConnection_OnDataChannel;
-            
-            
+            _peerConnection.OnDataChannel += _peerConnection_OnDataChannel;     // DataChannel Setup Completed            
 
             Debug.WriteLine("Conductor: Getting user media.");
             RTCMediaStreamConstraints mediaStreamConstraints = new RTCMediaStreamConstraints
@@ -394,43 +392,58 @@ namespace PeerConnectionClient.Signalling
         private void ClosePeerConnection()
         {                
             lock (MediaLock)
+            {
+                if (_peerConnection != null)
+                {
+                    _peerId = -1;
+                    if (_mediaStream != null)
                     {
-                        if (_peerConnection != null)
+                        foreach (var track in _mediaStream.GetTracks())
                         {
-                            _peerId = -1;
-                            if (_mediaStream != null)
+                            // Check Track Status before action to avoid reference errors
+                            // CRASH condition previously on non-XAML usage
+                            if (track != null)
                             {
-                                foreach (var track in _mediaStream.GetTracks())
+                                if (track.Enabled)
                                 {
-                                    // Check Track Status before action to avoid reference errors
-                                    // CRASH condition previously on non-XAML usage
-                                    if (track != null)
-                                    {
-                                        if (track.Enabled)
-                                        {
-                                            track.Stop();
-                                        }                                        
-                                        _mediaStream.RemoveTrack(track);
-                                    }
-                                }
+                                    track.Stop();
+                                }                                        
+                                _mediaStream.RemoveTrack(track);
                             }
-                            _mediaStream = null;
-
-                            OnPeerConnectionClosed?.Invoke();
-
-                            _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
-
-                            SessionId = null;
-#if ORTCLIB
-                    OrtcStatsManager.Instance.CallEnded();
-#endif
-                            _peerConnection = null;
-
-                            OnReadyToConnect?.Invoke();
-
-                            GC.Collect(); // Ensure all references are truly dropped.
                         }
-                    }                
+                    }
+                    _mediaStream = null;
+
+                    // TODO: Cleanup DataChannel
+                    if(_peerSendDataChannel != null)
+                    {                        
+                        _peerSendDataChannel.Close();
+                        _peerSendDataChannel = null;
+                    }
+
+                    if(_peerReceiveDataChannel != null)
+                    {
+                        _peerReceiveDataChannel.Close();
+                        _peerReceiveDataChannel = null;
+                    }
+
+
+
+                    OnPeerConnectionClosed?.Invoke();
+
+                    _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
+
+                    SessionId = null;
+    #if ORTCLIB
+            OrtcStatsManager.Instance.CallEnded();
+    #endif
+                    _peerConnection = null;
+
+                    OnReadyToConnect?.Invoke();
+
+                    GC.Collect(); // Ensure all references are truly dropped.
+                }
+            }                
         }
 
         /// <summary>
