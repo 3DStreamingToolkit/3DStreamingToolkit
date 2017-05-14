@@ -220,7 +220,7 @@ namespace XamlTestApp
             RunOnUiThread(() =>
             {
                 //_webRtcControl.SendPeerMessageData(MessageInputText.Text);
-                _webRtcControl.SeedPeerDataChannelMessage(MessageInputText.Text);
+                _webRtcControl.SendPeerDataChannelMessage(MessageInputText.Text);
             });
         }
 

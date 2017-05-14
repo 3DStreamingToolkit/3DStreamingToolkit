@@ -267,12 +267,12 @@ namespace PeerConnectionClient.Signalling
             _peerConnection.OnConnectionHealthStats += PeerConnection_OnConnectionHealthStats;
 #endif
 
-            // Setup Data Channel
-            var dcInit = new RTCDataChannelInit()
-            {
-                Ordered = true
-            };
-            _peerSendDataChannel = _peerConnection.CreateDataChannel("SendDataChannel", dcInit);
+            // Setup Data Channel            
+            _peerSendDataChannel = _peerConnection.CreateDataChannel(
+                "SendDataChannel", 
+                new RTCDataChannelInit(){
+                    Ordered = true
+                });
             _peerSendDataChannel.OnOpen += PeerSendDataChannelOnOpen;
             _peerSendDataChannel.OnClose += PeerSendDataChannelOnClose;
             _peerSendDataChannel.OnError += _peerSendDataChannel_OnError;
@@ -368,15 +368,15 @@ namespace PeerConnectionClient.Signalling
             Debug.WriteLine("DataChannel: {0}-{1}", _peerId, msg);
         }
 
-        public void SeedPeerDataChannelMessage(string msg)
+        public void SendPeerDataChannelMessage(string msg)
         {
             _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
         }
 
         private void PeerSendDataChannelOnClose()
         {
-            // TODO: PeerSendDataChannelOnClose()
-            Debug.WriteLine("Peer Data Channel Close");
+            // TODO: PeerSendDataChannelOnClose()            
+            Debug.WriteLine("Peer Data Channel OnClose()");
         }
 
         private void PeerSendDataChannelOnOpen()
@@ -413,11 +413,11 @@ namespace PeerConnectionClient.Signalling
                         }
                     }
                     _mediaStream = null;
-
+                    
                     // TODO: Cleanup DataChannel
                     if(_peerSendDataChannel != null)
                     {                        
-                        _peerSendDataChannel.Close();                        
+                        _peerSendDataChannel.Close();
                         _peerSendDataChannel = null;
                     }
 

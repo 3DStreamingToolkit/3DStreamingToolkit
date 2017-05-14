@@ -76,14 +76,14 @@ namespace WebRtcWrapper
 
             // HACK Remove Automatic Device Assignment
 
-//            if (SelectedCamera == null && Cameras.Count > 0)
-//            {
-//                SelectedCamera = Cameras.First();
-//            }
-//            if (SelectedMicrophone == null && Microphones.Count > 0)
-//            {
-//                SelectedMicrophone = Microphones.First();
-//            }
+            if (SelectedCamera == null && Cameras.Count > 0)
+            {
+                SelectedCamera = Cameras.First();
+            }
+            if (SelectedMicrophone == null && Microphones.Count > 0)
+            {
+                SelectedMicrophone = Microphones.First();
+            }
 
             Debug.WriteLine("Device Status: SelectedCamera: {0} - SelectedMic: {1}", SelectedCamera == null ? "NULL" : "OK", SelectedMicrophone == null ? "NULL" : "OK");
             if (SelectedAudioPlayoutDevice == null && AudioPlayoutDevices.Count > 0)
@@ -329,9 +329,9 @@ namespace WebRtcWrapper
 
         #region COMMANDS
 
-        public void SeedPeerDataChannelMessage(string msg)
+        public void SendPeerDataChannelMessage(string msg)
         {
-            Conductor.Instance.SeedPeerDataChannelMessage(msg);
+            Conductor.Instance.SendPeerDataChannelMessage(msg);
         }
 
         public void SendPeerMessageData(string msg)
