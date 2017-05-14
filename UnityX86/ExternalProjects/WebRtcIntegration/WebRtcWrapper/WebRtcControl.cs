@@ -197,9 +197,12 @@ namespace WebRtcWrapper
                     //                    SelfVideo.Source = null;
                     _peerVideoTrack = null;
                     _selfVideoTrack = null;
-                    GC.Collect(); // Ensure all references are truly dropped.
                     IsMicrophoneEnabled = false;
                     IsCameraEnabled = false;
+
+                    // TODO: Clean-up References
+                    //GC.Collect();         // Ensure all references are truly dropped.
+
                     OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
                 });
             };

@@ -392,7 +392,7 @@ namespace PeerConnectionClient.Signalling
         private void ClosePeerConnection()
         {                
             lock (MediaLock)
-            {
+            {                
                 if (_peerConnection != null)
                 {
                     _peerId = -1;
@@ -417,7 +417,7 @@ namespace PeerConnectionClient.Signalling
                     // TODO: Cleanup DataChannel
                     if(_peerSendDataChannel != null)
                     {                        
-                        _peerSendDataChannel.Close();
+                        _peerSendDataChannel.Close();                        
                         _peerSendDataChannel = null;
                     }
 
@@ -426,8 +426,6 @@ namespace PeerConnectionClient.Signalling
                         _peerReceiveDataChannel.Close();
                         _peerReceiveDataChannel = null;
                     }
-
-
 
                     OnPeerConnectionClosed?.Invoke();
 
@@ -441,7 +439,8 @@ namespace PeerConnectionClient.Signalling
 
                     OnReadyToConnect?.Invoke();
 
-                    GC.Collect(); // Ensure all references are truly dropped.
+                    // TODO: handle GC
+                    //GC.Collect(); // Ensure all references are truly dropped.
                 }
             }                
         }
