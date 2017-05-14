@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,8 +26,9 @@ namespace WebRtcWrapper
     public class WebRtcControl
     {
         public event Action OnInitialized;
-        public event Action<int, string> OnPeerMessageDataReceived;
+        public event Action<int, string> OnPeerMessageDataReceived;        
         public event Action<string> OnStatusMessageUpdate;
+        public event Action<int, IDataChannelMessage> OnPeerDataChannelReceived;
 
         public RawVideoSource rawVideo;
         public EncodedVideoSource encodedVideoSource;
@@ -48,7 +50,7 @@ namespace WebRtcWrapper
             _uiDispatcher = CoreApplication.MainView.CoreWindow.Dispatcher;
         }
 
-        #region SETUP
+        #region SETUP ROUTINES
         public void Initialize()
         {
             WebRTC.Initialize(_uiDispatcher);
@@ -58,6 +60,7 @@ namespace WebRtcWrapper
             Microphones = new ObservableCollection<MediaDevice>();
             AudioPlayoutDevices = new ObservableCollection<MediaDevice>();
 
+            // Detect Comm Hardware
             foreach (MediaDevice videoCaptureDevice in Conductor.Instance.Media.GetVideoCaptureDevices())
             {
                 Cameras.Add(videoCaptureDevice);
@@ -71,6 +74,8 @@ namespace WebRtcWrapper
                 AudioPlayoutDevices.Add(audioPlayoutDevice);
             }
 
+            // HACK Remove Automatic Device Assignment
+
             if (SelectedCamera == null && Cameras.Count > 0)
             {
                 SelectedCamera = Cameras.First();
@@ -79,6 +84,8 @@ namespace WebRtcWrapper
             {
                 SelectedMicrophone = Microphones.First();
             }
+
+            Debug.WriteLine("Device Status: SelectedCamera: {0} - SelectedMic: {1}", SelectedCamera == null ? "NULL" : "OK", SelectedMicrophone == null ? "NULL" : "OK");
             if (SelectedAudioPlayoutDevice == null && AudioPlayoutDevices.Count > 0)
             {
                 SelectedAudioPlayoutDevice = AudioPlayoutDevices.First();
@@ -148,7 +155,16 @@ namespace WebRtcWrapper
             {
                 RunOnUiThread(() =>
                 {
-                    // TODO: Handle All Peer Messages
+                    // TODO: Handles All Peer Messages (Signal Channel)
+                });
+            };
+
+            Conductor.Instance.Signaller.OnPeerConnected += (id, name) =>
+            {
+                RunOnUiThread(() =>
+                {
+                    SelectedPeer = Peers.First(x => x.Id == id);
+                    OnStatusMessageUpdate?.Invoke(string.Format("Connected Peer: {0}-{1}", SelectedPeer.Id, SelectedPeer.Name));
                 });
             };
 
@@ -156,6 +172,7 @@ namespace WebRtcWrapper
             // Implemented in Unity Consumer due to Event Handling Issue
             // Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream does not propagate
 
+            
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
             Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
@@ -167,7 +184,7 @@ namespace WebRtcWrapper
                     IsConnectedToPeer = true;
                     IsReadyToDisconnect = false;
                     IsMicrophoneEnabled = false;
-                    OnStatusMessageUpdate?.Invoke("Peer Connection Created");
+                    OnStatusMessageUpdate?.Invoke("Peer Connection Created");                    
                 });
             };
 
@@ -180,9 +197,12 @@ namespace WebRtcWrapper
                     //                    SelfVideo.Source = null;
                     _peerVideoTrack = null;
                     _selfVideoTrack = null;
-                    GC.Collect(); // Ensure all references are truly dropped.
                     IsMicrophoneEnabled = false;
                     IsCameraEnabled = false;
+
+                    // TODO: Clean-up References
+                    //GC.Collect();         // Ensure all references are truly dropped.
+
                     OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
                 });
             };
@@ -191,6 +211,13 @@ namespace WebRtcWrapper
             {
                 OnPeerMessageDataReceived?.Invoke(peerId, message);
             };
+
+            // DATA Channel Setup
+            Conductor.Instance.OnPeerMessageDataReceived += (i, s) =>
+            {
+                
+            };
+            
 
             Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
 
@@ -301,6 +328,12 @@ namespace WebRtcWrapper
         #endregion
 
         #region COMMANDS
+
+        public void SendPeerDataChannelMessage(string msg)
+        {
+            Conductor.Instance.SendPeerDataChannelMessage(msg);
+        }
+
         public void SendPeerMessageData(string msg)
         {
             new Task(async () =>
@@ -344,12 +377,15 @@ namespace WebRtcWrapper
             new Task(() =>
             {
                 IsConnecting = true;
-                Conductor.Instance.StartLogin(host, port, peerName);
+                Ip = new ValidableNonEmptyString(host);
+                Port = new ValidableIntegerString(port);
+                ConnectToServer(peerName);                
             }).Start();
         }
 
         public void ConnectToPeer()
         {
+            Debug.WriteLine("Device Status: SelectedCamera: {0} - SelectedMic: {1}", SelectedCamera == null ? "NULL" : "OK", SelectedMicrophone == null ? "NULL" : "OK");
             if (SelectedPeer != null)
             {
                 new Task(() => { Conductor.Instance.ConnectToPeer(SelectedPeer); }).Start();
@@ -379,7 +415,6 @@ namespace WebRtcWrapper
 
             Peers?.Clear();
         }
-
         #endregion
 
         #region EVENT HANDLERS
@@ -426,8 +461,9 @@ namespace WebRtcWrapper
                     }
                 }
 
-                if (SelectedCamera == null)
+                if ((SelectedCamera == null) && Cameras.Count > 0)
                 {
+                    Debug.WriteLine("SelectedCamera RefreshVideoCaptureDevices() Update");                    
                     SelectedCamera = Cameras.FirstOrDefault();
                 }
             });
@@ -490,13 +526,21 @@ namespace WebRtcWrapper
 
         private void Conductor_OnAddLocalStream(MediaStreamEvent evt)
         {
+            if (evt == null)
+            {
+                var msg = "Conductor_OnAddLocalStream--media stream NULL";
+                Debug.WriteLine(msg);
+                OnStatusMessageUpdate?.Invoke(msg);
+            }
             _selfVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_selfVideoTrack != null)
             {
+                Debug.WriteLine("selfVideoTrack Setup-IsCameraEnabled:{0}-IsMicrophoneEnabled:{1}", IsCameraEnabled, IsMicrophoneEnabled);
                 RunOnUiThread(() =>
-                {
+                {                                        
                     if (IsCameraEnabled)
                     {
+                        
                         Conductor.Instance.EnableLocalVideoStream();
                     }
                     else
@@ -520,6 +564,10 @@ namespace WebRtcWrapper
 //                        SelfVideo.SetMediaStreamSource(source);
 //                    }
                 });
+            }
+            else
+            {
+                Debug.WriteLine("selfVideoTrack NULL");
             }
         }
 
