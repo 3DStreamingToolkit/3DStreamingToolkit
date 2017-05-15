@@ -11,10 +11,31 @@ This will install 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this 
 [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
 <br>with this patch applied: ".\WebRTCLibs\nvencoder.patch"
 <br>
-After script finishes, open solution in 
+
+Next, browse to /WebRTCNativeClient and run this command before opening the Project/Solution structure.
+```
+.\WebRTCNativeClient\directXTKInstallLibs.ps1
+```
+
+This will install the 32bit and 64bit Debug and Release libraries for DirectX Toolkit.  We currently cannot use the nuget package because it doesn't provide static linking targets for release builds.
+
+Finally, if you are using Visual Studio 2017, ensure you have installed v140 C++ from individual components of the Visual Studio Installer.
+
+After the script finishes, open solution in 
 ```
 \3dtoolkit-directx\Toolkit3D.sln
 ```
+
+In Visual Studio 2017, press cancel on first launch when it asks if you want to upgrade your project.
+
+Build the solution from Visual Studio, and look in 
+
+\3dtoolkit-directx\Samples\**\Build\** for server binaries.
+
+\WebRTCNativeClient\Build\** for the native client binaries.   
+
+\WebRTCLibs\**\Exe\** for the sample signaling, turn and stun server binaries.
+
 
 ### Building WebRTC Libraries from Source
 If you want to build webrtc yourself, you will need to install Visual Studio 2015 with Update 3.
