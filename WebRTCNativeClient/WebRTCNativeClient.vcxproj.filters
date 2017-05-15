@@ -67,6 +67,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="webrtcConfig.json" />
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>
