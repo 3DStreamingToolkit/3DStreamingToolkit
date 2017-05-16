@@ -1,0 +1,5 @@
+﻿.vs/
+Build/
+Debug/
+x64/
+*.db
