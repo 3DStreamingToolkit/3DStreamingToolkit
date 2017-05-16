@@ -28,6 +28,15 @@
     <ClCompile Include="src\custom_video_capturer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\data_channel_handler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\default_data_channel_handler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\json_data_channel_handler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -62,6 +71,15 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\arc_ball.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\data_channel_handler.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\default_data_channel_handler.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\json_data_channel_handler.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
