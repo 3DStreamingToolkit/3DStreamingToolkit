@@ -8126,10 +8126,10 @@ index 0000000..fad4bda
 +    return NV_ENC_SUCCESS;
 +}
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 84bfafb..f24fe8f 100644
+index 84bfafb..66b1ddf 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-@@ -1,503 +1,932 @@
+@@ -1,503 +1,937 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -9189,9 +9189,10 @@ index 84bfafb..f24fe8f 100644
 +	}
 +
 +	NvEncPictureCommand pEncPicCommand;
-+	pEncPicCommand.bForceIDR = forceIntra;
++	pEncPicCommand.bForceIntraRefresh = forceIntra;
++	pEncPicCommand.intraRefreshDuration = m_encodeConfig.intraRefreshDuration;
 +
-+	nvStatus = m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, m_encodeConfig.width, m_encodeConfig.height);
++	nvStatus = m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, &pEncPicCommand, m_encodeConfig.width, m_encodeConfig.height);
 +	if (nvStatus != NV_ENC_SUCCESS  && nvStatus != NV_ENC_ERR_NEED_MORE_INPUT)
 +	{
 +		return;
@@ -9393,6 +9394,9 @@ index 84bfafb..f24fe8f 100644
 +
 +		auto p_nal = (uint8_t*)pFrameBuffer;
 +		std::vector<H264::NaluIndex> NALUidx;
++		
++		if(frameSizeInBytes >= 100000000)
++			return WEBRTC_VIDEO_CODEC_OK;
 +
 +		NALUidx = H264::FindNaluIndices(p_nal, frameSizeInBytes);
 +		if (NALUidx.size() < 1)
@@ -9410,6 +9414,7 @@ index 84bfafb..f24fe8f 100644
 +
 +		frag_header.VerifyAndAllocateFragmentationHeader(i_nal);
 +		encoded_image_.qp_ = m_encodeConfig.qp;
++		encoded_image_._frameType = force_key_frame ? kVideoFrameKey : kVideoFrameDelta;
 +
 +		uint32_t totalNaluIndex = 0;
 +		for (size_t nal_index = 0; nal_index < i_nal; nal_index++)
