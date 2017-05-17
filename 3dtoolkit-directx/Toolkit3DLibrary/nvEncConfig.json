@@ -1,13 +1,13 @@
 {
   "useSoftwareEncoding": false,
-  "serverFrameCaptureFPS": 30,
+  "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
-    "bitrate": 3000000,
-    "minBitrate": 3000000,
+    "bitrate": 5500000,
+    "minBitrate": 5500000,
     "fps": 60,
     "qp": 5,
     "intraRefreshPeriod": 60,
-    "intraRefreshEnableFlag": false,
+    "intraRefreshEnableFlag": true,
     "intraRefreshDuration": 6,
     "enableTemporalAQ": false,
     "invalidateRefFramesEnableFlag": true,
