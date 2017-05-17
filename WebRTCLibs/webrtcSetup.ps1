@@ -32,12 +32,12 @@ if((Test-Path ($fullPath + "\depot_tools\")) -eq $false) {
 
 if (-not($Env:Path | Select-String -SimpleMatch $fullPath\depot_tools)) { 
     $Env:Path = "$fullPath\depot_tools;" + $Env:Path
-    [Environment]::SetEnvironmentVariable("Path", $Env:Path, [System.EnvironmentVariableTarget]::Machine) 
+    #[Environment]::SetEnvironmentVariable("Path", $Env:Path, [System.EnvironmentVariableTarget]::Machine) 
     CMD /C "gclient"
 }
 
 $Env:DEPOT_TOOLS_WIN_TOOLCHAIN = 0
-[Environment]::SetEnvironmentVariable("DEPOT_TOOLS_WIN_TOOLCHAIN", $Env:DEPOT_TOOLS_WIN_TOOLCHAIN, [System.EnvironmentVariableTarget]::Machine)
+#[Environment]::SetEnvironmentVariable("DEPOT_TOOLS_WIN_TOOLCHAIN", $Env:DEPOT_TOOLS_WIN_TOOLCHAIN, [System.EnvironmentVariableTarget]::Machine)
 New-Item -Path . -Name "webrtc-checkout" -ItemType Directory -Force
 Set-Location "webrtc-checkout"
 #if src exists, don't repull, just reset and reapply patch
