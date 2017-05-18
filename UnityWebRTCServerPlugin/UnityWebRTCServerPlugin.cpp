@@ -1,6 +1,9 @@
 #define SUPPORT_D3D11 1
 #define WEBRTC_WIN 1
 
+#define SHOW_CONSOLE 0
+
+
 #include <iostream>
 #include <thread>
 #include <string>
@@ -71,9 +74,6 @@ static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
 DefaultMainWindow *wnd;
 std::thread *messageThread;
 
-//std::string s_server = "localhost";
-//uint32_t s_port = 8888;
-
 std::string s_server = "signalingserver.centralus.cloudapp.azure.com";
 uint32_t s_port = 3000;
 
@@ -90,48 +90,6 @@ void InputUpdate(const std::string& message)
 
 		(*s_onInputUpdate)(message.c_str());
 	}
-
-	/*
-	Json::Reader reader;
-	Json::Value jmessage;
-	if (!reader.parse(message, jmessage))
-	{
-		return;
-	}
-
-	if (jmessage.isMember("type") &&
-		!strcmp(jmessage["type"].asCString(), "message") &&
-		jmessage.isMember("camera-transform"))
-	{
-		// Parses the camera transformation data.
-		const char* data = jmessage["camera-transform"].asCString();
-		std::istringstream datastream(data);
-		std::string token;
-		getline(datastream, token, ',');
-		float eyeX = stof(token);
-		getline(datastream, token, ',');
-		float eyeY = stof(token);
-		getline(datastream, token, ',');
-		float eyeZ = stof(token);
-		getline(datastream, token, ',');
-		float focusX = stof(token);
-		getline(datastream, token, ',');
-		float focusY = stof(token);
-		getline(datastream, token, ',');
-		float focusZ = stof(token);
-
-		// Initializes the eye position vector.
-		const XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-		const XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-
-		// Updates the camera view.
-		g_Camera.SetViewParams(
-			eye,
-			lookAt);
-
-		g_Camera.FrameMove(0);
-	}
-	*/
 }
 
 
@@ -156,10 +114,7 @@ void InitWebRTC()
 		MainWindowCallback *callback = s_conductor;
 
 		callback->StartLogin(s_server, s_port);
-		
-		//s_conductor->Login(s_server, s_port);
 	}
-	//s_conductor->Login(s_server, s_port);
 
 	// Main loop.
 	MSG msg;
@@ -202,7 +157,6 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				s_frameBuffer->GetDesc(&desc);
 					
 				g_videoHelper->Initialize(s_frameBuffer, desc.Format, desc.Width, desc.Height);
-				//g_videoHelper->LockBuffer();
 				
 				s_frameBuffer->Release();
 				
@@ -210,15 +164,6 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 			}
 		}
 
-		/*
-		LOG(INFO) << "Unlock...";
-		g_videoHelper->UnlockBuffer();
-		
-		Sleep(1);
-		
-		g_videoHelper->LockBuffer();
-		LOG(INFO) << "Lock...";
-		*/
         return;
     }
 }
@@ -250,13 +195,14 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
 extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
-	/*
+#if SHOW_CONSOLE
     AllocConsole();
     FILE* out(nullptr);
     freopen_s(&out, "CONOUT$", "w", stdout);
 
     std::cout << "Console open..." << std::endl;
-	*/
+#endif
+	
     s_UnityInterfaces = unityInterfaces;
     s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
     s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
