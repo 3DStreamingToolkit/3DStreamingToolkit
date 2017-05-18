@@ -102,12 +102,6 @@ DefaultMainWindow::DefaultMainWindow(
 		auto_call_(auto_call),
 		width_(width),
 		height_(height)
-	/*,
-		keyboardTick(0),
-		mouseTick(0),
-		zoom_(DEFAULT_ZOOM),
-		distance_(DEFAULT_DISTANCE)
-	*/
 {
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
