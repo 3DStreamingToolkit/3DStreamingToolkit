@@ -1,8 +1,30 @@
+diff --git a/report.xml b/report.xml
+new file mode 100644
+index 0000000..434f184
+--- /dev/null
++++ b/report.xml
+@@ -0,0 +1,16 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<testsuites tests="7" failures="0" disabled="0" errors="0" timestamp="2017-05-15T15:03:55" time="0.132" name="AllTests">
++  <testsuite name="H264SpropParameterSetsTest" tests="2" failures="0" disabled="0" errors="0" time="0.002">
++    <testcase name="Base64DecodeSprop" status="run" time="0" classname="H264SpropParameterSetsTest" />
++    <testcase name="InvalidData" status="run" time="0.001" classname="H264SpropParameterSetsTest" />
++  </testsuite>
++  <testsuite name="H264EncoderImplTest" tests="4" failures="0" disabled="0" errors="0" time="0.04">
++    <testcase name="CanInitializeWithDefaultParameters" status="run" time="0.01" classname="H264EncoderImplTest" />
++    <testcase name="CanInitializeWithNonInterleavedModeExplicitly" status="run" time="0.008" classname="H264EncoderImplTest" />
++    <testcase name="CanInitializeWithSingleNalUnitModeExplicitly" status="run" time="0.009" classname="H264EncoderImplTest" />
++    <testcase name="CanInitializeWithRemovedParameter" status="run" time="0.009" classname="H264EncoderImplTest" />
++  </testsuite>
++  <testsuite name="H264TestImpl" tests="1" failures="0" disabled="0" errors="0" time="0.088">
++    <testcase name="SoftwareEncodeDecode" status="run" time="0.086" classname="H264TestImpl" />
++  </testsuite>
++</testsuites>
 diff --git a/webrtc/api/video/i420_buffer.cc b/webrtc/api/video/i420_buffer.cc
-index 031b159..4fc4830 100644
+index 031b159..9ee100c 100644
 --- a/webrtc/api/video/i420_buffer.cc
 +++ b/webrtc/api/video/i420_buffer.cc
-@@ -1,260 +1,275 @@
+@@ -1,260 +1,261 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -299,28 +321,22 @@ index 031b159..4fc4830 100644
 +}  // namespace
 +
 +I420Buffer::I420Buffer(int width, int height)
-+    : I420Buffer(width, height, 0, width, (width + 1) / 2, (width + 1) / 2) {
-+}
-+
-+I420Buffer::I420Buffer(int width, int height, int encoded_length)
-+	: I420Buffer(width, height, encoded_length, width, (width + 1) / 2, (width + 1) / 2) {
++    : I420Buffer(width, height, width, (width + 1) / 2, (width + 1) / 2) {
 +}
 +
 +
 +I420Buffer::I420Buffer(int width,
 +                       int height,
-+					   int encoded_length,
 +                       int stride_y,
 +                       int stride_u,
 +                       int stride_v)
 +    : width_(width),
 +      height_(height),
-+	  encoded_length_(encoded_length),
 +      stride_y_(stride_y),
 +      stride_u_(stride_u),
 +      stride_v_(stride_v),
 +      data_(static_cast<uint8_t*>(AlignedMalloc(
-+		  encoded_length > 0 ? encoded_length : I420DataSize(height, stride_y, stride_u, stride_v),
++		  I420DataSize(height, stride_y, stride_u, stride_v),
 +          kBufferAlignment))) {
 +  RTC_DCHECK_GT(width, 0);
 +  RTC_DCHECK_GT(height, 0);
@@ -337,10 +353,6 @@ index 031b159..4fc4830 100644
 +  return new rtc::RefCountedObject<I420Buffer>(width, height);
 +}
 +
-+rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width, int height, int encoded_length) {
-+	return new rtc::RefCountedObject<I420Buffer>(width, height, encoded_length);
-+}
-+
 +// static
 +rtc::scoped_refptr<I420Buffer> I420Buffer::Create(int width,
 +                                                  int height,
@@ -348,7 +360,7 @@ index 031b159..4fc4830 100644
 +                                                  int stride_u,
 +                                                  int stride_v) {
 +  return new rtc::RefCountedObject<I420Buffer>(
-+      width, height, 0, stride_y, stride_u, stride_v);
++      width, height, stride_y, stride_u, stride_v);
 +}
 +
 +// static
@@ -429,10 +441,6 @@ index 031b159..4fc4830 100644
 +
 +int I420Buffer::height() const {
 +  return height_;
-+}
-+
-+int I420Buffer::encoded_length() const {
-+	return encoded_length_;
 +}
 +
 +const uint8_t* I420Buffer::DataY() const {
@@ -539,10 +547,10 @@ index 031b159..4fc4830 100644
 +
 +}  // namespace webrtc
 diff --git a/webrtc/api/video/i420_buffer.h b/webrtc/api/video/i420_buffer.h
-index 388a3dd..cc6fb8d 100644
+index 388a3dd..de3f982 100644
 --- a/webrtc/api/video/i420_buffer.h
 +++ b/webrtc/api/video/i420_buffer.h
-@@ -1,116 +1,120 @@
+@@ -1,116 +1,116 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -684,7 +692,6 @@ index 388a3dd..cc6fb8d 100644
 +class I420Buffer : public VideoFrameBuffer {
 + public:
 +  static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
-+  static rtc::scoped_refptr<I420Buffer> Create(int width, int height, int encoded_length);
 +  static rtc::scoped_refptr<I420Buffer> Create(int width,
 +                                               int height,
 +                                               int stride_y,
@@ -720,7 +727,6 @@ index 388a3dd..cc6fb8d 100644
 +
 +  int width() const override;
 +  int height() const override;
-+  int encoded_length() const override;
 +  const uint8_t* DataY() const override;
 +  const uint8_t* DataU() const override;
 +  const uint8_t* DataV() const override;
@@ -761,15 +767,13 @@ index 388a3dd..cc6fb8d 100644
 +
 + protected:
 +  I420Buffer(int width, int height);
-+  I420Buffer(int width, int height, int encoded_length);
-+  I420Buffer(int width, int height, int encoded_length, int stride_y, int stride_u, int stride_v);
++  I420Buffer(int width, int height, int stride_y, int stride_u, int stride_v);
 +
 +  ~I420Buffer() override;
 +
 + private:
 +  const int width_;
 +  const int height_;
-+  const int encoded_length_;
 +  const int stride_y_;
 +  const int stride_u_;
 +  const int stride_v_;
@@ -821,10 +825,10 @@ index 8840782..439cfbb 100644
  
  }  // namespace webrtc
 diff --git a/webrtc/api/video/video_frame_buffer.h b/webrtc/api/video/video_frame_buffer.h
-index c8c2e5d..39e2d72 100644
+index c8c2e5d..d7621ad 100644
 --- a/webrtc/api/video/video_frame_buffer.h
 +++ b/webrtc/api/video/video_frame_buffer.h
-@@ -1,55 +1,56 @@
+@@ -1,55 +1,55 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -908,7 +912,6 @@ index c8c2e5d..39e2d72 100644
 +  // subsampled, this is the highest-resolution plane.
 +  virtual int width() const = 0;
 +  virtual int height() const = 0;
-+  virtual int encoded_length() const = 0;
 +
 +  // Returns pointer to the pixel data for a given plane. The memory is owned by
 +  // the VideoFrameBuffer object and must not be freed by the caller.
@@ -936,11 +939,24 @@ index c8c2e5d..39e2d72 100644
 +}  // namespace webrtc
 +
 +#endif  // WEBRTC_API_VIDEO_VIDEO_FRAME_BUFFER_H_
+diff --git a/webrtc/base/BUILD.gn b/webrtc/base/BUILD.gn
+index eb9361b..89b2d4b 100644
+--- a/webrtc/base/BUILD.gn
++++ b/webrtc/base/BUILD.gn
+@@ -647,7 +647,7 @@ rtc_source_set("gtest_prod") {
+   ]
+ }
+ 
+-if (rtc_include_tests) {
++if (true) {
+   config("rtc_base_tests_utils_exported_config") {
+     defines = [ "GTEST_RELATIVE_PATH" ]
+   }
 diff --git a/webrtc/common_video/include/video_frame_buffer.h b/webrtc/common_video/include/video_frame_buffer.h
-index dfdd480..f52bfc4 100644
+index dfdd480..a6db3e1 100644
 --- a/webrtc/common_video/include/video_frame_buffer.h
 +++ b/webrtc/common_video/include/video_frame_buffer.h
-@@ -1,92 +1,94 @@
+@@ -1,92 +1,92 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -1095,7 +1111,6 @@ index dfdd480..f52bfc4 100644
 +                    const rtc::Callback0<void>& no_longer_used);
 +  int width() const override;
 +  int height() const override;
-+  int encoded_length() const override;
 +
 +  const uint8_t* DataY() const override;
 +  const uint8_t* DataU() const override;
@@ -1114,7 +1129,6 @@ index dfdd480..f52bfc4 100644
 +
 +  const int width_;
 +  const int height_;
-+  const int encoded_length_;
 +  const uint8_t* const y_plane_;
 +  const uint8_t* const u_plane_;
 +  const uint8_t* const v_plane_;
@@ -1128,10 +1142,10 @@ index dfdd480..f52bfc4 100644
 +
 +#endif  // WEBRTC_COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
 diff --git a/webrtc/common_video/video_frame_buffer.cc b/webrtc/common_video/video_frame_buffer.cc
-index 4646bf4..3e62c06 100644
+index 4646bf4..49206dc 100644
 --- a/webrtc/common_video/video_frame_buffer.cc
 +++ b/webrtc/common_video/video_frame_buffer.cc
-@@ -1,132 +1,136 @@
+@@ -1,132 +1,132 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -1345,7 +1359,6 @@ index 4646bf4..3e62c06 100644
 +                                     const rtc::Callback0<void>& no_longer_used)
 +    : width_(width),
 +      height_(height),
-+	  encoded_length_(0),
 +      y_plane_(y_plane),
 +      u_plane_(u_plane),
 +      v_plane_(v_plane),
@@ -1367,9 +1380,6 @@ index 4646bf4..3e62c06 100644
 +  return height_;
 +}
 +
-+int WrappedI420Buffer::encoded_length() const {
-+	return encoded_length_;
-+}
 +const uint8_t* WrappedI420Buffer::DataY() const {
 +  return y_plane_;
 +}
@@ -1400,6 +1410,30 @@ index 4646bf4..3e62c06 100644
 +}
 +
 +}  // namespace webrtc
+diff --git a/webrtc/media/base/mediaconstants.cc b/webrtc/media/base/mediaconstants.cc
+index 0d8512b..76dcb1c 100644
+--- a/webrtc/media/base/mediaconstants.cc
++++ b/webrtc/media/base/mediaconstants.cc
+@@ -108,6 +108,7 @@ const char kH264FmtpLevelAsymmetryAllowed[] = "level-asymmetry-allowed";
+ const char kH264FmtpPacketizationMode[] = "packetization-mode";
+ const char kH264FmtpSpropParameterSets[] = "sprop-parameter-sets";
+ const char kH264ProfileLevelConstrainedBaseline[] = "42e01f";
++const char kH264UseHWNvencode[] = "use-hw-nvencode";
+ 
+ const int kDefaultVideoMaxFramerate = 60;
+ }  // namespace cricket
+diff --git a/webrtc/media/base/mediaconstants.h b/webrtc/media/base/mediaconstants.h
+index 44d8c7e..b592198 100644
+--- a/webrtc/media/base/mediaconstants.h
++++ b/webrtc/media/base/mediaconstants.h
+@@ -130,6 +130,7 @@ extern const char kH264FmtpLevelAsymmetryAllowed[];
+ extern const char kH264FmtpPacketizationMode[];
+ extern const char kH264FmtpSpropParameterSets[];
+ extern const char kH264ProfileLevelConstrainedBaseline[];
++extern const char kH264UseHWNvencode[];
+ 
+ extern const int kDefaultVideoMaxFramerate;
+ }  // namespace cricket
 diff --git a/webrtc/media/engine/webrtcvideoengine2.cc b/webrtc/media/engine/webrtcvideoengine2.cc
 index 3639472..b61e548 100644
 --- a/webrtc/media/engine/webrtcvideoengine2.cc
@@ -6519,7 +6553,7 @@ index 3639472..b61e548 100644
 +
 +}  // namespace cricket
 diff --git a/webrtc/modules/video_coding/BUILD.gn b/webrtc/modules/video_coding/BUILD.gn
-index 643260a..ea98b82 100644
+index 643260a..cc193d9 100644
 --- a/webrtc/modules/video_coding/BUILD.gn
 +++ b/webrtc/modules/video_coding/BUILD.gn
 @@ -171,6 +171,9 @@ rtc_static_library("webrtc_h264") {
@@ -6532,12 +6566,21 @@ index 643260a..ea98b82 100644
      ]
      deps += [
        "../../common_video",
+@@ -271,7 +274,7 @@ rtc_static_library("webrtc_vp9") {
+   }
+ }
+ 
+-if (rtc_include_tests) {
++if (true) {
+   rtc_executable("video_quality_measurement") {
+     testonly = true
+ 
 diff --git a/webrtc/modules/video_coding/codecs/h264/NvHWEncoder.cc b/webrtc/modules/video_coding/codecs/h264/NvHWEncoder.cc
 new file mode 100644
-index 0000000..fad4bda
+index 0000000..418548a
 --- /dev/null
 +++ b/webrtc/modules/video_coding/codecs/h264/NvHWEncoder.cc
-@@ -0,0 +1,1587 @@
+@@ -0,0 +1,1591 @@
 +/*
 + * Copyright 1993-2015 NVIDIA Corporation.  All rights reserved.
 + *
@@ -7799,6 +7842,10 @@ index 0000000..fad4bda
 +    SET_VER(encPicParams, NV_ENC_PIC_PARAMS);
 +    encPicParams.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
 +    encPicParams.completionEvent = hEOSEvent;
++
++	if (!m_bEncoderInitialized)
++		return nvStatus;
++
 +    nvStatus = m_pEncodeAPI->nvEncEncodePicture(m_hEncoder, &encPicParams);
 +    if (nvStatus != NV_ENC_SUCCESS)
 +    {
@@ -8126,10 +8173,10 @@ index 0000000..fad4bda
 +    return NV_ENC_SUCCESS;
 +}
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 84bfafb..66b1ddf 100644
+index 84bfafb..5111d5d 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-@@ -1,503 +1,937 @@
+@@ -1,503 +1,1014 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -8802,26 +8849,39 @@ index 84bfafb..66b1ddf 100644
 +ID3D11DeviceContext * webrtc::H264EncoderImpl::m_d3dContext = nullptr;
 +
 +H264EncoderImpl::H264EncoderImpl(const cricket::VideoCodec& codec)
-+    : 
-+	 encoder_(nullptr),
++	:
++	encoder_(nullptr),
 +	number_of_cores_(0),
-+      width_(0),
-+      height_(0),
-+      max_frame_rate_(0.0f),
-+      target_bps_(0),
-+      max_bps_(0),
-+      mode_(kRealtimeVideo),
-+      frame_dropping_on_(false),
-+	  m_useSoftwareEncoding(false),
-+      key_frame_interval_(0),
-+      packetization_mode_(H264PacketizationMode::SingleNalUnit),
-+      max_payload_size_(0),
-+      encoded_image_callback_(nullptr),
-+      has_reported_init_(false),
-+      has_reported_error_(false) {
-+  RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
-+  std::string packetization_mode_string;
-+    packetization_mode_ = H264PacketizationMode::NonInterleaved;
++	width_(0),
++	height_(0),
++	max_frame_rate_(0.0f),
++	target_bps_(0),
++	max_bps_(0),
++	mode_(kRealtimeVideo),
++	frame_dropping_on_(false),
++	m_use_software_encoding(true),
++	m_first_frame_sent(false),
++	m_pNvHWEncoder(NULL),
++	key_frame_interval_(0),
++	packetization_mode_(H264PacketizationMode::SingleNalUnit),
++	max_payload_size_(0),
++	encoded_image_callback_(nullptr),
++	has_reported_init_(false),
++	has_reported_error_(false) {
++	RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
++	std::string packetization_mode_string;
++	if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
++		&packetization_mode_string) &&
++		packetization_mode_string == "1") {
++		packetization_mode_ = H264PacketizationMode::NonInterleaved;
++	}
++
++	int useNvencode;
++	if (codec.GetParam(cricket::kH264UseHWNvencode,
++		&useNvencode) &&
++		useNvencode == 1) {
++		m_use_software_encoding = false;
++	}
 +}
 +
 +H264EncoderImpl::~H264EncoderImpl() {
@@ -8846,6 +8906,20 @@ index 84bfafb..66b1ddf 100644
 +    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
 +  }
 +
++  Json::Reader reader;
++  Json::Value root = NULL;
++  auto encoderConfigPath = ExePath("nvEncConfig.json");
++  std::ifstream file(encoderConfigPath);
++  if (file.good())
++  {
++	  file >> root;
++	  reader.parse(file, root, true);
++
++	  if (root.isMember("useSoftwareEncoding")) {
++		  m_use_software_encoding = root.get("useSoftwareEncoding", false).asBool();
++	  }
++  }
++
 +  int32_t release_ret = Release();
 +  if (release_ret != WEBRTC_VIDEO_CODEC_OK) {
 +    ReportError();
@@ -8853,22 +8927,7 @@ index 84bfafb..66b1ddf 100644
 +  }
 +	RTC_DCHECK(!encoder_);
 +
-+	Json::Reader reader;
-+	Json::Value root = NULL;
-+
-+	auto encoderConfigPath = ExePath("nvEncConfig.json");
-+	std::ifstream file(encoderConfigPath);
-+	if (file.good())
-+	{
-+		file >> root;
-+		reader.parse(file, root, true);
-+
-+		if (root.isMember("useSoftwareEncoding")) {
-+			m_useSoftwareEncoding = root.get("useSoftwareEncoding", false).asBool();
-+		}
-+	}
-+
-+	if (m_useSoftwareEncoding)
++	if (m_use_software_encoding)
 +	{
 +		//codec_settings
 +		// Create encoder.
@@ -8886,7 +8945,7 @@ index 84bfafb..66b1ddf 100644
 +				&trace_level);
 +		}
 +		// else WELS_LOG_DEFAULT is used by default.
-+
++		
 +		number_of_cores_ = number_of_cores;
 +		// Set internal settings from codec_settings
 +		width_ = codec_settings->width;
@@ -8920,6 +8979,9 @@ index 84bfafb..66b1ddf 100644
 +	}
 +	else
 +	{
++		packetization_mode_ = H264PacketizationMode::NonInterleaved;
++		m_first_frame_sent = false;
++
 +		rtc::Win32Thread w32_thread;
 +		rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 +
@@ -8964,9 +9026,66 @@ index 84bfafb..66b1ddf 100644
 +		encoder_ = nullptr;
 +	}
 +
-+  encoded_image_._buffer = nullptr;
-+  encoded_image_buffer_.reset();
-+  return WEBRTC_VIDEO_CODEC_OK;
++	if (m_pNvHWEncoder)
++	{
++		Deinitialize();
++
++		if (m_pNvHWEncoder)
++		{
++			delete m_pNvHWEncoder;
++			m_pNvHWEncoder = NULL;
++		}
++	}
++
++	encoded_image_._buffer = nullptr;
++	encoded_image_buffer_.reset();
++	return WEBRTC_VIDEO_CODEC_OK;
++}
++
++// Cleanup resources.
++NVENCSTATUS H264EncoderImpl::Deinitialize()
++{
++	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
++
++	if (!m_pNvHWEncoder)
++		return nvStatus;
++
++	FlushEncoder();
++	ReleaseIOBuffers();
++	nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
++	return nvStatus;
++}
++
++NVENCSTATUS H264EncoderImpl::FlushEncoder()
++{
++	NVENCSTATUS nvStatus = m_pNvHWEncoder->NvEncFlushEncoderQueue(m_stEOSOutputBfr.hOutputEvent);
++	if (nvStatus != NV_ENC_SUCCESS)
++	{
++		assert(0);
++		return nvStatus;
++	}
++
++	EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetPending();
++	while (pEncodeBuffer)
++	{
++		m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
++		pEncodeBuffer = m_EncodeBufferQueue.GetPending();
++
++		// UnMap the input buffer after frame is done.
++		if (pEncodeBuffer && pEncodeBuffer->stInputBfr.hInputSurface)
++		{
++			nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
++			pEncodeBuffer->stInputBfr.hInputSurface = NULL;
++		}
++	}
++
++	if (WaitForSingleObject(m_stEOSOutputBfr.hOutputEvent, 500) != WAIT_OBJECT_0)
++	{
++		assert(0);
++		nvStatus = NV_ENC_ERR_GENERIC;
++	}
++
++	return nvStatus;
 +}
 +
 +int32_t H264EncoderImpl::RegisterEncodeCompleteCallback(
@@ -8984,7 +9103,7 @@ index 84bfafb..66b1ddf 100644
 +  target_bps_ = bitrate_allocation.get_sum_bps();
 +  max_frame_rate_ = static_cast<float>(framerate);
 +
-+  if (m_useSoftwareEncoding)
++  if (m_use_software_encoding)
 +  {
 +	  SBitrateInfo target_bitrate;
 +	  memset(&target_bitrate, 0, sizeof(SBitrateInfo));
@@ -9190,9 +9309,10 @@ index 84bfafb..66b1ddf 100644
 +
 +	NvEncPictureCommand pEncPicCommand;
 +	pEncPicCommand.bForceIntraRefresh = forceIntra;
++	pEncPicCommand.bForceIDR = forceIntra;
 +	pEncPicCommand.intraRefreshDuration = m_encodeConfig.intraRefreshDuration;
 +
-+	nvStatus = m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, &pEncPicCommand, m_encodeConfig.width, m_encodeConfig.height);
++	nvStatus = m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, forceIntra ? &pEncPicCommand : nullptr, m_encodeConfig.width, m_encodeConfig.height);
 +	if (nvStatus != NV_ENC_SUCCESS  && nvStatus != NV_ENC_ERR_NEED_MORE_INPUT)
 +	{
 +		return;
@@ -9300,10 +9420,11 @@ index 84bfafb..66b1ddf 100644
 +}
 +
 +// Captures encoded frames from NvEncoder.
-+void H264EncoderImpl::GetEncodedFrame(void** buffer, int* size)
++void H264EncoderImpl::GetEncodedFrame(void** buffer, int* size, _NV_ENC_PIC_TYPE* keyFrameType)
 +{
 +	*buffer = m_pNvHWEncoder->m_lockBitstreamData.bitstreamBufferPtr;
 +	*size = m_pNvHWEncoder->m_lockBitstreamData.bitstreamSizeInBytes;
++	*keyFrameType = m_pNvHWEncoder->m_lockBitstreamData.pictureType;
 +}
 +
 +int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
@@ -9314,7 +9435,7 @@ index 84bfafb..66b1ddf 100644
 +	SFrameBSInfo info;
 +	RTPFragmentationHeader frag_header;
 +
-+	if (m_useSoftwareEncoding && !IsInitialized())
++	if (m_use_software_encoding && !IsInitialized())
 +	{
 +		ReportError();
 +		return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -9342,13 +9463,13 @@ index 84bfafb..66b1ddf 100644
 +		// API doc says ForceIntraFrame(false) does nothing, but calling this
 +		// function forces a key frame regardless of the |bIDR| argument's value.
 +		// (If every frame is a key frame we get lag/delays.)
-+		if (m_useSoftwareEncoding)
++		if (m_use_software_encoding)
 +		{
 +			encoder_->ForceIntraFrame(true);
 +		}
 +	}
 +
-+	if (m_useSoftwareEncoding)
++	if (m_use_software_encoding)
 +	{
 +		// EncodeFrame input.
 +		SSourcePicture picture;
@@ -9382,21 +9503,24 @@ index 84bfafb..66b1ddf 100644
 +	{
 +		void* pFrameBuffer = nullptr;
 +		int frameSizeInBytes = 0;
++		_NV_ENC_PIC_TYPE frameType;
 +		auto texture = input_frame.GetID3D11Texture2D();
-+		if(texture == nullptr)
++		if (texture == nullptr)
 +			return WEBRTC_VIDEO_CODEC_OK;
++
++		// Force a key frame until we send the first one.
++		if (!m_first_frame_sent) force_key_frame = true;
 +
 +		size_t i_nal = 0;
 +		Capture(texture, force_key_frame);
-+		GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes);
-+		if (frameSizeInBytes < 1)
++		GetEncodedFrame(&pFrameBuffer, &frameSizeInBytes, &frameType);
++		if (frameSizeInBytes < 1 || frameSizeInBytes >= 100000000 || frameType == NV_ENC_PIC_TYPE_SKIPPED || frameType == NV_ENC_PIC_TYPE_UNKNOWN)
 +			return WEBRTC_VIDEO_CODEC_OK;
++
++		if (!m_first_frame_sent) m_first_frame_sent = true;
 +
 +		auto p_nal = (uint8_t*)pFrameBuffer;
 +		std::vector<H264::NaluIndex> NALUidx;
-+		
-+		if(frameSizeInBytes >= 100000000)
-+			return WEBRTC_VIDEO_CODEC_OK;
 +
 +		NALUidx = H264::FindNaluIndices(p_nal, frameSizeInBytes);
 +		if (NALUidx.size() < 1)
@@ -9414,7 +9538,7 @@ index 84bfafb..66b1ddf 100644
 +
 +		frag_header.VerifyAndAllocateFragmentationHeader(i_nal);
 +		encoded_image_.qp_ = m_encodeConfig.qp;
-+		encoded_image_._frameType = force_key_frame ? kVideoFrameKey : kVideoFrameDelta;
++		encoded_image_._frameType = frameType == NV_ENC_PIC_TYPE_IDR ? kVideoFrameKey : kVideoFrameDelta;
 +
 +		uint32_t totalNaluIndex = 0;
 +		for (size_t nal_index = 0; nal_index < i_nal; nal_index++)
@@ -9441,7 +9565,7 @@ index 84bfafb..66b1ddf 100644
 +	encoded_image_.rotation_ = input_frame.rotation();
 +
 +	// Split encoded image up into fragments. This also updates |encoded_image_|.
-+	if (m_useSoftwareEncoding)
++	if (m_use_software_encoding)
 +	{
 +		RtpFragmentize(&encoded_image_, &encoded_image_buffer_, *frame_buffer, &info,
 +			&frag_header);
@@ -9571,7 +9695,7 @@ index 84bfafb..66b1ddf 100644
 +
 +}  // namespace webrtc
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
-index a455259..9773c53 100644
+index a455259..d2ede06 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
 @@ -1,104 +1,221 @@
@@ -9708,7 +9832,7 @@ index a455259..9773c53 100644
 +
 +namespace webrtc {
 +
-+	static std::string ExePath(std::string fileName) {
++	static std::string ExePath(std::string fileName = "") {
 +		TCHAR buffer[MAX_PATH];
 +		GetModuleFileName(NULL, buffer, MAX_PATH);
 +		char charPath[MAX_PATH];
@@ -9850,15 +9974,16 @@ index a455259..9773c53 100644
 +  void GetDefaultNvencodeConfig(EncodeConfig &nvEncodeConfig, Json::Value rootValue);
 +
 +  void Capture(ID3D11Texture2D* frameBuffer, bool forceIntra);
-+  void GetEncodedFrame(void** buffer, int* size);
++  void GetEncodedFrame(void** buffer, int* size, _NV_ENC_PIC_TYPE* keyFrameType);
 +  NVENCSTATUS AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight);
++  NVENCSTATUS Deinitialize();
 +  NVENCSTATUS ReleaseIOBuffers();
++  NVENCSTATUS FlushEncoder();
 +
 +  webrtc::H264BitstreamParser h264_bitstream_parser_;
 +  // Reports statistics with histograms.
 +  void ReportInit();
 +  void ReportError();
-+
 +
 +  ISVCEncoder* encoder_;
 +  // Settings that are used by this encoder.
@@ -9882,9 +10007,8 @@ index a455259..9773c53 100644
 +  CNvQueue<EncodeBuffer>    m_EncodeBufferQueue;
 +  EncodeConfig				m_encodeConfig;
 +  bool						m_encoderInitialized;
-+  bool						m_useSoftwareEncoding;
-+  ID3D11Texture2D*			m_stagingFrameBuffer;
-+  D3D11_TEXTURE2D_DESC		m_stagingFrameBufferDesc;
++  bool						m_use_software_encoding;
++  bool						m_first_frame_sent;
 +
 +  EncodedImage encoded_image_;
 +  std::unique_ptr<uint8_t[]> encoded_image_buffer_;
@@ -9900,6 +10024,423 @@ index a455259..9773c53 100644
 +}  // namespace webrtc
 +
 +#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_H264_H264_ENCODER_IMPL_H_
+diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl_unittest.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl_unittest.cc
+index 2d236cf..32998fd 100644
+--- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl_unittest.cc
++++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl_unittest.cc
+@@ -8,76 +8,346 @@
+  *  be found in the AUTHORS file in the root of the source tree.
+  *
+  */
+-
+ #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
+-
+ #include "webrtc/test/gtest.h"
++#include "webrtc/base/criticalsection.h"
++#include "webrtc/base/event.h"
++#include "webrtc/base/thread_annotations.h"
++#include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
++#include "webrtc/test/frame_utils.h"
++#include "webrtc/test/testsupport/fileutils.h"
++#include "webrtc/modules/desktop_capture/win/d3d_device.h"
++#include "libyuv/convert_argb.h"
+ 
+ namespace webrtc {
+ 
+-namespace {
+-
+-const int kMaxPayloadSize = 1024;
+-const int kNumCores = 1;
+-
+-void SetDefaultSettings(VideoCodec* codec_settings) {
+-  codec_settings->codecType = kVideoCodecH264;
+-  codec_settings->maxFramerate = 60;
+-  codec_settings->width = 640;
+-  codec_settings->height = 480;
+-  // If frame dropping is false, we get a warning that bitrate can't
+-  // be controlled for RC_QUALITY_MODE; RC_BITRATE_MODE and RC_TIMESTAMP_MODE
+-  codec_settings->H264()->frameDroppingOn = true;
+-  codec_settings->targetBitrate = 2000;
+-  codec_settings->maxBitrate = 4000;
+-}
+-
+-TEST(H264EncoderImplTest, CanInitializeWithDefaultParameters) {
+-  H264EncoderImpl encoder(cricket::VideoCodec("H264"));
+-  VideoCodec codec_settings;
+-  SetDefaultSettings(&codec_settings);
+-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+-            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
+-  EXPECT_EQ(H264PacketizationMode::NonInterleaved,
+-            encoder.PacketizationModeForTesting());
+-}
+-
+-TEST(H264EncoderImplTest, CanInitializeWithNonInterleavedModeExplicitly) {
+-  cricket::VideoCodec codec("H264");
+-  codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
+-  H264EncoderImpl encoder(codec);
+-  VideoCodec codec_settings;
+-  SetDefaultSettings(&codec_settings);
+-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+-            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
+-  EXPECT_EQ(H264PacketizationMode::NonInterleaved,
+-            encoder.PacketizationModeForTesting());
+-}
+-
+-TEST(H264EncoderImplTest, CanInitializeWithSingleNalUnitModeExplicitly) {
+-  cricket::VideoCodec codec("H264");
+-  codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
+-  H264EncoderImpl encoder(codec);
+-  VideoCodec codec_settings;
+-  SetDefaultSettings(&codec_settings);
+-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+-            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
+-  EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
+-            encoder.PacketizationModeForTesting());
+-}
+-
+-TEST(H264EncoderImplTest, CanInitializeWithRemovedParameter) {
+-  cricket::VideoCodec codec("H264");
+-  codec.RemoveParam(cricket::kH264FmtpPacketizationMode);
+-  H264EncoderImpl encoder(codec);
+-  VideoCodec codec_settings;
+-  SetDefaultSettings(&codec_settings);
+-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+-            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
+-  EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
+-            encoder.PacketizationModeForTesting());
+-}
+-
+-}  // anonymous namespace
++	const int kMaxPayloadSize = 1024;
++	const int kNumCores = 1;
++	static const int kEncodeTimeoutMs = 100;
++	static const int kDecodeTimeoutMs = 25;
++
++	void SetDefaultSettings(VideoCodec* codec_settings) {
++		codec_settings->codecType = kVideoCodecH264;
++		codec_settings->maxFramerate = 60;
++		codec_settings->width = 1280;
++		codec_settings->height = 720;
++		codec_settings->targetBitrate = 4000;
++		codec_settings->maxBitrate = 8000;
++		codec_settings->H264()->frameDroppingOn = true;
++	}
++
++	class H264TestImpl : public ::testing::Test {
++	public:
++		H264TestImpl()
++			: encode_complete_callback_(this),
++			decode_complete_callback_(this),
++			encoded_frame_event_(false /* manual reset */,
++				false /* initially signaled */),
++			decoded_frame_event_(false /* manual reset */,
++				false /* initially signaled */)
++		{
++			defaultCodec = cricket::VideoCodec("H264");
++		}
++
++		void SetEncoderHWEnabled(bool value)
++		{
++			defaultCodec.SetParam(cricket::kH264UseHWNvencode, value);
++			if (value)
++			{
++				// Create a hardware D3D device and context
++				HRESULT hr = S_OK;
++				UINT createDeviceFlags = 0;
++
++				// Creates D3D11 device.
++				hr = D3D11CreateDevice(
++					nullptr,
++					D3D_DRIVER_TYPE_HARDWARE,
++					nullptr,
++					createDeviceFlags,
++					nullptr,
++					0,
++					D3D11_SDK_VERSION,
++					&device,
++					nullptr,
++					&context);
++
++				if (FAILED(hr))
++				{
++					return;
++				}
++
++				H264EncoderImpl::SetDevice(device);
++				H264EncoderImpl::SetContext(context);
++			}
++
++			SetUp();
++		}
++
++	protected:
++		class FakeEncodeCompleteCallback : public webrtc::EncodedImageCallback {
++		public:
++			explicit FakeEncodeCompleteCallback(H264TestImpl* test) : test_(test) {}
++
++			Result OnEncodedImage(const EncodedImage& frame,
++				const CodecSpecificInfo* codec_specific_info,
++				const RTPFragmentationHeader* fragmentation) {
++				rtc::CritScope lock(&test_->encoded_frame_section_);
++				test_->encoded_frame_ = rtc::Optional<EncodedImage>(frame);
++				test_->encoded_frame_event_.Set();
++				return Result(Result::OK);
++			}
++
++		private:
++			H264TestImpl* const test_;
++		};
++
++		class FakeDecodeCompleteCallback : public webrtc::DecodedImageCallback {
++		public:
++			explicit FakeDecodeCompleteCallback(H264TestImpl* test) : test_(test) {}
++
++			int32_t Decoded(VideoFrame& frame) override {
++
++				test_->decoded_frame_ = rtc::Optional<VideoFrame>(frame);
++				test_->decoded_frame_event_.Set();
++
++				return WEBRTC_VIDEO_CODEC_OK;
++			}
++			int32_t Decoded(VideoFrame& frame, int64_t decode_time_ms) override {
++				RTC_NOTREACHED();
++				return -1;
++			}
++			void Decoded(VideoFrame& frame,
++				rtc::Optional<int32_t> decode_time_ms,
++				rtc::Optional<uint8_t> qp) override {
++				rtc::CritScope lock(&test_->decoded_frame_section_);
++				test_->decoded_frame_ = rtc::Optional<VideoFrame>(frame);
++				test_->decoded_qp_ = qp;
++				test_->decoded_frame_event_.Set();
++			}
++
++		private:
++			H264TestImpl* const test_;
++		};
++
++		void SetUp() override {
++			VideoCodec codec_inst_;
++			SetDefaultSettings(&codec_inst_);
++			auto path = ExePath() + "..\\..\\..\\resources\\paris_qcif.yuv";
++			// Using a QCIF image. Processing only one frame.
++			FILE* source_file_ =
++				fopen(path.c_str(), "rb");
++			ASSERT_TRUE(source_file_ != NULL);
++			rtc::scoped_refptr<VideoFrameBuffer> video_frame_buffer(
++				test::ReadI420Buffer(codec_inst_.width, codec_inst_.height, source_file_));
++			
++			input_frame_.reset(new VideoFrame(video_frame_buffer, kVideoRotation_0, 0));
++			fclose(source_file_);
++
++			encoder_.reset(H264Encoder::Create(defaultCodec));
++			decoder_.reset(H264Decoder::Create());
++			encoder_->RegisterEncodeCompleteCallback(&encode_complete_callback_);
++			decoder_->RegisterDecodeCompleteCallback(&decode_complete_callback_);
++
++			EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++				encoder_->InitEncode(&codec_inst_, 1 /* number of cores */,
++					0 /* max payload size (unused) */));
++			EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++				decoder_->InitDecode(&codec_inst_, 1 /* number of cores */));
++		}
++
++		bool WaitForEncodedFrame(EncodedImage* frame) {
++			bool ret = encoded_frame_event_.Wait(kEncodeTimeoutMs);
++			if (!ret)
++				return false;
++
++			// This becomes unsafe if there are multiple threads waiting for frames.
++			rtc::CritScope lock(&encoded_frame_section_);
++			if (encoded_frame_) {
++				*frame = std::move(*encoded_frame_);
++				encoded_frame_.reset();
++				return true;
++			}
++			else {
++				return false;
++			}
++		}
++
++		bool WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
++			rtc::Optional<uint8_t>* qp) {
++			bool ret = decoded_frame_event_.Wait(kDecodeTimeoutMs);
++			EXPECT_TRUE(ret) << "Timed out while waiting for a decoded frame.";
++			// This becomes unsafe if there are multiple threads waiting for frames.
++			rtc::CritScope lock(&decoded_frame_section_);
++			EXPECT_TRUE(decoded_frame_);
++			if (decoded_frame_) {
++				frame->reset(new VideoFrame(std::move(*decoded_frame_)));
++				decoded_frame_.reset();
++				return true;
++			}
++			else {
++				return false;
++			}
++		}
++
++		std::unique_ptr<VideoFrame> input_frame_;
++
++		std::unique_ptr<VideoEncoder> encoder_;
++		std::unique_ptr<VideoDecoder> decoder_;
++
++		ID3D11Device* device = nullptr;
++		ID3D11DeviceContext* context = nullptr;
++
++	private:
++		FakeEncodeCompleteCallback encode_complete_callback_;
++		FakeDecodeCompleteCallback decode_complete_callback_;
++
++		cricket::VideoCodec defaultCodec;
++
++		rtc::Event encoded_frame_event_;
++		rtc::CriticalSection encoded_frame_section_;
++		rtc::Optional<EncodedImage> encoded_frame_ GUARDED_BY(encoded_frame_section_);
++
++		rtc::Event decoded_frame_event_;
++		rtc::CriticalSection decoded_frame_section_;
++		rtc::Optional<VideoFrame> decoded_frame_ GUARDED_BY(decoded_frame_section_);
++		rtc::Optional<uint8_t> decoded_qp_ GUARDED_BY(decoded_frame_section_);
++	};
++
++	TEST(H264EncoderImplTest, CanInitializeWithDefaultParameters) {
++		H264EncoderImpl encoder(cricket::VideoCodec("H264"));
++		VideoCodec codec_settings;
++		SetDefaultSettings(&codec_settings);
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
++		EXPECT_EQ(H264PacketizationMode::NonInterleaved,
++			encoder.PacketizationModeForTesting());
++	}
++
++	TEST(H264EncoderImplTest, CanInitializeWithNonInterleavedModeExplicitly) {
++		cricket::VideoCodec codec("H264");
++		codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
++		H264EncoderImpl encoder(codec);
++		VideoCodec codec_settings;
++		SetDefaultSettings(&codec_settings);
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
++		EXPECT_EQ(H264PacketizationMode::NonInterleaved,
++			encoder.PacketizationModeForTesting());
++	}
++
++	TEST(H264EncoderImplTest, CanInitializeWithSingleNalUnitModeExplicitly) {
++		cricket::VideoCodec codec("H264");
++		codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
++		H264EncoderImpl encoder(codec);
++		VideoCodec codec_settings;
++		SetDefaultSettings(&codec_settings);
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
++		EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
++			encoder.PacketizationModeForTesting());
++	}
++
++	TEST(H264EncoderImplTest, CanInitializeWithRemovedParameter) {
++		cricket::VideoCodec codec("H264");
++		codec.RemoveParam(cricket::kH264FmtpPacketizationMode);
++		H264EncoderImpl encoder(codec);
++		VideoCodec codec_settings;
++		SetDefaultSettings(&codec_settings);
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
++		EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
++			encoder.PacketizationModeForTesting());
++	}
++
++	TEST_F(H264TestImpl, SoftwareEncodeDecode) {
++		SetEncoderHWEnabled(false);
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			encoder_->Encode(*input_frame_, nullptr, nullptr));
++		EncodedImage encoded_frame;
++		ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame));
++		// First frame should be a key frame.
++		encoded_frame._frameType = kVideoFrameKey;
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			decoder_->Decode(encoded_frame, false, nullptr));
++		std::unique_ptr<VideoFrame> decoded_frame;
++		rtc::Optional<uint8_t> decoded_qp;
++		ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
++		ASSERT_TRUE(decoded_frame);
++		EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 25);
++	}
++
++	TEST_F(H264TestImpl, HardwareNvencodeEncodeDecode) {
++		SetEncoderHWEnabled(true);
++
++		rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
++			input_frame_.get()->video_frame_buffer());
++
++		D3D11_SUBRESOURCE_DATA initData;
++		size_t NumBytes = buffer->width() * buffer->height() * 4;
++		size_t RowBytes = buffer->width() * 4;
++
++		initData.pSysMem = new uint8_t[NumBytes];
++		initData.SysMemPitch = static_cast<UINT>(RowBytes);
++		initData.SysMemSlicePitch = static_cast<UINT>(NumBytes);
++
++		libyuv::I420ToABGR(buffer->DataY(), buffer->StrideY(),
++			buffer->DataU(), buffer->StrideU(),
++			buffer->DataV(), buffer->StrideV(),
++			(uint8_t*)initData.pSysMem,
++			RowBytes,
++			buffer->width(), buffer->height());
++
++		// Create texture
++		D3D11_TEXTURE2D_DESC desc;
++		desc.Width = buffer->width();
++		desc.Height = buffer->height();
++		desc.MipLevels = 1;
++		desc.ArraySize = 1;
++		desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
++		desc.SampleDesc.Count = 1;
++		desc.SampleDesc.Quality = 0;
++		desc.Usage = D3D11_USAGE_STAGING;
++		desc.BindFlags = 0;
++		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
++		desc.MiscFlags = 0;
++
++		ID3D11Texture2D* tex = nullptr;
++		device->CreateTexture2D(&desc, &initData, &tex);
++		input_frame_.get()->SetID3D11Texture2D(tex);
++
++		// Nvencode needs a few frames before it starts to output the encoded frame
++		int retryForEncodeFrame = 100;
++		EncodedImage encoded_frame;
++		while (retryForEncodeFrame > 0)
++		{
++			EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++				encoder_->Encode(*input_frame_, nullptr, nullptr));
++			if (WaitForEncodedFrame(&encoded_frame))
++			{
++				retryForEncodeFrame = -1;
++			}
++			else
++			{
++				retryForEncodeFrame--;
++
++				ID3D11Texture2D* tex = nullptr;
++				device->CreateTexture2D(&desc, &initData, &tex);
++				input_frame_.get()->SetID3D11Texture2D(tex);
++			}
++		}
++
++		// First frame should be a key frame.
++		encoded_frame._frameType = kVideoFrameKey;
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
++			decoder_->Decode(encoded_frame, false, nullptr));
++		std::unique_ptr<VideoFrame> decoded_frame;
++		rtc::Optional<uint8_t> decoded_qp;
++		ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
++		ASSERT_TRUE(decoded_frame);
++		EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 5);
++		
++		// Test correct release of hardware encoder
++		EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
++	}
+ 
+ }  // namespace webrtc
 diff --git a/webrtc/modules/video_coding/codecs/h264/include/NvHWEncoder.h b/webrtc/modules/video_coding/codecs/h264/include/NvHWEncoder.h
 new file mode 100644
 index 0000000..a96695e
@@ -22398,6 +22939,19 @@ index 0b54d13..d87b9cb 100644
 +}
 +}  // namespace vcm
 +}  // namespace webrtc
+diff --git a/webrtc/video/BUILD.gn b/webrtc/video/BUILD.gn
+index a5a3b7c..f2d27d0 100644
+--- a/webrtc/video/BUILD.gn
++++ b/webrtc/video/BUILD.gn
+@@ -77,7 +77,7 @@ rtc_static_library("video") {
+   ]
+ }
+ 
+-if (rtc_include_tests) {
++if (true) {
+   rtc_source_set("video_quality_test") {
+     testonly = true
+     sources = [
 diff --git a/webrtc/video/video_loopback.cc b/webrtc/video/video_loopback.cc
 index f86078e..aacf412 100644
 --- a/webrtc/video/video_loopback.cc
