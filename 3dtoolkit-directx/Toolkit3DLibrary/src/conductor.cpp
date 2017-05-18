@@ -152,40 +152,69 @@ bool Conductor::CreatePeerConnection(bool dtls)
 
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 
-#ifdef DEPLOYED_SERVICE
-	webrtc::PeerConnectionInterface::IceServer turnServer;
-	turnServer.uri = "";
-	turnServer.username = "";
-	turnServer.password = "";
-
 	// Try parsing config file.
 	std::string configFilePath = ExePath("webrtcConfig.json");
 	std::ifstream configFile(configFilePath);
 	Json::Reader reader;
 	Json::Value root = NULL;
+
 	if (configFile.good())
 	{
+
 		reader.parse(configFile, root, true);
-		if (root.isMember("turnServer"))
+		if (root.isMember("iceConfiguration"))
 		{
-			Json::Value jsonTurnServer = root.get("turnServer", NULL);
-			if (!jsonTurnServer.isNull())
+			Json::Value iceConfig = root.get("iceConfiguration", NULL);
+			if (iceConfig == "relay") 
 			{
-				turnServer.uri = jsonTurnServer["uri"].asString();
-				turnServer.username = jsonTurnServer["username"].asString();
-				turnServer.password = jsonTurnServer["password"].asString();
+				webrtc::PeerConnectionInterface::IceServer turnServer;
+				turnServer.uri = "";
+				turnServer.username = "";
+				turnServer.password = "";
+
+
+				if (root.isMember("turnServer"))
+				{
+					Json::Value jsonTurnServer = root.get("turnServer", NULL);
+					if (!jsonTurnServer.isNull())
+					{
+						turnServer.uri = jsonTurnServer["uri"].asString();
+						turnServer.username = jsonTurnServer["username"].asString();
+						turnServer.password = jsonTurnServer["password"].asString();
+					}
+				}
+
+				turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+				config.type = webrtc::PeerConnectionInterface::kRelay;
+				config.servers.push_back(turnServer);
 			}
+			else
+			{
+				if (iceConfig == "stun")
+				{
+					webrtc::PeerConnectionInterface::IceServer stunServer;
+					stunServer.uri = "";
+
+
+					if (root.isMember("stunServer"))
+					{
+						Json::Value jsonTurnServer = root.get("stunServer", NULL);
+						if (!jsonTurnServer.isNull())
+						{
+							stunServer.urls.push_back(jsonTurnServer["uri"].asString());
+							config.servers.push_back(stunServer);
+						}
+					}
+				}
+				else
+				{
+					webrtc::PeerConnectionInterface::IceServer stunServer;
+					stunServer.urls.push_back(GetPeerConnectionString());
+					config.servers.push_back(stunServer);
+				}
+			}	
 		}
 	}
-
-	turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck; 
-	config.type = webrtc::PeerConnectionInterface::kRelay;
-	config.servers.push_back(turnServer);
-#else
-	webrtc::PeerConnectionInterface::IceServer stunServer;
-	stunServer.urls.push_back(GetPeerConnectionString());
-	config.servers.push_back(stunServer);
-#endif // DEPLOYED_SERVICE
 
 	webrtc::FakeConstraints constraints;
 	if (dtls) 
