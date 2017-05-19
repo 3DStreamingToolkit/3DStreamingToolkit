@@ -14,6 +14,21 @@ function Get-ScriptDirectory
   Split-Path $Invocation.MyCommand.Path
 }
 
+function Run-H264UnitTests($path)
+{
+  Set-Location $path
+  CMD /C modules_unittests.exe --gtest_filter="H264*" --gtest_output="xml:report.xml" --run-manual
+  
+  [xml]$XmlDocument = Get-Content -Path report.xml
+  if ($XmlDocument.testsuites.failures -gt 0) 
+  {
+      Write-Error -Message "Error: H264 Unit tests failed" -Category InvalidResult
+      exit 1
+  }
+
+   Set-Location "../../../"
+}
+
 Import-Module BitsTransfer
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
@@ -63,13 +78,20 @@ CMD /C 'gn gen citest/Win32/Release  --ide=vs --args="use_rtti=true target_cpu=\
 CMD /C 'gn gen citest/Win32/Debug    --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_initialize_ffmpeg=true"'
 CMD /C 'gn gen citest/x64/Release    --ide=vs --args="use_rtti=true target_cpu=\"x64\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_initialize_ffmpeg=true is_official_build=true"'
 CMD /C 'gn gen citest/x64/Debug      --ide=vs --args="use_rtti=true target_cpu=\"x64\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_initialize_ffmpeg=true"'
-CMD /C 'ninja -C citest/Win32/Debug'
-CMD /C 'ninja -C citest/x64/Debug'
-CMD /C 'ninja -C citest/Win32/Release'
-CMD /C 'ninja -C citest/x64/Release'
 
-#Run Unit tests suite and validation checks here
-#Continue if successful to build packaged bits
+CMD /C 'ninja -C citest/Win32/Debug'
+Run-H264UnitTests("citest/Win32/Debug/")
+
+CMD /C 'ninja -C citest/x64/Debug'
+Run-H264UnitTests("citest/x64/Debug")
+
+CMD /C 'ninja -C citest/Win32/Release'
+Run-H264UnitTests("citest/Win32/Release")
+
+CMD /C 'ninja -C citest/x64/Release'
+Run-H264UnitTests("citest/x64/Release")
+
+#If unit tests are successful continue to build packaged bits
 
 CMD /C 'gn gen out/Win32/Release  --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
 CMD /C 'gn gen out/Win32/Debug    --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
