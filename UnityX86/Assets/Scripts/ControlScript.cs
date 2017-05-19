@@ -40,12 +40,16 @@ public class ControlScript : MonoBehaviour
     private float fpsCount = 0f;
     private float startTime = 0;
     private float endTime = 0;
-    
-    private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();    
+
+#if !UNITY_EDITOR
+    private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
+#else
+    private static readonly Queue<Action> _executionQueue = new Queue<Action>();
+#endif
     private bool frame_ready_receive = true;
     private string messageText;
 
-    #region Graphics Low-Level Plugin DLL Setup
+#region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
     public RawVideoSource rawVideo;
     public EncodedVideoSource encodedVideo;
@@ -80,7 +84,7 @@ public class ControlScript : MonoBehaviour
     [DllImport("TexturesUWP")]
 #endif
     private static extern IntPtr GetRenderEventFunc();
-    #endregion
+#endregion
 
     void Awake()
     {
@@ -277,7 +281,7 @@ public class ControlScript : MonoBehaviour
         {
             encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;            
         }
-#endif                
+#endif
         _webRtcControl.DisconnectFromPeer();
     }
 
@@ -358,6 +362,7 @@ public class ControlScript : MonoBehaviour
 
         MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
 
+#if !UNITY_EDITOR
         lock (_executionQueue)            
         {
             while (!_executionQueue.IsEmpty)
@@ -370,6 +375,7 @@ public class ControlScript : MonoBehaviour
                 }
             }
         }
+#endif
     }
 
     private void CreateTextureAndPassToPlugin()

@@ -7,7 +7,7 @@ using System.Text;
 // PLACEHOLDER Object for UWP Class
 namespace WebRtcWrapper
 {
-    public class WebRtcUtils
+    public class WebRtcControl
     {
         public delegate void OnRawVideoFrameSendDelegate(uint w, uint h, byte[] yPlane, uint yPitch, byte[] vPlane, uint vPitch, byte[] uPlane, uint uPitch);
 
@@ -25,7 +25,7 @@ namespace WebRtcWrapper
             OnStatusMessageUpdate?.Invoke("Initialized");            
         }
 
-        public void ConnectCommandExecute(object obj)
+        public void ConnectCommand(object obj)
         {
             OnStatusMessageUpdate?.Invoke("Connect Server");
         }
@@ -35,24 +35,24 @@ namespace WebRtcWrapper
             OnStatusMessageUpdate?.Invoke("ConnectToServer()");            
         }
 
-        public void DisconnectFromServerExecute(object obj)
+        public void DisconnectFromServer()
         {
             OnStatusMessageUpdate?.Invoke("Disconnect Server");
         }
 
-        public void ConnectToPeerCommandExecute(object obj)
+        public void ConnectToPeerCommand(object obj)
         {
             OnStatusMessageUpdate?.Invoke("Connect Peer");
             OnRawFrameReceived2?.Invoke();
 
         }
 
-        public void SendPeerMessageDataExecute(object obj)
+        public void SendPeerMessageData(object obj)
         {
             OnStatusMessageUpdate?.Invoke("Send Peer Message");
         }
 
-        public void DisconnectFromPeerCommandExecute(object obj)
+        public void DisconnectFromPeer()
         {
             OnStatusMessageUpdate?.Invoke("Disconnect Peer");
         }
