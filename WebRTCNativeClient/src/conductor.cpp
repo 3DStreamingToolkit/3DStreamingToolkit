@@ -160,53 +160,63 @@ bool Conductor::CreatePeerConnection(bool dtls)
 		if (root.isMember("iceConfiguration"))
 		{
 			Json::Value iceConfig = root.get("iceConfiguration", NULL);
+
 			if (iceConfig == "relay")
 			{
-				webrtc::PeerConnectionInterface::IceServer turnServer;
-				turnServer.uri = "";
-				turnServer.username = "";
-				turnServer.password = "";
-
-
-				if (root.isMember("turnServer"))
-				{
-					Json::Value jsonTurnServer = root.get("turnServer", NULL);
-					if (!jsonTurnServer.isNull())
-					{
-						turnServer.uri = jsonTurnServer["uri"].asString();
-						turnServer.username = jsonTurnServer["username"].asString();
-						turnServer.password = jsonTurnServer["password"].asString();
-					}
-				}
-
-				turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
 				config.type = webrtc::PeerConnectionInterface::kRelay;
-				config.servers.push_back(turnServer);
-					}
-			else
+			}
+			else if (iceConfig == "all")
 			{
-				if (iceConfig == "stun")
+				config.type = webrtc::PeerConnectionInterface::kAll;
+			}
+
+			if (root.isMember("iceServers"))
+			{
+				auto jsonIceServers = root.get("iceServers", NULL);
+				if (jsonIceServers.isArray())
 				{
-					webrtc::PeerConnectionInterface::IceServer stunServer;
-					stunServer.uri = "";
-
-
-					if (root.isMember("stunServer"))
+					auto arraySize = jsonIceServers.size();
+					for (Json::ArrayIndex i = 0; i < arraySize; i++)
 					{
-						Json::Value jsonTurnServer = root.get("stunServer", NULL);
-						if (!jsonTurnServer.isNull())
+
+						auto jsonIceServer = jsonIceServers.get(i, NULL);
+						if (jsonIceServer != NULL && jsonIceServer.isObject())
 						{
-							stunServer.urls.push_back(jsonTurnServer["uri"].asString());
-							config.servers.push_back(stunServer);
+							webrtc::PeerConnectionInterface::IceServer iceServer;
+							iceServer.uri = jsonIceServer["uri"].asString();
+
+							if (config.type == webrtc::PeerConnectionInterface::kAll 
+								|| config.type == webrtc::PeerConnectionInterface::kRelay)
+							{
+								if (iceServer.uri.find("turn:", 0) == 0)
+								{
+									iceServer.username = jsonIceServer["username"].asString();
+									iceServer.password = jsonIceServer["password"].asString();
+									iceServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+									config.servers.push_back(iceServer);
+								}
+							}
+
+							if (config.type == webrtc::PeerConnectionInterface::kAll)
+							{
+								if (iceServer.uri.find("stun:", 0) == 0)
+								{
+									iceServer.urls.push_back(jsonIceServer["uri"].asString());
+									config.servers.push_back(iceServer);
+								}
+
+							}
 						}
 					}
 				}
-				else
-				{
-					webrtc::PeerConnectionInterface::IceServer stunServer;
-					stunServer.urls.push_back(GetPeerConnectionString());
-					config.servers.push_back(stunServer);
-				}
+			}
+
+			if (config.servers.size() == 0)
+			{
+				// No other servers found add default.
+				webrtc::PeerConnectionInterface::IceServer stunServer;
+				stunServer.urls.push_back(GetPeerConnectionString());
+				config.servers.push_back(stunServer);
 			}
 		}
 	}
