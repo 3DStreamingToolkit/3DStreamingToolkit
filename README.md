@@ -30,14 +30,14 @@ In Visual Studio 2017, press cancel on first launch when it asks if you want to 
 
 Build the solution from Visual Studio, and look in 
 
-\3dtoolkit-directx\Samples\**\Build\** for server binaries.
+\3dtoolkit-directx\Samples\ ** \Build\ **  for server binaries.
 
-\WebRTCNativeClient\Build\** for the native client binaries.   
+\WebRTCNativeClient\Build\\ ** for the native client binaries.   
 
-\WebRTCLibs\**\Exe\** for the sample signaling, turn and stun server binaries.
+\WebRTCLibs\ ** \Exe\ ** for the sample signaling, turn and stun server binaries.
 
 
-### Building WebRTC Libraries from Source
+### Building WebRTC Libraries from Source (You don't need to do this unless you are changing the encoder)
 If you want to build webrtc yourself, you will need to install Visual Studio 2015 with Update 3.
 
 [Visual Studio 2015 Update 3 Community Edition ISO](http://download.microsoft.com/download/b/e/d/bedddfc4-55f4-4748-90a8-ffe38a40e89f/vs2015.3.com_enu.iso)
@@ -79,3 +79,10 @@ To distribute binaries for others, Currently you'll need to zip and upload yours
 https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_headers.zip
 https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_Win32.zip
 https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_x64.zip
+
+### Standing up production TURN/STUN/Signaling Servers
+
+See https://github.com/anastasiia-zolochevska/3dstreaming-arm-templates/ 
+And source repos:
+https://github.com/anastasiia-zolochevska/signaling-server-for-webrtc-native-client
+https://github.com/anastasiia-zolochevska/turn-server-docker-image
