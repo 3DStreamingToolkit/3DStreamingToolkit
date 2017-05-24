@@ -1,0 +1,140 @@
+﻿using System;
+using System.Collections;
+using System.Runtime.InteropServices;
+using UnityEngine;
+using UnityEngine.Rendering;
+using SimpleJSON;
+
+public class WebRTCServer : MonoBehaviour
+{
+    public delegate void FPtr([MarshalAs(UnmanagedType.LPStr)]string value);
+    
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+	[DllImport ("__Internal")]
+#else
+    [DllImport("UnityWebRTCServerPlugin")]
+#endif
+    private static extern IntPtr GetRenderEventFunc();
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+	[DllImport ("__Internal")]
+#else
+    [DllImport("UnityWebRTCServerPlugin")]
+#endif
+    private static extern void Login(string server, Int32 port);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+	[DllImport ("__Internal")]
+#else
+    [DllImport("UnityWebRTCServerPlugin")]
+#endif    
+    public static extern void SetInputDataCallback(FPtr cb);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+	[DllImport ("__Internal")]
+#else
+    [DllImport("UnityWebRTCServerPlugin")]
+#endif
+    private static extern void Close();
+
+
+    static Vector3 Location = new Vector3();
+    static Vector3 LookAt = new Vector3();
+
+    // Use this for initialization
+    void Start()
+    {
+        // Make sure that the render window continues to render when the game window does not have focus
+        Application.runInBackground = true;
+
+        CommandBuffer cmb = new CommandBuffer();
+        cmb.name = "WebRTC Encoding";
+        cmb.IssuePluginEvent(GetRenderEventFunc(), 0);
+
+        Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, cmb);
+        
+        Login("localhost", 8888);
+        
+        FPtr cb = new FPtr(OnInputData);
+
+        SetInputDataCallback(cb);
+    }
+
+    void Stop()
+    {
+        Close();
+    }
+
+    private void OnDisable()
+    {
+        Close();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        transform.position = Location;
+        transform.LookAt(LookAt);
+    }
+
+    void OnInputData(string val)
+    {
+        var node = SimpleJSON.JSON.Parse(val);
+        string messageType = node["type"];
+
+        switch (messageType)
+        {
+            /*
+            case "keyboard-event":
+                
+                var e = UnityEngine.Event.KeyboardEvent("s");
+                
+                int msg = node["message"];
+                int wParam = node["wParam"];
+
+
+                Debug.Log("Message(" + msg.ToString() + ", " + wParam.ToString() + ")");
+                
+                break;
+            */
+            case "camera-transform":
+                string cam = node["state"];
+
+                if (cam != null && cam.Length > 0)
+                {
+                    string[] sp = cam.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    Vector3 loc = new Vector3();
+
+                    loc.x = float.Parse(sp[0]);
+                    loc.y = float.Parse(sp[1]);
+                    loc.z = float.Parse(sp[2]);
+
+                    Location = loc;
+
+                    loc.x = float.Parse(sp[3]);
+                    loc.y = float.Parse(sp[4]);
+                    loc.z = float.Parse(sp[5]);
+
+                    LookAt = loc;
+                }
+
+                break;
+            default:
+                
+                
+                /*
+                Debug.Log("InputData(" + val + ")");
+                Debug.Log("");
+
+                foreach (var child in node.Children)
+                {
+                    Debug.Log(child.ToString());
+                }
+                */
+                break;
+        }
+    }
+
+}
