@@ -102,7 +102,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>NOMINMAX;WIN32_LEAN_AND_MEAN;NOMINMAX;WIN32_LEAN_AND_MEAN;WIN32;_DEBUG;_WINDOWS;_USRDLL;ARFUNITYMRT_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files\Unity 2017.1.0b1\Editor\Data\PluginAPI;$(ProjectDir);$(SolutionDir)Toolkit3DLibrary\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\UnityPluginAPI;$(ProjectDir);$(SolutionDir)Toolkit3DLibrary\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -123,7 +123,7 @@ xcopy /y $(OutDir)*.pdb $(ProjectDir)\..\Assets\Plugins\x86</Command>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>NOMINMAX;WIN32_LEAN_AND_MEAN;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Program Files\Unity 2017.1.0b1\Editor\Data\PluginAPI;$(ProjectDir);$(SolutionDir)..\3dtoolkit-directx\Toolkit3DLibrary\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\UnityPluginAPI;$(ProjectDir);$(SolutionDir)..\3dtoolkit-directx\Toolkit3DLibrary\inc;$(SolutionDir)..\WebRTCLibs\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
