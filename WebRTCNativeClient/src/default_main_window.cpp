@@ -12,8 +12,7 @@
 
 #include <math.h>
 
-#include "default_data_channel_handler.h"
-#include "json_data_channel_handler.h"
+#include "data_channel_handler_factory.h"
 #include "default_main_window.h"
 #include "defaults.h"
 #include "libyuv/convert_argb.h"
@@ -133,8 +132,7 @@ bool DefaultMainWindow::Create()
 	CreateChildWindows();
 	SwitchToConnectUI();
 	
-	data_channel_handler_ = new DefaultDataChannelHandler();
-	//data_channel_handler_ = new JsonDataChannelHandler();
+	data_channel_handler_ = DataChannelHandlerFactory::Create("JSON");
 	
 	return wnd_ != NULL;
 }

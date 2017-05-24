@@ -31,6 +31,7 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 	LPARAM lParam = msg->lParam;
 	Vector3 move = Vector3::Zero;
 	float scale = distance_;
+	float translate = 0;
 	bool sendMessage = false;
 	bool sendMouseEvent = false;
 
@@ -167,11 +168,10 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 			}
 			else
 			{
-				// Zoom with scroll wheel
-				float newZoom = 1.f + float(mouse.scrollWheelValue) / float(120 * 10);
-				newZoom = std::max(newZoom, 0.01f);
-				sendMessage |= newZoom != zoom_;
-				zoom_ = newZoom;
+				// translate with scroll wheel
+				float translate = float(mouse.scrollWheelValue) / float(120 * 10);
+
+				sendMessage |= (translate != 0);
 
 				if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::PRESSED)
 				{
@@ -188,7 +188,7 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 	Vector3 right = Vector3::Up.Cross(lookAt);
 	Vector3 up = lookAt.Cross(right);
 
-	Vector3 tmove = lookAt * (distance_ * zoom_);
+	Vector3 tmove = lookAt * translate;
 
 	last_camera_pos_ += tmove;
 	camera_focus_ = last_camera_pos_ + lookAt;
@@ -223,5 +223,5 @@ void JsonDataChannelHandler::ResetCamera()
 	mouse_button_tracker_.Reset();
 	Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
 	Vector3 up = Vector3::Transform(Vector3::Up, camera_rot_);
-	last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
+	last_camera_pos_ = camera_focus_ - (distance_ * zoom_) * lookAt;
 }
