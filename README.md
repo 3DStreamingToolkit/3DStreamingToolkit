@@ -15,7 +15,7 @@ This will install and configure the following:
 + [This patch](.\WebRTCLibs\nvencoder.patch) will be applied to the above
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit
 
-> Note: we can't currently use the [directxtk nuget packages](https://www.nuget.org/packages?q=directxtk) because they don't provide static linking targets for release builds.
+> Note: We can't currently use the [directxtk nuget packages](https://www.nuget.org/packages?q=directxtk) because they don't provide static linking targets for release builds.
 
 Once you see `Libraries retrieved and up to date` you may proceed and open [the solution](.\3dtoolkit-directx\Toolkit3D.sln).
 
@@ -29,7 +29,7 @@ Build the solution from Visual Studio, and look in:
 
 ## Distributing binaries
 
-> Note: currently for others you'll need to zip and upload yourself to match the `.\WebRTCLibs\webrtcInstallLibs.ps1` script.
+> Note: Currently for others you'll need to zip and upload yourself to match the `.\WebRTCLibs\webrtcInstallLibs.ps1` script.
 
 https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_headers.zip
 https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_Win32.zip
@@ -79,4 +79,4 @@ Once finished building, for local use, copy the contents of
 ```
 C:\<path to source>\webrtv-checkout\dist
 ```
-to the WebRTCLibs folder in this repo.
+to the `WebRTCLibs` folder in this repo.
