@@ -3,7 +3,7 @@
 A toolkit for building powerful stereoscopic 3d experiences that run on azure
 and stream to devices. :muscle: :eye: :cloud:
 
-> Note: If you are using Visual Studio 2017, ensure you have installed the [v140 c++ runtime](https://www.microsoft.com/en-us/download/details.aspx?id=48145), and please __do not update our projects when prompted to do so__.
+> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
 
 ## Installing Prebuilt Libraries for /3dtoolkit-directx
 
