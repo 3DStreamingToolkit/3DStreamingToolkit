@@ -543,19 +543,6 @@ int InitWebRTC(char* server, int port)
 		}
 	}
 
-	if (conductor->connection_active() || client.is_connected())
-	{
-		while ((conductor->connection_active() || client.is_connected()) &&
-			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
-		{
-			if (!wnd.PreTranslateMessage(&msg))
-			{
-				::TranslateMessage(&msg);
-				::DispatchMessage(&msg);
-			}
-		}
-	}
-
 	rtc::CleanupSSL();
 
 	return 0;

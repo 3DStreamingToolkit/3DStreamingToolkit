@@ -1,7 +1,5 @@
 #pragma once
 
-#define DEPLOYED_SERVICE
-
 #define KEYBOARD_DELAY					1
 #define MOUSE_DELAY						5
 
