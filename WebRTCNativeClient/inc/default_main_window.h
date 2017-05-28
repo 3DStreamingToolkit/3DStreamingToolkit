@@ -18,7 +18,8 @@
 #include "defs.h"
 #include "main_window.h"
 #include "peer_connection_client.h"
-#include "arc_ball.h"
+#include "data_channel_handler.h"
+
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/win32.h"
@@ -183,8 +184,7 @@ protected:
 	void HandleTabbing();
 
 private:
-	void ResetCamera();
-
+	
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;
 	UI ui_;
@@ -204,19 +204,11 @@ private:
 	std::string port_;
 	bool auto_connect_;
 	bool auto_call_;
+
+	DataChannelHandler *data_channel_handler_;
+
 	int width_;
 	int height_;
-	int keyboardTick;
-	int mouseTick;
-	std::unique_ptr<DirectX::Mouse> mouse_;
-	DirectX::Mouse::ButtonStateTracker mouse_button_tracker_;
-	ArcBall ball_camera_;
-	DirectX::SimpleMath::Matrix view_;
-	DirectX::SimpleMath::Vector3 camera_focus_;
-	DirectX::SimpleMath::Vector3 last_camera_pos_;
-	DirectX::SimpleMath::Quaternion camera_rot_;
-	float zoom_;
-	float distance_;
 };
 
 #endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_

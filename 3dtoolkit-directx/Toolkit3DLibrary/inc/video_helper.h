@@ -17,6 +17,7 @@ namespace Toolkit3DLibrary
 												~VideoHelper();
 												
 		NVENCSTATUS								Initialize(IDXGISwapChain* swapChain);
+		NVENCSTATUS								Initialize(ID3D11Texture2D* frameBuffer, DXGI_FORMAT format, int width, int height);
 		NVENCSTATUS                             Deinitialize(); 
 		void									Capture(void** buffer, int* size, int* width, int* height);
 		ID3D11Texture2D*						Capture2DTexture(int* width, int* height);
@@ -27,6 +28,7 @@ namespace Toolkit3DLibrary
 
 	private:
 		IDXGISwapChain*							m_swapChain;
+		ID3D11Texture2D*						m_frameBuffer;
 
 		// NvEncoder
 		ID3D11Texture2D*						m_stagingFrameBuffer;

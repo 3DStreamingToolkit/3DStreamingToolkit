@@ -35,6 +35,7 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain)
 {
 	// Caches the pointer to the swap chain.
 	m_swapChain = swapChain;
+	m_frameBuffer = NULL;
 
 	// Gets the swap chain desc.
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
@@ -55,6 +56,32 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain)
 	return NV_ENC_SUCCESS;
 }
 
+
+// Initializes the IO buffers without access to a swapchain
+NVENCSTATUS VideoHelper::Initialize(ID3D11Texture2D* frameBuffer, DXGI_FORMAT format, int width, int height)
+{
+	// Caches the pointer to the swap chain.
+	m_swapChain = NULL;
+	m_frameBuffer = frameBuffer;
+	m_frameBuffer->AddRef();
+
+	// Initializes the staging frame buffer, backed by ID3D11Texture2D*.
+	m_stagingFrameBufferDesc = { 0 };
+	m_stagingFrameBufferDesc.ArraySize = 1;
+	m_stagingFrameBufferDesc.Format = format;
+	m_stagingFrameBufferDesc.Width = width;
+	m_stagingFrameBufferDesc.Height = height;
+	m_stagingFrameBufferDesc.MipLevels = 1;
+	m_stagingFrameBufferDesc.SampleDesc.Count = 1;
+	m_stagingFrameBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	m_stagingFrameBufferDesc.Usage = D3D11_USAGE_STAGING;
+	m_d3dDevice->CreateTexture2D(&m_stagingFrameBufferDesc, nullptr, &m_stagingFrameBuffer);
+
+	return NV_ENC_SUCCESS;
+}
+
+
+
 // Cleanup resources.
 NVENCSTATUS VideoHelper::Deinitialize()
 {
@@ -72,9 +99,19 @@ ID3D11Texture2D* VideoHelper::Capture2DTexture(int* width, int* height)
 {
 	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
+
+	if (m_swapChain)
+	{
+		// Gets the frame buffer from the swap chain.
 	HRESULT hr = m_swapChain->GetBuffer(0,
 		__uuidof(ID3D11Texture2D),
 		reinterpret_cast<void**>(&frameBuffer));
+	}
+	else
+	{
+		frameBuffer = m_frameBuffer;
+		m_frameBuffer->AddRef();
+	}
 
 	*width = m_stagingFrameBufferDesc.Width;
 	*height = m_stagingFrameBufferDesc.Height;
@@ -85,12 +122,23 @@ ID3D11Texture2D* VideoHelper::Capture2DTexture(int* width, int* height)
 // Captures frame buffer from the swap chain.
 void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 {
-	// Gets the frame buffer from the swap chain.
 	ID3D11Texture2D* frameBuffer = nullptr;
-	CHECK_HR_FAILED(m_swapChain->GetBuffer(0,
-		__uuidof(ID3D11Texture2D),
-		reinterpret_cast<void**>(&frameBuffer)));
 
+	if (m_swapChain)
+	{
+		// Gets the frame buffer from the swap chain.
+		HRESULT hr = m_swapChain->GetBuffer(0,
+		__uuidof(ID3D11Texture2D),
+			reinterpret_cast<void**>(&frameBuffer));
+	}
+	else
+	{
+		frameBuffer = m_frameBuffer;
+		frameBuffer->AddRef();
+	}
+
+	if (frameBuffer)
+	{
 	// Copies the frame buffer to the staging frame buffer.
 	m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
 	frameBuffer->Release();
@@ -108,4 +156,5 @@ void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 	}
 
 	m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
+	}
 }
