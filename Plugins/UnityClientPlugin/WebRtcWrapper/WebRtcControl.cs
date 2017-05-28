@@ -75,7 +75,6 @@ namespace WebRtcWrapper
             }
 
             // HACK Remove Automatic Device Assignment
-
             if (SelectedCamera == null && Cameras.Count > 0)
             {
                 SelectedCamera = Cameras.First();
@@ -533,6 +532,7 @@ namespace WebRtcWrapper
                 OnStatusMessageUpdate?.Invoke(msg);
             }
             _selfVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
+            //if ((_selfVideoTrack != null) && (SelectedCamera != null))
             if (_selfVideoTrack != null)
             {
                 Debug.WriteLine("selfVideoTrack Setup-IsCameraEnabled:{0}-IsMicrophoneEnabled:{1}", IsCameraEnabled, IsMicrophoneEnabled);

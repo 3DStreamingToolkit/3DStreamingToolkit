@@ -1,4 +1,5 @@
 {
+  "iceConfiguration": "relay",
   "turnServer": {
     "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
     "username": "user",
