@@ -52,7 +52,8 @@ echo Target Plugin Path is %25TARGET_PLUGIN_PATH%25
 mkdir "%25TARGET_PLUGIN_PATH%25Plugins"
 mkdir "%25TARGET_PLUGIN_PATH%25Plugins\WebRtcWrapper"
 mkdir "%25TARGET_PLUGIN_PATH%25Plugins\WebRtcWrapper\Placeholder"
-xcopy /R /I /Y "$(TargetPath)" "%25TARGET_PLUGIN_PATH%25Plugins\WebRtcWrapper\Placeholder"
+mkdir "%25TARGET_PLUGIN_PATH%25Plugins\WebRtcWrapper\Placeholder\$(Platform)"
+xcopy /R /I /Y "$(TargetPath)" "%25TARGET_PLUGIN_PATH%25Plugins\WebRtcWrapper\Placeholder\$(Platform)"
 ENDLOCAL</PostBuildEvent>
   </PropertyGroup>
 </Project>

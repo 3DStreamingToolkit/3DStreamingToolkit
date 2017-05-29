@@ -515,7 +515,7 @@ PlayerSettings:
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
   metroCertificateIssuer: DefaultCompany
-  metroCertificateNotAfter: 00a26d5d9acdd301
+  metroCertificateNotAfter: 003a6b0e57f7d301
   metroApplicationDescription: UnityX86
   wsaImages: {}
   metroTileShortName: 
@@ -552,7 +552,7 @@ PlayerSettings:
       Proximity: False
       RemovableStorage: False
       SharedUserCertificates: False
-      SpatialPerception: False
+      SpatialPerception: True
       UserAccountInformation: False
       VideosLibrary: False
       VoipCall: False

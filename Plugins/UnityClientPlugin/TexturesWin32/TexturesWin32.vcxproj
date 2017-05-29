@@ -117,7 +117,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
 
-      xcopy /R /I /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
       ENDLOCAL
       </Command>
     </PostBuildEvent>
@@ -145,7 +145,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
 
-      xcopy /R /I /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
       ENDLOCAL
       </Command>
     </PostBuildEvent>
@@ -177,7 +177,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
 
-      xcopy /R /I /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
       ENDLOCAL
       </Command>
     </PostBuildEvent>
@@ -209,7 +209,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
 
-      xcopy /R /I /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
       ENDLOCAL
       </Command>
     </PostBuildEvent>
