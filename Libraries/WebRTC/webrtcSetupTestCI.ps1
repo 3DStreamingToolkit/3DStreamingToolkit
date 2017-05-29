@@ -48,17 +48,26 @@ if((Test-Path ($fullPath + "\depot_tools\")) -eq $false) {
 if (-not($Env:Path | Select-String -SimpleMatch $fullPath\depot_tools)) { 
     $Env:Path = "$fullPath\depot_tools;" + $Env:Path
     # proper check for build agents, as they cannot write to registry.
-    if(-not (Test-Path Env:SYSTEM_TEAMPROJECT)) {
-        [Environment]::SetEnvironmentVariable("Path", $Env:Path, [System.EnvironmentVariableTarget]::Machine) 
+    If (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
+    [Security.Principal.WindowsBuiltInRole] "Administrator"))
+    {
+        if(-not (Test-Path Env:SYSTEM_TEAMPROJECT)) {
+            [Environment]::SetEnvironmentVariable("Path", $Env:Path, [System.EnvironmentVariableTarget]::Machine) 
+        }
     }
     CMD /C "gclient"
 }
 
 $Env:DEPOT_TOOLS_WIN_TOOLCHAIN = 0
 # proper check for build agents, as they cannot write to registry.
-if(-not (Test-Path Env:SYSTEM_TEAMPROJECT)) {
-    [Environment]::SetEnvironmentVariable("DEPOT_TOOLS_WIN_TOOLCHAIN", $Env:DEPOT_TOOLS_WIN_TOOLCHAIN, [System.EnvironmentVariableTarget]::Machine)
-}New-Item -Path . -Name "webrtc-checkout" -ItemType Directory -Force
+If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
+    [Security.Principal.WindowsBuiltInRole] "Administrator"))
+{
+    if(-not (Test-Path Env:SYSTEM_TEAMPROJECT)) {
+        [Environment]::SetEnvironmentVariable("DEPOT_TOOLS_WIN_TOOLCHAIN", $Env:DEPOT_TOOLS_WIN_TOOLCHAIN, [System.EnvironmentVariableTarget]::Machine)
+    }
+}
+New-Item -Path . -Name "webrtc-checkout" -ItemType Directory -Force
 Set-Location "webrtc-checkout"
 #if src exists, don't repull, just reset and reapply patch
 if((Test-Path ("src")) -eq $false) {
