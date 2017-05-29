@@ -1,2 +1,2 @@
 @echo off
-powershell -file .\setup\setup.ps1
+powershell -file .\Utilities\setup.ps1

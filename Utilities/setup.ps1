@@ -1,7 +1,7 @@
 Push-Location -Path .
 $err = $null
 
-Set-Location -Path .\WebRTCLibs
+Set-Location -Path ($PSScriptRoot + "\..\Libraries\WebRTC")
 
 try {
     & .\webrtcInstallLibs.ps1
@@ -10,20 +10,43 @@ try {
 }
 
 if ($err) {
-    Write-Host 'Error retrieving WebRTC libraries: $err.Message' -ForegroundColor Red
+    Write-Host ('Error retrieving WebRTC libraries: ' + $err.Message) -ForegroundColor Red
 }
 
-Set-Location -Path ..
-Set-Location -Path .\WebRTCNativeClient
+Set-Location -Path ($PSScriptRoot + "\..\Samples\Client\Directx")
 
 try {
-    & .\directXTKInstallLibs.ps1
+    & .\InstallLibraries.ps1
 } catch {
     $err = $_.Exception
 }
 
 if ($err) {
-    Write-Host 'Error retrieving WebRTC libraries: $err.Message' -ForegroundColor Red
+    Write-Host ('Error retrieving DirectXTK libraries for native client: ' + $err.Message) -ForegroundColor Red
+}
+
+Set-Location -Path ($PSScriptRoot + "\..\Samples\Client\DirectxHololens")
+
+try {
+    & .\InstallLibraries.ps1
+} catch {
+    $err = $_.Exception
+}
+
+if ($err) {
+    Write-Host ('Error retrieving WebRTC-UWP & LibYUV libraries for directx hololens client: ' + $err.Message) -ForegroundColor Red
+}
+
+Set-Location -Path ($PSScriptRoot + "\..\Plugins\UnityClientPlugin")
+
+try {
+    & .\InstallLibraries.ps1
+} catch {
+    $err = $_.Exception
+}
+
+if ($err) {
+    Write-Host ('Error retrieving WebRTC-UWP & LibYUV libraries for unity client plugin: ' + $err.Message) -ForegroundColor Red
 }
 
 if ($err -eq $null) {
