@@ -700,7 +700,7 @@ GameObject:
   - component: {fileID: 492526795}
   - component: {fileID: 492526794}
   - component: {fileID: 492526793}
-  m_Layer: 5
+  m_Layer: 14
   m_Name: RightCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -793,7 +793,7 @@ GameObject:
   - component: {fileID: 524280182}
   - component: {fileID: 524280184}
   - component: {fileID: 524280183}
-  m_Layer: 5
+  m_Layer: 14
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -996,7 +996,7 @@ GameObject:
   - component: {fileID: 594903644}
   - component: {fileID: 594903643}
   - component: {fileID: 594903642}
-  m_Layer: 0
+  m_Layer: 14
   m_Name: RightCamera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1104,7 +1104,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 669725300}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f16859116aaf76641abff9890f3277fb, type: 3}
+  m_Script: {fileID: 11500000, guid: ee072976bc4d908439ee2547612a6829, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   StatusText: {fileID: 84462042}
@@ -1122,7 +1122,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 669725300}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e2124036feabe014194bc905ba3ad785, type: 3}
+  m_Script: {fileID: 11500000, guid: 381aa1e08f5b8c64cbe6972754241fc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   panelMain: {fileID: 1271731265}
@@ -1499,7 +1499,7 @@ GameObject:
   - component: {fileID: 820444787}
   - component: {fileID: 820444786}
   - component: {fileID: 820444790}
-  m_Layer: 0
+  m_Layer: 13
   m_Name: LeftCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -1585,7 +1585,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 820444784}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68016f231d2ae864da6f60df6012532e, type: 3}
+  m_Script: {fileID: 11500000, guid: d95186380a379514ead09e07cd29ae88, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   MoveRate: 1
@@ -1750,7 +1750,7 @@ GameObject:
   - component: {fileID: 1021261824}
   - component: {fileID: 1021261826}
   - component: {fileID: 1021261825}
-  m_Layer: 5
+  m_Layer: 13
   m_Name: Image
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3725,7 +3725,7 @@ GameObject:
   - component: {fileID: 2143558902}
   - component: {fileID: 2143558901}
   - component: {fileID: 2143558900}
-  m_Layer: 5
+  m_Layer: 13
   m_Name: LeftCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
