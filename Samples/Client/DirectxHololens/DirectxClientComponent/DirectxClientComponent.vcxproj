@@ -71,7 +71,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\DirectxClient\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\DirectxClientComponent\</IntDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
@@ -101,6 +104,9 @@
       <AdditionalLibraryDirectories>VideoDecoder\libyuv\libs\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -119,6 +125,9 @@
       <AdditionalLibraryDirectories>VideoDecoder\libyuv\libs\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -137,6 +146,9 @@
       <AdditionalLibraryDirectories>VideoDecoder\libyuv\libs\Debug</AdditionalLibraryDirectories>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -155,6 +167,9 @@
       <AdditionalLibraryDirectories>VideoDecoder\libyuv\libs\Release</AdditionalLibraryDirectories>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Common\CameraResources.h" />
