@@ -20,7 +20,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)Build\$(Platform)\$(Configuration)\DirectxClient\</OutputPath>
+    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <NoWarn>;2008</NoWarn>
     <DebugType>full</DebugType>
@@ -30,7 +31,8 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>bin\x86\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)Build\$(Platform)\$(Configuration)\DirectxClient</OutputPath>
+    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <Optimize>true</Optimize>
     <NoWarn>;2008</NoWarn>
@@ -43,7 +45,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x64\Debug\</OutputPath>
+    <OutputPath>$(SolutionDir)Build\$(Platform)\$(Configuration)\DirectxClient</OutputPath>
+    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <NoWarn>;2008</NoWarn>
     <DebugType>full</DebugType>
@@ -53,7 +56,8 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
+    <OutputPath>$(SolutionDir)Build\$(Platform)\$(Configuration)\DirectxClient</OutputPath>
+    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
     <DefineConstants>TRACE;NETFX_CORE;WINDOWS_UWP</DefineConstants>
     <Optimize>true</Optimize>
     <NoWarn>;2008</NoWarn>
@@ -94,9 +98,9 @@
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DirectxClientComponent\DirectXClientComponent.vcxproj">
+    <ProjectReference Include="..\DirectxClientComponent\DirectxClientComponent.vcxproj">
       <Project>{80204d5c-6e4d-46a6-8506-c1280966fd16}</Project>
-      <Name>WebRTCDirectXClientComponent</Name>
+      <Name>DirectxClientComponent</Name>
     </ProjectReference>
     <ProjectReference Include="..\WebRtcWrapper\WebRtcWrapper.csproj">
       <Project>{1857162f-96cc-451f-a4e2-3616207943ab}</Project>

@@ -74,6 +74,7 @@ CMD /C 'ninja -C out/x64/Debug'
 CMD /C 'ninja -C out/Win32/Release'
 CMD /C 'ninja -C out/x64/Release'
 
+# Testing Builds for WINRT Libs.  Currently broken, do not enable
 # CMD /C 'gn gen out/Win32/Release  --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=false target_os=\"winrt_10\" current_os=\"winrt_10\""'
 # CMD /C 'gn gen out/Win32/Debug    --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=true  target_os=\"winrt_10\" current_os=\"winrt_10\""'
 # CMD /C 'gn gen out/x64/Release    --ide=vs --args="use_rtti=true target_cpu=\"x64\" is_debug=false target_os=\"winrt_10\" current_os=\"winrt_10\""'
@@ -100,11 +101,11 @@ Get-ChildItem -Directory | ForEach-Object {
 
         Get-ChildItem -Path $_.FullName -Recurse -Filter "*.pdb" | Where-Object {
             $_.Name -notmatch ".*exe.*" -and $_.Name -notmatch ".*dll.*" } | ForEach-Object {
-            $touchItem = New-Item -Path ($libPath.FullName + "\symbol") -Name $_.Name  -ItemType file -Force
+            $touchItem = New-Item -Path ($libPath.FullName + "\lib") -Name $_.Name  -ItemType file -Force
             Copy-Item $_.FullName -Destination $touchItem.FullName -Force
         }
         Get-ChildItem -Path $_.FullName -Recurse -Filter "*.lib" | Where-Object {
-            $_.Name -match "common_video.lib|ffmpeg.dll.lib|webrtc.lib|boringssl_asm.lib|boringssl.dll.lib|field_trial_default.lib|metrics_default.lib|protobuf_full.lib" } | ForEach-Object {
+            $_.Name -match "common_video.lib|ffmpeg.dll.lib|webrtc.lib|boringssl_asm.lib|boringssl.dll.lib|field_trial_default.lib|metrics_default.lib|protobuf_full.lib|libyuv.lib" } | ForEach-Object {
             $touchItem = New-Item -Path ($libPath.FullName + "\lib") -Name $_.Name  -ItemType file -Force
             Copy-Item $_.FullName -Destination $touchItem.FullName -Force
         }

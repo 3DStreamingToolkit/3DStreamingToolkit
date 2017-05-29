@@ -112,10 +112,22 @@
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.dll $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x86
-xcopy /y $(OutDir)*.pdb $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x86
-xcopy /y /d  "$(SolutionDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x86" 
-xcopy /y /d  "$(SolutionDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x86"</Command>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+
+      xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      ENDLOCAL
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -137,10 +149,22 @@ xcopy /y /d  "$(SolutionDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.dll $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x64
-xcopy /y $(OutDir)*.pdb $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x64
-xcopy /y /d  "$(SolutionDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x64" 
-xcopy /y /d  "$(SolutionDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x64"</Command>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+
+      xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      ENDLOCAL
+      </Command>   
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -167,8 +191,20 @@ xcopy /y /d  "$(SolutionDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.dll $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x86
-xcopy /y $(OutDir)*.pdb $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x86</Command>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+
+      xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      ENDLOCAL
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -195,8 +231,20 @@ xcopy /y $(OutDir)*.pdb $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\As
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.dll $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x64
-xcopy /y $(OutDir)*.pdb $(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\Plugins\x64</Command>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+
+      xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\WebRTCServer"
+      ENDLOCAL
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
