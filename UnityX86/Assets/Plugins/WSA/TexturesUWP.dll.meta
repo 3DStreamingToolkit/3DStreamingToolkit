@@ -131,7 +131,7 @@ PluginImporter:
           CPU: X86
           DontProcess: False
           PlaceholderPath: 
-          SDK: UWP
+          SDK: AnySDK
           ScriptingBackend: AnyScriptingBackend
     data:
       first:

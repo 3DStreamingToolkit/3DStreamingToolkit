@@ -159,7 +159,7 @@ xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\
       <AdditionalOptions>/nodefaultlib:msvcrt  /nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\x86\
+      <Command>xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Assets\Plugins\WSA\
 xcopy /R /I /Y $(TargetPath) $(SolutionDir)..\..\Build\UWP\UnityX86\Plugins\X86\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
