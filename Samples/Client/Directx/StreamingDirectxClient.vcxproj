@@ -69,9 +69,9 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\Client\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\Client\</IntDir>
-    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\Client\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\Client\</IntDir>
+    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(ProjectDir)libs\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <LinkIncremental>true</LinkIncremental>

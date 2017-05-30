@@ -73,25 +73,21 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="Unity.props" />
   </ImportGroup>
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\StreamingUnityServerPlugin\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\StreamingUnityServerPlugin\</IntDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\StreamingUnityServerPlugin\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

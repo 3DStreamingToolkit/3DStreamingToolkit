@@ -69,29 +69,22 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\SpinningCubeServer\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\SpinningCubeServerService\</IntDir>
+    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\SpinningCubeServer\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\SpinningCubeServerService\</IntDir>
-    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\SpinningCubeServer\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\SpinningCubeServerService\</IntDir>
-    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\SpinningCubeServer\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\SpinningCubeServerService\</IntDir>
-    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\SpinningCubeServer\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\SpinningCubeServerService\</IntDir>
-    <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
