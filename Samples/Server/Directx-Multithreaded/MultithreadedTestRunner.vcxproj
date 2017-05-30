@@ -89,12 +89,14 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner\</IntDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\MultithreadTestRunner\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\MultithreadTestRunner\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <ReferencePath>$(VC_ReferencesPath_x86);</ReferencePath>
   </PropertyGroup>
@@ -102,24 +104,18 @@
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\MultithreadTestRunner\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\MultithreadTestRunner\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\MultithreadTestRunner\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\MultithreadTestRunner\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|X64'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\MultithreadTestRunner\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\MultithreadTestRunner\</IntDir>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
