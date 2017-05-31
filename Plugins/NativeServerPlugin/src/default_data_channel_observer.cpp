@@ -38,7 +38,10 @@ void DefaultDataChannelObserver::OnStateChange()
 
 void DefaultDataChannelObserver::OnMessage(const webrtc::DataBuffer& buffer) 
 {
-	input_update_func_(std::string((const char*)buffer.data.data(), buffer.data.size()));
+	if (input_update_func_ != NULL)
+	{
+		input_update_func_(std::string((const char*)buffer.data.data(), buffer.data.size()));
+	}
 }
 
 bool DefaultDataChannelObserver::IsOpen() const
