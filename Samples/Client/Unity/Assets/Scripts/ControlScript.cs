@@ -56,43 +56,27 @@ public class ControlScript : MonoBehaviour
     private MediaVideoTrack _peerVideoTrack;
 #endif
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
-    [DllImport("TexturesUWP")]
-#endif
+    [DllImport("Textures")]
     private static extern void SetTextureFromUnity(System.IntPtr texture, int w, int h);
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
-    [DllImport("TexturesUWP")]
-#endif
+    [DllImport("Textures")]
     private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
         IntPtr vPlane, uint vStride);
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
-    [DllImport("TexturesUWP")]
-#endif
+    [DllImport("Textures")]
     private static extern void ProcessH264Frame(uint w, uint h, IntPtr data, uint dataSize);
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
-    [DllImport("TexturesUWP")]
-#endif
+    [DllImport("Textures")]
     private static extern IntPtr GetRenderEventFunc();
 #endregion
 
     void Awake()
     {
         // Azure Host Details
-        //ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
         
         // Local Dev Setup
-        ServerInputTextField.text = "127.0.0.1:8888";
+        //ServerInputTextField.text = "127.0.0.1:8888";
     }
 
     void Start()

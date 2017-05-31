@@ -19,6 +19,7 @@
     <PackageCertificateKeyFile>StreamingDirectxHololensClient_TemporaryKey.pfx</PackageCertificateKeyFile>
     <OutputPath>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\DirectxClient\</OutputPath>
     <IntermediateOutputPath>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
+    <LayoutDir>$(IntDir)\Layout</LayoutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -97,12 +98,13 @@
       <Name>DirectxClientComponent</Name>
     </ProjectReference>
     <ProjectReference Include="..\WebRtcWrapper\WebRtcWrapper.csproj">
-      <Project>{1857162f-96cc-451f-a4e2-3616207943ab}</Project>
+      <Project>{fd9e6a0f-1dd6-4f65-b41c-e4ff0fe7709b}</Project>
       <Name>WebRtcWrapper</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Org.WebRtc">
+      <Path>..\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</Path>
       <HintPath>..\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</HintPath>
     </Reference>
   </ItemGroup>

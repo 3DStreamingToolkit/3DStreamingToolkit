@@ -86,6 +86,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
+
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\Textures$(TargetExt)"
+      ENDLOCAL
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -102,21 +118,6 @@
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
-      ENDLOCAL
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -130,21 +131,6 @@
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
-    <PostBuildEvent>
-      <Command>
-      SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
-      ENDLOCAL
-      </Command>
-    </PostBuildEvent>
     </Link>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -162,21 +148,6 @@
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
-      ENDLOCAL
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -194,21 +165,6 @@
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\Textures\$(PlatformShortName)\Textures_$(PlatformShortName)$(TargetExt)"
-      ENDLOCAL
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
