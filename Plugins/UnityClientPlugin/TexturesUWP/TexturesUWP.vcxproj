@@ -109,7 +109,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
 
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\Textures$(TargetExt)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\TexturesUWP$(TargetExt)"
       ENDLOCAL
       </Command>
     </PostBuildEvent>
