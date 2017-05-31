@@ -1,10 +1,15 @@
 {
-  "iceConfiguration": "relay",
-  "turnServer": {
-    "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
-    "username": "user",
-    "password": "3Dstreaming0317"
-  },
+  "iceConfiguration": "all",
+  "iceServers": [
+    {
+      "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
+      "username": "user",
+      "password": "3Dstreaming0317"
+    },
+    {
+      "uri": "stun:stun.l.google.com:19302"
+    }
+  ],
   "server": "signalingserver.centralus.cloudapp.azure.com",
   "port": 3000
 }
