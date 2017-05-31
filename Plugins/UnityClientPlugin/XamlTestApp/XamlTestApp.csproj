@@ -134,6 +134,9 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Org.WebRtc">
+      <HintPath>..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</HintPath>
+    </Reference>
     <ProjectReference Include="..\WebRtcWrapper\WebRtcWrapper.csproj">
       <Project>{1857162f-96cc-451f-a4e2-3616207943ab}</Project>
       <Name>WebRtcWrapper</Name>
@@ -143,16 +146,6 @@
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>SETLOCAL
-set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-echo Target Plugin Path is %25TARGET_PLUGIN_PATH%25
-mkdir "%25TARGET_PLUGIN_PATH%25Plugins"
-mkdir "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
-xcopy /R /I /Y "$(OutDir)Org.WebRtc.dll" "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
-xcopy /R /I /Y "$(OutDir)Org.WebRtc.winmd" "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
-ENDLOCAL</PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

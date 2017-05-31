@@ -5,9 +5,9 @@
 #include <cmath>
 #include <d3d11.h>
 #include <assert.h>
-#include "UnityPluginAPI/IUnityGraphics.h"
-#include "UnityPluginAPI/IUnityInterface.h"
-#include "UnityPluginAPI/IUnityGraphicsD3D11.h"
+#include "IUnityGraphics.h"
+#include "IUnityInterface.h"
+#include "IUnityGraphicsD3D11.h"
 
 static void* g_TextureHandle = NULL;
 static int   g_TextureWidth = 0;

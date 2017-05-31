@@ -104,8 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Org.WebRtc">
-      <Path>..\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</Path>
-      <HintPath>..\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</HintPath>
+      <HintPath>..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</HintPath>
     </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
