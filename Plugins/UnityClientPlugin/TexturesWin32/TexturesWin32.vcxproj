@@ -100,7 +100,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
 
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\Textures$(TargetExt)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\TexturesWin32$(TargetExt)"
       ENDLOCAL
       </Command>
     </PostBuildEvent>

@@ -161,9 +161,10 @@ set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
 echo Target Plugin Path is %25TARGET_PLUGIN_PATH%25
 mkdir "%25TARGET_PLUGIN_PATH%25Plugins"
 mkdir "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
+mkdir "%25TARGET_PLUGIN_PATH%25Plugins\WSA\$(Platform)"
 xcopy /R /I /Y "$(OutDir)$(TargetName)$(TargetExt)" "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
 xcopy /R /I /Y "$(OutDir)$(TargetName).pdb" "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
-xcopy /R /I /Y "$(OutDir)Org.WebRtc.dll" "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
+xcopy /R /I /Y "$(OutDir)Org.WebRtc.dll" "%25TARGET_PLUGIN_PATH%25Plugins\WSA\$(Platform)"
 xcopy /R /I /Y "$(OutDir)Org.WebRtc.winmd" "%25TARGET_PLUGIN_PATH%25Plugins\WSA"
 
 ENDLOCAL</PostBuildEvent>

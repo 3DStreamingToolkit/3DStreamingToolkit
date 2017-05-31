@@ -56,17 +56,33 @@ public class ControlScript : MonoBehaviour
     private MediaVideoTrack _peerVideoTrack;
 #endif
 
-    [DllImport("Textures")]
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
     private static extern void SetTextureFromUnity(System.IntPtr texture, int w, int h);
 
-    [DllImport("Textures")]
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
     private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
         IntPtr vPlane, uint vStride);
 
-    [DllImport("Textures")]
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
     private static extern void ProcessH264Frame(uint w, uint h, IntPtr data, uint dataSize);
 
-    [DllImport("Textures")]
+#if UNITY_EDITOR
+    [DllImport("TexturesWin32")]
+#else
+    [DllImport("TexturesUWP")]
+#endif
     private static extern IntPtr GetRenderEventFunc();
 #endregion
 
