@@ -13,28 +13,28 @@ public class WebRTCServer : MonoBehaviour
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("UnityWebRTCServerPlugin")]
+    [DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern IntPtr GetRenderEventFunc();
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("UnityWebRTCServerPlugin")]
+    [DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern void Login(string server, Int32 port);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("UnityWebRTCServerPlugin")]
+    [DllImport("StreamingUnityServerPlugin")]
 #endif    
     public static extern void SetInputDataCallback(FPtr cb);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("UnityWebRTCServerPlugin")]
+    [DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern void Close();
 
