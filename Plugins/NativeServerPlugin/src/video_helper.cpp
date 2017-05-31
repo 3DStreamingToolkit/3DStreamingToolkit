@@ -139,22 +139,22 @@ void VideoHelper::Capture(void** buffer, int* size, int* width, int* height)
 
 	if (frameBuffer)
 	{
-	// Copies the frame buffer to the staging frame buffer.
-	m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
-	frameBuffer->Release();
+		// Copies the frame buffer to the staging frame buffer.
+		m_d3dContext->CopyResource(m_stagingFrameBuffer, frameBuffer);
+		frameBuffer->Release();
 
-	// Accesses the frame buffer.
-	D3D11_TEXTURE2D_DESC desc;
-	m_stagingFrameBuffer->GetDesc(&desc);
-	D3D11_MAPPED_SUBRESOURCE mapped;
-	if (SUCCEEDED(m_d3dContext->Map(m_stagingFrameBuffer, 0, D3D11_MAP_READ, 0, &mapped)))
-	{
-		*buffer = mapped.pData;
-		*size = mapped.RowPitch * desc.Height;
-		*width = desc.Width;
-		*height = desc.Height;
-	}
+		// Accesses the frame buffer.
+		D3D11_TEXTURE2D_DESC desc;
+		m_stagingFrameBuffer->GetDesc(&desc);
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		if (SUCCEEDED(m_d3dContext->Map(m_stagingFrameBuffer, 0, D3D11_MAP_READ, 0, &mapped)))
+		{
+			*buffer = mapped.pData;
+			*size = mapped.RowPitch * desc.Height;
+			*width = desc.Width;
+			*height = desc.Height;
+		}
 
-	m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
+		m_d3dContext->Unmap(m_stagingFrameBuffer, 0);
 	}
 }
