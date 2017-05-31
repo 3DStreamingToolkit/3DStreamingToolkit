@@ -1,9 +1,9 @@
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function DecompressZip {    
-    if((Test-Path ($PSScriptRoot + "\DirectxClientComponent\VideoDecoder\libyuv\libs")) -eq $false) {
+    if((Test-Path ($PSScriptRoot + "\libyuv\libs")) -eq $false) {
         Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($PSScriptRoot + "\DirectxClientComponent\VideoDecoder\libyuv\libs.zip", $PSScriptRoot + "\DirectxClientComponent\VideoDecoder\libyuv\")
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($PSScriptRoot + "\libyuv\libs.zip", $PSScriptRoot + "\libyuv\")
         Write-Host "Finished"
     }
 

@@ -7,9 +7,9 @@
 #include <cmath>
 #include <d3d11.h>
 #include <assert.h>
-#include "UnityPluginAPI/IUnityGraphics.h"
-#include "UnityPluginAPI/IUnityInterface.h"
-#include "UnityPluginAPI/IUnityGraphicsD3D11.h"
+#include "IUnityGraphics.h"
+#include "IUnityInterface.h"
+#include "IUnityGraphicsD3D11.h"
 #include "VideoDecoder.h"
 #include "libyuv/convert_argb.h"
 
