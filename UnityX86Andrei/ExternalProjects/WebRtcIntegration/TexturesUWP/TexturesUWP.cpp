@@ -17,7 +17,7 @@
 // Decoder Namespace
 using namespace WebRTCDirectXClientComponent;
 int const textureWidth = 1280;
-int const textureHeight = 720;
+int const textureHeight = 480;
 
 static void* g_TextureHandle = NULL;
 static int   g_TextureWidth = textureWidth;

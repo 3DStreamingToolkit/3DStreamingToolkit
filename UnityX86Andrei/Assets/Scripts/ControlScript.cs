@@ -20,7 +20,7 @@ using PeerConnectionClient.Utilities;
 public class ControlScript : MonoBehaviour
 {
     private const int textureWidth = 1280;
-    private const int textureHeight = 720;
+    private const int textureHeight = 480;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
