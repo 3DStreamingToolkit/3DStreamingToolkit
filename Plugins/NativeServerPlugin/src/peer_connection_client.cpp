@@ -158,10 +158,11 @@ void PeerConnectionClient::DoConnect()
 	InitSocketSignals();
 	char buffer[1024];
 	std::string clientName = "renderingserver_" + client_name_;
+	std::string hostName = server_address_.hostname();
 	sprintfn(
 		buffer,
 		sizeof(buffer),
-		"GET /sign_in?%s HTTP/1.0\r\n\r\n", clientName.c_str());
+		"GET /sign_in?%s HTTP/1.0\r\nHost: %s\r\n\r\n", clientName.c_str(), hostName.c_str());
 
 	onconnect_data_ = buffer;
 
@@ -196,11 +197,13 @@ bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
 		headers,
 		sizeof(headers),
 		"POST /message?peer_id=%i&to=%i HTTP/1.0\r\n"
+		"Host: %s\r\n"
 		"Content-Length: %i\r\n"
 		"Content-Type: text/plain\r\n"
 		"\r\n",
 		my_id_,
 		peer_id,
+		server_address_.hostname().c_str(),
 		message.length());
 
 	onconnect_data_ = headers;
@@ -240,8 +243,9 @@ bool PeerConnectionClient::SignOut()
 			sprintfn(
 				buffer,
 				sizeof(buffer),
-				"GET /sign_out?peer_id=%i HTTP/1.0\r\n\r\n",
-				my_id_);
+				"GET /sign_out?peer_id=%i HTTP/1.0\r\nHost: %s\r\n\r\n",
+				my_id_,
+				server_address_.hostname().c_str());
 
 			onconnect_data_ = buffer;
 			return ConnectControlSocket();
@@ -303,8 +307,9 @@ void PeerConnectionClient::OnHangingGetConnect(rtc::AsyncSocket* socket)
 	sprintfn(
 		buffer,
 		sizeof(buffer),
-		"GET /wait?peer_id=%i HTTP/1.0\r\n\r\n",
-		my_id_);
+		"GET /wait?peer_id=%i HTTP/1.0\r\nHost: %s\r\n\r\n",
+		my_id_,
+		server_address_.hostname().c_str());
 
 	int len = static_cast<int>(strlen(buffer));
 	int sent = socket->Send(buffer, len);
