@@ -90,8 +90,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -118,6 +118,18 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      IF NOT EXIST $(OutDir)xcopy.lock (
+      type nul > $(OutDir)xcopy.lock
+        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
+        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
+      )
+      del /f /q xcopy.lock
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -155,14 +167,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
-    <ProjectReference />
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -204,13 +208,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -254,13 +251,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir)</Command>
-    </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -303,13 +293,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir)</Command>
-    </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>

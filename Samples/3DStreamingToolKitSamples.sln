@@ -21,7 +21,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpinningCubeServerStereo", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpinningCubeServerService", "Server\Directx-SpinningCube\SpinningCubeServerService.vcxproj", "{A7B54AE6-00CE-43A9-87AC-C7C7563F8710}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StreamingDirectxClient", "Client\Directx\StreamingDirectxClient.vcxproj", "{DB35DAB6-614D-4097-B739-EF71326EFB05}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StreamingDirectxClient", "Client\DirectxWin32\StreamingDirectxClient.vcxproj", "{DB35DAB6-614D-4097-B739-EF71326EFB05}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Clients", "Clients", "{E9049A23-41EA-452B-B6AF-6A2B4BD640A3}"
 EndProject

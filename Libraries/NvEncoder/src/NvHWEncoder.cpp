@@ -10,8 +10,7 @@
  */
 
 #include "pch.h"
-
-#include "../inc/NvHWEncoder.h"
+#include "NvHWEncoder.h"
 
 NVENCSTATUS CNvHWEncoder::NvEncOpenEncodeSession(void* device, uint32_t deviceType)
 {
