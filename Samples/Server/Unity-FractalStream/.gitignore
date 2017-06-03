@@ -25,8 +25,8 @@ sysinfo.txt
 /App/
 /UWP/
 Assets/**/*.dll
+Assets/Plugins
 
- 
 # ============ #
 # OS generated #
 # ============ #

@@ -126,6 +126,7 @@
 
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
+      xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       ENDLOCAL
@@ -161,6 +162,7 @@
 
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
+      xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       ENDLOCAL
@@ -201,6 +203,7 @@
 
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
+      xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
       ENDLOCAL
       </Command>
     </PostBuildEvent>
@@ -239,6 +242,7 @@
 
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
+      xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
       ENDLOCAL
       </Command>
     </PostBuildEvent>

@@ -42,6 +42,29 @@ public class WebRTCServer : MonoBehaviour
     static Vector3 Location = new Vector3();
     static Vector3 LookAt = new Vector3();
 
+#if UNITY_EDITOR
+    /// <summary>
+    /// Copies two config files to the executable directory.
+    /// </summary>
+    [UnityEditor.Callbacks.PostProcessBuild]
+    static void OnPostprocessBuild(
+        UnityEditor.BuildTarget target,
+        string pathToBuiltProject)
+    {
+        string sourcePath = Application.dataPath + "/Plugins/";
+        string desPath = pathToBuiltProject.Substring(
+            0, pathToBuiltProject.LastIndexOf("/") + 1);
+
+        UnityEditor.FileUtil.CopyFileOrDirectory(
+            sourcePath + "nvEncConfig.json",
+            desPath + "nvEncConfig.json");
+
+        UnityEditor.FileUtil.CopyFileOrDirectory(
+            sourcePath + "webrtcConfig.json",
+            desPath + "webrtcConfig.json");
+    }
+#endif // UNITY_EDITOR
+
     // Use this for initialization
     void Start()
     {
