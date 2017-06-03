@@ -58,9 +58,10 @@ namespace DirectXClientComponent
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
 		VideoRenderer*											m_videoRenderer;
 		VideoDecoder*											m_videoDecoder;
+
+		bool													m_isHolographic;
 #ifdef HOLOLENS
 		std::unique_ptr<HolographicAppMain>						m_main;
-
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;
 #endif // HOLOLENS

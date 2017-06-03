@@ -16,8 +16,8 @@
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <OutputPath>$(SolutionDir)Build\$(PlatformName)\$(Configuration)\DirectxClient\</OutputPath>
-    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(PlatformName)\$(Configuration)\$(MSBuildProjectName)\</IntermediateOutputPath>
+    <OutputPath>$(SolutionDir)Build\$(PlatformName)\$(Configuration)\DirectxClient</OutputPath>
+    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(PlatformName)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <PlatformTarget>x86</PlatformTarget>
@@ -88,8 +88,17 @@
     <EmbeddedResource Include="Properties\WebRtcWrapper.rd.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Org.WebRtc">
-      <HintPath>..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\$(Platform)\$(Configuration)\Org.WebRtc.winmd</HintPath>
+    <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+      <HintPath>$(ProjectDir)..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x64\Release\Org.WebRtc.winmd</HintPath>
+    </Reference>
+    <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+      <HintPath>$(ProjectDir)..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x64\Debug\Org.WebRtc.winmd</HintPath>
+    </Reference>
+    <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+      <HintPath>$(ProjectDir)..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x86\Release\Org.WebRtc.winmd</HintPath>
+    </Reference>
+    <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+      <HintPath>$(ProjectDir)..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x86\Debug\Org.WebRtc.winmd</HintPath>
     </Reference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

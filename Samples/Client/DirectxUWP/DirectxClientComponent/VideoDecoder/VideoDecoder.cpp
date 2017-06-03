@@ -95,11 +95,15 @@ void VideoDecoder::Initialize(int width, int height)
 	CHECK_HR(decoderAttributes->SetUINT32(CODECAPI_AVLowLatencyMode, TRUE),
 		"Failed to enable CODECAPI_AVLowLatencyMode");
 
+	CHECK_HR(decoderAttributes->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE),
+		"Failed to enable YUV conversation processing MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING");
+
 	decoderAttributes->Release();
 
 	MFCreateMediaType(&m_pDecInputMediaType);
 	m_pDecInputMediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
 	m_pDecInputMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_H264);
+
 	CHECK_HR(MFSetAttributeSize(m_pDecInputMediaType, MF_MT_FRAME_SIZE, width, height),
 		"Failed to set image size");
 

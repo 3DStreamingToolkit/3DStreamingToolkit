@@ -258,5 +258,3 @@ paket-files/
 *.h264
 *.log
 *.cso
-*.dll
-Samples/Client/DirectxHololens/Org.WebRtc/Org.WebRtc.zip

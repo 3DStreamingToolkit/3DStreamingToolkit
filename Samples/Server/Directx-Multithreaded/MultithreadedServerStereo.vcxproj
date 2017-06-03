@@ -90,8 +90,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadServer\</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadServerStereo\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadServer</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadServerStereo</IntDir>
     <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -153,14 +153,18 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+      <Command>
+      IF NOT EXIST $(OutDir)xcopy.lock (
+      type nul > $(OutDir)xcopy.lock
+        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
+        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
+        xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" 
+        xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
+      )
+      del /f /q xcopy.lock
+      </Command>
     </PostBuildEvent>
-    <ProjectReference />
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -203,12 +207,17 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
+      <Command>
+      IF NOT EXIST $(OutDir)xcopy.lock (
+      type nul > $(OutDir)xcopy.lock
+        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
+        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
+        xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" 
+        xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
+      )
+      del /f /q xcopy.lock
+      </Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -254,12 +263,15 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir)</Command>
+      <Command>
+      IF NOT EXIST $(OutDir)xcopy.lock (
+      type nul > $(OutDir)xcopy.lock
+        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
+        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
+      )
+      del /f /q xcopy.lock
+      </Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -304,12 +316,15 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir)</Command>
+      <Command>
+      IF NOT EXIST $(OutDir)xcopy.lock (
+      type nul > $(OutDir)xcopy.lock
+        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
+        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
+      )
+      del /f /q xcopy.lock
+      </Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>

@@ -2,8 +2,10 @@
 #include "AppCallbacks.h"
 #include "libyuv/convert.h"
 
+
 using namespace DirectXClientComponent;
 using namespace Platform;
+using namespace Windows::System::Profile;
 #ifdef HOLOLENS
 using namespace Windows::Graphics::Holographic;
 #endif // HOLOLENS
@@ -23,6 +25,12 @@ AppCallbacks::AppCallbacks() :
 	m_holographicSpace(nullptr)
 #endif // HOLOLENS
 {
+	AnalyticsVersionInfo^ deviceInfo = AnalyticsInfo::VersionInfo;
+	if (deviceInfo->DeviceFamily == "Windows.Holographic")
+	{
+		
+	}
+		
 }
 
 AppCallbacks::~AppCallbacks()
