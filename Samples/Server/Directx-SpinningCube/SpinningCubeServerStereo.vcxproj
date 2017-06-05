@@ -70,8 +70,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\SpinningCubeServer</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\SpinningCubeServerStereo</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\SpinningCubeServer\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\SpinningCubeServerStereo\</IntDir>
     <LibraryPath>$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

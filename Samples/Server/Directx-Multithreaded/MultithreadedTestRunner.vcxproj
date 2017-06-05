@@ -90,8 +90,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\MultithreadTestRunner\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
