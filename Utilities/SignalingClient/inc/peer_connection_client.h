@@ -14,6 +14,10 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <iostream>
+#include <functional>
+
+#include <cpprest/http_client.h>
 
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -43,13 +47,12 @@ protected:
 };
 
 class PeerConnectionClient : public sigslot::has_slots<>,
-                             public rtc::MessageHandler
+							 public rtc::MessageHandler
 {
 public:
 	enum State
 	{
 		NOT_CONNECTED,
-		RESOLVING,
 		SIGNING_IN,
 		CONNECTED,
 		SIGNING_OUT_WAITING,
@@ -69,7 +72,7 @@ public:
 	void RegisterObserver(PeerConnectionClientObserver* callback);
 
 	void Connect(const std::string& server, int port,
-				 const std::string& client_name);
+		const std::string& client_name);
 
 	bool SendToPeer(int peer_id, const std::string& message);
 
@@ -82,60 +85,36 @@ public:
 	// implements the MessageHandler interface
 	void OnMessage(rtc::Message* msg);
 
+	void set_proxy(const std::string& proxy);
+
+	const std::string& proxy() const;
+
 protected:
 	void DoConnect();
 
+	void ConfigureHangingGet();
+
 	void Close();
 
-	void InitSocketSignals();
-
-	bool ConnectControlSocket();
-
-	void OnConnect(rtc::AsyncSocket* socket);
-
-	void OnHangingGetConnect(rtc::AsyncSocket* socket);
-
-	void OnMessageFromPeer(int peer_id, const std::string& message);
-
-	// Quick and dirty support for parsing HTTP header values.
-	bool GetHeaderValue(const std::string& data, size_t eoh,
-						const char* header_pattern, size_t* value);
-
-	bool GetHeaderValue(const std::string& data, size_t eoh,
-						const char* header_pattern, std::string* value);
-
-	// Returns true if the whole response has been read.
-	bool ReadIntoBuffer(rtc::AsyncSocket* socket, std::string* data,
-						size_t* content_length);
-
-	void OnRead(rtc::AsyncSocket* socket);
-
-	void OnHangingGetRead(rtc::AsyncSocket* socket);
+	void OnMessageFromPeer(int peer_id, const std::wstring& message);
 
 	// Parses a single line entry in the form "<name>,<id>,<connected>"
-	bool ParseEntry(const std::string& entry, std::string* name, int* id,
+	bool ParseEntry(const std::wstring& entry, std::string* name, int* id,
 					bool* connected);
 
-	int GetResponseStatus(const std::string& response);
+	web::http::client::http_client_config CreateHttpConfig();
 
-	bool ParseServerResponse(const std::string& response, size_t content_length,
-							size_t* peer_id, size_t* eoh);
+	std::vector<std::wstring> NotificationBodyParser(std::wstring);
 
-	void OnClose(rtc::AsyncSocket* socket, int err);
-
-	void OnSignalingServerClose(rtc::AsyncSocket* socket, int err);
-
-	void OnResolveResult(rtc::AsyncResolverInterface* resolver);
+	std::function<web::http::http_response(concurrency::task<web::http::http_response>)> RequestErrorHandler(std::string errorContext, std::function<void(std::exception)> callback = nullptr);
 
 	PeerConnectionClientObserver* callback_;
-	rtc::SocketAddress server_address_;
-	rtc::AsyncResolver* resolver_;
-	std::unique_ptr<rtc::AsyncSocket> control_socket_;
-	std::unique_ptr<rtc::AsyncSocket> hanging_get_;
-	std::string onconnect_data_;
-	std::string control_data_;
-	std::string notification_data_;
-	std::string client_name_;
+	web::uri server_address_;
+	std::string proxy_address_;
+	std::unique_ptr<web::http::client::http_client> http_client_;
+	std::unique_ptr<web::http::client::http_client> hanging_http_client_;
+	std::unique_ptr<pplx::cancellation_token_source> request_async_src_;
+	std::wstring client_name_;
 	Peers peers_;
 	State state_;
 	int my_id_;
