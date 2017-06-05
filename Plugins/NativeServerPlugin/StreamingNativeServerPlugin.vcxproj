@@ -69,8 +69,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\StreamingNativeServerPlugin</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\StreamingNativeServerPlugin</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\StreamingNativeServerPlugin\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\StreamingNativeServerPlugin\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
