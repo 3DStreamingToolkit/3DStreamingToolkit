@@ -31,7 +31,6 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 	LPARAM lParam = msg->lParam;
 	Vector3 move = Vector3::Zero;
 	float scale = distance_;
-	float translate = 0;
 	bool sendMessage = false;
 	bool sendMouseEvent = false;
 
@@ -93,14 +92,10 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 
 			if (move != Vector3::Zero)
 			{
-				Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
-				Vector3 right = Vector3::Up.Cross(lookAt);
-				Vector3 up = lookAt.Cross(right);
-
-				Vector3 tmove = lookAt * move.z + up * move.y + right * move.x;
-				
-				last_camera_pos_ += tmove;
-				
+				Matrix im;
+				view_.Invert(im);
+				move = Vector3::TransformNormal(move, im);
+				camera_focus_ += move;
 				if (++keyboardTick == KEYBOARD_DELAY)
 				{
 					sendMessage = true;
@@ -168,10 +163,11 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 			}
 			else
 			{
-				// translate with scroll wheel
-				float translate = float(mouse.scrollWheelValue) / float(120 * 10);
-
-				sendMessage |= (translate != 0);
+				// Zoom with scroll wheel
+				float newZoom = 1.f + float(mouse.scrollWheelValue) / float(120 * 10);
+				newZoom = std::max(newZoom, 0.01f);
+				sendMessage |= newZoom != zoom_;
+				zoom_ = newZoom;
 
 				if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::PRESSED)
 				{
@@ -185,14 +181,9 @@ bool JsonDataChannelHandler::ProcessMessage(MSG* msg)
 
 	// Update camera
 	Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
-	Vector3 right = Vector3::Up.Cross(lookAt);
-	Vector3 up = lookAt.Cross(right);
-
-	Vector3 tmove = lookAt * translate;
-
-	last_camera_pos_ += tmove;
-	camera_focus_ = last_camera_pos_ + lookAt;
-
+	Vector3 up = Vector3::Transform(Vector3::Up, camera_rot_);
+	last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
+	view_ = XMMatrixLookAtLH(last_camera_pos_, camera_focus_, up);
 	if (sendMessage)
 	{
 		char buffer[1024];
@@ -223,5 +214,5 @@ void JsonDataChannelHandler::ResetCamera()
 	mouse_button_tracker_.Reset();
 	Vector3 lookAt = Vector3::Transform(Vector3::Forward, camera_rot_);
 	Vector3 up = Vector3::Transform(Vector3::Up, camera_rot_);
-	last_camera_pos_ = camera_focus_ - (distance_ * zoom_) * lookAt;
+	last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
 }
