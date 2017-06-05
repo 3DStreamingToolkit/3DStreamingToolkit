@@ -89,6 +89,16 @@ bool Conductor::connection_active() const
 void Conductor::Close() 
 {
 	client_->SignOut();
+
+	// ensure that we've been given time to actually
+	// sign out, before erasing the instance entirely
+	while (client_->is_connected())
+	{
+		main_window_->MessageBox(
+			"Info",
+			"Waiting for safe disconnect",
+			true);
+	}
 	DeletePeerConnection();
 }
 
@@ -482,7 +492,7 @@ void Conductor::OnMessageSent(int err)
 
 void Conductor::OnServerConnectionFailure()
 {
-    main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
+	main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
 }
 
 //-------------------------------------------------------------------------

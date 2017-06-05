@@ -22,9 +22,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="src\peer_connection_client.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="src\custom_video_capturer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -64,9 +61,6 @@
     <ClInclude Include="inc\main_window.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\peer_connection_client.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\webrtc.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -91,5 +85,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="webrtcConfig.json" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

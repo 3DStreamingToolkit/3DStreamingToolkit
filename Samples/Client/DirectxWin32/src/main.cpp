@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <string>
 #include <stdlib.h>
 #include <shellapi.h>
 #include <fstream>
@@ -18,6 +19,7 @@
 #pragma comment(lib, "usp10.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "SignalingClient.lib")
 
 //--------------------------------------------------------------------------------------
 // Global Methods
@@ -36,7 +38,7 @@ std::string GetAbsolutePath(std::string fileName)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port)
+int InitWebRTC(char* server, int port, std::string proxy)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -52,6 +54,7 @@ int InitWebRTC(char* server, int port)
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
+	client.set_proxy(proxy);
 
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(&client, &wnd));
@@ -90,6 +93,7 @@ int WINAPI wWinMain(
 	char server[1024];
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
+	std::string proxy = FLAG_proxy;
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
@@ -116,8 +120,13 @@ int WINAPI wWinMain(
 			{
 				port = root.get("port", FLAG_port).asInt();
 			}
+
+			if (root.isMember("proxy"))
+			{
+				proxy = root.get("proxy", FLAG_proxy).asString();
+			}
 		}
 	}
 
-	return InitWebRTC(server, port);
+	return InitWebRTC(server, port, proxy);
 }
