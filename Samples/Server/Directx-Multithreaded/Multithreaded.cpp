@@ -601,11 +601,7 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 #ifndef REMOTE_RENDERING
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
-#ifdef STEREO_OUTPUT_MODE
-	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 2560, 720);
-#else
-	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, 1280, 720);
-#endif // STEREO_OUTPUT_MODE
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
 #ifdef TEST_RUNNER
 	// Initializes the video test runner
@@ -1698,9 +1694,12 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
 
 
 //--------------------------------------------------------------------------------------
-HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapChain* 
-pSwapChain,
-                                          const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
+HRESULT CALLBACK OnD3D11ResizedSwapChain(
+	ID3D11Device* pd3dDevice,
+	IDXGISwapChain* 
+	pSwapChain,
+	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
+	void* pUserContext)
 {
     HRESULT hr;
 
@@ -1708,29 +1707,23 @@ pSwapChain,
     V_RETURN( g_D3DSettingsDlg.OnD3D11ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
 
     // Setup the camera's projection parameters
-    float fAspectRatio = pBackBufferSurfaceDesc->Width / ( FLOAT )pBackBufferSurfaceDesc->Height;
 #ifdef STEREO_OUTPUT_MODE
+	float bufferWidth = pBackBufferSurfaceDesc->Width / 2;
+#else // STEREO_OUTPUT_MODE
+	float bufferWidth = pBackBufferSurfaceDesc->Width;
+#endif // STEREO_OUTPUT_MODE
+
+	float fAspectRatio = bufferWidth / (FLOAT)pBackBufferSurfaceDesc->Height;
 	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
-	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width / 2, pBackBufferSurfaceDesc->Height);
+	g_Camera.SetWindow(bufferWidth, pBackBufferSurfaceDesc->Height);
 	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
+
 #ifndef TEST_RUNNER
-	g_HUD.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, 0);
+	g_HUD.SetLocation(bufferWidth - 170, 0);
 	g_HUD.SetSize(170, 170);
-	g_SampleUI.SetLocation((pBackBufferSurfaceDesc->Width / 2) - 170, pBackBufferSurfaceDesc->Height - 300);
+	g_SampleUI.SetLocation(bufferWidth - 170, pBackBufferSurfaceDesc->Height - 300);
 	g_SampleUI.SetSize(170, 300);
 #endif // !TEST_RUNNER
-	
-#else // STEREO_OUTPUT_MODE
-	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
-	g_Camera.SetWindow(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
-	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
-#ifndef TEST_RUNNER
-	g_HUD.SetLocation(pBackBufferSurfaceDesc->Width - 170, 0);
-	g_HUD.SetSize(170, 170);
-	g_SampleUI.SetLocation(pBackBufferSurfaceDesc->Width - 170, pBackBufferSurfaceDesc->Height - 300);
-	g_SampleUI.SetSize(170, 300);
-#endif // !TEST_RUNNER	
-#endif // STEREO_OUTPUT_MODE
 
     return S_OK;
 }
@@ -2300,46 +2293,30 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 
 #ifdef STEREO_OUTPUT_MODE
 	// Render scene in the left eye.
-	g_Camera.SetViewParams(
-		DirectX::XMVectorSubtract(g_Camera.GetEyePt(), DirectX::XMVectorSet(IPD, 0, 0, 0)),
-		g_Camera.GetLookAtPt());
-
-#ifdef RENDER_SCENE_LIGHT_POV
-	if (g_bRenderSceneLightPOV)
-	{
-		mvp = CalcLightViewProj(0);
-	}
-	else
-#endif
-	{
-		mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
-	}
+	XMMATRIX transLeft = XMMatrixTranslationFromVector(XMVectorSet(-IPD, 0, 0, 0));
+	mvp = transLeft * g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
 
 	SceneParamsDynamic DynamicParamsLeft;
 	XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
 
-	V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParamsLeft, STEREO_OUTPUT_TYPE::LEFT_EYE));
+	V(RenderScene(
+		pd3dContext,
+		&g_StaticParamsDirect,
+		&DynamicParamsLeft,
+		STEREO_OUTPUT_TYPE::LEFT_EYE));
 
 	// Render scene in the right eye.
-	g_Camera.SetViewParams(
-		DirectX::XMVectorAdd(g_Camera.GetEyePt(), DirectX::XMVectorSet(IPD, 0, 0, 0)),
-		g_Camera.GetLookAtPt());
-
-#ifdef RENDER_SCENE_LIGHT_POV
-	if (g_bRenderSceneLightPOV)
-	{
-		mvp = CalcLightViewProj(0);
-	}
-	else
-#endif
-	{
-		mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
-	}
+	XMMATRIX transRight = XMMatrixTranslationFromVector(XMVectorSet(IPD, 0, 0, 0));
+	mvp = transRight * g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
 
 	SceneParamsDynamic DynamicParamsRight;
 	XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
 
-	V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParamsRight, STEREO_OUTPUT_TYPE::RIGHT_EYE));
+	V(RenderScene(
+		pd3dContext,
+		&g_StaticParamsDirect,
+		&DynamicParamsRight,
+		STEREO_OUTPUT_TYPE::RIGHT_EYE));
 #else // STEREO_OUTPUT_MODE
 #ifdef RENDER_SCENE_LIGHT_POV
     if ( g_bRenderSceneLightPOV )
@@ -2594,13 +2571,13 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 	V(DXUTSetupD3D11Views(pd3dImmediateContext));
 
 	// Render the HUD
-#ifndef TEST_RUNNER
+#if !defined(TEST_RUNNER) && !defined(STEREO_OUTPUT_MODE)
 	DXUT_BeginPerfEvent(DXUT_PERFEVENTCOLOR, L"HUD / Stats");
 	g_HUD.OnRender(fElapsedTime);
 	g_SampleUI.OnRender(fElapsedTime);
 	RenderText();
 	DXUT_EndPerfEvent();
-#endif // !TEST_RUNNER
+#endif // !TEST_RUNNER && !STEREO_OUTPUT_MODE
 }
 
 //--------------------------------------------------------------------------------------
