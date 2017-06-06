@@ -27,5 +27,5 @@ protected:
 	void SendMouseInput(const std::string& msg);
 
 private:
-	DataChannelCallback* _data_channel_callback;
+	DataChannelCallback* data_channel_callback_;
 };

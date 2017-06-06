@@ -9,7 +9,7 @@ const char kKeyboardEventMsgType[]				= "keyboard-event";
 const char kMouseEventMsgType[]					= "mouse-event";
 
 DataChannelHandler::DataChannelHandler(DataChannelCallback* data_channel_callback) :
-	_data_channel_callback(data_channel_callback)
+	data_channel_callback_(data_channel_callback)
 {
 }
 
@@ -33,7 +33,7 @@ void DataChannelHandler::SendCameraInput(
 	jmessage["type"] = kCameraTransformLookAtMsgType;
 	jmessage["body"] = buffer;
 
-	_data_channel_callback->SendInputData(writer.write(jmessage));
+	data_channel_callback_->SendInputData(writer.write(jmessage));
 }
 
 void DataChannelHandler::SendCameraInput(
@@ -48,7 +48,7 @@ void DataChannelHandler::SendCameraInput(
 	jmessage["type"] = kCameraTransformMsgType;
 	jmessage["body"] = buffer;
 
-	_data_channel_callback->SendInputData(writer.write(jmessage));
+	data_channel_callback_->SendInputData(writer.write(jmessage));
 }
 
 void DataChannelHandler::SendKeyboardInput(const std::string& msg)
@@ -57,7 +57,7 @@ void DataChannelHandler::SendKeyboardInput(const std::string& msg)
 	Json::Value jmessage;
 	jmessage["type"] = kKeyboardEventMsgType;
 	jmessage["body"] = msg;
-	_data_channel_callback->SendInputData(writer.write(jmessage));
+	data_channel_callback_->SendInputData(writer.write(jmessage));
 }
 
 void DataChannelHandler::SendMouseInput(const std::string& msg)
@@ -66,5 +66,5 @@ void DataChannelHandler::SendMouseInput(const std::string& msg)
 	Json::Value jmessage;
 	jmessage["type"] = kMouseEventMsgType;
 	jmessage["body"] = msg;
-	_data_channel_callback->SendInputData(writer.write(jmessage));
+	data_channel_callback_->SendInputData(writer.write(jmessage));
 }
