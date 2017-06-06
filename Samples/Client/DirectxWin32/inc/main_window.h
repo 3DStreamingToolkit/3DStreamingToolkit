@@ -21,8 +21,9 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
 #include "peer_connection_client.h"
+#include "win32_data_channel_handler.h"
 
-class MainWindowCallback
+class MainWindowCallback : public DataChannelCallback
 {
 public:
 	virtual void StartLogin(const std::string& server, int port) = 0;
@@ -33,11 +34,11 @@ public:
 
 	virtual void DisconnectFromCurrentPeer() = 0;
 
-	virtual void ProcessInput(const std::string& message) = 0;
-
 	virtual void UIThreadCallback(int msg_id, void* data) = 0;
 
 	virtual void Close() = 0;
+
+	virtual void SendInputData(const std::string& message) = 0;
 
 protected:
 	virtual ~MainWindowCallback() {}

@@ -200,29 +200,25 @@
     <ClCompile Include="src\conductor.cpp" />
     <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\data_channel_handler.cpp" />
-    <ClCompile Include="src\data_channel_handler_factory.cpp" />
     <ClCompile Include="src\defaults.cpp" />
-    <ClCompile Include="src\default_data_channel_handler.cpp" />
     <ClCompile Include="src\default_main_window.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\peer_connection_client.cpp" />
-    <ClCompile Include="src\json_data_channel_handler.cpp" />
+    <ClCompile Include="src\win32_data_channel_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\arc_ball.h" />
     <ClInclude Include="inc\conductor.h" />
     <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\data_channel_handler.h" />
-    <ClInclude Include="inc\data_channel_handler_factory.h" />
     <ClInclude Include="inc\defaults.h" />
-    <ClInclude Include="inc\default_data_channel_handler.h" />
     <ClInclude Include="inc\default_main_window.h" />
     <ClInclude Include="inc\defs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
     <ClInclude Include="inc\main_window.h" />
     <ClInclude Include="inc\peer_connection_client.h" />
-    <ClInclude Include="inc\json_data_channel_handler.h" />
+    <ClInclude Include="inc\win32_data_channel_handler.h" />
     <ClInclude Include="inc\webrtc.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
