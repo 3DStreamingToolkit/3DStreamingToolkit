@@ -211,7 +211,6 @@
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\default_main_window.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\json_data_channel_handler.cpp" />
     <ClCompile Include="src\win32_data_channel_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -225,7 +224,6 @@
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
     <ClInclude Include="inc\main_window.h" />
-    <ClInclude Include="inc\json_data_channel_handler.h" />
     <ClInclude Include="inc\win32_data_channel_handler.h" />
     <ClInclude Include="inc\webrtc.h" />
     <ClInclude Include="pch.h" />
