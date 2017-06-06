@@ -445,21 +445,19 @@ void FrameUpdate()
 void InputUpdate(const std::string& message)
 {
 	char data[1024];
-
 	Json::Reader reader;
-	Json::Value msg = NULL;
-	
+	Json::Value msg = NULL;	
 	reader.parse(message, msg, false);
 		
 	if (msg.isMember("type"))
 	{
 		strcpy(data, msg.get("type", "").asCString());
 
-		if (strcmp(data, "camera-transform") == 0)
+		if (strcmp(data, "camera-transform-lookat") == 0)
 		{
-			if (msg.isMember("state"))
+			if (msg.isMember("body"))
 			{
-				strcpy(data, msg.get("state", "").asCString());
+				strcpy(data, msg.get("body", "").asCString());
 
 				// Parses the camera transformation data.
 				std::istringstream datastream(data);

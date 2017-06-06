@@ -1,18 +1,31 @@
 #pragma once
-#include "main_window.h"
-#include "webrtc/base/win32.h"
+
+using namespace DirectX::SimpleMath;
+
+class DataChannelCallback
+{
+public:
+	virtual void SendInputData(const std::string&) = 0;
+};
 
 class DataChannelHandler
 {
-public:
-	DataChannelHandler();
+protected:
+	DataChannelHandler(DataChannelCallback* data_channel_callback);
+
 	~DataChannelHandler();
 
-	void SetCallback(MainWindowCallback* callback);
+	void SendCameraInput(
+		Vector3 camera_position,
+		Vector3 camera_target,
+		Vector3 camera_up_vector);
 
-	virtual bool ProcessMessage(MSG* msg) = 0;
+	void SendCameraInput(float x, float y, float z, float yaw, float pitch, float roll);
 
-protected:
-	MainWindowCallback* callback_;
+	void SendKeyboardInput(const std::string& msg);
+
+	void SendMouseInput(const std::string& msg);
+
+private:
+	DataChannelCallback* _data_channel_callback;
 };
-

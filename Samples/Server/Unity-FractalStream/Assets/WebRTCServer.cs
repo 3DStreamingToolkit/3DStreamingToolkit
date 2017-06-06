@@ -105,23 +105,23 @@ public class WebRTCServer : MonoBehaviour
 
         switch (messageType)
         {
-            /*
             case "keyboard-event":
-                
-                var e = UnityEngine.Event.KeyboardEvent("s");
-                
-                int msg = node["message"];
-                int wParam = node["wParam"];
-
-
-                Debug.Log("Message(" + msg.ToString() + ", " + wParam.ToString() + ")");
-                
+                var kbBody = node["body"];
+                int kbMsg = kbBody["msg"];
+                int kbWParam = kbBody["wParam"];
+                Debug.Log("Message(" + kbMsg.ToString() + ", " + kbWParam.ToString() + ")");      
                 break;
-            */
 
-            case "camera-transform":
-                string cam = node["state"];
+            case "mouse-event":
+                var mouseBody = node["body"];
+                int mouseMsg = mouseBody["msg"];
+                int mouseWParam = mouseBody["wParam"];
+                int mouseLParam = mouseBody["lParam"];
+                Debug.Log("Message(" + mouseMsg.ToString() + ", " + mouseWParam.ToString() + ", " + mouseLParam.ToString() + ")");
+                break;
 
+            case "camera-transform-lookat":
+                string cam = node["body"];
                 if (cam != null && cam.Length > 0)
                 {
                     string[] sp = cam.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -148,7 +148,6 @@ public class WebRTCServer : MonoBehaviour
                 break;
 
             default:
-                /*
                 Debug.Log("InputData(" + val + ")");
                 Debug.Log("");
 
@@ -156,7 +155,7 @@ public class WebRTCServer : MonoBehaviour
                 {
                     Debug.Log(child.ToString());
                 }
-                */
+
                 break;
         }
     }
