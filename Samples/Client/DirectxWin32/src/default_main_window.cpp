@@ -12,8 +12,8 @@
 
 #include <math.h>
 
-#include "data_channel_handler_factory.h"
 #include "default_main_window.h"
+#include "win32_data_channel_handler.h"
 #include "defaults.h"
 #include "libyuv/convert_argb.h"
 #include "webrtc/api/video/i420_buffer.h"
@@ -32,7 +32,6 @@ const wchar_t DefaultMainWindow::kClassName[] = L"WebRTC_MainWindow";
 
 namespace
 {
-
 const char kConnecting[] = "Connecting... ";
 const char kNoVideoStreams[] = "(no video streams either way)";
 const char kNoIncomingStream[] = "(no incoming video)";
@@ -95,6 +94,7 @@ DefaultMainWindow::DefaultMainWindow(
 		listbox_(NULL),
 		destroyed_(false),
 		callback_(NULL),
+		data_channel_handler_(NULL),
 		nested_msg_(NULL),
 		server_(server),
 		auto_connect_(auto_connect),
@@ -132,8 +132,6 @@ bool DefaultMainWindow::Create()
 	CreateChildWindows();
 	SwitchToConnectUI();
 	
-	data_channel_handler_ = DataChannelHandlerFactory::Create("JSON");
-	
 	return wnd_ != NULL;
 }
 
@@ -145,6 +143,9 @@ bool DefaultMainWindow::Destroy()
 		ret = ::DestroyWindow(wnd_);
 	}
 
+	delete data_channel_handler_;
+	data_channel_handler_ = NULL;
+
 	return ret != FALSE;
 }
 
@@ -152,7 +153,10 @@ void DefaultMainWindow::RegisterObserver(MainWindowCallback* callback)
 {
 	callback_ = callback;
 
-	data_channel_handler_->SetCallback(callback);
+	if (!data_channel_handler_)
+	{
+		data_channel_handler_ = new Win32DataChannelHandler(callback);
+	}
 }
 
 bool DefaultMainWindow::IsWindow()
@@ -524,6 +528,7 @@ bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* resul
 			if (callback_)
 			{
 				callback_->Close();
+				callback_ = NULL;
 			}
 
 			break;
