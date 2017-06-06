@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
-using SimpleJSON;
 
 public class WebRTCServer : MonoBehaviour
 {
     public delegate void FPtr([MarshalAs(UnmanagedType.LPStr)]string value);
-    
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
@@ -38,9 +35,9 @@ public class WebRTCServer : MonoBehaviour
 #endif
     private static extern void Close();
 
-
     static Vector3 Location = new Vector3();
     static Vector3 LookAt = new Vector3();
+    static Vector3 Up = new Vector3();
 
 #if UNITY_EDITOR
     /// <summary>
@@ -98,7 +95,7 @@ public class WebRTCServer : MonoBehaviour
     void Update()
     {
         transform.position = Location;
-        transform.LookAt(LookAt);
+        transform.LookAt(LookAt, Up);
     }
 
     void OnInputData(string val)
@@ -108,46 +105,49 @@ public class WebRTCServer : MonoBehaviour
 
         switch (messageType)
         {
-            /*
             case "keyboard-event":
-                
-                var e = UnityEngine.Event.KeyboardEvent("s");
-                
-                int msg = node["message"];
-                int wParam = node["wParam"];
-
-
-                Debug.Log("Message(" + msg.ToString() + ", " + wParam.ToString() + ")");
-                
+                var kbBody = node["body"];
+                int kbMsg = kbBody["msg"];
+                int kbWParam = kbBody["wParam"];
+                Debug.Log("Message(" + kbMsg.ToString() + ", " + kbWParam.ToString() + ")");      
                 break;
-            */
-            case "camera-transform":
-                string cam = node["state"];
 
+            case "mouse-event":
+                var mouseBody = node["body"];
+                int mouseMsg = mouseBody["msg"];
+                int mouseWParam = mouseBody["wParam"];
+                int mouseLParam = mouseBody["lParam"];
+                Debug.Log("Message(" + mouseMsg.ToString() + ", " + mouseWParam.ToString() + ", " + mouseLParam.ToString() + ")");
+                break;
+
+            case "camera-transform-lookat":
+                string cam = node["body"];
                 if (cam != null && cam.Length > 0)
                 {
                     string[] sp = cam.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                     Vector3 loc = new Vector3();
-
                     loc.x = float.Parse(sp[0]);
                     loc.y = float.Parse(sp[1]);
                     loc.z = float.Parse(sp[2]);
-
                     Location = loc;
 
-                    loc.x = float.Parse(sp[3]);
-                    loc.y = float.Parse(sp[4]);
-                    loc.z = float.Parse(sp[5]);
+                    Vector3 look = new Vector3();
+                    look.x = float.Parse(sp[3]);
+                    look.y = float.Parse(sp[4]);
+                    look.z = float.Parse(sp[5]);
+                    LookAt = look;
 
-                    LookAt = loc;
+                    Vector3 up = new Vector3();
+                    up.x = float.Parse(sp[6]);
+                    up.y = float.Parse(sp[7]);
+                    up.z = float.Parse(sp[8]);
+                    Up = up;
                 }
 
                 break;
+
             default:
-                
-                
-                /*
                 Debug.Log("InputData(" + val + ")");
                 Debug.Log("");
 
@@ -155,9 +155,8 @@ public class WebRTCServer : MonoBehaviour
                 {
                     Debug.Log(child.ToString());
                 }
-                */
+
                 break;
         }
     }
-
 }

@@ -18,7 +18,7 @@
 #include "defs.h"
 #include "main_window.h"
 #include "peer_connection_client.h"
-#include "data_channel_handler.h"
+#include "win32_data_channel_handler.h"
 
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/video/video_frame.h"
@@ -205,7 +205,7 @@ private:
 	bool auto_connect_;
 	bool auto_call_;
 
-	DataChannelHandler *data_channel_handler_;
+	Win32DataChannelHandler* data_channel_handler_;
 
 	int width_;
 	int height_;
