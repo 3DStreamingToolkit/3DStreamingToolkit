@@ -166,6 +166,7 @@ void PeerConnectionClient::DoConnect()
 		}
 		else
 		{
+            state_ = NOT_CONNECTED;
 			callback_->OnServerConnectionFailure();
 
 			// just return a task to keep the return type constant here
