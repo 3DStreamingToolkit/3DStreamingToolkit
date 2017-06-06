@@ -16,15 +16,6 @@ namespace
 	// This is our magical hangup signal.
 	const char kByeMessage[] = "BYE";
 
-	// This is the consuming device category
-#ifdef SIGNALING_API_CLIENT
-	const wchar_t kDeviceTypePrefix[] = L"renderingclient_";
-#elif SIGNALING_API_SERVER
-	const wchar_t kDeviceTypePrefix[] = L"renderingserver_";
-#else
-	const wchar_t kDeviceTypePrefix[] = L"renderingunknown_";
-#endif
-
 	// Delay between server connection retries, in milliseconds
 	const int kReconnectDelay = 2000;
 }
@@ -132,7 +123,7 @@ void PeerConnectionClient::DoConnect()
 
 	web::uri_builder builder(server_address_);
 	builder.append_path(L"sign_in");
-	builder.append_query(kDeviceTypePrefix + client_name_);
+	builder.append_query(client_name_);
 
 	state_ = SIGNING_IN;
 
