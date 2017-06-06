@@ -128,9 +128,9 @@ protected:
 
 	void DisconnectFromCurrentPeer() override;
 
-	void ProcessInput(const std::string& message) override;
-
 	void UIThreadCallback(int msg_id, void* data) override;
+
+	void SendInputData(const std::string& message) override;
 
 	// CreateSessionDescriptionObserver implementation.
 	void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;

@@ -1,13 +1,18 @@
 #include "pch.h"
 
-#include "default_data_channel_handler.h"
+#include <algorithm>
+
+#include "win32_data_channel_handler.h"
 #include "minwindef.h"
+
+#include "webrtc/base/json.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
-DefaultDataChannelHandler::DefaultDataChannelHandler()
-	: width_(0),
+Win32DataChannelHandler::Win32DataChannelHandler(DataChannelCallback* data_channel_callback) :
+	DataChannelHandler(data_channel_callback),
+	width_(0),
 	height_(0),
 	keyboardTick(0),
 	mouseTick(0),
@@ -17,12 +22,11 @@ DefaultDataChannelHandler::DefaultDataChannelHandler()
 	mouse_ = std::make_unique<Mouse>();
 }
 
-
-DefaultDataChannelHandler::~DefaultDataChannelHandler()
+Win32DataChannelHandler::~Win32DataChannelHandler()
 {
 }
 
-bool DefaultDataChannelHandler::ProcessMessage(MSG* msg)
+bool Win32DataChannelHandler::ProcessMessage(MSG* msg)
 {
 	bool ret = false;
 	WPARAM wParam = msg->wParam;
@@ -30,14 +34,24 @@ bool DefaultDataChannelHandler::ProcessMessage(MSG* msg)
 	Vector3 move = Vector3::Zero;
 	float scale = distance_;
 	bool sendMessage = false;
+	bool sendMouseEvent = false;
 
 	switch (msg->message)
 	{
 		case WM_SIZE:
 			ball_camera_.SetWindow(LOWORD(lParam), HIWORD(lParam));
 			break;
+
 		case WM_CHAR:
 		case WM_KEYDOWN:
+			{
+				Json::StyledWriter writer;
+				Json::Value jmessage;
+				jmessage["message"] = msg->message;
+				jmessage["wParam"] = msg->wParam;
+				SendKeyboardInput(writer.write(jmessage));
+			}
+
 			switch (wParam)
 			{
 			case VK_SHIFT:
@@ -90,14 +104,39 @@ bool DefaultDataChannelHandler::ProcessMessage(MSG* msg)
 			}
 
 			break;
+
+		case WM_MOUSEHOVER:
+		case WM_MOUSELEAVE:
 		case WM_MOUSEHWHEEL:
-		case WM_MOUSEMOVE:
+		case WM_LBUTTONDBLCLK:
 		case WM_LBUTTONDOWN:
 		case WM_LBUTTONUP:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
+		case WM_MBUTTONDBLCLK:
 		case WM_MBUTTONDOWN:
 		case WM_MBUTTONUP:
+		case WM_RBUTTONDBLCLK:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+			sendMouseEvent = true;
+			// fall through
+		case WM_MOUSEMOVE:
+			// thottle mouse move events
+			if (wParam = WM_MOUSEMOVE && ++mouseMoveTick == MOUSE_DELAY)
+			{
+				sendMouseEvent = true;
+				mouseMoveTick = 0;
+			}
+			
+			if (sendMouseEvent)
+			{
+				Json::StyledWriter writer;
+				Json::Value jmessage;
+				jmessage["message"] = msg->message;
+				jmessage["wParam"] = msg->wParam;
+				jmessage["lParam"] = msg->lParam;			
+				SendMouseInput(writer.write(jmessage));
+			}
+
 			// Mouse
 			mouse_->ProcessMessage(msg->message, wParam, lParam);
 
@@ -133,7 +172,9 @@ bool DefaultDataChannelHandler::ProcessMessage(MSG* msg)
 					ball_camera_.OnBegin(mouse.x, mouse.y);
 				}
 			}
+
 			break;
+
 		default:
 			return false;
 	}
@@ -144,20 +185,14 @@ bool DefaultDataChannelHandler::ProcessMessage(MSG* msg)
 	last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
 	view_ = XMMatrixLookAtLH(last_camera_pos_, camera_focus_, up);
 	if (sendMessage)
-	{
-		char buffer[1024];
-		sprintf(buffer, "%f, %f, %f, %f, %f, %f, %f, %f, %f",
-			last_camera_pos_.x, last_camera_pos_.y, last_camera_pos_.z,
-			camera_focus_.x, camera_focus_.y, camera_focus_.z,
-			up.x, up.y, up.z);
-
-		callback_->ProcessInput(std::string(buffer));
+	{	
+		SendCameraInput(last_camera_pos_, camera_focus_, up);
 	}
 	
 	return ret;
 }
 
-void DefaultDataChannelHandler::ResetCamera()
+void Win32DataChannelHandler::ResetCamera()
 {
 	zoom_ = 1.f;
 	camera_rot_ = Quaternion::Identity;
