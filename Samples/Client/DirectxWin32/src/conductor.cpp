@@ -17,13 +17,13 @@
 
 #include "conductor.h"
 #include "defaults.h"
-#include "custom_video_capturer.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/json.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "webrtc/media/base/fakevideocapturer.h"
 
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";
@@ -538,18 +538,6 @@ void Conductor::ConnectToPeer(int peer_id)
 	}
 }
 
-std::unique_ptr<cricket::VideoCapturer> Conductor::OpenFakeVideoCaptureDevice()
-{
-	webrtc::VideoCapturerFactoryCustom factory;
-	std::unique_ptr<cricket::VideoCapturer> capturer;
-	cricket::Device dummyDevice;
-	dummyDevice.name = "custom dummy device";
-	capturer = factory.Create(webrtc::Clock::GetRealTimeClock(),
-		dummyDevice);
-
-	return capturer;
-}
-
 void Conductor::AddStreams()
 {
 	if (active_streams_.find(kStreamLabel) != active_streams_.end())
@@ -561,7 +549,8 @@ void Conductor::AddStreams()
 		peer_connection_factory_->CreateVideoTrack(
 			kVideoLabel,
 			peer_connection_factory_->CreateVideoSource(
-				OpenFakeVideoCaptureDevice(),
+				std::unique_ptr<cricket::VideoCapturer>(
+					new cricket::FakeVideoCapturer(false)),
 				NULL)));
 
 	main_window_->StartLocalRenderer(video_track);
