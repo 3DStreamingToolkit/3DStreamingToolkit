@@ -35,9 +35,15 @@ public class WebRTCServer : MonoBehaviour
 #endif
     private static extern void Close();
 
+    [DllImport("StreamingUnityServerPlugin")]
+    private static extern void MsgBox(string msg);
+
+
     static Vector3 Location = new Vector3();
     static Vector3 LookAt = new Vector3();
     static Vector3 Up = new Vector3();
+
+    static bool closing_ = false;
 
 #if UNITY_EDITOR
     /// <summary>
@@ -65,6 +71,11 @@ public class WebRTCServer : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        if (closing_)
+        {
+            MsgBox("Start() called after closing");
+        }
+
         // Make sure that the render window continues to render when the game window does not have focus
         Application.runInBackground = true;
 
@@ -83,23 +94,53 @@ public class WebRTCServer : MonoBehaviour
 
     void Stop()
     {
+        MsgBox("Stop()");
         Close();
     }
 
     private void OnDisable()
     {
-        Close();
+        if (!closing_)
+        {
+            MsgBox("OnDisable()");
+            Close();
+        }
+    }
+        
+    private void OnApplicationQuit()
+    {
+        if (!closing_)
+        {
+            closing_ = true;
+
+            MsgBox("OnApplicationQuit()");
+            Close();
+            MsgBox("Closed");
+        }
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        transform.position = Location;
-        transform.LookAt(LookAt, Up);
+        if (closing_)
+        {
+            MsgBox("Update() called after closing");
+        }
+        else
+        {
+            transform.position = Location;
+            transform.LookAt(LookAt, Up);
+        }
     }
 
     void OnInputData(string val)
     {
+        if (closing_)
+        {
+            MsgBox("OnInputData() called after closing");
+        }
+
         var node = SimpleJSON.JSON.Parse(val);
         string messageType = node["type"];
 
