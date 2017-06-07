@@ -204,6 +204,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="exports.props" />
     <None Include="nvEncConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

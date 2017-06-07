@@ -19,9 +19,6 @@
     <ClCompile Include="src\defaults.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="src\peer_connection_client.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="src\custom_video_capturer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -58,9 +55,6 @@
     <ClInclude Include="inc\pch.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\peer_connection_client.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\custom_video_capturer.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -74,5 +68,6 @@
   <ItemGroup>
     <None Include="nvEncConfig.json" />
     <None Include="webrtcConfig.json" />
+    <None Include="exports.props" />
   </ItemGroup>
 </Project>
