@@ -16,6 +16,6 @@ namespace DirectXClientComponent
     struct VertexPositionTexture
     {
 		DirectX::XMFLOAT3 position;		// Position
-		DirectX::XMFLOAT2 textureUV;	// Texture coordinate
+		DirectX::XMFLOAT3 textureUV;	// Texture coordinate
     };
 }

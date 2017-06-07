@@ -25,8 +25,7 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
 struct VertexShaderInput
 {
 	float4	position	: POSITION;
-	float2	textureUV	: TEXCOORD0;
-	uint    instId		: SV_InstanceID;
+	float4	textureUV	: TEXCOORD0;
 };
 
 // Per-vertex data passed to the geometry shader.
@@ -44,10 +43,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	float4 pos = input.position;
 
 	// Note which view this vertex has been sent to. Used for matrix lookup.
-	// Taking the modulo of the instance ID allows geometry instancing to be used
-	// along with stereo instanced drawing; in that case, two copies of each 
-	// instance would be drawn, one for left and one for right.
-	int idx = input.instId % 2;
+	int idx = input.textureUV.z;
 
 	// Transform the vertex position into world space.
 	pos = mul(pos, model);
@@ -55,7 +51,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	// Correct for perspective and project the vertex position onto the screen.
 	pos = mul(pos, viewProjection[idx]);
 	output.position = (min16float4)pos;
-	output.textureUV = input.textureUV;
+	output.textureUV = input.textureUV.xy;
 
 	// Set the render target array index.
 	output.rtvId = idx;

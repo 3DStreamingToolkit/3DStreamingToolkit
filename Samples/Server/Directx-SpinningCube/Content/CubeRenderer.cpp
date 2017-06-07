@@ -6,9 +6,9 @@ using namespace DirectX;
 using namespace DX;
 using namespace Toolkit3DSample;
 
-// Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
-static const XMVECTORF32 eye = { 0.0f, 0.7f, 1.5f, 0.0f };
-static const XMVECTORF32 at = { 0.0f, -0.1f, 0.0f, 0.0f };
+// Eye is at (0, 0.1, 1.0), looking at point (0, 0.1, 0) with the up-vector along the y-axis.
+static const XMVECTORF32 eye = { 0.0f, 0.1f, 1.0f, 0.0f };
+static const XMVECTORF32 at = { 0.0f, 0.1f, 0.0f, 0.0f };
 static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
@@ -25,14 +25,14 @@ void CubeRenderer::InitGraphics()
 	// Load mesh vertices. Each vertex has a position and a color.
 	static const VertexPositionColor cubeVertices[] =
 	{
-		{ XMFLOAT3(-0.5f, -0.5f, -0.5f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(-0.5f, -0.5f,  0.5f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(-0.5f,  0.5f, -0.5f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-0.5f,  0.5f,  0.5f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(0.5f, -0.5f, -0.5f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(0.5f, -0.5f,  0.5f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(0.5f,  0.5f, -0.5f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(0.5f,  0.5f,  0.5f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(-0.1f, -0.1f,  0.1f), XMFLOAT3(0.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(-0.1f,  0.1f, -0.1f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-0.1f,  0.1f,  0.1f), XMFLOAT3(0.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(	0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(	0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(	0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(	0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 	};
 
 	CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
