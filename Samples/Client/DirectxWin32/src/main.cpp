@@ -19,7 +19,6 @@
 #pragma comment(lib, "usp10.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "SignalingClient.lib")
 
 //--------------------------------------------------------------------------------------
 // Global Methods

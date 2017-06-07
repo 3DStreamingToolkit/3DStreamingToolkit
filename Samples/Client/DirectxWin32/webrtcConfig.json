@@ -6,6 +6,5 @@
     "password": "3Dstreaming0317"
   },
   "server": "signalingserver.centralus.cloudapp.azure.com",
-  "port": 3000,
-  "proxy": ""
+  "port": 3000
 }
