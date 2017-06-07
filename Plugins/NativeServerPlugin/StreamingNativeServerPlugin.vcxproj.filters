@@ -40,9 +40,6 @@
     <ClInclude Include="inc\defaults.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\defs.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\flagdefs.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -62,6 +59,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\default_data_channel_observer.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\plugindefs.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
