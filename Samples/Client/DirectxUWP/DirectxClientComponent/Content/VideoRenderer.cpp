@@ -17,6 +17,7 @@ VideoRenderer::VideoRenderer(
 #ifdef HOLOLENS
 	m_position = { 0.f, 0.f, -2.f };
 #endif // HOLOLENS
+
 	CreateDeviceDependentResources();
 }
 
@@ -26,20 +27,20 @@ void VideoRenderer::CreateDeviceDependentResources()
 	{
 #ifdef HOLOLENS
 		// Left camera.
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-1.0f, -1.0f, -2.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(	1.0f,  1.0f, -2.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 
 		// Right camera.
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(-1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(	1.0f,  1.0f, -2.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
 #else // HOLOLENS
 		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) },
 		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) },
@@ -165,43 +166,6 @@ void VideoRenderer::CreateDeviceDependentResources()
 		m_deviceResources->GetD3DDeviceContext()->IASetInputLayout(m_inputLayout.Get());
 		m_deviceResources->GetD3DDeviceContext()->VSSetShader(
 			m_vertexShader.Get(), nullptr, 0);
-
-#ifdef HOLOLENS
-		const CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
-		DX::ThrowIfFailed(
-			m_deviceResources->GetD3DDevice()->CreateBuffer(
-				&constantBufferDesc,
-				nullptr,
-				&m_modelConstantBuffer
-			)
-		);
-
-		// Position the video texture.
-		const XMMATRIX modelTransform = XMMatrixTranslationFromVector(XMLoadFloat3(&m_position));
-
-		// The view and projection matrices are provided by the system; they are associated
-		// with holographic cameras, and updated on a per-camera basis.
-		// Here, we provide the model transform for the sample hologram. The model transform
-		// matrix is transposed to prepare it for the shader.
-		XMStoreFloat4x4(&m_modelConstantBufferData.model, XMMatrixTranspose(modelTransform));
-
-		// Update the model transform buffer for the hologram.
-		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
-			m_modelConstantBuffer.Get(),
-			0,
-			nullptr,
-			&m_modelConstantBufferData,
-			0,
-			0
-		);
-
-		// Apply the model constant buffer to the vertex shader.
-		m_deviceResources->GetD3DDeviceContext()->VSSetConstantBuffers(
-			0,
-			1,
-			m_modelConstantBuffer.GetAddressOf()
-		);
-#endif // HOLOLENS
 	});
 
 	auto loadPixelShaderTask = DX::ReadDataAsync(L"PixelShader.cso");
@@ -221,9 +185,6 @@ void VideoRenderer::ReleaseDeviceDependentResources()
 	m_inputLayout.Reset();
 	m_pixelShader.Reset();
 	m_vertexBuffer.Reset();
-#ifdef HOLOLENS
-	m_modelConstantBuffer.Reset();
-#endif // HOLOLENS
 }
 
 void VideoRenderer::Update(DX::StepTimer timer)

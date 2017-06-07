@@ -9,12 +9,6 @@
 //
 //*********************************************************
 
-// A constant buffer that stores the model transform.
-cbuffer ModelConstantBuffer : register(b0)
-{
-	float4x4 model;
-};
-
 // A constant buffer that stores each set of view and projection matrices in column-major format.
 cbuffer ViewProjectionConstantBuffer : register(b1)
 {
@@ -28,13 +22,13 @@ struct VertexShaderInput
 	float4	textureUV	: TEXCOORD0;
 };
 
-// Per-vertex data passed to the geometry shader.
+// Per-vertex data passed to the pixel shader.
 // Note that the render target array index is set here in the vertex shader.
 struct VertexShaderOutput
 {
 	float4	position	: SV_POSITION;
 	float2	textureUV	: TEXCOORD0;
-	uint	rtvId		: SV_RenderTargetArrayIndex; // SV_InstanceID % 2
+	uint	rtvId		: SV_RenderTargetArrayIndex;
 };
 
 VertexShaderOutput main(VertexShaderInput input)
@@ -44,9 +38,6 @@ VertexShaderOutput main(VertexShaderInput input)
 
 	// Note which view this vertex has been sent to. Used for matrix lookup.
 	int idx = input.textureUV.z;
-
-	// Transform the vertex position into world space.
-	pos = mul(pos, model);
 
 	// Correct for perspective and project the vertex position onto the screen.
 	pos = mul(pos, viewProjection[idx]);

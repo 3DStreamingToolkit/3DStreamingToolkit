@@ -26,8 +26,9 @@ namespace DirectXClientComponent
 
 #ifdef HOLOLENS
 		// Property accessors.
-		void SetPosition(Windows::Foundation::Numerics::float3 pos)		{ m_position = pos; }
-		Windows::Foundation::Numerics::float3 GetPosition()				{ return m_position; }
+		void SetPosition(Windows::Foundation::Numerics::float3 pos) { m_position = pos; }
+
+		Windows::Foundation::Numerics::float3 GetPosition() { return m_position; }
 #endif // HOLOLENS
 
 	private:
@@ -47,13 +48,8 @@ namespace DirectXClientComponent
 		ComPtr<ID3D11SamplerState>					m_sampler;
 
 #ifdef HOLOLENS
-		ComPtr<ID3D11Buffer>						m_modelConstantBuffer;
-
-		// System resources for geometry.
-		ModelConstantBuffer                         m_modelConstantBufferData;
-
 		// Variables used with the rendering loop.
-		Windows::Foundation::Numerics::float3		m_position;
+		Windows::Foundation::Numerics::float3       m_position;
 #endif // HOLOLENS
 	};
 }
