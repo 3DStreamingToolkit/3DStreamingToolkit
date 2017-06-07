@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef STEREO_OUTPUT_MODE
-#define IPD 0.05f
+#define IPD 0.1f
 #define FRAME_BUFFER_WIDTH	2560
 #else // STEREO_OUTPUT_MODE
 #define FRAME_BUFFER_WIDTH	1280

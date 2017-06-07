@@ -26,6 +26,8 @@ void VideoRenderer::CreateDeviceDependentResources()
 	VertexPositionTexture vertices[] =
 	{
 #ifdef HOLOLENS
+		// Positions the world-locked hologram two meters in front of the user.
+
 		// Left camera.
 		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
