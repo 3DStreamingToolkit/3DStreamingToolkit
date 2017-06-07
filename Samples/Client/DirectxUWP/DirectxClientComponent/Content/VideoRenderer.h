@@ -42,7 +42,6 @@ namespace DirectXClientComponent
 		ComPtr<ID3D11Buffer>						m_vertexBuffer;
 		ComPtr<ID3D11VertexShader>					m_vertexShader;
 		ComPtr<ID3D11PixelShader>					m_pixelShader;
-		ComPtr<ID3D11GeometryShader>				m_geometryShader;
 		ComPtr<ID3D11InputLayout>					m_inputLayout;
 		ComPtr<ID3D11ShaderResourceView>			m_textureView;
 		ComPtr<ID3D11SamplerState>					m_sampler;

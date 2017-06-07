@@ -21,6 +21,7 @@ cbuffer ViewProjectionConstantBuffer : register(b1)
 	float4x4 viewProjection[2];
 };
 
+// Per-vertex data used as input to the vertex shader.
 struct VertexShaderInput
 {
 	float4	position	: POSITION;
@@ -29,13 +30,12 @@ struct VertexShaderInput
 };
 
 // Per-vertex data passed to the geometry shader.
-// Note that the render target array index will be set by the geometry shader
-// using the value of viewId.
+// Note that the render target array index is set here in the vertex shader.
 struct VertexShaderOutput
 {
 	float4	position	: SV_POSITION;
 	float2	textureUV	: TEXCOORD0;
-	uint	viewId		: TEXCOORD1; // SV_InstanceID % 2
+	uint	rtvId		: SV_RenderTargetArrayIndex; // SV_InstanceID % 2
 };
 
 VertexShaderOutput main(VertexShaderInput input)
@@ -54,13 +54,11 @@ VertexShaderOutput main(VertexShaderInput input)
 
 	// Correct for perspective and project the vertex position onto the screen.
 	pos = mul(pos, viewProjection[idx]);
-
 	output.position = (min16float4)pos;
 	output.textureUV = input.textureUV;
 
-	// Set the instance ID. The pass-through geometry shader will set the
-	// render target array index to whatever value is set here.
-	output.viewId = idx;
+	// Set the render target array index.
+	output.rtvId = idx;
 
 	return output;
 }

@@ -134,7 +134,7 @@ namespace StreamingDirectXHololensClient
         {
             Task.Run(() =>
             {
-                Conductor.Instance.StartLogin("signalingserver.centralus.cloudapp.azure.com", "3000");
+                Conductor.Instance.StartLogin("127.0.0.1", "8888");
             });
 
             _appCallbacks.Run();

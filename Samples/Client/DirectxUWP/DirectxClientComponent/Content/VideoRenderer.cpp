@@ -117,7 +117,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 	);
 
 #ifdef HOLOLENS
-	auto loadVertexShaderTask = DX::ReadDataAsync(L"VertexShaderHoloLens.cso");
+	auto loadVertexShaderTask = DX::ReadDataAsync(L"VprtVertexShader.cso");
 #else // HOLOLENS
 	auto loadVertexShaderTask = DX::ReadDataAsync(L"VertexShader.cso");
 #endif // HOLOLENS
@@ -182,12 +182,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 #endif // HOLOLENS
 	});
 
-#ifdef HOLOLENS
-	auto loadPixelShaderTask = DX::ReadDataAsync(L"PixelShaderHoloLens.cso");
-#else // HOLOLENS
 	auto loadPixelShaderTask = DX::ReadDataAsync(L"PixelShader.cso");
-#endif // HOLOLENS
-
 	loadPixelShaderTask.then([this](std::vector<byte> file)
 	{
 		m_deviceResources->GetD3DDevice()->CreatePixelShader(
@@ -196,25 +191,6 @@ void VideoRenderer::CreateDeviceDependentResources()
 		m_deviceResources->GetD3DDeviceContext()->PSSetShader(
 			m_pixelShader.Get(), nullptr, 0);
 	});
-
-#ifdef HOLOLENS
-	// After the pass-through geometry shader file is loaded, create the shader.
-	auto loadGeometryShaderTask = DX::ReadDataAsync(L"GeometryShaderHoloLens.cso");
-	loadGeometryShaderTask.then([this](const std::vector<byte>& fileData)
-	{
-		m_deviceResources->GetD3DDevice()->CreateGeometryShader(
-			fileData.data(), fileData.size(), nullptr, &m_geometryShader);
-
-		// On devices that do not support the D3D11_FEATURE_D3D11_OPTIONS3::
-		// VPAndRTArrayIndexFromAnyShaderFeedingRasterizer optional feature,
-		// a pass-through geometry shader is used to set the render target 
-		// array index.
-		m_deviceResources->GetD3DDeviceContext()->GSSetShader(
-			m_geometryShader.Get(),
-			nullptr,
-			0);
-	});
-#endif // HOLOLENS
 }
 
 void VideoRenderer::ReleaseDeviceDependentResources()
@@ -223,7 +199,6 @@ void VideoRenderer::ReleaseDeviceDependentResources()
 	m_inputLayout.Reset();
 	m_pixelShader.Reset();
 	m_vertexBuffer.Reset();
-	m_geometryShader.Reset();
 #ifdef HOLOLENS
 	m_modelConstantBuffer.Reset();
 #endif // HOLOLENS
@@ -264,13 +239,6 @@ void VideoRenderer::Render()
 	}
 
 	m_deviceResources->GetD3DDeviceContext()->Unmap(m_videoTexture, 0);
-
-#ifdef HOLOLENS
-	m_deviceResources->GetD3DDeviceContext()->GSSetShader(
-		m_geometryShader.Get(),
-		nullptr,
-		0);
-#endif // HOLOLENS
 
 	// Rendering.
 	UINT stride = sizeof(VertexPositionTexture);
