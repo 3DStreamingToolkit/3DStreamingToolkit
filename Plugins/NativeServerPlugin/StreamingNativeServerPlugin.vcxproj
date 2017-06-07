@@ -187,7 +187,6 @@
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\default_data_channel_observer.cpp" />
     <ClCompile Include="src\default_main_window.cpp" />
-    <ClCompile Include="src\peer_connection_client.cpp" />
     <ClCompile Include="src\video_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -201,7 +200,6 @@
     <ClInclude Include="inc\macros.h" />
     <ClInclude Include="inc\main_window.h" />
     <ClInclude Include="inc\pch.h" />
-    <ClInclude Include="inc\peer_connection_client.h" />
     <ClInclude Include="inc\video_helper.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
@@ -213,6 +211,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <Import Project="$(SolutionDir)\Libraries\SignalingClient\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
