@@ -1,7 +1,7 @@
 #define SUPPORT_D3D11 1
 #define WEBRTC_WIN 1
 
-#define SHOW_CONSOLE 0
+#define SHOW_CONSOLE 1
 
 
 #include <iostream>
@@ -77,6 +77,15 @@ std::thread *messageThread;
 std::string s_server = "signalingserver.centralus.cloudapp.azure.com";
 uint32_t s_port = 3000;
 
+
+extern "C" __declspec(dllexport) void MsgBox(char *msg)
+{
+#if SHOW_CONSOLE
+	std::cout << msg << std::endl;
+#endif
+	//MessageBoxA(NULL, msg, "", MB_OK);
+}
+
 void FrameUpdate()
 {
 }
@@ -99,7 +108,7 @@ void InitWebRTC()
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 	rtc::InitializeSSL();
-
+	
 	PeerConnectionClient client;
 
 	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
@@ -133,6 +142,8 @@ void InitWebRTC()
 			}
 		}
 	}
+
+	int aaa = 3;
 }
 
 
@@ -183,9 +194,14 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
         case kUnityGfxDeviceEventShutdown:
         {
+			MsgBox("kUnityGfxDeviceEventShutdown enter");
+
             s_Context.Reset();
             s_Device.Reset();
             s_DeviceType = kUnityGfxRendererNull;
+
+			MsgBox("kUnityGfxDeviceEventShutdown exit");
+
             break;
         }
     }
@@ -214,9 +230,33 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 	g_videoHelper = new VideoHelper(s_Device.Get(), s_Context.Get());
 }
 
+extern "C" __declspec(dllexport) void Close()
+{
+	if (s_conductor != nullptr)
+	{
+		MsgBox("Close enter");
+
+		MainWindowCallback *callback = s_conductor;
+		callback->DisconnectFromCurrentPeer(); 
+		callback->DisconnectFromServer();
+		
+		callback->Close();
+
+		s_conductor = nullptr;
+		MsgBox("Close exit");
+
+		rtc::CleanupSSL();
+}
+
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
+	MsgBox("UnityPluginUnload enter");
+
+	Close();
+
     s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
+	MsgBox("UnityPluginUnload exit");
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
@@ -239,13 +279,6 @@ extern "C" __declspec(dllexport) void Login(char *server, int32_t port)
 	}
 }
 
-extern "C" __declspec(dllexport) void Close()
-{
-	if (s_conductor != nullptr)
-	{
-		s_conductor->Close();
-	}
-}
 
 
 extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
