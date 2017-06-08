@@ -10,7 +10,6 @@
 //*********************************************************
 
 using System.Xml.Serialization;
-using PeerConnectionClient.MVVM;
 
 namespace PeerConnectionClient.Utilities
 {
@@ -18,7 +17,7 @@ namespace PeerConnectionClient.Utilities
     /// A base class for validable values.
     /// </summary>
     /// <typeparam name="T">The type of the value.</typeparam>
-    public abstract class ValidableBase<T> : BindableBase
+    public abstract class ValidableBase<T>
     {
         private T _value;
 
@@ -30,10 +29,8 @@ namespace PeerConnectionClient.Utilities
             get { return _value; }
             set
             {
-                if (SetProperty(ref _value, value))
-                {
-                    Validate();
-                }
+                _value = value;
+                Validate();                
             }
         }
 
@@ -47,7 +44,10 @@ namespace PeerConnectionClient.Utilities
         public bool Valid
         {
             get { return _valid; }
-            protected set { SetProperty(ref _valid, value); }
+            protected set
+            {
+                _valid = value;
+            }
         }
 
         /// <summary>

@@ -14,7 +14,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Xml.Serialization;
-using PeerConnectionClient.MVVM;
 using PeerConnectionClient.Utilities;
 
 namespace PeerConnectionClient.Model
@@ -22,7 +21,7 @@ namespace PeerConnectionClient.Model
     /// <summary>
     /// Class represents an Ice server
     /// </summary>
-    public class IceServer : BindableBase
+    public class IceServer
     {
         /// <summary>
         /// Default constructor for Ice server.
@@ -38,7 +37,8 @@ namespace PeerConnectionClient.Model
         /// <param name="type">The type of the Ice server.</param>
         public IceServer(string host, ServerType type)
         {
-            Host.PropertyChanged += ValidableProperties_PropertyChanged;
+            //Host.PropertyChanged += ValidableProperties_PropertyChanged;
+            // TODO: validate host values
             Host.Value = host;
             Type = type;
         }
@@ -139,7 +139,7 @@ namespace PeerConnectionClient.Model
         public bool Valid
         {
             get { return _valid; }
-            set { SetProperty(ref _valid, value); }
+            set { _valid = value; }
         }
 
 
