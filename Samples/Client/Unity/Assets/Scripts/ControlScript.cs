@@ -20,14 +20,14 @@ using PeerConnectionClient.Utilities;
 public class ControlScript : MonoBehaviour
 {
     private const int textureWidth = 1280;
-    private const int textureHeight = 720;
+    private const int textureHeight = 480;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
     public InputField PeerInputTextField;
     public InputField MessageInputField;
-    public Renderer RenderTexture;
-    public Transform VirtualCamera;
+    public RawImage LeftCanvas;
+    public RawImage RightCanvas;
 
     private Transform camTransform;
     private Vector3 prevPos;
@@ -89,10 +89,10 @@ public class ControlScript : MonoBehaviour
     void Awake()
     {
         // Azure Host Details
-        ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        // ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
         
         // Local Dev Setup
-        //ServerInputTextField.text = "127.0.0.1:8888";
+        ServerInputTextField.text = "127.0.0.1:8888";
     }
 
     void Start()
@@ -215,6 +215,8 @@ public class ControlScript : MonoBehaviour
 #endif
 #endif
         StatusText.text += "WebRTC Initialized\n";
+
+        ConnectToServer();
     }
 
     private void WebRtcControlOnPeerMessageDataReceived(int peerId, string message)
@@ -330,29 +332,6 @@ public class ControlScript : MonoBehaviour
 //        }
 #endregion
 
-
-#region Virtual Camera Control
-        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
-            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
-        {
-            prevPos = VirtualCamera.position;
-            prevRot = VirtualCamera.rotation;
-            var eulerRot = prevRot.eulerAngles;
-            var camMsg = string.Format(
-                @"{{""camera-transform"":""{0},{1},{2},{3},{4},{5}""}}",
-                prevPos.x,
-                prevPos.y,
-                prevPos.z,
-                eulerRot.x,
-                eulerRot.y,
-                eulerRot.z);
-
-            //_webRtcUtils.SendPeerMessageDataExecute(camMsg);
-            _webRtcControl.SendPeerMessageData(camMsg);
-        }
-#endregion
-
-
         if (Time.time > endTime)
         {
             fpsCount = (float)fpsCounter / (Time.time - startTime);
@@ -380,14 +359,15 @@ public class ControlScript : MonoBehaviour
 
     private void CreateTextureAndPassToPlugin()
     {
-        RenderTexture.transform.localScale = new Vector3(-1f, (float) textureHeight / textureWidth, 1f) * 2f;
-
         Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.ARGB32, false);
         // Workaround for Unity Color Space Shift issue
         //Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.BGRA32, false);
         tex.filterMode = FilterMode.Point;       
         tex.Apply();
-        RenderTexture.material.mainTexture = tex;
+
+        LeftCanvas.texture = tex;
+        RightCanvas.texture = tex;
+
         SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
     }
 

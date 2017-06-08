@@ -76,7 +76,7 @@ namespace PeerConnectionClient.Signalling
         /// Helps to pass WebRTC session signals between client and server.
         /// </summary>
         public Signaller Signaller => _signaller;
-        
+
         /// <summary>
         /// Video codec used in WebRTC session.
         /// </summary>
@@ -114,7 +114,7 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Media details.
         /// </summary>
-        public Media Media => _media;	
+        public Media Media => _media;
 
         public ObservableCollection<Peer> Peers;
         public Peer Peer;
@@ -198,14 +198,14 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         public void UpdatePreferredFrameFormat()
         {
-          if (VideoCaptureProfile != null)
-          {
+            if (VideoCaptureProfile != null)
+            {
 #if ORTCLIB
             _media.SetPreferredVideoCaptureFormat(
               (int)VideoCaptureProfile.Width, (int)VideoCaptureProfile.Height, (int)VideoCaptureProfile.FrameRate);
 #else
-            Org.WebRtc.WebRTC.SetPreferredVideoCaptureFormat(
-                          (int)VideoCaptureProfile.Width, (int)VideoCaptureProfile.Height, (int)VideoCaptureProfile.FrameRate);
+                Org.WebRtc.WebRTC.SetPreferredVideoCaptureFormat(
+                              (int)VideoCaptureProfile.Width, (int)VideoCaptureProfile.Height, (int)VideoCaptureProfile.FrameRate);
 #endif
             }
         }
@@ -217,11 +217,11 @@ namespace PeerConnectionClient.Signalling
         private async Task<bool> CreatePeerConnection(CancellationToken cancelationToken)
         {
             Debug.Assert(_peerConnection == null);
-            if(cancelationToken.IsCancellationRequested)
+            if (cancelationToken.IsCancellationRequested)
             {
                 return false;
             }
-            
+
             var config = new RTCConfiguration()
             {
                 BundlePolicy = RTCBundlePolicy.Balanced,
@@ -269,8 +269,9 @@ namespace PeerConnectionClient.Signalling
 
             // Setup Data Channel            
             _peerSendDataChannel = _peerConnection.CreateDataChannel(
-                "SendDataChannel", 
-                new RTCDataChannelInit(){
+                "SendDataChannel",
+                new RTCDataChannelInit()
+                {
                     Ordered = true
                 });
             _peerSendDataChannel.OnOpen += PeerSendDataChannelOnOpen;
@@ -338,7 +339,7 @@ namespace PeerConnectionClient.Signalling
             {
                 Debug.WriteLine("CONDUCTOR: LOCAL MEDIA STREAM NULL");
             }
-            _peerConnection.AddStream(_mediaStream);                       
+            _peerConnection.AddStream(_mediaStream);
 #endif
 
             OnAddLocalStream?.Invoke(new MediaStreamEvent() { Stream = _mediaStream });
@@ -363,7 +364,7 @@ namespace PeerConnectionClient.Signalling
 
         private void _peerReceiveDataChannel_OnMessage(RTCDataChannelMessageEvent rtcMessage)
         {
-            var msg = ((StringDataChannelMessage) rtcMessage.Data).StringData;
+            var msg = ((StringDataChannelMessage)rtcMessage.Data).StringData;
             OnPeerDataChannelReceived?.Invoke(_peerId, msg);
             Debug.WriteLine("DataChannel: {0}-{1}", _peerId, msg);
         }
@@ -390,9 +391,9 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         //private async Task ClosePeerConnection()
         private void ClosePeerConnection()
-        {                
+        {
             lock (MediaLock)
-            {                
+            {
                 if (_peerConnection != null)
                 {
                     _peerId = -1;
@@ -407,21 +408,21 @@ namespace PeerConnectionClient.Signalling
                                 if (track.Enabled)
                                 {
                                     track.Stop();
-                                }                                        
+                                }
                                 _mediaStream.RemoveTrack(track);
                             }
                         }
                     }
                     _mediaStream = null;
-                    
+
                     // TODO: Cleanup DataChannel
-                    if(_peerSendDataChannel != null)
-                    {                        
+                    if (_peerSendDataChannel != null)
+                    {
                         _peerSendDataChannel.Close();
                         _peerSendDataChannel = null;
                     }
 
-                    if(_peerReceiveDataChannel != null)
+                    if (_peerReceiveDataChannel != null)
                     {
                         _peerReceiveDataChannel.Close();
                         _peerReceiveDataChannel = null;
@@ -432,9 +433,9 @@ namespace PeerConnectionClient.Signalling
                     _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
 
                     SessionId = null;
-    #if ORTCLIB
+#if ORTCLIB
             OrtcStatsManager.Instance.CallEnded();
-    #endif
+#endif
                     _peerConnection = null;
 
                     OnReadyToConnect?.Invoke();
@@ -442,7 +443,7 @@ namespace PeerConnectionClient.Signalling
                     // TODO: handle GC
                     //GC.Collect(); // Ensure all references are truly dropped.
                 }
-            }                
+            }
         }
 
         /// <summary>
@@ -457,7 +458,7 @@ namespace PeerConnectionClient.Signalling
                 return;
             }
 
-            double index = evt.Candidate.SdpMLineIndex != 0 ? (double)evt.Candidate.SdpMLineIndex : -1;
+            double index = null != evt.Candidate.SdpMLineIndex ? (double)evt.Candidate.SdpMLineIndex : -1;
 
             JsonObject json;
 #if ORTCLIB
@@ -639,7 +640,7 @@ namespace PeerConnectionClient.Signalling
                         if (type == "offer" || type == "answer" || type == "json")
                         {
                             Debug.Assert(_peerId == -1);
-                            _peerId = peerId;              
+                            _peerId = peerId;
 
                             IEnumerable<Peer> enumerablePeer = Peers.Where(x => x.Id == peerId);
                             Peer = enumerablePeer.First();
@@ -807,11 +808,11 @@ namespace PeerConnectionClient.Signalling
             {
                 return;
             }
-            
+
             //_signaller.Connect(server, port, GetLocalPeerName());
             _signaller.Connect(server, port, peerName == String.Empty ? GetLocalPeerName() : peerName);
         }
-       
+
         /// <summary>
         /// Calls to disconnect the user from the server.
         /// </summary>
@@ -828,7 +829,7 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         /// <param name="peer">Peer to connect to.</param>
         public async void ConnectToPeer(Peer peer)
-        {            
+        {
             Debug.Assert(peer != null);
             Debug.Assert(_peerId == -1);
 
@@ -868,7 +869,7 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Calls to disconnect from peer.
         /// </summary>
-        public async Task DisconnectFromPeer()        
+        public async Task DisconnectFromPeer()
         {
             await SendHangupMessage();
             ClosePeerConnection();
@@ -973,7 +974,7 @@ namespace PeerConnectionClient.Signalling
                 if (_mediaStream != null)
                 {
                     foreach (MediaVideoTrack videoTrack in _mediaStream.GetVideoTracks())
-                    {                        
+                    {
                         videoTrack.Enabled = true;
                     }
                 }
@@ -1042,7 +1043,7 @@ namespace PeerConnectionClient.Signalling
         public void ConfigureIceServers(Collection<IceServer> iceServers)
         {
             _iceServers.Clear();
-            foreach(IceServer iceServer in iceServers)
+            foreach (IceServer iceServer in iceServers)
             {
                 //Url format: stun:stun.l.google.com:19302
                 string url = "stun:";
@@ -1081,7 +1082,7 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         public void CancelConnectingToPeer()
         {
-            if(_connectToPeerTask != null)
+            if (_connectToPeerTask != null)
             {
                 Debug.WriteLine("Conductor: Connecting to peer in progress, canceling");
                 _connectToPeerCancelationTokenSource.Cancel();
