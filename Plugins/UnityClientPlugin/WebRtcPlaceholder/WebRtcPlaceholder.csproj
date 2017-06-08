@@ -30,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -53,11 +54,9 @@ mkdir "%25TARGET_PLUGIN_PATH%25Plugins"
 echo $(Platform)
 IF $(Platform)==AnyCPU (
 xcopy /R /I /Y "$(TargetPath)" "%25TARGET_PLUGIN_PATH%25Plugins\"
-copy /Y "$(ProjectDir)\WebRtcWrapper.dll.meta" "%TARGET_PLUGIN_PATH%Plugins\WebRtcWrapper.dll.meta"
 ) ELSE (
 mkdir "%25TARGET_PLUGIN_PATH%25Plugins\$(PlatformName)"
 xcopy /R /I /Y "$(TargetPath)" "%25TARGET_PLUGIN_PATH%25Plugins\$(PlatformName)"
-copy /Y "$(ProjectDir)\WebRtcWrapper.dll.meta" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformName)\WebRtcWrapper.dll.meta"
 )
 ENDLOCAL</PostBuildEvent>
   </PropertyGroup>

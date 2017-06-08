@@ -6,11 +6,14 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/Scenes/StereoSideBySideTexture.unity
+    path: 
     guid: 9a9dc3d97525f3d42851c4743227ba29
   - enabled: 0
     path: 
     guid: 5425aa1f238ee674481b5c84bfa7e01c
-  - enabled: 1
-    path: Assets/Scenes/RenderTexture.unity
+  - enabled: 0
+    path: 
     guid: 2ceba1cde0a6df04ead15f92b89acb67
+  - enabled: 1
+    path: Assets/Scenes/StereoSideBySideTexture.unity
+    guid: e9a5c06fae8d2074d9efcbdef017eec7

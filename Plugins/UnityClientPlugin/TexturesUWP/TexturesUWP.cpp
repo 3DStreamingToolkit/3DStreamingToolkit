@@ -17,7 +17,7 @@
 // Decoder Namespace
 using namespace WebRTCDirectXClientComponent;
 int const textureWidth = 1280;
-int const textureHeight = 720;
+int const textureHeight = 480;
 
 static void* g_TextureHandle = NULL;
 static int   g_TextureWidth = textureWidth;
@@ -58,7 +58,7 @@ void InitializeVideoProcessing()
 {
 	// Setup Video Decoder
 	videoDecoder = new VideoDecoder();
-	videoDecoder->Initialize(hH264Frame, wH264Frame);
+	videoDecoder->Initialize(wH264Frame, hH264Frame);
 
 	// Pre-Allocate Buffers instead of dynamic allocation and release
 	int bufSize = g_TextureWidth * g_TextureHeight * pixelSize;
