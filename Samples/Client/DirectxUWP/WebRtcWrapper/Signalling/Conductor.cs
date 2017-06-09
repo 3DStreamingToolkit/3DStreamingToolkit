@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using PeerConnectionClient.Model;
 using System.Collections.ObjectModel;
 using System.Threading;
-using System.Text.RegularExpressions;
 using static System.String;
 #if ORTCLIB
 using Org.Ortc;
@@ -65,6 +64,7 @@ namespace PeerConnectionClient.Signalling
                         }
                     }
                 }
+
                 return _instance;
             }
         }
@@ -138,6 +138,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return _etwStatsEnabled;
             }
+
             set
             {
                 _etwStatsEnabled = value;
@@ -162,6 +163,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return _peerConnectionStatsEnabled;
             }
+
             set
             {
                 _peerConnectionStatsEnabled = value;
@@ -190,8 +192,6 @@ namespace PeerConnectionClient.Signalling
         // Specialized Message Handling Messages
         public event Action<int, string> OnPeerMessageDataReceived;
         public event Action<int, string> OnPeerDataChannelReceived;
-
-
 
         /// <summary>
         /// Updates the preferred video frame rate and resolution.
@@ -401,11 +401,13 @@ namespace PeerConnectionClient.Signalling
                                 if (track.Enabled)
                                 {
                                     track.Stop();
-                                }                                        
+                                }               
+                                                         
                                 _mediaStream.RemoveTrack(track);
                             }
                         }
                     }
+
                     _mediaStream = null;
                     
                     // TODO: Cleanup DataChannel
@@ -432,9 +434,6 @@ namespace PeerConnectionClient.Signalling
                     _peerConnection = null;
 
                     OnReadyToConnect?.Invoke();
-
-                    // TODO: handle GC
-                    //GC.Collect(); // Ensure all references are truly dropped.
                 }
             }
         }
@@ -469,6 +468,7 @@ namespace PeerConnectionClient.Signalling
                     {kCandidateSdpName, JsonValue.CreateStringValue(evt.Candidate.Candidate)}
                 };
             }
+
             Debug.WriteLine("Conductor: Sending ice candidate.\n" + json.Stringify());
             SendMessage(json);
         }
@@ -527,8 +527,6 @@ namespace PeerConnectionClient.Signalling
         {
 #if ORTCLIB
             _signalingMode = RTCPeerConnectionSignalingMode.Json;
-//#else
-            //_signalingMode = RTCPeerConnectionSignalingMode.Sdp;
 #endif
             _signaller = new Signaller();
             _media = Media.CreateMedia();
@@ -771,6 +769,7 @@ namespace PeerConnectionClient.Signalling
                     {
                         candidate = RTCIceCandidate.FromJsonString(message);
                     }
+
                     _peerConnection?.AddIceCandidate(candidate);
 #else
                     await _peerConnection.AddIceCandidate(candidate);
@@ -971,6 +970,7 @@ namespace PeerConnectionClient.Signalling
                         videoTrack.Enabled = true;
                     }
                 }
+
                 VideoEnabled = true;
             }
         }
@@ -989,6 +989,7 @@ namespace PeerConnectionClient.Signalling
                         videoTrack.Enabled = false;
                     }
                 }
+
                 VideoEnabled = false;
             }
         }
@@ -1007,6 +1008,7 @@ namespace PeerConnectionClient.Signalling
                         audioTrack.Enabled = false;
                     }
                 }
+
                 AudioEnabled = false;
             }
         }
@@ -1025,6 +1027,7 @@ namespace PeerConnectionClient.Signalling
                         audioTrack.Enabled = true;
                     }
                 }
+
                 AudioEnabled = true;
             }
         }
@@ -1044,6 +1047,7 @@ namespace PeerConnectionClient.Signalling
                 {
                     url = "turn:";
                 }
+
                 RTCIceServer server = null;
                 url += iceServer.Host.Value;
 #if ORTCLIB
@@ -1061,10 +1065,12 @@ namespace PeerConnectionClient.Signalling
                 {
                     server.Credential = iceServer.Credential;
                 }
+
                 if (iceServer.Username != null)
                 {
                     server.Username = iceServer.Username;
                 }
+
                 _iceServers.Add(server);
             }
         }

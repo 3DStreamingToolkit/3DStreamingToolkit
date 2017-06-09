@@ -18,14 +18,13 @@ namespace StreamingDirectXHololensClient
     class App : IFrameworkView, IFrameworkViewSource
     {
         private AppCallbacks _appCallbacks;
-        //public RawVideoSource _rawVideo;
         public EncodedVideoSource _encodedVideo;
         private MediaVideoTrack _peerVideoTrack;
         private Peer _selectedPeer;
 
         public App()
         {
-            _appCallbacks = new AppCallbacks();
+            _appCallbacks = new AppCallbacks(SendInputData);
         }
 
         public virtual void Initialize(CoreApplicationView applicationView)
@@ -184,24 +183,9 @@ namespace StreamingDirectXHololensClient
             _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_peerVideoTrack != null)
             {
-                //_rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
-                //_rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
                 _encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
                 _encodedVideo.OnEncodedVideoFrame += Source_OnEncodedVideoFrame;
             }
-        }
-
-        private void Source_OnRawVideoFrame(
-            uint width,
-            uint height,
-            byte[] dataY,
-            uint strideY,
-            byte[] dataU,
-            uint strideU,
-            byte[] dataV,
-            uint strideV)
-        {
-            _appCallbacks.OnFrame(width, height, dataY, strideY, dataU, strideU, dataV, strideV);
         }
 
         private void Source_OnEncodedVideoFrame(
@@ -210,6 +194,11 @@ namespace StreamingDirectXHololensClient
             byte[] encodedData)
         {
             _appCallbacks.OnEncodedFrame(width, height, encodedData);
+        }
+
+        private void SendInputData(string msg)
+        {
+            Conductor.Instance.SendPeerDataChannelMessage(msg);
         }
     }
 }

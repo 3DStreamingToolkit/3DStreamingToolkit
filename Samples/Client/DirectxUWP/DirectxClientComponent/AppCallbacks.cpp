@@ -1,13 +1,16 @@
 ﻿#include "pch.h"
+
 #include "AppCallbacks.h"
+#include "DirectXHelper.h"
 #include "libyuv/convert.h"
 
-
 using namespace DirectXClientComponent;
+using namespace DirectX;
 using namespace Platform;
 using namespace Windows::System::Profile;
 #ifdef HOLOLENS
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Perception::Spatial;
 #endif // HOLOLENS
 
 static uint8_t* s_videoYUVFrame = nullptr;
@@ -16,21 +19,16 @@ static uint8_t* s_videoDataY = nullptr;
 static uint8_t* s_videoDataU = nullptr;
 static uint8_t* s_videoDataV = nullptr;
 
-AppCallbacks::AppCallbacks() :
+AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 #ifndef HOLOLENS
 	m_videoDecoder(nullptr)
 #else // HOLOLENS
 	m_videoDecoder(nullptr),
-	m_holographicSpace(nullptr)
+	m_holographicSpace(nullptr),
+	m_sendInputDataHandler(sendInputDataHandler)
 #endif // HOLOLENS
 {
-	AnalyticsVersionInfo^ deviceInfo = AnalyticsInfo::VersionInfo;
-	if (deviceInfo->DeviceFamily == "Windows.Holographic")
-	{
-		
-	}
-		
 }
 
 AppCallbacks::~AppCallbacks()
@@ -209,7 +207,13 @@ void AppCallbacks::OnEncodedFrame(
 		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
 
 #ifdef HOLOLENS
+		// Updates.
 		HolographicFrame^ holographicFrame = m_main->Update();
+
+		// Sends view and projection matrices.
+		SendInputData(holographicFrame);
+
+		// Renders.
 		if (m_main->Render(holographicFrame))
 		{
 			// The holographic frame has an API that presents the swap chain for each
@@ -243,4 +247,64 @@ void AppCallbacks::ReadI420Buffer(
 	memcpy(*dataY, buffer, size_y);
 	memcpy(*dataU, buffer + *strideY * height, size_uv);
 	memcpy(*dataV, buffer + *strideY * height + *strideU * ((height + 1) / 2), size_uv);
+}
+
+void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
+{
+	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
+	SpatialCoordinateSystem^ currentCoordinateSystem =
+		m_main->GetReferenceFrame()->CoordinateSystem;
+
+	for (auto cameraPose : prediction->CameraPoses)
+	{
+		HolographicStereoTransform cameraProjectionTransform =
+			cameraPose->ProjectionTransform;
+
+		Platform::IBox<HolographicStereoTransform>^ viewTransformContainer =
+			cameraPose->TryGetViewTransform(currentCoordinateSystem);
+
+		if (viewTransformContainer != nullptr)
+		{
+			HolographicStereoTransform viewCoordinateSystemTransform =
+				viewTransformContainer->Value;
+
+			XMFLOAT4X4 leftViewProjectionMatrix;
+			XMStoreFloat4x4(
+				&leftViewProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
+			);
+
+			XMFLOAT4X4 rightViewProjectionMatrix;
+			XMStoreFloat4x4(
+				&rightViewProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
+			);
+
+			// Builds the camera transform message.
+			String^ leftCameraTransform = "";
+			String^ rightCameraTransform = "";
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					leftCameraTransform += leftViewProjectionMatrix.m[i][j];
+					leftCameraTransform += ",";
+					rightCameraTransform += rightViewProjectionMatrix.m[i][j];
+					if (i != 3 || j != 3)
+					{
+						rightCameraTransform += ",";
+					}
+				}
+			}
+
+			String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
+			String^ msg =
+				"{" +
+				"  \"type\":\"camera-transform-stereo\"," +
+				"  \"body\":\"" + cameraTransformBody + "\"" +
+				"}";
+
+			m_sendInputDataHandler(msg);
+		}
+	}
 }

@@ -51,8 +51,8 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
         resource.As(&cameraBackBuffer)
         );
 
-    // Determine if the back buffer has changed. If so, ensure that the render target view
-    // is for the current back buffer.
+    // Determine if the back buffer has changed. If so, ensure that the
+	// render target view is for the current back buffer.
     if (m_d3dBackBuffer.Get() != cameraBackBuffer.Get())
     {
         // This can change every frame as the system moves to the next buffer in the
@@ -72,7 +72,8 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
             );
 
         // Get the DXGI format for the back buffer.
-        // This information can be accessed by the app using CameraResources::GetBackBufferDXGIFormat().
+        // This information can be accessed by the app using
+		// CameraResources::GetBackBufferDXGIFormat().
         D3D11_TEXTURE2D_DESC backBufferDesc;
         m_d3dBackBuffer->GetDesc(&backBufferDesc);
         m_dxgiFormat = backBufferDesc.Format;
@@ -114,6 +115,7 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
         CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(
             m_isStereo ? D3D11_DSV_DIMENSION_TEXTURE2DARRAY : D3D11_DSV_DIMENSION_TEXTURE2D
             );
+
         DX::ThrowIfFailed(
             device->CreateDepthStencilView(
                 depthStencil.Get(),
@@ -126,8 +128,12 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
     // Create the constant buffer, if needed.
     if (m_viewProjectionConstantBuffer == nullptr)
     {
-        // Create a constant buffer to store view and projection matrices for the camera.
-        CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+        // Create a constant buffer to store view and projection matrices for
+		// the camera.
+        CD3D11_BUFFER_DESC constantBufferDesc(
+			sizeof(ViewProjectionConstantBuffer),
+			D3D11_BIND_CONSTANT_BUFFER);
+
         DX::ThrowIfFailed(
             device->CreateBuffer(
                 &constantBufferDesc,
@@ -139,7 +145,8 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
 }
 
 // Releases resources associated with a back buffer.
-void DX::CameraResources::ReleaseResourcesForBackBuffer(DX::DeviceResources* pDeviceResources)
+void DX::CameraResources::ReleaseResourcesForBackBuffer(
+	DX::DeviceResources* pDeviceResources)
 {
     const auto context = pDeviceResources->GetD3DDeviceContext();
 
@@ -149,9 +156,14 @@ void DX::CameraResources::ReleaseResourcesForBackBuffer(DX::DeviceResources* pDe
     m_d3dDepthStencilView.Reset();
     m_viewProjectionConstantBuffer.Reset();
 
-    // Ensure system references to the back buffer are released by clearing the render
-    // target from the graphics pipeline state, and then flushing the Direct3D context.
-    ID3D11RenderTargetView* nullViews[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = { nullptr };
+    // Ensure system references to the back buffer are released by clearing
+	// the render target from the graphics pipeline state, and then flushing
+	// the Direct3D context.
+    ID3D11RenderTargetView* nullViews[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = 
+	{ 
+		nullptr
+	};
+
     context->OMSetRenderTargets(ARRAYSIZE(nullViews), nullViews, nullptr);
     context->Flush();
 }
@@ -171,33 +183,40 @@ void DX::CameraResources::UpdateViewProjectionBuffer(
         cameraPose->Viewport.Height
         );
 
-    // The projection transform for each frame is provided by the HolographicCameraPose.
-    HolographicStereoTransform cameraProjectionTransform = cameraPose->ProjectionTransform;
+    // The projection transform for each frame is provided by the
+	// HolographicCameraPose.
+    HolographicStereoTransform cameraProjectionTransform = 
+		cameraPose->ProjectionTransform;
 
-    // Get a container object with the view and projection matrices for the given
-    // pose in the given coordinate system.
-    Platform::IBox<HolographicStereoTransform>^ viewTransformContainer = cameraPose->TryGetViewTransform(coordinateSystem);
+    // Get a container object with the view and projection matrices
+	// for the given pose in the given coordinate system.
+    Platform::IBox<HolographicStereoTransform>^ viewTransformContainer = 
+		cameraPose->TryGetViewTransform(coordinateSystem);
 
-    // If TryGetViewTransform returns a null pointer, that means the pose and coordinate
-    // system cannot be understood relative to one another; content cannot be rendered
-    // in this coordinate system for the duration of the current frame.
-    // This usually means that positional tracking is not active for the current frame, in
-    // which case it is possible to use a SpatialLocatorAttachedFrameOfReference to render
-    // content that is not world-locked instead.
+    // If TryGetViewTransform returns a null pointer, that means the pose and
+	// coordinate system cannot be understood relative to one another;
+	// content cannot be rendered in this coordinate system for the duration
+	// of the current frame.
+    // This usually means that positional tracking is not active for the
+	// current frame, in which case it is possible to use a 
+	// SpatialLocatorAttachedFrameOfReference to render content that is not
+	// world-locked instead.
     DX::ViewProjectionConstantBuffer viewProjectionConstantBufferData;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
     if (viewTransformAcquired)
     {
         // Otherwise, the set of view transforms can be retrieved.
-        HolographicStereoTransform viewCoordinateSystemTransform = viewTransformContainer->Value;
+        HolographicStereoTransform viewCoordinateSystemTransform = 
+			viewTransformContainer->Value;
 
-        // Update the view matrices. Holographic cameras (such as Microsoft HoloLens) are
-        // constantly moving relative to the world. The view matrices need to be updated
-        // every frame.
+        // Update the view matrices. Holographic cameras (such as Microsoft HoloLens)
+		// are constantly moving relative to the world. The view matrices need to be
+		// updated every frame.
         XMStoreFloat4x4(
             &viewProjectionConstantBufferData.viewProjection[0],
             XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
             );
+
         XMStoreFloat4x4(
             &viewProjectionConstantBufferData.viewProjection[1],
             XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
@@ -254,19 +273,6 @@ bool DX::CameraResources::AttachViewProjectionBuffer(
         1,
         m_viewProjectionConstantBuffer.GetAddressOf()
         );
-
-    // The template includes a pass-through geometry shader that is used by
-    // default on systems that don't support the D3D11_FEATURE_D3D11_OPTIONS3::
-    // VPAndRTArrayIndexFromAnyShaderFeedingRasterizer extension. The shader 
-    // will be enabled at run-time on systems that require it.
-    // If your app will also use the geometry shader for other tasks and those
-    // tasks require the view/projection matrix, uncomment the following line 
-    // of code to send the constant buffer to the geometry shader as well.
-    /*context->GSSetConstantBuffers(
-        1,
-        1,
-        m_viewProjectionConstantBuffer.GetAddressOf()
-        );*/
 
     m_framePending = false;
 

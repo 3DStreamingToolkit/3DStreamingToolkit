@@ -16,10 +16,12 @@ using namespace Windows::UI::Core;
 
 namespace DirectXClientComponent
 {
+	public delegate void SendInputDataHandler(String^ msg);
+
     public ref class AppCallbacks sealed
     {
     public:
-		AppCallbacks();
+		AppCallbacks(SendInputDataHandler^ sendInputDataHandler);
 		virtual ~AppCallbacks();
 
 		void Initialize(CoreApplicationView^ appView);
@@ -55,9 +57,12 @@ namespace DirectXClientComponent
 			uint8** dataV,
 			int* strideV);
 
+		void SendInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
+
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
 		VideoRenderer*											m_videoRenderer;
 		VideoDecoder*											m_videoDecoder;
+		SendInputDataHandler^									m_sendInputDataHandler;
 
 		bool													m_isHolographic;
 #ifdef HOLOLENS
