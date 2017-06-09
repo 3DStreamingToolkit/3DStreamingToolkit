@@ -1,7 +1,7 @@
 #define SUPPORT_D3D11 1
 #define WEBRTC_WIN 1
 
-#define SHOW_CONSOLE 1
+#define SHOW_CONSOLE 0
 
 
 #include <iostream>
@@ -77,14 +77,8 @@ std::thread *messageThread;
 std::string s_server = "signalingserver.centralus.cloudapp.azure.com";
 uint32_t s_port = 3000;
 
+bool s_closing = false;
 
-extern "C" __declspec(dllexport) void MsgBox(char *msg)
-{
-#if SHOW_CONSOLE
-	std::cout << msg << std::endl;
-#endif
-	//MessageBoxA(NULL, msg, "", MB_OK);
-}
 
 void FrameUpdate()
 {
@@ -128,7 +122,7 @@ void InitWebRTC()
 	// Main loop.
 	MSG msg;
 	BOOL gm;
-	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1 && !s_closing)
 	{
 		if (!wnd->PreTranslateMessage(&msg))
 		{
@@ -194,13 +188,9 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
         case kUnityGfxDeviceEventShutdown:
         {
-			MsgBox("kUnityGfxDeviceEventShutdown enter");
-
-            s_Context.Reset();
+			s_Context.Reset();
             s_Device.Reset();
             s_DeviceType = kUnityGfxRendererNull;
-
-			MsgBox("kUnityGfxDeviceEventShutdown exit");
 
             break;
         }
@@ -234,29 +224,26 @@ extern "C" __declspec(dllexport) void Close()
 {
 	if (s_conductor != nullptr)
 	{
-		MsgBox("Close enter");
-
 		MainWindowCallback *callback = s_conductor;
-		callback->DisconnectFromCurrentPeer(); 
+		callback->DisconnectFromCurrentPeer();
 		callback->DisconnectFromServer();
-		
+
 		callback->Close();
 
 		s_conductor = nullptr;
-		MsgBox("Close exit");
-
+		
 		rtc::CleanupSSL();
+
+		s_closing = true;
+	}
 }
 
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
-	MsgBox("UnityPluginUnload enter");
+    s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 	Close();
-
-    s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
-	MsgBox("UnityPluginUnload exit");
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
