@@ -19,105 +19,100 @@
 
 #include <cpprest/http_client.h>
 
-#include "webrtc/base/nethelpers.h"
-#include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
+
+#include "OrderedHttpClient.h"
+#include "peer_connection_async.h"
 
 typedef std::map<int, std::string> Peers;
 
 struct PeerConnectionClientObserver
 {
-	virtual void OnSignedIn() = 0;  // Called when we're logged on.
+    virtual void OnSignedIn() = 0;  // Called when we're logged on.
 
-	virtual void OnDisconnected() = 0;
+    virtual void OnDisconnected() = 0;
 
-	virtual void OnPeerConnected(int id, const std::string& name) = 0;
+    virtual void OnPeerConnected(int id, const std::string& name) = 0;
 
-	virtual void OnPeerDisconnected(int peer_id) = 0;
+    virtual void OnPeerDisconnected(int peer_id) = 0;
 
-	virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
+    virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
 
-	virtual void OnMessageSent(int err) = 0;
+    virtual void OnMessageSent(int err) = 0;
 
-	virtual void OnServerConnectionFailure() = 0;
+    virtual void OnServerConnectionFailure() = 0;
 
 protected:
-	virtual ~PeerConnectionClientObserver() {}
+    virtual ~PeerConnectionClientObserver() {}
 };
 
 class PeerConnectionClient : public sigslot::has_slots<>,
-							 public rtc::MessageHandler
+    public rtc::MessageHandler
 {
 public:
-	enum State
-	{
-		NOT_CONNECTED,
-		SIGNING_IN,
-		CONNECTED,
-		SIGNING_OUT_WAITING,
-		SIGNING_OUT,
-	};
+    enum State
+    {
+        NOT_CONNECTED,
+        SIGNING_IN,
+        CONNECTED,
+        SIGNING_OUT_WAITING,
+        SIGNING_OUT,
+    };
 
-	PeerConnectionClient();
+    PeerConnectionClient();
 
-	~PeerConnectionClient();
+    ~PeerConnectionClient();
 
-	int id() const;
+    int id() const;
 
-	bool is_connected() const;
+    bool is_connected() const;
 
-	const Peers& peers() const;
+    const Peers& peers() const;
 
-	void RegisterObserver(PeerConnectionClientObserver* callback);
+    void RegisterObserver(PeerConnectionClientObserver* callback);
 
-	void Connect(const std::string& server, int port,
-		const std::string& client_name);
+    void Connect(const std::string& server, int port,
+        const std::string& client_name);
 
-	bool SendToPeer(int peer_id, const std::string& message);
+    bool SendToPeer(int peer_id, const std::string& message);
 
-	bool SendHangUp(int peer_id);
+    bool SendHangUp(int peer_id);
 
-	bool IsSendingMessage();
+    bool IsSendingMessage();
 
-	bool SignOut();
+    bool SignOut();
 
-	// implements the MessageHandler interface
-	void OnMessage(rtc::Message* msg);
+    // implements the MessageHandler interface
+    void OnMessage(rtc::Message* msg);
 
-	void set_proxy(const std::string& proxy);
+    void set_proxy(const std::string& proxy);
 
-	const std::string& proxy() const;
+    const std::string& proxy() const;
 
 protected:
-	void DoConnect();
+    void DoConnect();
 
-	void ConfigureHangingGet();
+    void ConfigurePolling();
 
-	void Close();
+    void Close();
 
-	void OnMessageFromPeer(int peer_id, const std::wstring& message);
+    void OnMessageFromPeer(int peer_id, const std::string& message);
 
-	// Parses a single line entry in the form "<name>,<id>,<connected>"
-	bool ParseEntry(const std::wstring& entry, std::string* name, int* id,
-					bool* connected);
+    // Parses a single line entry in the form "<name>,<id>,<connected>"
+    bool ParseEntry(const std::string& entry, std::string* name, int* id,
+        bool* connected);
 
-	web::http::client::http_client_config CreateHttpConfig();
+    SignalingClient::Http::http_client_config CreateHttpConfig();
+    SignalingClient::Http::uri server_address_;
+    std::string proxy_address_;
+    std::wstring client_name_;
+    SignalingClient::Http::OrderedHttpClient control_request_client_;
+    SignalingClient::Http::OrderedHttpClient polling_request_client_;
 
-	std::vector<std::wstring> NotificationBodyParser(std::wstring);
-
-	std::function<web::http::http_response(concurrency::task<web::http::http_response>)> RequestErrorHandler(std::string errorContext, std::function<void(std::exception)> callback = nullptr);
-
-	PeerConnectionClientObserver* callback_;
-	web::uri server_address_;
-	std::string proxy_address_;
-	std::unique_ptr<web::http::client::http_client> http_client_;
-	std::unique_ptr<web::http::client::http_client> hanging_http_client_;
-	std::unique_ptr<pplx::cancellation_token_source> request_async_src_;
-	std::wstring client_name_;
-	Peers peers_;
-	State state_;
-	int my_id_;
+    PeerConnectionClientObserver* callback_;
+    Peers peers_;
+    State state_;
+    int my_id_;
 };
-
 #endif  // WEBRTC_PEER_CONNECTION_CLIENT_H_
