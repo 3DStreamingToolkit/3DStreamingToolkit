@@ -252,8 +252,8 @@ CModelViewerCamera          g_Camera;               // A model viewing camera
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
 #else // TEST_RUNNER
-static const XMVECTORF32    s_vDefaultEye = { 0.0f, 0.0f, 0.0f, 0.f };
-static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 0.0f, 1.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
 #endif // TEST_RUNNER
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
@@ -494,6 +494,45 @@ void InputUpdate(const std::string& message)
 
 				// Updates the camera view.
 				g_Camera.SetViewParams(eye, lookAt, up);
+				g_Camera.FrameMove(0);
+			}
+		}
+		else if (strcmp(data, "camera-transform-stereo") == 0)
+		{
+			if (msg.isMember("body"))
+			{
+				strcpy(data, msg.get("body", "").asCString());
+
+				// Parses the camera transformation data.
+				std::istringstream datastream(data);
+				std::string token;
+
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Updates the camera's matrices.
+				g_Camera.SetViewProjMatrices(
+					viewProjectionLeft, viewProjectionRight);
+
 				g_Camera.FrameMove(0);
 			}
 		}
@@ -2293,8 +2332,7 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 
 #ifdef STEREO_OUTPUT_MODE
 	// Render scene in the left eye.
-	XMMATRIX transLeft = XMMatrixTranslationFromVector(XMVectorSet(-IPD, 0, 0, 0));
-	mvp = transLeft * g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+	mvp = g_Camera.GetViewProjMatrixLeft();
 
 	SceneParamsDynamic DynamicParamsLeft;
 	XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
@@ -2306,8 +2344,7 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 		STEREO_OUTPUT_TYPE::LEFT_EYE));
 
 	// Render scene in the right eye.
-	XMMATRIX transRight = XMMatrixTranslationFromVector(XMVectorSet(IPD, 0, 0, 0));
-	mvp = transRight * g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+	mvp = g_Camera.GetViewProjMatrixRight();
 
 	SceneParamsDynamic DynamicParamsRight;
 	XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);

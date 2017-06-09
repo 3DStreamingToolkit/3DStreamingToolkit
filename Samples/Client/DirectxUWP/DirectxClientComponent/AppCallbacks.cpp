@@ -85,15 +85,15 @@ void AppCallbacks::Run()
 			// Updates.
 			HolographicFrame^ holographicFrame = m_main->Update();
 
+			// Sends view and projection matrices.
+			SendInputData(holographicFrame);
+
 			// Renders.
 			if (m_main->Render(holographicFrame))
 			{
 				// The holographic frame has an API that presents the swap chain for each
 				// holographic camera.
 				m_deviceResources->Present(holographicFrame);
-
-				// Sends view and projection matrices.
-				SendInputData(holographicFrame);
 			}
 		}
 #endif // HOLOLENS

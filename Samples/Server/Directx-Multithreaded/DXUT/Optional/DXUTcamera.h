@@ -153,6 +153,9 @@ public:
     virtual void Reset();
     virtual void SetViewParams( _In_ DirectX::FXMVECTOR vEyePt, _In_ DirectX::FXMVECTOR vLookatPt, _In_ DirectX::FXMVECTOR pvUpPt = DirectX::g_XMIdentityR1 );
     virtual void SetProjParams( _In_ float fFOV, _In_ float fAspect, _In_ float fNearPlane, _In_ float fFarPlane );
+#ifdef STEREO_OUTPUT_MODE
+	void SetViewProjMatrices( const DirectX::XMFLOAT4X4& viewProjLeft, const DirectX::XMFLOAT4X4& viewProjRight ) { m_mViewProjLeft = viewProjLeft; m_mViewProjRight = viewProjRight; }
+#endif // STEREO_OUTPUT_MODE
 
     // Functions to change behavior
     virtual void SetDragRect( _In_ const RECT& rc ) { m_rcDrag = rc; }
@@ -181,6 +184,10 @@ public:
     // Functions to get state
     DirectX::XMMATRIX GetViewMatrix() const { return DirectX::XMLoadFloat4x4( &m_mView ); }
     DirectX::XMMATRIX GetProjMatrix() const { return DirectX::XMLoadFloat4x4( &m_mProj ); }
+#ifdef STEREO_OUTPUT_MODE
+	DirectX::XMMATRIX GetViewProjMatrixLeft() const { return DirectX::XMLoadFloat4x4(&m_mViewProjLeft); }
+	DirectX::XMMATRIX GetViewProjMatrixRight() const { return DirectX::XMLoadFloat4x4(&m_mViewProjRight); }
+#endif // STEREO_OUTPUT_MODE
     DirectX::XMVECTOR GetEyePt() const { return DirectX::XMLoadFloat3( &m_vEye ); }
     DirectX::XMVECTOR GetLookAtPt() const { return DirectX::XMLoadFloat3( &m_vLookAt ); }
     float GetNearClip() const { return m_fNearPlane; }
@@ -215,6 +222,10 @@ protected:
 
     DirectX::XMFLOAT4X4 m_mView;                    // View matrix 
     DirectX::XMFLOAT4X4 m_mProj;                    // Projection matrix
+#ifdef STEREO_OUTPUT_MODE
+	DirectX::XMFLOAT4X4 m_mViewProjLeft;            // Left Projection matrix
+	DirectX::XMFLOAT4X4 m_mViewProjRight;           // Right Projection matrix
+#endif // STEREO_OUTPUT_MODE
 
     DXUT_GAMEPAD m_GamePad[DXUT_MAX_CONTROLLERS];  // XInput controller state
     DirectX::XMFLOAT3 m_vGamePadLeftThumb;
