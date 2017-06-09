@@ -29,20 +29,20 @@ void VideoRenderer::CreateDeviceDependentResources()
 		// Positions the world-locked hologram two meters in front of the user.
 
 		// Left camera.
-		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, -2.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, -2.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(-1.0f,  1.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -4.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-1.0f, -1.0f, -4.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(	1.0f,  1.0f, -4.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -4.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(-1.0f,  1.0f, -4.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 
 		// Right camera.
-		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, -2.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, -2.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, -2.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, -2.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+		{ XMFLOAT3(-1.0f,  1.0f, -4.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -4.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(-1.0f, -1.0f, -4.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(	1.0f,  1.0f, -4.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(	1.0f, -1.0f, -4.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(-1.0f,  1.0f, -4.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
 #else // HOLOLENS
 		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) },
 		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) },
@@ -200,6 +200,12 @@ void VideoRenderer::UpdateFrame(const uint8_t* data)
 
 void VideoRenderer::Render()
 {
+	// Do not render when the frame data isn't ready.
+	if (!m_frameData)
+	{
+		return;
+	}
+
 	// Gets the device context.
 	ID3D11DeviceContext* context = m_deviceResources->GetD3DDeviceContext();
 

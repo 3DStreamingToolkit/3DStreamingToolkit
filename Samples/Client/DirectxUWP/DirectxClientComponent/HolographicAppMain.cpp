@@ -279,7 +279,7 @@ bool HolographicAppMain::Render(
             if (cameraActive)
             {
                 // Draw the sample hologram.
-                m_videoRenderer->Render();
+				m_videoRenderer->Render();
             }
 
             atLeastOneCameraRendered = true;

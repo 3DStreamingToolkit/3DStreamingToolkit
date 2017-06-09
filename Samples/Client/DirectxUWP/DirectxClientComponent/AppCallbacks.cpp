@@ -78,6 +78,25 @@ void AppCallbacks::Run()
 	{
 		CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(
 			CoreProcessEventsOption::ProcessAllIfPresent);
+
+#ifdef HOLOLENS
+		if (m_videoRenderer)
+		{
+			// Updates.
+			HolographicFrame^ holographicFrame = m_main->Update();
+
+			// Renders.
+			if (m_main->Render(holographicFrame))
+			{
+				// The holographic frame has an API that presents the swap chain for each
+				// holographic camera.
+				m_deviceResources->Present(holographicFrame);
+
+				// Sends view and projection matrices.
+				SendInputData(holographicFrame);
+			}
+		}
+#endif // HOLOLENS
 	}
 }
 
@@ -206,21 +225,7 @@ void AppCallbacks::OnEncodedFrame(
 
 		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
 
-#ifdef HOLOLENS
-		// Updates.
-		HolographicFrame^ holographicFrame = m_main->Update();
-
-		// Renders.
-		if (m_main->Render(holographicFrame))
-		{
-			// The holographic frame has an API that presents the swap chain for each
-			// holographic camera.
-			m_deviceResources->Present(holographicFrame);
-
-			// Sends view and projection matrices.
-			SendInputData(holographicFrame);
-		}
-#else // HOLOLENS
+#ifndef HOLOLENS
 		m_videoRenderer->Render();
 		m_deviceResources->Present();
 #endif // HOLOLENS
