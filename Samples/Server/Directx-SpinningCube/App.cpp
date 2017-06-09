@@ -51,6 +51,58 @@ void FrameUpdate()
 
 #ifdef REMOTE_RENDERING
 
+// Handles input from client.
+void InputUpdate(const std::string& message)
+{
+	char data[1024];
+	Json::Reader reader;
+	Json::Value msg = NULL;
+	reader.parse(message, msg, false);
+
+	if (msg.isMember("type"))
+	{
+		strcpy(data, msg.get("type", "").asCString());
+
+		if (strcmp(data, "camera-transform-stereo") == 0)
+		{
+			if (msg.isMember("body"))
+			{
+				strcpy(data, msg.get("body", "").asCString());
+
+				// Parses the camera transformation data.
+				std::istringstream datastream(data);
+				std::string token;
+
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Updates the cube's matrices.
+				g_cubeRenderer->UpdateViewProjectionMatrices(
+					viewProjectionLeft, viewProjectionRight);
+			}
+		}
+	}
+}
+
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
@@ -91,7 +143,7 @@ int InitWebRTC(char* server, int port)
 
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper));
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;

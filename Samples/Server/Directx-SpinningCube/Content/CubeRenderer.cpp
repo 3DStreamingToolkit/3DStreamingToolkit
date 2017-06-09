@@ -76,7 +76,11 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
+#ifdef STEREO_OUTPUT_MODE
+	errno_t error = fopen_s(&vertexShaderFile, "StereoVertexShader.cso", "rb");
+#else // STEREO_OUTPUT_MODE
 	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+#endif // STEREO_OUTPUT_MODE
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -157,6 +161,7 @@ void CubeRenderer::InitPipeline()
 		100.0f
 	);
 
+#ifndef STEREO_OUTPUT_MODE
 	// Ignores the orientation.
 	XMMATRIX orientationMatrix = XMMatrixIdentity();
 
@@ -166,6 +171,7 @@ void CubeRenderer::InitPipeline()
 	);
 
 	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+#endif // STEREO_OUTPUT_MODE
 }
 
 void CubeRenderer::Update()
@@ -174,7 +180,12 @@ void CubeRenderer::Update()
 	float radians = XMConvertToRadians(m_degreesPerSecond++);
 
 	// Prepares to pass the updated model matrix to the shader.
+#ifdef STEREO_OUTPUT_MODE
+	XMStoreFloat4x4(&m_constantBufferDataLeft.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
+	XMStoreFloat4x4(&m_constantBufferDataRight.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
+#else // STEREO_OUTPUT_MODE
 	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
+#endif // STEREO_OUTPUT_MODE
 }
 
 void CubeRenderer::Render()
@@ -205,21 +216,17 @@ void CubeRenderer::Render()
 	// Gets the viewport.
 	D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
 
-	// Updates view matrix for the left eye.
-	XMVECTORF32 leftEye = eye;
-	leftEye.f[0] -= IPD / 2;
-	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(leftEye, at, up)));
-	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
+	// Updates view projection matrix for the left eye.
+	context->UpdateSubresource1(
+		m_constantBuffer, 0, NULL, &m_constantBufferDataLeft, 0, 0, 0);
 
 	// Draws the objects in the left eye.
 	context->RSSetViewports(1, viewports);
 	context->DrawIndexed(m_indexCount, 0, 0);
 
 	// Updates view matrix for the right eye.
-	XMVECTORF32 rightEye = eye;
-	rightEye.f[0] += IPD / 2;
-	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(rightEye, at, up)));
-	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
+	context->UpdateSubresource1(
+		m_constantBuffer, 0, NULL, &m_constantBufferDataRight, 0, 0, 0);
 
 	// Draws the objects in the right eye.
 	context->RSSetViewports(1, viewports + 1);
@@ -233,3 +240,11 @@ void CubeRenderer::Render()
 	context->DrawIndexed(m_indexCount, 0, 0);
 #endif // STEREO_OUTPUT_MODE
 }
+
+#ifdef STEREO_OUTPUT_MODE
+void CubeRenderer::UpdateViewProjectionMatrices(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
+{
+	m_constantBufferDataLeft.viewProjection = viewProjectionLeft;
+	m_constantBufferDataRight.viewProjection = viewProjectionRight;
+}
+#endif // STEREO_OUTPUT_MODE
