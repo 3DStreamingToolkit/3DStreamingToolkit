@@ -9,10 +9,10 @@
 //
 //*********************************************************
 
-// A constant buffer that stores each set of view and projection matrices in column-major format.
-cbuffer ViewProjectionConstantBuffer : register(b1)
+// A constant buffer that stores projection matrices in column-major format.
+cbuffer ProjectionConstantBuffer : register(b1)
 {
-	float4x4 viewProjection[2];
+	float4x4 projection[2];
 };
 
 // Per-vertex data used as input to the vertex shader.
@@ -40,7 +40,7 @@ VertexShaderOutput main(VertexShaderInput input)
 	int idx = input.textureUV.z;
 
 	// Correct for perspective and project the vertex position onto the screen.
-	pos = mul(pos, viewProjection[idx]);
+	pos = mul(pos, projection[idx]);
 	output.position = (min16float4)pos;
 	output.textureUV = input.textureUV.xy;
 

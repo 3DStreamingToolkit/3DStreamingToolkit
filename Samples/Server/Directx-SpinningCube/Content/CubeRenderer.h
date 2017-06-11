@@ -8,12 +8,8 @@ namespace Toolkit3DSample
 	struct ModelViewProjectionConstantBuffer
 	{
 		DirectX::XMFLOAT4X4 model;
-#ifdef STEREO_OUTPUT_MODE
-		DirectX::XMFLOAT4X4 viewProjection;
-#else // STEREO_OUTPUT_MODE
 		DirectX::XMFLOAT4X4 view;
 		DirectX::XMFLOAT4X4 projection;
-#endif // STEREO_OUTPUT_MODE
 	};
 
 	// Used to send per-vertex data to the vertex shader.
@@ -32,7 +28,7 @@ namespace Toolkit3DSample
 		void									Update();
 		void									Render();
 #ifdef STEREO_OUTPUT_MODE
-		void									UpdateViewProjectionMatrices(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
+		void									UpdateViewMatrices(const DirectX::XMFLOAT4X4& viewLeft, const DirectX::XMFLOAT4X4& viewRight);
 #endif // STEREO_OUTPUT_MODE
 
 	private:

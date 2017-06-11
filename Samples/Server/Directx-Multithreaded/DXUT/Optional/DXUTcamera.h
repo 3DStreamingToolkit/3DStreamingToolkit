@@ -154,7 +154,7 @@ public:
     virtual void SetViewParams( _In_ DirectX::FXMVECTOR vEyePt, _In_ DirectX::FXMVECTOR vLookatPt, _In_ DirectX::FXMVECTOR pvUpPt = DirectX::g_XMIdentityR1 );
     virtual void SetProjParams( _In_ float fFOV, _In_ float fAspect, _In_ float fNearPlane, _In_ float fFarPlane );
 #ifdef STEREO_OUTPUT_MODE
-	void SetViewProjMatrices( const DirectX::XMFLOAT4X4& viewProjLeft, const DirectX::XMFLOAT4X4& viewProjRight ) { m_mViewProjLeft = viewProjLeft; m_mViewProjRight = viewProjRight; }
+	void SetViewMatrices( const DirectX::XMFLOAT4X4& viewLeft, const DirectX::XMFLOAT4X4& viewRight ) { m_mViewLeft = viewLeft; m_mViewRight = viewRight; }
 #endif // STEREO_OUTPUT_MODE
 
     // Functions to change behavior
@@ -185,8 +185,8 @@ public:
     DirectX::XMMATRIX GetViewMatrix() const { return DirectX::XMLoadFloat4x4( &m_mView ); }
     DirectX::XMMATRIX GetProjMatrix() const { return DirectX::XMLoadFloat4x4( &m_mProj ); }
 #ifdef STEREO_OUTPUT_MODE
-	DirectX::XMMATRIX GetViewProjMatrixLeft() const { return DirectX::XMLoadFloat4x4(&m_mViewProjLeft); }
-	DirectX::XMMATRIX GetViewProjMatrixRight() const { return DirectX::XMLoadFloat4x4(&m_mViewProjRight); }
+	DirectX::XMMATRIX GetViewMatrixLeft() const { return DirectX::XMLoadFloat4x4(&m_mViewLeft); }
+	DirectX::XMMATRIX GetViewMatrixRight() const { return DirectX::XMLoadFloat4x4(&m_mViewRight); }
 #endif // STEREO_OUTPUT_MODE
     DirectX::XMVECTOR GetEyePt() const { return DirectX::XMLoadFloat3( &m_vEye ); }
     DirectX::XMVECTOR GetLookAtPt() const { return DirectX::XMLoadFloat3( &m_vLookAt ); }
@@ -223,8 +223,8 @@ protected:
     DirectX::XMFLOAT4X4 m_mView;                    // View matrix 
     DirectX::XMFLOAT4X4 m_mProj;                    // Projection matrix
 #ifdef STEREO_OUTPUT_MODE
-	DirectX::XMFLOAT4X4 m_mViewProjLeft;            // Left Projection matrix
-	DirectX::XMFLOAT4X4 m_mViewProjRight;           // Right Projection matrix
+	DirectX::XMFLOAT4X4 m_mViewLeft;				// Left matrix
+	DirectX::XMFLOAT4X4 m_mViewRight;				// Right matrix
 #endif // STEREO_OUTPUT_MODE
 
     DXUT_GAMEPAD m_GamePad[DXUT_MAX_CONTROLLERS];  // XInput controller state

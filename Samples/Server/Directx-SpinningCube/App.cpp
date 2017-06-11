@@ -73,31 +73,31 @@ void InputUpdate(const std::string& message)
 				std::istringstream datastream(data);
 				std::string token;
 
-				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				// Parses the left view matrix.
+				DirectX::XMFLOAT4X4 viewLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
+						viewLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
+				// Parses the right view matrix.
+				DirectX::XMFLOAT4X4 viewRight;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						viewRight.m[i][j] = stof(token);
 					}
 				}
 
 				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateViewProjectionMatrices(
-					viewProjectionLeft, viewProjectionRight);
+				g_cubeRenderer->UpdateViewMatrices(
+					viewLeft, viewRight);
 			}
 		}
 	}

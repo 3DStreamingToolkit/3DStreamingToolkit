@@ -76,11 +76,7 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
-#ifdef STEREO_OUTPUT_MODE
-	errno_t error = fopen_s(&vertexShaderFile, "StereoVertexShader.cso", "rb");
-#else // STEREO_OUTPUT_MODE
 	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
-#endif // STEREO_OUTPUT_MODE
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -161,10 +157,20 @@ void CubeRenderer::InitPipeline()
 		100.0f
 	);
 
-#ifndef STEREO_OUTPUT_MODE
 	// Ignores the orientation.
 	XMMATRIX orientationMatrix = XMMatrixIdentity();
 
+#ifdef STEREO_OUTPUT_MODE
+	XMStoreFloat4x4(
+		&m_constantBufferDataLeft.projection,
+		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
+	);
+
+	XMStoreFloat4x4(
+		&m_constantBufferDataRight.projection,
+		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
+	);
+#else // STEREO_OUTPUT_MODE
 	XMStoreFloat4x4(
 		&m_constantBufferData.projection,
 		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
@@ -242,9 +248,9 @@ void CubeRenderer::Render()
 }
 
 #ifdef STEREO_OUTPUT_MODE
-void CubeRenderer::UpdateViewProjectionMatrices(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
+void CubeRenderer::UpdateViewMatrices(const XMFLOAT4X4& viewLeft, const XMFLOAT4X4& viewRight)
 {
-	m_constantBufferDataLeft.viewProjection = viewProjectionLeft;
-	m_constantBufferDataRight.viewProjection = viewProjectionRight;
+	m_constantBufferDataLeft.view = viewLeft;
+	m_constantBufferDataRight.view = viewRight;
 }
 #endif // STEREO_OUTPUT_MODE

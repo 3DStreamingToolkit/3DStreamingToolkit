@@ -126,19 +126,19 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
     }
 
     // Create the constant buffer, if needed.
-    if (m_viewProjectionConstantBuffer == nullptr)
+    if (m_projectionConstantBuffer == nullptr)
     {
         // Create a constant buffer to store view and projection matrices for
 		// the camera.
         CD3D11_BUFFER_DESC constantBufferDesc(
-			sizeof(ViewProjectionConstantBuffer),
+			sizeof(ProjectionConstantBuffer),
 			D3D11_BIND_CONSTANT_BUFFER);
 
         DX::ThrowIfFailed(
             device->CreateBuffer(
                 &constantBufferDesc,
                 nullptr,
-                &m_viewProjectionConstantBuffer
+                &m_projectionConstantBuffer
                 )
             );
     }
@@ -154,7 +154,7 @@ void DX::CameraResources::ReleaseResourcesForBackBuffer(
     m_d3dBackBuffer.Reset();
     m_d3dRenderTargetView.Reset();
     m_d3dDepthStencilView.Reset();
-    m_viewProjectionConstantBuffer.Reset();
+    m_projectionConstantBuffer.Reset();
 
     // Ensure system references to the back buffer are released by clearing
 	// the render target from the graphics pipeline state, and then flushing
@@ -168,8 +168,8 @@ void DX::CameraResources::ReleaseResourcesForBackBuffer(
     context->Flush();
 }
 
-// Updates the view/projection constant buffer for a holographic camera.
-void DX::CameraResources::UpdateViewProjectionBuffer(
+// Updates the projection constant buffer for a holographic camera.
+void DX::CameraResources::UpdateProjectionBuffer(
     std::shared_ptr<DX::DeviceResources> deviceResources,
     HolographicCameraPose^ cameraPose,
     SpatialCoordinateSystem^ coordinateSystem
@@ -201,7 +201,7 @@ void DX::CameraResources::UpdateViewProjectionBuffer(
 	// current frame, in which case it is possible to use a 
 	// SpatialLocatorAttachedFrameOfReference to render content that is not
 	// world-locked instead.
-    DX::ViewProjectionConstantBuffer viewProjectionConstantBufferData;
+    DX::ProjectionConstantBuffer projectionConstantBufferData;
     bool viewTransformAcquired = viewTransformContainer != nullptr;
     if (viewTransformAcquired)
     {
@@ -213,12 +213,12 @@ void DX::CameraResources::UpdateViewProjectionBuffer(
 		// are constantly moving relative to the world. The view matrices need to be
 		// updated every frame.
         XMStoreFloat4x4(
-            &viewProjectionConstantBufferData.viewProjection[0],
+            &projectionConstantBufferData.projection[0],
             XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Left))
             );
 
         XMStoreFloat4x4(
-            &viewProjectionConstantBufferData.viewProjection[1],
+            &projectionConstantBufferData.projection[1],
             XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Right))
             );
     }
@@ -227,7 +227,7 @@ void DX::CameraResources::UpdateViewProjectionBuffer(
     const auto context = deviceResources->GetD3DDeviceContext();
 
     // Loading is asynchronous. Resources must be created before they can be updated.
-    if (context == nullptr || m_viewProjectionConstantBuffer == nullptr || !viewTransformAcquired)
+    if (context == nullptr || m_projectionConstantBuffer == nullptr || !viewTransformAcquired)
     {
         m_framePending = false;
     }
@@ -235,10 +235,10 @@ void DX::CameraResources::UpdateViewProjectionBuffer(
     {
         // Update the view and projection matrices.
         context->UpdateSubresource(
-            m_viewProjectionConstantBuffer.Get(),
+            m_projectionConstantBuffer.Get(),
             0,
             nullptr,
-            &viewProjectionConstantBufferData,
+            &projectionConstantBufferData,
             0,
             0
             );
@@ -247,9 +247,9 @@ void DX::CameraResources::UpdateViewProjectionBuffer(
     }
 }
 
-// Gets the view-projection constant buffer for the HolographicCamera and attaches it
+// Gets the projection constant buffer for the HolographicCamera and attaches it
 // to the shader pipeline.
-bool DX::CameraResources::AttachViewProjectionBuffer(
+bool DX::CameraResources::AttachProjectionBuffer(
     std::shared_ptr<DX::DeviceResources> deviceResources
     )
 {
@@ -259,7 +259,7 @@ bool DX::CameraResources::AttachViewProjectionBuffer(
     // Loading is asynchronous. Resources must be created before they can be updated.
     // Cameras can also be added asynchronously, in which case they must be initialized
     // before they can be used.
-    if (context == nullptr || m_viewProjectionConstantBuffer == nullptr || m_framePending == false)
+    if (context == nullptr || m_projectionConstantBuffer == nullptr || m_framePending == false)
     {
         return false;
     }
@@ -271,7 +271,7 @@ bool DX::CameraResources::AttachViewProjectionBuffer(
     context->VSSetConstantBuffers(
         1,
         1,
-        m_viewProjectionConstantBuffer.GetAddressOf()
+        m_projectionConstantBuffer.GetAddressOf()
         );
 
     m_framePending = false;
