@@ -212,15 +212,15 @@ void DX::CameraResources::UpdateProjectionBuffer(
         // Update the view matrices. Holographic cameras (such as Microsoft HoloLens)
 		// are constantly moving relative to the world. The view matrices need to be
 		// updated every frame.
-        XMStoreFloat4x4(
-            &projectionConstantBufferData.projection[0],
-            XMMatrixTranspose(XMMatrixOrthographicLH(1.28f, 1.44f, 0.0f, 1.0f))
-            );
+		XMStoreFloat4x4(
+			&projectionConstantBufferData.projection[0],
+			XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(
+				0, 1268.0f, 0.0f, 720.0f, 0.0f, 1.0f)));
 
-        XMStoreFloat4x4(
-            &projectionConstantBufferData.projection[1],
-            XMMatrixTranspose(XMMatrixOrthographicLH(1.28f, 1.44f, 0.0f, 1.0f))
-            );
+		XMStoreFloat4x4(
+			&projectionConstantBufferData.projection[1],
+			XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(
+				0, 1268.0f, 0.0f, 720.0f, 0.0f, 1.0f)));
     }
 
     // Use the D3D device context to update Direct3D device-based resources.

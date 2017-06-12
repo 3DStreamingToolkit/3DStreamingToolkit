@@ -26,23 +26,23 @@ void VideoRenderer::CreateDeviceDependentResources()
 	VertexPositionTexture vertices[] =
 	{
 #ifdef HOLOLENS
-		// Positions the world-locked hologram two meters in front of the user.
+		// TODO: Positions the world-locked hologram two meters in front of the user.
 
 		// Left camera.
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(	  0.0f,	  0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(1268.0f, 720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(   0.0f, 720.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 
-		// Right camera.
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+		// Right cameraswap
+		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(   0.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(1268.0f, 720.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
 #else // HOLOLENS
 		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) },
 		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) },
