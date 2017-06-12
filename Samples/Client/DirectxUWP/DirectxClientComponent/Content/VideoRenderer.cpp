@@ -36,7 +36,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
 		{ XMFLOAT3(   0.0f, 720.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 
-		// Right cameraswap
+		// Right camera
 		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
 		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 		{ XMFLOAT3(   0.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
