@@ -155,6 +155,8 @@ int InitWebRTC(char* server, int port)
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 		}
+
+		g_deviceResources->Present();
 	}
 
 	if (conductor->connection_active() || client.is_connected())

@@ -161,15 +161,55 @@ void CubeRenderer::InitPipeline()
 	XMMATRIX orientationMatrix = XMMatrixIdentity();
 
 #ifdef STEREO_OUTPUT_MODE
-	XMStoreFloat4x4(
-		&m_constantBufferDataLeft.projection,
-		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	);
+	//XMStoreFloat4x4(
+	//	&m_constantBufferDataLeft.projection,
+	//	XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
+	//);
 
-	XMStoreFloat4x4(
-		&m_constantBufferDataRight.projection,
-		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	);
+	//XMStoreFloat4x4(
+	//	&m_constantBufferDataRight.projection,
+	//	XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
+	//);
+
+	m_constantBufferDataLeft.projection.m[0][0] = 3.76372361;
+	m_constantBufferDataLeft.projection.m[0][1] = -0.00703282235;
+	m_constantBufferDataLeft.projection.m[0][2] = 0.0278869867;
+	m_constantBufferDataLeft.projection.m[0][3] = 0.000000000;
+
+	m_constantBufferDataLeft.projection.m[1][0] = 0.000000000;
+	m_constantBufferDataLeft.projection.m[1][1] = 6.65269279;
+	m_constantBufferDataLeft.projection.m[1][2] = -0.0103124380;
+	m_constantBufferDataLeft.projection.m[1][3] = 0.000000000;
+
+	m_constantBufferDataLeft.projection.m[2][0] = 0.000000000;
+	m_constantBufferDataLeft.projection.m[2][1] = 0.000000000;
+	m_constantBufferDataLeft.projection.m[2][2] = -1.00502515;
+	m_constantBufferDataLeft.projection.m[2][3] = -0.100502513;
+
+	m_constantBufferDataLeft.projection.m[3][0] = 0.000000000;
+	m_constantBufferDataLeft.projection.m[3][1] = 0.000000000;
+	m_constantBufferDataLeft.projection.m[3][2] = -1.00000000;
+	m_constantBufferDataLeft.projection.m[3][3] = 0.000000000;
+
+	m_constantBufferDataRight.projection.m[0][0] = 3.76920915;
+	m_constantBufferDataRight.projection.m[0][1] = -0.000568702759;
+	m_constantBufferDataRight.projection.m[0][2] = -0.0304735899;
+	m_constantBufferDataRight.projection.m[0][3] = 0.000000000;
+
+	m_constantBufferDataRight.projection.m[1][0] = 0.000000000;
+	m_constantBufferDataRight.projection.m[1][1] = 6.66007090;
+	m_constantBufferDataRight.projection.m[1][2] = -0.000967204571;
+	m_constantBufferDataRight.projection.m[1][3] = 0.000000000;
+
+	m_constantBufferDataRight.projection.m[2][0] = 0.000000000;
+	m_constantBufferDataRight.projection.m[2][1] = 0.000000000;
+	m_constantBufferDataRight.projection.m[2][2] = -1.00502515;
+	m_constantBufferDataRight.projection.m[2][3] = -0.100502513;
+
+	m_constantBufferDataRight.projection.m[3][0] = 0.000000000;
+	m_constantBufferDataRight.projection.m[3][1] = 0.000000000;
+	m_constantBufferDataRight.projection.m[3][2] = -1.00000000;
+	m_constantBufferDataRight.projection.m[3][3] = 0.000000000;
 #else // STEREO_OUTPUT_MODE
 	XMStoreFloat4x4(
 		&m_constantBufferData.projection,

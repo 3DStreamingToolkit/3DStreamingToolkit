@@ -292,8 +292,7 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 			{
 				for (int j = 0; j < 4; j++)
 				{
-					leftCameraTransform += leftViewMatrix.m[i][j];
-					leftCameraTransform += ",";
+					leftCameraTransform += leftViewMatrix.m[i][j] + ",";
 					rightCameraTransform += rightViewMatrix.m[i][j];
 					if (i != 3 || j != 3)
 					{

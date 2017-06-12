@@ -214,12 +214,12 @@ void DX::CameraResources::UpdateProjectionBuffer(
 		// updated every frame.
         XMStoreFloat4x4(
             &projectionConstantBufferData.projection[0],
-            XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Left))
+            XMMatrixTranspose(XMMatrixOrthographicLH(1.28f, 1.44f, 0.0f, 1.0f))
             );
 
         XMStoreFloat4x4(
             &projectionConstantBufferData.projection[1],
-            XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Right))
+            XMMatrixTranspose(XMMatrixOrthographicLH(1.28f, 1.44f, 0.0f, 1.0f))
             );
     }
 

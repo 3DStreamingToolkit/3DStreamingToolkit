@@ -262,7 +262,7 @@ bool HolographicAppMain::Render(
 			//      Transparent as shown above.
             //
 
-            // The view and projection matrices for each holographic camera will
+            // The projection matrice for each holographic camera will
 			// change every frame. This function refreshes the data in the constant
 			// buffer for the holographic camera indicated by cameraPose.
             pCameraResources->UpdateProjectionBuffer(
@@ -270,7 +270,7 @@ bool HolographicAppMain::Render(
 				cameraPose,
 				m_referenceFrame->CoordinateSystem);
 
-            // Attach the view/projection constant buffer for this camera to the
+            // Attach the projection constant buffer for this camera to the
 			// graphics pipeline.
             bool cameraActive = pCameraResources->AttachProjectionBuffer(
 				m_deviceResources);
