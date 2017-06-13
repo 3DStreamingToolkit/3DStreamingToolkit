@@ -34,10 +34,12 @@ public class WebRTCServer : MonoBehaviour
     [DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern void Close();
-
+    
     static Vector3 Location = new Vector3();
     static Vector3 LookAt = new Vector3();
     static Vector3 Up = new Vector3();
+
+    static bool closing_ = false;
 
 #if UNITY_EDITOR
     /// <summary>
@@ -88,14 +90,31 @@ public class WebRTCServer : MonoBehaviour
 
     private void OnDisable()
     {
-        Close();
+        if (!closing_)
+        {
+            Close();
+        }
+    }
+        
+    private void OnApplicationQuit()
+    {
+        if (!closing_)
+        {
+            closing_ = true;
+            
+            Close();
+        }
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        transform.position = Location;
-        transform.LookAt(LookAt, Up);
+        if (!closing_)
+        {
+            transform.position = Location;
+            transform.LookAt(LookAt, Up);
+        }
     }
 
     void OnInputData(string val)

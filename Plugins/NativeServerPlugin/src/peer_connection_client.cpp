@@ -264,6 +264,17 @@ bool PeerConnectionClient::SignOut()
 	return true;
 }
 
+bool PeerConnectionClient::Shutdown()
+{
+	hanging_get_->Close();
+	control_socket_->Close();
+	
+	state_ = NOT_CONNECTED;
+	
+	return true;
+}
+
+
 void PeerConnectionClient::Close()
 {
 	control_socket_->Close();
