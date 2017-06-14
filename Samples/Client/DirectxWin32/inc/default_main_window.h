@@ -59,7 +59,7 @@ public:
 
 	virtual void SwitchToConnectUI();
 
-	virtual void SwitchToPeerList(const Peers& peers);
+	virtual void SwitchToPeerList(const map<int, string>& peers);
 
 	virtual void SwitchToStreamingUI();
 
