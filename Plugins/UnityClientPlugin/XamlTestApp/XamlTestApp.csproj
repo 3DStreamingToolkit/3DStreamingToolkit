@@ -18,6 +18,7 @@
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
     <PackageCertificateKeyFile>XamlTestApp_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateThumbprint>A3C0FEEFC5C5EFF2AEE1191F50451266B313CAEE</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <DebugSymbols>true</DebugSymbols>
@@ -97,6 +98,7 @@
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
     <None Include="project.json" />
+    <None Include="XamlTestApp_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.xaml.cs">
@@ -111,7 +113,6 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="XamlTestApp_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Properties\Default.rd.xml" />
@@ -134,7 +135,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-       <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <HintPath>$(ProjectDir)..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x64\Release\Org.WebRtc.winmd</HintPath>
     </Reference>
     <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">

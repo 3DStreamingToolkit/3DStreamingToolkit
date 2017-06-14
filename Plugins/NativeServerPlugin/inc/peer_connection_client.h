@@ -79,6 +79,8 @@ public:
 
 	bool SignOut();
 
+	bool Shutdown();
+
 	// implements the MessageHandler interface
 	void OnMessage(rtc::Message* msg);
 

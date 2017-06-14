@@ -109,8 +109,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\NvEncoder</OutDir>
-    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\NvEncoder</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\NvEncoder\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\NvEncoder\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
   </PropertyGroup>
