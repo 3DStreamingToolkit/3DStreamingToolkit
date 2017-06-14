@@ -88,7 +88,7 @@ bool Conductor::connection_active() const
 
 void Conductor::Close() 
 {
-    client_->Disconnect();
+    client_->SignOut();
 
 	DeletePeerConnection();
 }
@@ -368,7 +368,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 		if (!InitializePeerConnection()) 
 		{
 			LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
-            client_->Logout();
+            client_->SignOut();
 			return;
 		}
 	}
@@ -402,7 +402,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 			{
 				LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
 				DeletePeerConnection();
-				client_->Logout();
+				client_->SignOut();
 			}
 
 			return;
@@ -493,13 +493,12 @@ void Conductor::OnServerConnectionFailure()
 void Conductor::StartLogin(const std::string& server, int port)
 {
 	server_ = server;
-	client_->Connect(server, port);
-    client_->Login(GetPeerName());
+	client_->SignIn(server, port, GetPeerName());
 }
 
 void Conductor::DisconnectFromServer()
 {
-	client_->Logout();
+	client_->SignOut();
 }
 
 void Conductor::ConnectToPeer(int peer_id) 
@@ -581,7 +580,7 @@ void Conductor::DisconnectFromCurrentPeer()
 	LOG(INFO) << __FUNCTION__;
 	if (peer_connection_.get())
 	{
-		client_->PushMessage(peer_id_, "BYE");
+		client_->SendHangUp(peer_id_);
 		DeletePeerConnection();
 	}
 
@@ -612,11 +611,9 @@ void Conductor::UIThreadCallback(int msg_id, void* data)
 
 			if (main_window_->IsWindow())
 			{
-                auto peers = client_->peers();
-
-				if (peers.size() > 0)
+				if (client_->id() != PeerConnectionClient::DefaultId)
 				{
-					main_window_->SwitchToPeerList(peers);
+					main_window_->SwitchToPeerList(client_->peers());
 				}
 				else
 				{
@@ -648,7 +645,15 @@ void Conductor::UIThreadCallback(int msg_id, void* data)
 				msg = pending_messages_.front();
 				pending_messages_.pop_front();
 
-                client_->PushMessage(peer_id_, *msg);
+                if (peer_id_ == PeerConnectionClient::DefaultId)
+                {
+                    LOG(LS_ERROR) << "SendToPeer failed";
+                    DisconnectFromServer();
+                }
+                else
+                {
+                    client_->SendToPeer(peer_id_, *msg);
+                }
 
 				delete msg;
 			}

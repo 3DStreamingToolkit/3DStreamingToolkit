@@ -107,9 +107,9 @@ int InitWebRTC(char* server, int port, char* proxy)
 		}
 	}
 
-	if (conductor->connection_active() || client.is_connected())
+	if (conductor->connection_active())
 	{
-		while ((conductor->connection_active() || client.is_connected()) &&
+		while ((conductor->connection_active()) &&
 			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 		{
 			if (!wnd.PreTranslateMessage(&msg))

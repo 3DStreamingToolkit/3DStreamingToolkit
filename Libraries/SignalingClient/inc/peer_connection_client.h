@@ -1,5 +1,10 @@
 #pragma once
 
+#include <mutex>
+#include <string>
+#include <functional>
+#include <map>
+
 #include <webrtc/base/thread.h>
 #include <webrtc/base/messagehandler.h>
 #include <webrtc/base/sigslot.h>
@@ -18,21 +23,22 @@ class PeerConnectionClient : public sigslot::has_slots<>,
     public rtc::MessageHandler
 {
 public:
+    constexpr static int DefaultId = -1;
+
     PeerConnectionClient();
     ~PeerConnectionClient();
 
-    void Connect(string hostname, uint32_t port);
-    void Login(string clientName);
-    void Logout();
-    void Disconnect();
+    void SignIn(string hostname, uint32_t port, string clientName);
+    void SignOut();
 
     void set_proxy(const string& proxy);
 
     const map<int, string> peers();
     const int id();
+    const string name();
 
-    void PushMessage(int clientId, string data);
-    string PopMessage();
+    void SendToPeer(int clientId, string data);
+    void SendHangUp(int clientId);
 
     // implements the MessageHandler interface
     void OnMessage(Message* msg);
@@ -67,11 +73,18 @@ private:
     OrderedHttpClient m_controlClient;
     OrderedHttpClient m_pollingClient;
 
+    task<void> m_signInChain;
+    task<void> m_signOutChain;
+    task<void> m_sendToPeerChain;
+    task<void> m_pollChain;
+
     map<int, string> m_peers;
     int m_id;
-    queue<string> m_messageBuffer;
+    string m_name;
     bool m_allowPolling;
     Observer* m_observer;
+    mutex m_wrapAndCallMutex;
+    rtc::Thread* m_signalingThread;
 
     struct BodyAndPragma
     {
