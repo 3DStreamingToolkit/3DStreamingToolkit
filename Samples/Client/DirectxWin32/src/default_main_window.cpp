@@ -231,14 +231,14 @@ void DefaultMainWindow::SwitchToConnectUI()
 	}
 }
 
-void DefaultMainWindow::SwitchToPeerList(const Peers& peers)
+void DefaultMainWindow::SwitchToPeerList(const map<int, string>& peers)
 {
 	LayoutConnectUI(false);
 
 	::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
 
 	AddListBoxItem(listbox_, "List of currently connected peers:", -1);
-	Peers::const_iterator i = peers.begin();
+	map<int, string>::const_iterator i = peers.begin();
 	for (; i != peers.end(); ++i)
 	AddListBoxItem(listbox_, i->second.c_str(), i->first);
 

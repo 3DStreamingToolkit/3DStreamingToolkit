@@ -29,5 +29,8 @@
     <ClCompile Include="OrderedHttpClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="PeerConnectionClientTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

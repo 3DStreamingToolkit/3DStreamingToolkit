@@ -71,7 +71,7 @@ namespace SignalingClient
     {
         return [](http_response res)
         {
-            return res.extract_utf8string();
+            return res.extract_utf8string(true);
         };
     }
 

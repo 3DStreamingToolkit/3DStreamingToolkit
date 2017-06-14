@@ -16,6 +16,8 @@ namespace SignalingClient
         class OrderedHttpClient
         {
         public:
+            static bool IsDefaultInitialized(const OrderedHttpClient& client);
+
             OrderedHttpClient();
             OrderedHttpClient(const string& baseUrl);
             OrderedHttpClient(const string_t& baseUrl);
@@ -40,7 +42,9 @@ namespace SignalingClient
             const task<http_response> most_recent();
 
         private:
-            http_client request_client_;
+            bool default_init_;
+            web::uri request_root_;
+            http_client_config request_config_;
             task<http_response> pending_request_;
             cancellation_token_source request_async_src_;
         };

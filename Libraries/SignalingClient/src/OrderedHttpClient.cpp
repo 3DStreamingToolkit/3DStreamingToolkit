@@ -4,9 +4,15 @@ namespace SignalingClient
 {
     namespace Http
     {
+        bool OrderedHttpClient::IsDefaultInitialized(const OrderedHttpClient& client)
+        {
+            return client.default_init_;
+        }
+
         OrderedHttpClient::OrderedHttpClient() :
             OrderedHttpClient("http://*/")
         {
+            default_init_ = true;
         }
 
         OrderedHttpClient::OrderedHttpClient(const string& baseUrl) :
@@ -20,7 +26,9 @@ namespace SignalingClient
         }
 
         OrderedHttpClient::OrderedHttpClient(const string_t& baseUrl, const http_client_config& config) :
-            request_client_(baseUrl, config)
+            request_root_(baseUrl),
+            request_config_(config),
+            default_init_(false)
         {
             // the contents of the first task don't matter, as
             // it's instantly resolved, and therefore overwritten
@@ -33,6 +41,18 @@ namespace SignalingClient
         OrderedHttpClient::~OrderedHttpClient()
         {
             CancelAll();
+            
+            // handle (and silently swallow) code 105 failures
+            // as these occur when we cancel a task (as we did just)
+            // and is legal behavior in a destruction scenario
+            try
+            {
+                pending_request_.wait();
+            }
+            catch (const exception& ex)
+            {
+                // swallow failures in the underlying task, as we're trying to kill it
+            }
         }
 
         task<http_response> OrderedHttpClient::Issue(const method& requestMethod, const string& requestEndpoint)
@@ -52,8 +72,11 @@ namespace SignalingClient
 
         task<http_response> OrderedHttpClient::Issue(const method& requestMethod, const string_t& requestEndpoint, const string_t& requestBody)
         {
+            auto captureRoot = request_root_;
+            auto captureConfig = request_config_;
+
             return pending_request_ = pending_request_.then([=](http_response) {
-                return request_client_.request(requestMethod,
+                return http_client(captureRoot, captureConfig).request(requestMethod,
                     requestEndpoint,
                     requestBody,
                     request_async_src_.get_token());
@@ -68,22 +91,22 @@ namespace SignalingClient
 
         const http_client_config OrderedHttpClient::config()
         {
-            return request_client_.client_config();
+            return request_config_;
         }
 
         void OrderedHttpClient::SetConfig(const http_client_config& config)
         {
-            request_client_ = http_client(request_client_.base_uri(), config);
+            request_config_ = config;
         }
 
         const uri OrderedHttpClient::uri()
         {
-            return request_client_.base_uri();
+            return request_root_;
         }
 
         void OrderedHttpClient::SetUri(const web::uri& uri)
         {
-            request_client_ = http_client(uri);
+            request_root_ = uri;
         }
 
         const task<http_response> OrderedHttpClient::most_recent()

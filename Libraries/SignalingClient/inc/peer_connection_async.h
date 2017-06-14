@@ -5,9 +5,9 @@
 #include <string>
 #include <ppl.h>
 #include <agents.h>
-#include <cpprest/http_client.h>
 
-#include "webrtc/base/logging.h"
+#include <cpprest/http_client.h>
+#include <webrtc/base/logging.h>
 
 namespace SignalingClient
 {
