@@ -1,7 +1,4 @@
-﻿// Required Plugin Handlers - Based on UNITY LOW LEVEL PLUGIN EXAMPLE
-// https://docs.unity3d.com/Manual/NativePluginInterface.html
-// https://bitbucket.org/Unity-Technologies/graphicsdemos
-
+﻿
 #include "pch.h"
 #include "TexturesUWP.h"
 #include <cmath>
@@ -12,12 +9,16 @@
 #include "IUnityGraphicsD3D11.h"
 #include "VideoDecoder.h"
 #include "libyuv/convert_argb.h"
+#include <thread>
 
+
+// Plugin Mode
+int PluginMode = 0;
 
 // Decoder Namespace
 using namespace WebRTCDirectXClientComponent;
 int const textureWidth = 1280;
-int const textureHeight = 480;
+int const textureHeight = 720;
 
 static void* g_TextureHandle = NULL;
 static int   g_TextureWidth = textureWidth;
@@ -51,14 +52,13 @@ unsigned int wH264Frame = textureWidth;
 unsigned int hH264Frame = textureHeight;
 byte* argbDataBuf = NULL;
 
-
 static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType);
 
 void InitializeVideoProcessing()
 {
 	// Setup Video Decoder
 	videoDecoder = new VideoDecoder();
-	videoDecoder->Initialize(wH264Frame, hH264Frame);
+	videoDecoder->Initialize(hH264Frame, wH264Frame);
 
 	// Pre-Allocate Buffers instead of dynamic allocation and release
 	int bufSize = g_TextureWidth * g_TextureHeight * pixelSize;
@@ -90,10 +90,10 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 	s_UnityInterfaces = unityInterfaces;
 	s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
 	s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
-	
+
 	// Run OnGraphicsDeviceEvent(initialize) manually on plugin load
-	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);	
-	InitializeVideoProcessing();	
+	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
+	InitializeVideoProcessing();
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
@@ -117,7 +117,7 @@ static void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType ev
 	case kUnityGfxDeviceEventShutdown:
 	{
 		//TODO: user shutdown code
-		s_DeviceType = kUnityGfxRendererNull;		
+		s_DeviceType = kUnityGfxRendererNull;
 		break;
 	}
 	case kUnityGfxDeviceEventBeforeReset:
@@ -141,6 +141,74 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTextureFromUnity(v
 	g_TextureHeight = h;
 }
 
+void ProcessTestFrameDataThread()
+{
+	while (true)
+	{
+		if (!g_TextureHandle)
+		{
+			Sleep(500);
+			continue;;
+		}
+
+		//int bufSize = g_TextureWidth * g_TextureHeight * pixelSize;
+		const float t = g_Time * 4.0f;
+		g_Time += 0.03f;
+
+		// TODO: Setup Mutex/Lock for isARGBFrameReady/argbDataBuf
+		// Quick solution to coordinate render status
+		isARGBFrameReady = false;
+
+		byte* dst = argbDataBuf;
+		for (int y = 0; y < g_TextureHeight; ++y)
+		{
+			byte* ptr = dst;
+			for (int x = 0; x < g_TextureWidth; ++x)
+			{
+				// Simple "plasma effect": several combined sine waves
+				int vv = int(
+					(127.0f + (127.0f * sinf(x / 7.0f + t))) +
+					(127.0f + (127.0f * sinf(y / 5.0f - t))) +
+					(127.0f + (127.0f * sinf((x + y) / 6.0f - t))) +
+					(127.0f + (127.0f * sinf(sqrtf(float(x*x + y*y)) / 4.0f - t)))
+					) / 4;
+
+				ptr[0] = vv / 2;
+				ptr[1] = vv;
+				ptr[2] = vv;
+				ptr[3] = 255;
+
+				// To next pixel (our pixels are 4 bpp)
+				ptr += 4;
+			}
+
+			// To next image row
+			dst += pixelSize * g_TextureWidth;
+		}
+
+		isARGBFrameReady = true;
+		Sleep(15);
+	}
+
+	// Texture Update is executed when Unity triggers the render event to avoid collision
+	// between the plugin and Unity's graphics update.  Data can be manipulated but graphics
+	// needs to follow Unity render event.	
+	//
+	//UpdateUnityTexture(g_TextureHandle, g_TextureWidth * pixelSize, argbDataBuf);
+}
+
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetPluginMode(int mode)
+{
+	PluginMode = mode;
+
+	if(PluginMode == 2)
+	{		
+		// Starts the display update thread and detach to run continuously
+		std::thread t(ProcessTestFrameDataThread);
+		t.detach();
+	}
+}
+
 
 void UpdateUnityTexture(void* textureHandle, int rowPitch, void* dataPtr)
 {
@@ -156,59 +224,19 @@ void UpdateUnityTexture(void* textureHandle, int rowPitch, void* dataPtr)
 
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessRawFrame(unsigned int w, unsigned int h, byte* yPlane, unsigned int yStride, byte* uPlane, unsigned int uStride, byte* vPlane, unsigned int vStride)
-{	
+{
 	if ((yPlane == NULL) || (vPlane == NULL) || (uPlane == NULL))
 		return;
 
 	wRawFrame = w;
 	hRawFrame = h;
 
-// TODO: Remove Byte Buffers - Consume parameter data directly	
-//	yStrideBuf = yStride;
-//	uStrideBuf = uStride;
-//	vStrideBuf = vStride;
-//	unsigned int bufSize = w * h;							// Assume YUV420 Setup
-//	unsigned int bufSize2 = (w + 1) / 2 * (h + 1) /2;	
-
-//	if (yDataBuf == NULL)
-//	{
-//		yDataBuf = new byte[bufSize];
-//		uDataBuf = new byte[bufSize2];
-//		vDataBuf = new byte[bufSize2];
-//	}
-//
-//	memcpy(yDataBuf, yPlane, bufSize);
-//	memcpy(uDataBuf, uPlane, bufSize2);
-//	memcpy(vDataBuf, vPlane, bufSize2);
 
 	// TODO:  Test VP8 RawFrame Event Setup
 	// Process YUV to ARGB	
 	int half_width = (wRawFrame + 1) / 2;
 	int half_height = (hRawFrame + 1) / 2;
 	int bufSize2 = half_width * half_height;
-
-//	yStrideBuf = wRawFrame;
-//	uStrideBuf = half_width;
-//	vStrideBuf = half_width;
-
-// TODO: Remove Byte Buffers Usage
-//	yDataBuf = yuvDataBuf;
-//	vDataBuf = yuvDataBuf + yStrideBuf * hRawFrame;
-//	uDataBuf = vDataBuf + vStrideBuf * half_height;	
-//	memcpy(yDataBuf, yPlane, bufSize);	
-//	memcpy(vDataBuf, vPlane, bufSize2);
-//	memcpy(uDataBuf, uPlane, bufSize2);
-//	isARGBFrameReady = !libyuv::I420ToARGB(
-//		yDataBuf,
-//		yStrideBuf,
-//		uDataBuf,
-//		uStrideBuf,
-//		vDataBuf,
-//		vStrideBuf,
-//		argbDataBuf,
-//		wRawFrame * pixelSize,
-//		wRawFrame,
-//		hRawFrame);	
 
 	isARGBFrameReady = !libyuv::I420ToARGB(
 		yPlane,
@@ -231,10 +259,6 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsi
 	hH264Frame = h;
 	isARGBFrameReady = false;
 
-	// TODO: remove h264DataBuf -- not used
-	//h264DataBufLen = bufSize;
-	//memcpy(h264DataBuf, data, h264DataBufLen);
-
 	if (!videoDecoder->DecodeH264VideoFrame(
 		data,
 		bufSize,
@@ -242,11 +266,11 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsi
 		hH264Frame,
 		&yuvDataBuf,
 		&yuvDataBufLen))
-	{				
-		
+	{
+
 		int half_width = (wH264Frame + 1) / 2;
 		int half_height = (hH264Frame + 1) / 2;
-	
+
 		yStrideBuf = wH264Frame;
 		uStrideBuf = half_width;
 		vStrideBuf = half_width;
@@ -254,7 +278,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsi
 		// Note: Decode Information is in YVU ordering instead YUV
 		yDataBuf = yuvDataBuf;
 		vDataBuf = yuvDataBuf + yStrideBuf * hH264Frame;
-		uDataBuf = vDataBuf + vStrideBuf * half_height;		
+		uDataBuf = vDataBuf + vStrideBuf * half_height;
 
 		isARGBFrameReady = !libyuv::I420ToARGB(
 			yDataBuf,
@@ -276,7 +300,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ProcessH264Frame(unsi
 //			wH264Frame * pixelSize,
 //			wH264Frame,
 //			hH264Frame);
-	}	
+	}
 }
 
 static void ProcessARGBFrameData()
@@ -291,59 +315,68 @@ static void ProcessARGBFrameData()
 	isARGBFrameReady = false;
 }
 
-/*
-static void ProcessRawFrameData()
+static void ProcessTestFrameData()
 {
-	void* textureHandle = g_TextureHandle;
-	int width = g_TextureWidth;
-	int height = g_TextureHeight;
-	if (!textureHandle)
+	if (!g_TextureHandle)
 		return;
 
-	int textureRowPitch;
-	void* textureDataPtr = BeginModifyTexture(textureHandle, width, height, &textureRowPitch);
-	if (!textureDataPtr)
-		return;
-
+	//int bufSize = g_TextureWidth * g_TextureHeight * pixelSize;
 	const float t = g_Time * 4.0f;
 	g_Time += 0.03f;
-	byte val1 = 100;
-	byte val2 = 50;
 
-	// TODO: Switch Source either RAWFRAMES or ENCODED FRAME
-	// TODO: DECODE H264 Frame to RAW
-
-	// Process RAW FRAME DAYA
-	byte *yDataPtr = yDataBuf;
-	unsigned char* dst = (unsigned char*)textureDataPtr;	
-	for (int y = 0; y < height; ++y)
+	byte* dst = argbDataBuf;
+	for (int y = 0; y < g_TextureHeight; ++y)
 	{
-		unsigned char* ptr = dst;
-		for (int x = 0; x < width; ++x)
+		byte* ptr = dst;
+		for (int x = 0; x < g_TextureWidth; ++x)
 		{
-			// TODO: Convert YUV420 to RGBA			
-			byte dataPoint = *yDataPtr;
-			yDataPtr++;
-			ptr[0] = dataPoint;
-			ptr[1] = dataPoint;
-			ptr[2] = dataPoint;
+			// Simple "plasma effect": several combined sine waves
+			int vv = int(
+				(127.0f + (127.0f * sinf(x / 7.0f + t))) +
+				(127.0f + (127.0f * sinf(y / 5.0f - t))) +
+				(127.0f + (127.0f * sinf((x + y) / 6.0f - t))) +
+				(127.0f + (127.0f * sinf(sqrtf(float(x*x + y*y)) / 4.0f - t)))
+				) / 4;
+
+			ptr[0] = vv / 2;
+			ptr[1] = vv;
+			ptr[2] = vv;
 			ptr[3] = 255;
-			
+
 			// To next pixel (our pixels are 4 bpp)
 			ptr += 4;
 		}
 
 		// To next image row
-		dst += textureRowPitch;
+		dst += pixelSize * g_TextureWidth;
 	}
 
-	UpdateUnityTexture(textureHandle, width * pixelSize , textureDataPtr);
+	UpdateUnityTexture(g_TextureHandle, g_TextureWidth * pixelSize, argbDataBuf);
 }
-*/
+
+
+
 
 static void UNITY_INTERFACE_API OnRenderEvent(int eventID)
-{		
-	ProcessARGBFrameData();
+{
+	switch (PluginMode)
+	{
+	case 0:		// WebRTC Image Frame Rendering
+		ProcessARGBFrameData();
+		break;
+	case 1:		// Invoke
+		ProcessTestFrameData();
+		break;
+	case 2:		// Invoke
+		if(isARGBFrameReady)
+		{
+			UpdateUnityTexture(g_TextureHandle, g_TextureWidth * pixelSize, argbDataBuf);
+			isARGBFrameReady = false;
+		}
+		break;
+
+	}
+
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()

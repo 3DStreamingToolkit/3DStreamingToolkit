@@ -27,6 +27,30 @@ Build the solution from Visual Studio, and look in:
 + `\WebRTCNativeClient\Build\**` for the native client binaries.
 + `\WebRTCLibs\**\Exe\**` for the sample signaling, turn and stun server binaries.
 
+## Building HoloLens Unity client 
+
+ > Note: Make sure you have Unity version 5.6.1f1 with UWP tools support. 
+
+You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The HoloLens client is using a native dll library for video decoding that needs to be built before you open the sample in Unity. Follow these steps:
++ Open `3DStreamingToolKit.sln` from the root folder 
++ Switch the build configuration to Release mode and x86. 
++ Under `Plugins -> UnityClient`, find TexturesUWP project and open TexturesUWP.cpp. (For now) You need to manually set the texture resolution for the decoder depending on what server you are using. 
++ Modify the constant attributes textureWidth and textureHeight. The default value is 1280 x 720. These are the resolution for our current server implementations:
+    - MultithreadedServer - 1280 x 720
+    - MultithreadedServerStereo - 2560 x 720
+	- SpinningCubeServer - 640 x 480
+	- SpinningCubeServerStereo - 1280 x 480
++ Build TexturesUWP and WebRtcWrapper. This will copy the necessary dll's to the Unity project folder. 
++ Open Unity and open the HoloLens client folder `\Samples\Client\Unity`
++ Open ControlScript.cs under the Scripts folder. Modify the constant attributes textureWidth and textureHeight to match the resolution selected on the step above.
++ In the Awake() function, uncomment //Azure Host Details to use the Azure signalling server or use the local host address to test on your machine.
++ Go to `File -> Build Settings` and select Windows Store platform. If that is not available, you need to add UWP support to your Unity installation. 
++ Select SDK: Universal 10; Target Device: HoloLens; UWP Build type: D3D and UWP SDK: Latest Installed. 
++ Build the project to an empty folder and open the generated UnityX86.sln.
++ Switch configuration to Release mode and x86. 
++ Deploy to your machine or HoloLens. Make sure the server is running, the app will automatically connect to the ip address that was set in the step above.
++ Open the desired server and connect to the Unity client. 
+
 ## Distributing binaries
 
 > Note: Currently for others you'll need to zip and upload yourself to match the `.\WebRTCLibs\webrtcInstallLibs.ps1` script.
