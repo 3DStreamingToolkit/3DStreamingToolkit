@@ -28,13 +28,7 @@
     <ClCompile Include="src\data_channel_handler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="src\default_data_channel_handler.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="src\json_data_channel_handler.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="src\data_channel_handler_factory.cpp">
+    <ClCompile Include="src\win32_data_channel_handler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -73,13 +67,7 @@
     <ClInclude Include="inc\data_channel_handler.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\default_data_channel_handler.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\json_data_channel_handler.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\data_channel_handler_factory.h">
+    <ClInclude Include="inc\win32_data_channel_handler.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

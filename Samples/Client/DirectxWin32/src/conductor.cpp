@@ -67,10 +67,10 @@ protected:
 };
 
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_window) :
-		peer_id_(-1),
-		loopback_(false),
-		client_(client),
-		main_window_(main_window)
+	peer_id_(-1),
+	loopback_(false),
+	client_(client),
+	main_window_(main_window)
 {
 	client_->RegisterObserver(this);
 	main_window->RegisterObserver(this);
@@ -586,7 +586,7 @@ void Conductor::DisconnectFromCurrentPeer()
 	}
 }
 
-void Conductor::ProcessInput(const std::string& message)
+void Conductor::SendInputData(const std::string& message)
 {
 	if (data_channel_ && data_channel_->state() == webrtc::DataChannelInterface::kOpen)
 	{
