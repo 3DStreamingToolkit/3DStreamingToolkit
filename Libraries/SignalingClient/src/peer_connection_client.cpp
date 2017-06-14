@@ -1,39 +1,65 @@
 #include "peer_connection_client.h"
 
 PeerConnectionClient::PeerConnectionClient() :
-    m_id(-1),
+    m_id(DefaultId),
     m_allowPolling(true),
     m_observer(nullptr)
 {
+    // we need a "signaling_thread" so that all our webrtc calls occur
+    // on the same rtc::Thread
+    auto wrapped = rtc::Thread::Current();
+
+    if (wrapped == nullptr)
+    {
+        wrapped = ThreadManager::Instance()->WrapCurrentThread();
+    }
+
+    m_signalingThread = wrapped;
 }
 
 PeerConnectionClient::~PeerConnectionClient()
 {
     m_allowPolling = false;
+
+    // these occur when we cancel a task (as we did just)
+    // and is legal behavior in a destruction scenario
+    try
+    {
+        m_signInChain.wait();
+        m_signOutChain.wait();
+        m_sendToPeerChain.wait();
+        m_pollChain.wait();
+    }
+    catch (const exception&)
+    {
+        // swallow failures in the underlying task, as we're trying to kill it
+    }
 }
 
-void PeerConnectionClient::Connect(string hostname, uint32_t port)
+void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientName)
 {
-    uri_builder builder;
-    builder.set_host(conversions::to_utf16string(hostname));
-    builder.set_port(port);
-
-    m_controlClient.SetUri(builder.to_uri());
-    m_pollingClient.SetUri(builder.to_uri());
-}
-
-void PeerConnectionClient::Login(string clientName)
-{
-    if (m_id != -1)
+    if (m_id != DefaultId)
     {
         return;
     }
 
-    uri_builder builder;
-    builder.append_path(L"/sign_in");
-    builder.append_query(utility::conversions::to_string_t(clientName));
+    uri_builder baseUriBuilder;
+    baseUriBuilder.set_host(conversions::to_utf16string(hostname));
+    baseUriBuilder.set_port(port);
 
-    m_controlClient.Issue(methods::GET, builder.to_string())
+    m_controlClient.SetUri(baseUriBuilder.to_uri());
+    m_pollingClient.SetUri(baseUriBuilder.to_uri());
+
+    auto existingPollingConfig = m_pollingClient.config();
+    existingPollingConfig.set_timeout(utility::seconds::max());
+
+    m_name = clientName;
+
+    uri_builder endpointUriBuilder;
+    endpointUriBuilder.append_path(L"/sign_in");
+    endpointUriBuilder.append_query(utility::conversions::to_string_t(clientName));
+
+    m_signInChain = m_controlClient.Issue(methods::GET, endpointUriBuilder.to_string())
         .then([&](http_response res)
     {
         auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
@@ -69,9 +95,9 @@ void PeerConnectionClient::Login(string clientName)
     });
 }
 
-void PeerConnectionClient::Logout()
+void PeerConnectionClient::SignOut()
 {
-    if (m_id == -1)
+    if (m_id == DefaultId)
     {
         return;
     }
@@ -80,7 +106,7 @@ void PeerConnectionClient::Logout()
     builder.append_path(L"sign_out");
     builder.append_query(L"peer_id", std::to_wstring(m_id));
 
-    m_controlClient.Issue(methods::GET, builder.to_string())
+    m_signOutChain = m_controlClient.Issue(methods::GET, builder.to_string())
         .then([&](http_response) { m_id = -1; })
         .then([&]
     {
@@ -99,16 +125,13 @@ void PeerConnectionClient::Logout()
     });
 }
 
-void PeerConnectionClient::Disconnect()
-{
-    if (m_id != -1)
-    {
-        Logout();
-    }
-}
-
 void PeerConnectionClient::set_proxy(const string& proxy)
 {
+    if (proxy.length() <= 0)
+    {
+        return;
+    }
+
     {
         auto existing = m_controlClient.config();
         existing.set_proxy(web_proxy(uri(utility::conversions::to_string_t(proxy))));
@@ -132,9 +155,14 @@ const int PeerConnectionClient::id()
     return m_id;
 }
 
-void PeerConnectionClient::PushMessage(int clientId, string data)
+const string PeerConnectionClient::name()
 {
-    if (m_id == -1)
+    return m_name;
+}
+
+void PeerConnectionClient::SendToPeer(int clientId, string data)
+{
+    if (m_id == DefaultId)
     {
         return;
     }
@@ -144,7 +172,7 @@ void PeerConnectionClient::PushMessage(int clientId, string data)
     builder.append_query(L"peer_id", std::to_wstring(m_id));
     builder.append_query(L"to", std::to_wstring(clientId));
 
-    m_controlClient.Issue(methods::POST, builder.to_string(), utility::conversions::to_string_t(data))
+    m_sendToPeerChain = m_controlClient.Issue(methods::POST, builder.to_string(), utility::conversions::to_string_t(data))
         .then([&](http_response res)
     {
         auto status = res.status_code();
@@ -159,18 +187,17 @@ void PeerConnectionClient::PushMessage(int clientId, string data)
     });
 }
 
-string PeerConnectionClient::PopMessage()
+void PeerConnectionClient::SendHangUp(int clientId)
 {
-    auto back = m_messageBuffer.back();
-    m_messageBuffer.pop();
-    return back;
+    SendToPeer(clientId, "BYE");
 }
 
 // ignore msg; there is currently only one supported message ("retry")
 void PeerConnectionClient::OnMessage(rtc::Message*)
 {
     if (OrderedHttpClient::IsDefaultInitialized(m_controlClient) ||
-        OrderedHttpClient::IsDefaultInitialized(m_pollingClient))
+        OrderedHttpClient::IsDefaultInitialized(m_pollingClient) ||
+        m_name.length() <= 0)
     {
         // ERROR, default initialized means we can't "retry"
         return;
@@ -181,7 +208,7 @@ void PeerConnectionClient::OnMessage(rtc::Message*)
     auto hostAsStr = utility::conversions::to_utf8string(uri.host());
 
     // try connecting
-    Connect(hostAsStr, uri.port());
+    SignIn(hostAsStr, uri.port(), m_name);
 }
 
 void PeerConnectionClient::RegisterObserver(Observer* observer)
@@ -200,7 +227,7 @@ void PeerConnectionClient::Poll()
     builder.append_path(L"wait");
     builder.append_query(L"peer_id", std::to_wstring(m_id));
 
-    m_pollingClient.Issue(methods::GET, builder.to_string())
+    m_pollChain = m_pollingClient.Issue(methods::GET, builder.to_string())
         .then([&](http_response res)
     {
         auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
@@ -234,11 +261,21 @@ void PeerConnectionClient::Poll()
                     m_observer->OnMessageFromPeer(senderId, body);
                 }
             });
-
-            m_messageBuffer.push(body);
         }
     })
-        .then([&] { Poll(); });
+        .then([&](task<void> prevTask)
+    {
+        try
+        {
+            prevTask.wait();
+        }
+        catch (exception&)
+        {
+            // swallow
+        }
+
+        Poll();
+    });
 }
 
 void PeerConnectionClient::UpdatePeers(string body)
@@ -284,6 +321,8 @@ void PeerConnectionClient::UpdatePeers(string body)
         {
             if (connected)
             {
+                m_peers[id] = name;
+
                 // notify our observer
                 RTCWrapAndCall([&, id, name] {
                     if (m_observer != nullptr)
@@ -291,8 +330,6 @@ void PeerConnectionClient::UpdatePeers(string body)
                         m_observer->OnPeerConnected(id, name);
                     }
                 });
-
-                m_peers[id] = name;
             }
             else
             {
@@ -303,7 +340,7 @@ void PeerConnectionClient::UpdatePeers(string body)
                         m_observer->OnPeerDisconnected(id);
                     }
                 });
-
+                
                 m_peers.erase(id);
             }
         }
@@ -312,12 +349,8 @@ void PeerConnectionClient::UpdatePeers(string body)
 
 void PeerConnectionClient::RTCWrapAndCall(const function<void()>& func)
 {
-    Thread* wrapped = Thread::Current();
+    // lock our mutex and release at end of scope
+    lock_guard<mutex> guard(m_wrapAndCallMutex);
 
-    if (wrapped == nullptr)
-    {
-        wrapped = ThreadManager::Instance()->WrapCurrentThread();
-    }
-
-    wrapped->Invoke<void>(RTC_FROM_HERE, func);
+    m_signalingThread->Invoke<void>(RTC_FROM_HERE, func);
 }

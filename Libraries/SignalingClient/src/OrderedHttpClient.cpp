@@ -75,6 +75,13 @@ namespace SignalingClient
             auto captureRoot = request_root_;
             auto captureConfig = request_config_;
 
+            if (pending_request_.is_done())
+            {
+                pending_request_ = create_task([] {
+                    return http_response();
+                });
+            }
+
             return pending_request_ = pending_request_.then([=](http_response) {
                 return http_client(captureRoot, captureConfig).request(requestMethod,
                     requestEndpoint,

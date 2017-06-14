@@ -92,7 +92,8 @@ int WINAPI wWinMain(
 	char server[1024];
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
-	std::string proxy = FLAG_proxy;
+    char proxy[1024];
+    strcpy(proxy, FLAG_proxy);
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
@@ -101,6 +102,12 @@ int WINAPI wWinMain(
 		wcstombs(server, szArglist[0], sizeof(server));
 		port = _wtoi(szArglist[1]);
 	}
+    else if (szArglist && nArgs == 3)
+    {
+        wcstombs(server, szArglist[0], sizeof(server));
+        port = _wtoi(szArglist[1]);
+        wcstombs(proxy, szArglist[2], sizeof(proxy));
+    }
 	else // Try parsing config file.
 	{
 		std::string configFilePath = GetAbsolutePath("webrtcConfig.json");
@@ -122,7 +129,7 @@ int WINAPI wWinMain(
 
 			if (root.isMember("proxy"))
 			{
-				proxy = root.get("proxy", FLAG_proxy).asString();
+				strcpy(proxy, root.get("proxy", FLAG_proxy).asCString());
 			}
 		}
 	}

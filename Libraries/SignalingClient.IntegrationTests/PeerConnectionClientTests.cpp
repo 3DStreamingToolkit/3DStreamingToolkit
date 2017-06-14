@@ -67,8 +67,7 @@ namespace SignalingClientIntegrationTests
             PeerConnectionClient client;
             client.RegisterObserver(&observer);
 
-            client.Connect(utility::conversions::to_utf8string(uri.host()), uri.port());
-            client.Login("renderingtest_user3@machine");
+            client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user3@machine");
 
             // if this runs indefintely, it's a failure
             observer.onSignedIn.wait();
@@ -106,8 +105,7 @@ namespace SignalingClientIntegrationTests
             PeerConnectionClient client;
             client.RegisterObserver(&observer);
 
-            client.Connect(utility::conversions::to_utf8string(uri.host()), uri.port());
-            client.Login("renderingtest_user3@machine");
+            client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user3@machine");
 
             // if this runs indefintely, it's a failure
             observer.onSignedIn.wait();
@@ -115,16 +113,10 @@ namespace SignalingClientIntegrationTests
             Assert::AreNotEqual<int>(-1, client.id());
             Assert::AreNotEqual<size_t>(0, client.peers().size());
 
-            client.Logout();
+            client.SignOut();
 
             // if this runs indefintely, it's a failure
             observer.onDisconnected.wait();
-
-            Assert::AreEqual<int>(-1, client.id());
-            Assert::AreEqual<size_t>(0, client.peers().size());
-
-
-            client.Disconnect();
 
             Assert::AreEqual<int>(-1, client.id());
             Assert::AreEqual<size_t>(0, client.peers().size());
@@ -176,15 +168,14 @@ namespace SignalingClientIntegrationTests
             client.RegisterObserver(&observer);
 
             // connect and login
-            client.Connect(utility::conversions::to_utf8string(uri.host()), uri.port());
-            client.Login("renderingtest_user@machine");
+            client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user@machine");
 
             observer.onSignedIn.wait();
 
             Assert::AreEqual<int>(1, client.id());
             Assert::AreEqual<size_t>(1, client.peers().size());
 
-            client.PushMessage(2, "hi mom");
+            client.SendToPeer(2, "hi mom");
 
             auto statusCode = observer.onMessageSent.get();
 
@@ -195,13 +186,9 @@ namespace SignalingClientIntegrationTests
             Assert::AreEqual<int>(2, msg.i);
             Assert::AreEqual<string>(waitingBody, msg.s);
 
-            client.Logout();
+            client.SignOut();
 
             observer.onDisconnected.wait();
-
-            Assert::AreEqual<size_t>(0, client.peers().size());
-
-            client.Disconnect();
 
             Assert::AreEqual<size_t>(0, client.peers().size());
         }
