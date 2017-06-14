@@ -41,7 +41,7 @@ You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The Ho
 	- SpinningCubeServer - 640 x 480
 	- SpinningCubeServerStereo - 1280 x 480
 + Build TexturesUWP and WebRtcWrapper. This will copy the necessary dll's to the Unity project folder. 
-+ Open Unity and open the HoloLens client folder `\Samples\Client\Unity`
++ Open Unity and open the HoloLens client folder `\Samples\Client\Unity` and open StereoSideBySideTexture scene.
 + Open ControlScript.cs under the Scripts folder. Modify the constant attributes textureWidth and textureHeight to match the resolution selected on the step above.
 + In the Awake() function, uncomment //Azure Host Details to use the Azure signalling server or use the local host address to test on your machine.
 + Go to `File -> Build Settings` and select Windows Store platform. If that is not available, you need to add UWP support to your Unity installation. 
