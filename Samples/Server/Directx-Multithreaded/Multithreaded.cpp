@@ -252,8 +252,8 @@ CModelViewerCamera          g_Camera;               // A model viewing camera
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
 #else // TEST_RUNNER
-static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
-static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 0.0f, 0.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 0.0f, 1.0f, 0.f };
 #endif // TEST_RUNNER
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
@@ -497,6 +497,7 @@ void InputUpdate(const std::string& message)
 				g_Camera.FrameMove(0);
 			}
 		}
+#ifdef STEREO_OUTPUT_MODE
 		else if (strcmp(data, "camera-transform-stereo") == 0)
 		{
 			if (msg.isMember("body"))
@@ -536,6 +537,7 @@ void InputUpdate(const std::string& message)
 				g_Camera.FrameMove(0);
 			}
 		}
+#endif // STEREO_OUTPUT_MODE
 	}
 }
 

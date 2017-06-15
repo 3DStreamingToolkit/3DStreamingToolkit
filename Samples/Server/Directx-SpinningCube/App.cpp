@@ -63,6 +63,7 @@ void InputUpdate(const std::string& message)
 	{
 		strcpy(data, msg.get("type", "").asCString());
 
+#ifdef STEREO_OUTPUT_MODE
 		if (strcmp(data, "camera-transform-stereo") == 0)
 		{
 			if (msg.isMember("body"))
@@ -100,6 +101,7 @@ void InputUpdate(const std::string& message)
 					viewLeft, viewRight);
 			}
 		}
+#endif // STEREO_OUTPUT_MODE
 	}
 }
 
@@ -156,7 +158,9 @@ int InitWebRTC(char* server, int port)
 			::DispatchMessage(&msg);
 		}
 
+#ifdef STEREO_OUTPUT_MODE
 		g_deviceResources->Present();
+#endif // STEREO_OUTPUT_MODE
 	}
 
 	if (conductor->connection_active() || client.is_connected())
