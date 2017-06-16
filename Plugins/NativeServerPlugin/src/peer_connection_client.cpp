@@ -266,10 +266,14 @@ bool PeerConnectionClient::SignOut()
 
 bool PeerConnectionClient::Shutdown()
 {
-	hanging_get_->Close();
-	control_socket_->Close();
+	if (hanging_get_)
+		hanging_get_->Close();
+
+	if (control_socket_)
+		control_socket_->Close();
 	
 	state_ = NOT_CONNECTED;
+	my_id_ = -1;
 	
 	return true;
 }
