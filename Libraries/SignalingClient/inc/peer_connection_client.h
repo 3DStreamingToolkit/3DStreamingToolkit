@@ -1,94 +1,134 @@
 #pragma once
 
-#include <mutex>
-#include <string>
-#include <functional>
-#include <map>
-
 #include <webrtc/base/thread.h>
-#include <webrtc/base/messagehandler.h>
-#include <webrtc/base/sigslot.h>
 
+#include "BasePeerConnectionClient.h"
 #include "OrderedHttpClient.h"
 
 using namespace std;
 using namespace concurrency;
-using namespace web;
-using namespace web::http;
-using namespace web::http::client;
+using namespace SignalingClient;
 using namespace SignalingClient::Http;
-using namespace rtc;
 
-class PeerConnectionClient : public sigslot::has_slots<>,
-    public rtc::MessageHandler
+/// <summary>
+/// PeerConnectionClient implementation v1
+/// </summary>
+class PeerConnectionClient : public BasePeerConnectionClient
 {
 public:
-    constexpr static int DefaultId = -1;
-
+	/// <summary>
+	/// Default ctor
+	/// </summary>
     PeerConnectionClient();
+
+	/// <summary>
+	/// Default dtor
+	/// </summary>
     ~PeerConnectionClient();
 
-    void SignIn(string hostname, uint32_t port, string clientName);
-    void SignOut();
+	virtual void SignIn(string hostname, uint32_t port, string clientName);
 
-    void set_proxy(const string& proxy);
+	virtual void SignOut();
 
-    const map<int, string> peers();
-    const int id();
-    const string name();
+	virtual void SetProxy(const string& proxy);
 
-    void SendToPeer(int clientId, string data);
-    void SendHangUp(int clientId);
+	virtual void SendToPeer(int clientId, string data);
 
-    // implements the MessageHandler interface
-    void OnMessage(Message* msg);
+	virtual void SendHangUp(int clientId);
 
-    struct Observer
-    {
-        virtual void OnSignedIn() = 0;  // Called when we're logged on.
+	virtual void OnMessage(rtc::Message* msg);
 
-        virtual void OnDisconnected() = 0;
-
-        virtual void OnPeerConnected(int id, const std::string& name) = 0;
-
-        virtual void OnPeerDisconnected(int peer_id) = 0;
-
-        virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
-
-        virtual void OnMessageSent(int err) = 0;
-
-        virtual void OnServerConnectionFailure() = 0;
-
-    protected:
-        virtual ~Observer() {}
-    };
-
-    void RegisterObserver(Observer* observer);
+	/// <summary>
+	/// Test hook to provide access to the underlying signaling thread
+	/// </summary>
+	rtc::Thread* signaling_thread();
 
 private:
+	/// <summary>
+	/// Internal polling method that handles constant polling for messages
+	/// and peer updates from the signaling server
+	/// </summary>
     void Poll();
+
+	/// <summary>
+	/// Helper method that parses peer data from an http response body
+	/// and updates peers_ accordingly
+	/// </summary>
+	/// <param name="body">the http response body to parse</param>
     void UpdatePeers(string body);
+
+	/// <summary>
+	/// Helper method to wrap a function and invoke it on
+	/// our signaling thread
+	/// </summary>
+	/// <param name="func">the function to invoke</param>
+	/// <remarks>
+	/// This is necessary for webrtc logic that's triggered
+	/// inside observer_ callbacks
+	/// </remarks>
     void RTCWrapAndCall(const function<void()>& func);
 
+	/// <summary>
+	/// the http client we use to make requests related to signaling
+	/// </summary>
     OrderedHttpClient m_controlClient;
+
+	/// <summary>
+	/// the http client we use to make a single long poll hanging request
+	/// </summary>
     OrderedHttpClient m_pollingClient;
 
+	/// <summary>
+	/// The task representing pending sign in operations
+	/// </summary>
     task<void> m_signInChain;
+
+	/// <summary>
+	/// The task representing pending sign out operations
+	/// </summary>
     task<void> m_signOutChain;
+
+	/// <summary>
+	/// The task representing pending send to peer operations
+	/// </summary>
     task<void> m_sendToPeerChain;
+
+	/// <summary>
+	/// The task representing pending polling operations
+	/// </summary>
     task<void> m_pollChain;
 
-    map<int, string> m_peers;
-    int m_id;
-    string m_name;
-    bool m_allowPolling;
-    Observer* m_observer;
+	/// <summary>
+	/// Flag that when true, allows polling to continue
+	/// </summary>
+	/// <remarks>
+	/// Setting this to false cancels future polling
+	/// </remarks>
+	bool m_allowPolling;
+
+	/// <summary>
+	/// Mutex used to ensure we only call one observer_ callback at a time
+	/// </summary>
     mutex m_wrapAndCallMutex;
+
+	/// <summary>
+	/// Pointer to the thread we use for signaling
+	/// </summary>
     rtc::Thread* m_signalingThread;
 
+	/// <summary>
+	/// Internally represents both an http response body, and it's pragma header
+	/// </summary>
     struct BodyAndPragma
     {
+		/// <summary>
+		/// the body of an http response
+		/// </summary>
         string body;
+
+		/// <summary>
+		/// the pragma header of an http response
+		/// </summary>
         string pragma;
     };
 };

@@ -1,9 +1,7 @@
 #include "peer_connection_client.h"
 
 PeerConnectionClient::PeerConnectionClient() :
-    m_id(DefaultId),
-    m_allowPolling(true),
-    m_observer(nullptr)
+    m_allowPolling(true)
 {
     // we need a "signaling_thread" so that all our webrtc calls occur
     // on the same rtc::Thread
@@ -11,7 +9,7 @@ PeerConnectionClient::PeerConnectionClient() :
 
     if (wrapped == nullptr)
     {
-        wrapped = ThreadManager::Instance()->WrapCurrentThread();
+        wrapped = rtc::ThreadManager::Instance()->WrapCurrentThread();
     }
 
     m_signalingThread = wrapped;
@@ -38,7 +36,7 @@ PeerConnectionClient::~PeerConnectionClient()
 
 void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientName)
 {
-    if (m_id != DefaultId)
+    if (id_ != DefaultId)
     {
         return;
     }
@@ -53,7 +51,7 @@ void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientN
     auto existingPollingConfig = m_pollingClient.config();
     existingPollingConfig.set_timeout(utility::seconds::max());
 
-    m_name = clientName;
+    name_ = clientName;
 
     uri_builder endpointUriBuilder;
     endpointUriBuilder.append_path(L"/sign_in");
@@ -76,7 +74,7 @@ void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientN
     })
         .then([&](BodyAndPragma box)
     {
-        m_id = atoi(box.pragma.c_str());
+        id_ = atoi(box.pragma.c_str());
 
         UpdatePeers(box.body);
     })
@@ -84,9 +82,9 @@ void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientN
     {
         // notify our observer
         RTCWrapAndCall([&] {
-            if (m_observer != nullptr)
+            if (observer_ != nullptr)
             {
-                m_observer->OnSignedIn();
+                observer_->OnSignedIn();
             }
         });
 
@@ -97,35 +95,36 @@ void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientN
 
 void PeerConnectionClient::SignOut()
 {
-    if (m_id == DefaultId)
+    if (id_ == DefaultId)
     {
         return;
     }
 
     uri_builder builder;
     builder.append_path(L"sign_out");
-    builder.append_query(L"peer_id", std::to_wstring(m_id));
+    builder.append_query(L"peer_id", std::to_wstring(id_));
 
     m_signOutChain = m_controlClient.Issue(methods::GET, builder.to_string())
-        .then([&](http_response) { m_id = -1; })
+        .then([&](http_response) { id_ = -1; })
         .then([&]
     {
-        m_controlClient.CancelAll();
+		m_allowPolling = false;
+		m_controlClient.CancelAll();
         m_pollingClient.CancelAll();
 
-        m_peers.clear();
+        peers_.clear();
 
         // notify our observer
         RTCWrapAndCall([&] {
-            if (m_observer != nullptr)
+            if (observer_ != nullptr)
             {
-                m_observer->OnDisconnected();
+				observer_->OnDisconnected();
             }
         });
     });
 }
 
-void PeerConnectionClient::set_proxy(const string& proxy)
+void PeerConnectionClient::SetProxy(const string& proxy)
 {
     if (proxy.length() <= 0)
     {
@@ -145,31 +144,16 @@ void PeerConnectionClient::set_proxy(const string& proxy)
     }
 }
 
-const map<int, string> PeerConnectionClient::peers()
-{
-    return m_peers;
-}
-
-const int PeerConnectionClient::id()
-{
-    return m_id;
-}
-
-const string PeerConnectionClient::name()
-{
-    return m_name;
-}
-
 void PeerConnectionClient::SendToPeer(int clientId, string data)
 {
-    if (m_id == DefaultId)
+    if (id_ == DefaultId)
     {
         return;
     }
 
     uri_builder builder;
     builder.append_path(L"message");
-    builder.append_query(L"peer_id", std::to_wstring(m_id));
+    builder.append_query(L"peer_id", std::to_wstring(id_));
     builder.append_query(L"to", std::to_wstring(clientId));
 
     m_sendToPeerChain = m_controlClient.Issue(methods::POST, builder.to_string(), utility::conversions::to_string_t(data))
@@ -179,9 +163,9 @@ void PeerConnectionClient::SendToPeer(int clientId, string data)
 
         // notify our observer
         RTCWrapAndCall([&, status] {
-            if (m_observer != nullptr)
+            if (observer_ != nullptr)
             {
-                m_observer->OnMessageSent(status);
+                observer_->OnMessageSent(status);
             }
         });
     });
@@ -197,7 +181,7 @@ void PeerConnectionClient::OnMessage(rtc::Message*)
 {
     if (OrderedHttpClient::IsDefaultInitialized(m_controlClient) ||
         OrderedHttpClient::IsDefaultInitialized(m_pollingClient) ||
-        m_name.length() <= 0)
+        name_.length() <= 0)
     {
         // ERROR, default initialized means we can't "retry"
         return;
@@ -208,12 +192,12 @@ void PeerConnectionClient::OnMessage(rtc::Message*)
     auto hostAsStr = utility::conversions::to_utf8string(uri.host());
 
     // try connecting
-    SignIn(hostAsStr, uri.port(), m_name);
+    SignIn(hostAsStr, uri.port(), name_);
 }
 
-void PeerConnectionClient::RegisterObserver(Observer* observer)
+rtc::Thread* PeerConnectionClient::signaling_thread()
 {
-    m_observer = observer;
+	return m_signalingThread;
 }
 
 void PeerConnectionClient::Poll()
@@ -225,7 +209,7 @@ void PeerConnectionClient::Poll()
 
     uri_builder builder;
     builder.append_path(L"wait");
-    builder.append_query(L"peer_id", std::to_wstring(m_id));
+    builder.append_query(L"peer_id", std::to_wstring(id_));
 
     m_pollChain = m_pollingClient.Issue(methods::GET, builder.to_string())
         .then([&](http_response res)
@@ -247,7 +231,7 @@ void PeerConnectionClient::Poll()
         auto senderId = atoi(box.pragma.c_str());
         auto body = box.body;
 
-        if (senderId == m_id)
+        if (senderId == id_)
         {
             // note: we notify the observer of peer changes INSIDE UpdatePeers()
             UpdatePeers(body);
@@ -256,9 +240,9 @@ void PeerConnectionClient::Poll()
         {
             // notify our observer
             RTCWrapAndCall([&, senderId, body] {
-                if (m_observer != nullptr)
+                if (observer_ != nullptr)
                 {
-                    m_observer->OnMessageFromPeer(senderId, body);
+                    observer_->OnMessageFromPeer(senderId, body);
                 }
             });
         }
@@ -317,17 +301,17 @@ void PeerConnectionClient::UpdatePeers(string body)
 
         // if we're parsed successfully, update m_peers
         // note: we don't count anything with our id as a peer
-        if (name.length() > 0 && id != m_id)
+        if (name.length() > 0 && id != id_)
         {
             if (connected)
             {
-                m_peers[id] = name;
+				peers_[id] = name;
 
                 // notify our observer
                 RTCWrapAndCall([&, id, name] {
-                    if (m_observer != nullptr)
+                    if (observer_ != nullptr)
                     {
-                        m_observer->OnPeerConnected(id, name);
+                        observer_->OnPeerConnected(id, name);
                     }
                 });
             }
@@ -335,13 +319,13 @@ void PeerConnectionClient::UpdatePeers(string body)
             {
                 // notify our observer
                 RTCWrapAndCall([&, id] {
-                    if (m_observer != nullptr)
+                    if (observer_ != nullptr)
                     {
-                        m_observer->OnPeerDisconnected(id);
+                        observer_->OnPeerDisconnected(id);
                     }
                 });
                 
-                m_peers.erase(id);
+				peers_.erase(id);
             }
         }
     }

@@ -89,7 +89,7 @@ int InitWebRTC(char* server, int port, char* proxy)
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 
-    client.set_proxy(proxy);
+    client.SetProxy(proxy);
 
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(

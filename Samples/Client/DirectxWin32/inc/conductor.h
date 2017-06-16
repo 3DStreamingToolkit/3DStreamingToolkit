@@ -34,7 +34,7 @@ namespace cricket
 
 class Conductor : public webrtc::PeerConnectionObserver,
 	public webrtc::CreateSessionDescriptionObserver,
-    public PeerConnectionClient::Observer,
+    public PeerConnectionClientObserver,
 	public MainWindowCallback
 {
 public:

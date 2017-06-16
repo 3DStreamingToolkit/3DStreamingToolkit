@@ -27,6 +27,16 @@ using namespace SignalingClient;
 
 namespace SignalingClientIntegrationTests
 {
+	struct ProcessMessagesGuard
+	{
+	public:
+		ProcessMessagesGuard(rtc::Thread* th) : m_stop(false), m_tick([&, th] { while (!m_stop) { th->ProcessMessages(1000); } }) {}
+		~ProcessMessagesGuard() { m_stop = true; m_tick.join(); }
+	private:
+		bool m_stop;
+		std::thread m_tick;
+	};
+
     TEST_CLASS(PeerConnectionClientTests)
     {
     public:
@@ -67,10 +77,15 @@ namespace SignalingClientIntegrationTests
             PeerConnectionClient client;
             client.RegisterObserver(&observer);
 
-            client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user3@machine");
+			// block scoping for guard
+			{
+				ProcessMessagesGuard stGuard(client.signaling_thread());
 
-            // if this runs indefintely, it's a failure
-            observer.onSignedIn.wait();
+				client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user3@machine");
+
+				// if this runs indefintely, it's a failure
+				observer.onSignedIn.wait();
+			}
 
             Assert::AreEqual<int>(3, client.id());
 
@@ -105,18 +120,22 @@ namespace SignalingClientIntegrationTests
             PeerConnectionClient client;
             client.RegisterObserver(&observer);
 
-            client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user3@machine");
+			// block scoping for guard
+			{
+				ProcessMessagesGuard stGuard(client.signaling_thread());
+				client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user3@machine");
 
-            // if this runs indefintely, it's a failure
-            observer.onSignedIn.wait();
+				// if this runs indefintely, it's a failure
+				observer.onSignedIn.wait();
 
-            Assert::AreNotEqual<int>(-1, client.id());
-            Assert::AreNotEqual<size_t>(0, client.peers().size());
+				Assert::AreNotEqual<int>(-1, client.id());
+				Assert::AreNotEqual<size_t>(0, client.peers().size());
 
-            client.SignOut();
+				client.SignOut();
 
-            // if this runs indefintely, it's a failure
-            observer.onDisconnected.wait();
+				// if this runs indefintely, it's a failure
+				observer.onDisconnected.wait();
+			}
 
             Assert::AreEqual<int>(-1, client.id());
             Assert::AreEqual<size_t>(0, client.peers().size());
@@ -167,28 +186,33 @@ namespace SignalingClientIntegrationTests
             PeerConnectionClient client;
             client.RegisterObserver(&observer);
 
-            // connect and login
-            client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user@machine");
+			// block scoping for guard
+			{
+				ProcessMessagesGuard stGuard(client.signaling_thread());
 
-            observer.onSignedIn.wait();
+				// connect and login
+				client.SignIn(utility::conversions::to_utf8string(uri.host()), uri.port(), "renderingtest_user@machine");
 
-            Assert::AreEqual<int>(1, client.id());
-            Assert::AreEqual<size_t>(1, client.peers().size());
+				observer.onSignedIn.wait();
 
-            client.SendToPeer(2, "hi mom");
+				Assert::AreEqual<int>(1, client.id());
+				Assert::AreEqual<size_t>(1, client.peers().size());
 
-            auto statusCode = observer.onMessageSent.get();
+				client.SendToPeer(2, "hi mom");
 
-            Assert::AreEqual<int>(200, statusCode);
+				auto statusCode = observer.onMessageSent.get();
 
-            auto msg = observer.onMessageFromPeer.get();
+				Assert::AreEqual<int>(200, statusCode);
 
-            Assert::AreEqual<int>(2, msg.i);
-            Assert::AreEqual<string>(waitingBody, msg.s);
+				auto msg = observer.onMessageFromPeer.get();
 
-            client.SignOut();
+				Assert::AreEqual<int>(2, msg.i);
+				Assert::AreEqual<string>(waitingBody, msg.s);
 
-            observer.onDisconnected.wait();
+				client.SignOut();
+
+				observer.onDisconnected.wait();
+			}
 
             Assert::AreEqual<size_t>(0, client.peers().size());
         }
@@ -206,7 +230,7 @@ namespace SignalingClientIntegrationTests
         bool listener_started_;
         experimental::listener::http_listener listener_;
 
-        struct Observer : public PeerConnectionClient::Observer
+        struct Observer : public PeerConnectionClientObserver
         {
         public:
 
