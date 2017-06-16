@@ -18,6 +18,12 @@
     <FxCompile Include="Shaders\VertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\GeometryShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\VertexShaderHololens.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -28,6 +34,12 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="App.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="HolographicAppMain.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\CameraResources.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -45,5 +57,8 @@
     <ClInclude Include="server_renderer.h">
       <Filter>Headers</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

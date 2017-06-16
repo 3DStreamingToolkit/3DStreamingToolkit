@@ -4,8 +4,16 @@
 #include <shellapi.h>
 #include <fstream>
 
+#include "DirectXHelper.h"
 #include "DeviceResources.h"
+
+#ifdef STEREO_OUTPUT_MODE
+#include <Microsoft.Perception.Simulation.h>
+
+#include "HolographicAppMain.h"
+#else // STEREO_OUTPUT_MODE
 #include "CubeRenderer.h"
+#endif //STEREO_OUTPUT_MODE
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -25,28 +33,264 @@
 #pragma comment(lib, "winmm.lib")
 
 using namespace DX;
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Wrappers;
 using namespace Toolkit3DLibrary;
 using namespace Toolkit3DSample;
 
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-HWND				g_hWnd = nullptr;
-DeviceResources*	g_deviceResources = nullptr;
-CubeRenderer*		g_cubeRenderer = nullptr;
+HWND									g_hWnd = nullptr;
+DeviceResources*						g_deviceResources = nullptr;
+
+#ifdef STEREO_OUTPUT_MODE
+// Holographics remoting simulation
+ComPtr<IPerceptionSimulationControl>	g_spPerceptionSimulationControl;
+UINT64									g_lastFrameTimestamp = 0;
+ComPtr<ISimulationStreamSink>			g_spStreamSink;
+ComPtr<IPerceptionSimulationFrame>		g_spFrame;
+
+// The holographic space the app will use for rendering.
+HolographicSpace^						g_holographicSpace = nullptr;
+std::unique_ptr<HolographicAppMain>		g_main;
+#else // STEREO_OUTPUT_MODE
+CubeRenderer*							g_cubeRenderer = nullptr;
+DX::StepTimer                           g_timer;
+#endif //STEREO_OUTPUT_MODE
+
 #ifdef TEST_RUNNER
-VideoTestRunner*	g_videoTestRunner = nullptr;
+VideoTestRunner*						g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
-VideoHelper*		g_videoHelper = nullptr;
+VideoHelper*							g_videoHelper = nullptr;
 #endif // TESTRUNNER
+
+#ifdef STEREO_OUTPUT_MODE
+class FrameGeneratedCallbackWrapper
+	: public RuntimeClass<RuntimeClassFlags<ClassicCom>, IPerceptionSimulationFrameGeneratedCallback, FtmBase>
+{
+public:
+	HRESULT RuntimeClassInitialize()
+	{
+		return S_OK;
+	}
+
+	STDMETHODIMP FrameGenerated(_In_ IPerceptionSimulationFrame* frame) override
+	{
+		ComPtr<ID3D11Texture2D> spTexture;
+		INT64 timestamp = 0;
+		ThrowIfFailed(frame->get_PredictionTargetTime(&timestamp));
+
+		if (timestamp != g_lastFrameTimestamp)
+		{
+			g_lastFrameTimestamp = timestamp;
+			ThrowIfFailed(frame->get_Frame(&spTexture));
+
+			// Renders to swapchain's buffer
+			ComPtr<ID3D11Device1> spDevice = g_deviceResources->GetD3DDevice();
+			ComPtr<ID3D11DeviceContext> spContext = g_deviceResources->GetD3DDeviceContext();
+
+			ComPtr<ID3D11Texture2D> spBackBuffer;
+			ThrowIfFailed(g_deviceResources->GetSwapChain()->GetBuffer(0, IID_PPV_ARGS(&spBackBuffer)));
+
+			spContext->CopySubresourceRegion(
+				spBackBuffer.Get(), // dest
+				0,                  // dest subresource
+				0, 0, 0,            // dest x, y, z
+				spTexture.Get(),    // source
+				0,                  // source subresource
+				nullptr);           // source box, null means the entire resource
+
+			spContext->CopySubresourceRegion(
+				spBackBuffer.Get(),
+				0,
+				FRAME_BUFFER_WIDTH / 2, 0, 0,
+				spTexture.Get(),
+				1,
+				nullptr);
+		}
+
+		g_spFrame = frame;
+		return S_OK;
+	}
+
+private:
+	Platform::WeakReference m_outerWeak;
+};
+
+#endif //STEREO_OUTPUT_MODE
 
 //--------------------------------------------------------------------------------------
 // Global Methods
 //--------------------------------------------------------------------------------------
+void InitResources(HWND handle)
+{
+	g_deviceResources = new DeviceResources();
+
+#ifdef STEREO_OUTPUT_MODE
+	// Checks for Perception Simulation Supported.
+    if (!Windows::Foundation::Metadata::ApiInformation::IsApiContractPresent(
+		L"Windows.Perception.Automation.Core.PerceptionAutomationCoreContract", 1))
+    {
+        throw ref new Platform::NotImplementedException();
+    }
+
+    DX::ThrowIfFailed(InitializePerceptionSimulation(
+		PerceptionSimulationControlFlags_None,
+        IID_PPV_ARGS(&g_spPerceptionSimulationControl)));
+
+	// Initializes the Holographic space and control stream.
+    ComPtr<IUnknown> spUnkHolographicSpace;
+    DX::ThrowIfFailed(g_spPerceptionSimulationControl->get_HolographicSpace(&spUnkHolographicSpace));
+    g_holographicSpace = static_cast<Windows::Graphics::Holographic::HolographicSpace^>(
+		reinterpret_cast<Platform::Object^>(spUnkHolographicSpace.Get()));
+
+    DX::ThrowIfFailed(g_spPerceptionSimulationControl->get_ControlStream(
+		&g_spStreamSink));
+
+	// Sets frame generated callback.
+	ComPtr<FrameGeneratedCallbackWrapper> spFrameGeneratedCallback;
+	DX::ThrowIfFailed(MakeAndInitialize<FrameGeneratedCallbackWrapper>(&spFrameGeneratedCallback));
+	DX::ThrowIfFailed(g_spPerceptionSimulationControl->SetFrameGeneratedCallback(spFrameGeneratedCallback.Get()));
+
+	// Sets Holographic space.
+	g_deviceResources->SetHolographicSpace(g_holographicSpace);
+	g_main = std::make_unique<HolographicAppMain>(g_deviceResources);
+	g_main->SetHolographicSpace(g_holographicSpace);
+
+	// Sets window.
+	g_deviceResources->SetWindow(handle);
+#else // STEREO_OUTPUT_MODE
+	// Sets window.
+	g_deviceResources->SetWindow(handle);
+
+	// Initializes the cube renderer.
+	g_cubeRenderer = new CubeRenderer(g_deviceResources);
+#endif // STEREO_OUTPUT_MODE
+
+	// Creates and initializes the video helper library.
+	g_videoHelper = new VideoHelper(
+		g_deviceResources->GetD3DDevice(),
+		g_deviceResources->GetD3DDeviceContext());
+
+	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
+}
+
+void CleanupResources()
+{
+	delete g_videoHelper;
+	delete g_deviceResources;
+
+#ifndef STEREO_OUTPUT_MODE
+	delete g_cubeRenderer;
+#endif // STEREO_OUTPUT_MODE
+}
+
+int count = 0;
 void FrameUpdate()
 {
-	g_cubeRenderer->Update();
+#ifdef STEREO_OUTPUT_MODE
+	byte buf[164] = { 0 };
+	int dataLength = 164;
+	int offset = 0;
+	++count;
+
+	// Header
+	*((int*)(buf + 0))		= 1; // Stream type
+	*((int*)(buf + 4))		= 2; // Version
+
+	// Unknown
+	*((int*)(buf + 8))		= 1;
+	*((int*)(buf + 12))		= 12;
+
+	// Unknown1 ???
+	*((int*)(buf + 16))		= -185552 + count;
+
+	// Unknown
+	*((int*)(buf + 20))		= 33;
+	*((int*)(buf + 24))		= 2;
+
+	// Rotation matrix (Column major)
+	*((float*)(buf + 28))	= 1.0f;
+	*((float*)(buf + 32))	= 0.0f;
+	*((float*)(buf + 36))	= 0.0f;
+	*((float*)(buf + 40))	= 0.0f;
+	*((float*)(buf + 44))	= 1.0f;
+	*((float*)(buf + 48))	= 0.0f;
+	*((float*)(buf + 52))	= 0.0f;
+	*((float*)(buf + 56))	= 0.0f;
+	*((float*)(buf + 60))	= 1.0f;
+
+	// Translation vector
+	*((float*)(buf + 64))	= 0.0f;
+	*((float*)(buf + 68))	= 0.0f;
+	*((float*)(buf + 72))	= 0.0f;
+
+	// 76 - 80: ignored
+
+	// Unknown2 ???
+	*((int*)(buf + 80))		= -79896 + count;
+
+	// Unknown
+	*((int*)(buf + 84))		= 33;
+	*((int*)(buf + 88))		= 2;
+
+	// Rotation matrix (Column major)
+	*((float*)(buf + 92))	= 1.0f;
+	*((float*)(buf + 96))	= 0.0f;
+	*((float*)(buf + 100))	= 0.0f;
+	*((float*)(buf + 104))	= 0.0f;
+	*((float*)(buf + 108))	= 1.0f;
+	*((float*)(buf + 112))	= 0.0f;
+	*((float*)(buf + 116))	= 0.0f;
+	*((float*)(buf + 120))	= 0.0f;
+	*((float*)(buf + 124))	= 1.0f;
+
+	// Translation vector
+	*((float*)(buf + 128))	= 0.0f;
+	*((float*)(buf + 132))	= 0.0f;
+	*((float*)(buf + 136))	= 0.0f;
+
+	// 140 - 144: ignored
+
+	// Unknown 3
+	*((int*)(buf + 144))	= 118363 + count;
+	*((int*)(buf + 148))	= 104577;
+
+	// Unknown
+	*((int*)(buf + 152))	= 0;
+	*((int*)(buf + 158))	= 64;
+	*((int*)(buf + 160))	= 36;
+
+	g_spStreamSink->OnPacketReceived(dataLength, buf);
+
+	if (g_main)
+	{
+		// When running on Windows Holographic, we can use the holographic rendering system.
+		HolographicFrame^ holographicFrame = g_main->Update();
+
+		if (holographicFrame && g_main->Render(holographicFrame))
+		{
+			// The holographic frame has an API that presents the swap chain for each
+			// holographic camera.
+			g_deviceResources->Present(holographicFrame);
+		}
+	}
+#else // STEREO_OUTPUT_MODE
+	g_timer.Tick([&]()
+	{
+		//
+		// Update scene objects.
+		//
+		// Put time-based updates here. By default this code will run once per frame,
+		// but if you change the StepTimer to use a fixed time step this code will
+		// run as many times as needed to get to the current step.
+		//
+		g_cubeRenderer->Update(g_timer);
+	});
+
 	g_cubeRenderer->Render();
+#endif // STEREO_OUTPUT_MODE
 }
 
 #ifdef REMOTE_RENDERING
@@ -95,10 +339,6 @@ void InputUpdate(const std::string& message)
 						viewRight.m[i][j] = stof(token);
 					}
 				}
-
-				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateViewMatrices(
-					viewLeft, viewRight);
 			}
 		}
 #endif // STEREO_OUTPUT_MODE
@@ -126,19 +366,8 @@ int InitWebRTC(char* server, int port)
 		return -1;
 	}
 
-	// Initializes the device resources.
-	g_deviceResources = new DeviceResources();
-	g_deviceResources->SetWindow(wnd.handle());
-
-	// Initializes the cube renderer.
-	g_cubeRenderer = new CubeRenderer(g_deviceResources);
-
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext());
-
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
+	// Initializes resources.
+	InitResources(wnd.handle());
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
@@ -157,10 +386,6 @@ int InitWebRTC(char* server, int port)
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 		}
-
-#ifdef STEREO_OUTPUT_MODE
-		g_deviceResources->Present();
-#endif // STEREO_OUTPUT_MODE
 	}
 
 	if (conductor->connection_active() || client.is_connected())
@@ -179,9 +404,7 @@ int InitWebRTC(char* server, int port)
 	rtc::CleanupSSL();
 
 	// Cleanup.
-	delete g_videoHelper;
-	delete g_cubeRenderer;
-	delete g_deviceResources;
+	CleanupResources();
 
 	return 0;
 }
@@ -220,7 +443,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 //--------------------------------------------------------------------------------------
 // Registers class and creates window
 //--------------------------------------------------------------------------------------
-HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
+HRESULT InitWindow()
 {
 	// Registers class.
 	WNDCLASSEX wcex = { 0 };
@@ -229,7 +452,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 	wcex.lpfnWndProc = WndProc;
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
-	wcex.hInstance = hInstance;
+	wcex.hInstance = 0;
 	wcex.hIcon = 0;
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
@@ -241,11 +464,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	// Creates window.
-#ifdef STEREO_OUTPUT_MODE
-	RECT rc = { 0, 0, 2560, 720 };
-#else
 	RECT rc = { 0, 0, 1280, 720 };
-#endif
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	g_hWnd = CreateWindow(
 		L"SpinningCubeClass",
@@ -257,7 +476,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 		rc.bottom - rc.top,
 		nullptr,
 		nullptr,
-		hInstance,
+		0,
 		nullptr);
 
 	if (!g_hWnd)
@@ -265,7 +484,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 		return E_FAIL;
 	}
 
-	ShowWindow(g_hWnd, nCmdShow);
+	ShowWindow(g_hWnd, SW_SHOWNORMAL);
 
 	return S_OK;
 }
@@ -285,27 +504,19 @@ void Render()
 // Entry point to the program. Initializes everything and goes into a message processing 
 // loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
-int WINAPI wWinMain(
-	_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPWSTR lpCmdLine,
-	_In_ int nCmdShow)
+int main(Platform::Array<Platform::String^>^ args)
 {
-	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmdLine);
+	RoInitializeWrapper roinit(RO_INIT_MULTITHREADED);
+	DX::ThrowIfFailed(HRESULT(roinit));
 
 #ifndef REMOTE_RENDERING
-	if (FAILED(InitWindow(hInstance, nCmdShow)))
+	if (FAILED(InitWindow()))
 	{
 		return 0;
 	}
 
 	// Initializes the device resources.
-	g_deviceResources = new DeviceResources();
-	g_deviceResources->SetWindow(g_hWnd);
-
-	// Initializes the cube renderer.
-	g_cubeRenderer = new CubeRenderer(g_deviceResources);
+	InitResources(g_hWnd);
 
 	RECT rc;
 	GetClientRect(g_hWnd, &rc);
@@ -319,13 +530,6 @@ int WINAPI wWinMain(
 		g_deviceResources->GetD3DDeviceContext()); 
 
 	g_videoTestRunner->StartTestRunner(g_deviceResources->GetSwapChain());
-#else // TEST_RUNNER
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext());
-
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
 #endif // TEST_RUNNER
 	
 	// Main message loop.
@@ -356,22 +560,20 @@ int WINAPI wWinMain(
 		}
 	}
 
-	delete g_cubeRenderer;
-	delete g_deviceResources;
+	// Cleanup.
+	CleanupResources();
 
 	return (int)msg.wParam;
 #else // REMOTE_RENDERING
-	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
-	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
-	if (szArglist && nArgs == 2)
+	if (args->Length == 3)
 	{
-		wcstombs(server, szArglist[0], sizeof(server));
-		port = _wtoi(szArglist[1]);
+		wcstombs(server, args[1]->Data(), sizeof(server));
+		port = _wtoi(args[2]->Data());
 	}
 	else // Try parsing config file.
 	{

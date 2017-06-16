@@ -6,7 +6,10 @@
 #include "webrtc/modules/video_coding/codecs/h264/include/nvEncodeAPI.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/nvCPUOPSys.h"
 
+// Phong Cao: avoid error C2059: syntax error : 'generic'
+#define generic codecSpecificInfoGeneric
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
+#undef generic
 
 namespace Toolkit3DLibrary
 {

@@ -4,6 +4,9 @@
 
 using namespace DirectX;
 using namespace DX;
+using namespace Windows::Foundation;
+using namespace Windows::Foundation::Numerics;
+using namespace Windows::UI::Input::Spatial;
 using namespace Toolkit3DSample;
 
 // Eye is at (0, 0.1, 1.0), looking at point (0, 0.1, 0) with the up-vector along the y-axis.
@@ -19,6 +22,35 @@ CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	InitGraphics();
 	InitPipeline();
 }
+
+#ifdef STEREO_OUTPUT_MODE
+// This function uses a SpatialPointerPose to position the world-locked hologram
+// two meters in front of the user's heading.
+void CubeRenderer::PositionHologram(SpatialPointerPose^ pointerPose)
+{
+	if (pointerPose != nullptr)
+	{
+		// Get the gaze direction relative to the given coordinate system.
+		const float3 headPosition = pointerPose->Head->Position;
+		const float3 headDirection = pointerPose->Head->ForwardDirection;
+
+		PositionHologram(headPosition, headDirection);
+	}
+}
+
+// This function uses a point and a vector to position the world-locked hologram
+// two meters in front of the user's heading.
+void CubeRenderer::PositionHologram(float3 headPosition, float3 headDirection)
+{
+	// The hologram is positioned two meters along the user's gaze direction.
+	static const float distanceFromUser = 2.0f; // meters
+	const float3 gazeAtTwoMeters = headPosition + (distanceFromUser * headDirection);
+
+	// This will be used as the translation component of the hologram's
+	// model transform.
+	SetPosition(gazeAtTwoMeters);
+}
+#endif // STEREO_OUTPUT_MODE
 
 void CubeRenderer::InitGraphics()
 {
@@ -76,7 +108,11 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
+#ifdef STEREO_OUTPUT_MODE
+	errno_t error = fopen_s(&vertexShaderFile, "VertexShaderHololens.cso", "rb");
+#else // STEREO_OUTPUT_MODE
 	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+#endif // STEREO_OUTPUT_MODE
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -125,20 +161,51 @@ void CubeRenderer::InitPipeline()
 	// Sets the pixel shader.
 	m_deviceResources->GetD3DDeviceContext()->PSSetShader(m_pixelShader, nullptr, 0);
 
+#ifdef STEREO_OUTPUT_MODE
+	// Creates the geometry shader.
+	FILE* geometryShaderFile = nullptr;
+	error = fopen_s(&geometryShaderFile, "GeometryShader.cso", "rb");
+	fseek(geometryShaderFile, 0, SEEK_END);
+	int geometryShaderFileSize = ftell(geometryShaderFile);
+	char* geometryShaderFileData = new char[geometryShaderFileSize];
+	fseek(geometryShaderFile, 0, SEEK_SET);
+	fread(geometryShaderFileData, 1, geometryShaderFileSize, geometryShaderFile);
+	fclose(geometryShaderFile);
+	m_deviceResources->GetD3DDevice()->CreateGeometryShader(
+		geometryShaderFileData,
+		geometryShaderFileSize,
+		nullptr,
+		&m_geometryShader);
+
+	// On devices that do not support the D3D11_FEATURE_D3D11_OPTIONS3::
+	// VPAndRTArrayIndexFromAnyShaderFeedingRasterizer optional feature,
+	// a pass-through geometry shader is used to set the render target 
+	// array index.
+	m_deviceResources->GetD3DDeviceContext()->GSSetShader(
+		m_geometryShader,
+		nullptr,
+		0
+	);
+#endif // STEREO_OUTPUT_MODE
+
 	// Cleanup.
 	delete []vertexShaderFileData;
 	delete []pixelShaderFileData;
-
-	// Creates the constant buffer.
-	CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
-	m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_constantBuffer);
-
-	// Initializes the projection matrix.
-	SIZE outputSize = m_deviceResources->GetOutputSize();
 #ifdef STEREO_OUTPUT_MODE
-	outputSize.cy = outputSize.cy * 2;
+	delete []geometryShaderFileData;
 #endif // STEREO_OUTPUT_MODE
 
+	// Creates the constant buffer.
+#ifdef STEREO_OUTPUT_MODE
+	const CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+#else // STEREO_OUTPUT_MODE
+	const CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+#endif // STEREO_OUTPUT_MODE
+	m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_constantBuffer);
+
+#ifndef STEREO_OUTPUT_MODE
+	// Initializes the projection matrix.
+	SIZE outputSize = m_deviceResources->GetOutputSize();
 	float aspectRatio = (float)outputSize.cx / outputSize.cy;
 	float fovAngleY = 70.0f * XM_PI / 180.0f;
 
@@ -160,57 +227,6 @@ void CubeRenderer::InitPipeline()
 	// Ignores the orientation.
 	XMMATRIX orientationMatrix = XMMatrixIdentity();
 
-#ifdef STEREO_OUTPUT_MODE
-	//XMStoreFloat4x4(
-	//	&m_constantBufferDataLeft.projection,
-	//	XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	//);
-
-	//XMStoreFloat4x4(
-	//	&m_constantBufferDataRight.projection,
-	//	XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	//);
-
-	m_constantBufferDataLeft.projection.m[0][0] = 3.76372361;
-	m_constantBufferDataLeft.projection.m[0][1] = -0.00703282235;
-	m_constantBufferDataLeft.projection.m[0][2] = 0.0278869867;
-	m_constantBufferDataLeft.projection.m[0][3] = 0.000000000;
-
-	m_constantBufferDataLeft.projection.m[1][0] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[1][1] = 6.65269279;
-	m_constantBufferDataLeft.projection.m[1][2] = -0.0103124380;
-	m_constantBufferDataLeft.projection.m[1][3] = 0.000000000;
-
-	m_constantBufferDataLeft.projection.m[2][0] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[2][1] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[2][2] = -1.00502515;
-	m_constantBufferDataLeft.projection.m[2][3] = -0.100502513;
-
-	m_constantBufferDataLeft.projection.m[3][0] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[3][1] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[3][2] = -1.00000000;
-	m_constantBufferDataLeft.projection.m[3][3] = 0.000000000;
-
-	m_constantBufferDataRight.projection.m[0][0] = 3.76920915;
-	m_constantBufferDataRight.projection.m[0][1] = -0.000568702759;
-	m_constantBufferDataRight.projection.m[0][2] = -0.0304735899;
-	m_constantBufferDataRight.projection.m[0][3] = 0.000000000;
-
-	m_constantBufferDataRight.projection.m[1][0] = 0.000000000;
-	m_constantBufferDataRight.projection.m[1][1] = 6.66007090;
-	m_constantBufferDataRight.projection.m[1][2] = -0.000967204571;
-	m_constantBufferDataRight.projection.m[1][3] = 0.000000000;
-
-	m_constantBufferDataRight.projection.m[2][0] = 0.000000000;
-	m_constantBufferDataRight.projection.m[2][1] = 0.000000000;
-	m_constantBufferDataRight.projection.m[2][2] = -1.00502515;
-	m_constantBufferDataRight.projection.m[2][3] = -0.100502513;
-
-	m_constantBufferDataRight.projection.m[3][0] = 0.000000000;
-	m_constantBufferDataRight.projection.m[3][1] = 0.000000000;
-	m_constantBufferDataRight.projection.m[3][2] = -1.00000000;
-	m_constantBufferDataRight.projection.m[3][3] = 0.000000000;
-#else // STEREO_OUTPUT_MODE
 	XMStoreFloat4x4(
 		&m_constantBufferData.projection,
 		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
@@ -220,31 +236,41 @@ void CubeRenderer::InitPipeline()
 #endif // STEREO_OUTPUT_MODE
 }
 
-void CubeRenderer::Update()
+void CubeRenderer::Update(const DX::StepTimer& timer)
 {
-	// Converts to radians.
-	float radians = XMConvertToRadians(m_degreesPerSecond++);
+	// Rotate the cube.
+	// Convert degrees to radians, then convert seconds to rotation angle.
+	const float radiansPerSecond = XMConvertToRadians(m_degreesPerSecond);
+	const double relativeRotation = timer.GetTotalSeconds() * radiansPerSecond;
+	const float radians = static_cast<float>(fmod(relativeRotation, XM_2PI));
+	const XMMATRIX modelRotation = XMMatrixRotationY(-radians);
+
+	// Position the cube.
+	const XMMATRIX modelTranslation = XMMatrixTranslationFromVector(XMLoadFloat3(&m_position));
+
+	// Multiply to get the transform matrix.
+	// Note that this transform does not enforce a particular coordinate system. The calling
+	// class is responsible for rendering this content in a consistent manner.
+	const XMMATRIX modelTransform = XMMatrixMultiply(modelRotation, modelTranslation);
 
 	// Prepares to pass the updated model matrix to the shader.
-#ifdef STEREO_OUTPUT_MODE
-	XMStoreFloat4x4(&m_constantBufferDataLeft.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
-	XMStoreFloat4x4(&m_constantBufferDataRight.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
-#else // STEREO_OUTPUT_MODE
-	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
-#endif // STEREO_OUTPUT_MODE
+	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixTranspose(modelTransform));
+
+	// Update the model transform buffer for the hologram.
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource(
+		m_constantBuffer,
+		0,
+		nullptr,
+		&m_constantBufferData,
+		0,
+		0
+	);
 }
 
 void CubeRenderer::Render()
 {
 	// Gets the device context.
 	auto context = m_deviceResources->GetD3DDeviceContext();
-
-	// Sets the render target.
-	ID3D11RenderTargetView *const targets[1] = { m_deviceResources->GetBackBufferRenderTargetView() };
-	context->OMSetRenderTargets(1, targets, nullptr);
-
-	// Clear the back buffer.
-	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::Black);
 
 	// Sets the vertex buffer and index buffer.
 	UINT stride = sizeof(VertexPositionColor);
@@ -259,25 +285,21 @@ void CubeRenderer::Render()
 	context->VSSetConstantBuffers1(0, 1, &m_constantBuffer, nullptr, nullptr);
 
 #ifdef STEREO_OUTPUT_MODE
-	// Gets the viewport.
-	D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
-
-	// Updates view projection matrix for the left eye.
-	context->UpdateSubresource1(
-		m_constantBuffer, 0, NULL, &m_constantBufferDataLeft, 0, 0, 0);
-
-	// Draws the objects in the left eye.
-	context->RSSetViewports(1, viewports);
-	context->DrawIndexed(m_indexCount, 0, 0);
-
-	// Updates view matrix for the right eye.
-	context->UpdateSubresource1(
-		m_constantBuffer, 0, NULL, &m_constantBufferDataRight, 0, 0, 0);
-
-	// Draws the objects in the right eye.
-	context->RSSetViewports(1, viewports + 1);
-	context->DrawIndexed(m_indexCount, 0, 0);
+	context->DrawIndexedInstanced(
+		m_indexCount,       // Index count per instance.
+		2,					// Instance count.
+		0,                  // Start index location.
+		0,                  // Base vertex location.
+		0                   // Start instance location.
+	);
 #else // STEREO_OUTPUT_MODE
+	// Sets the render target.
+	ID3D11RenderTargetView *const targets[1] = { m_deviceResources->GetBackBufferRenderTargetView() };
+	context->OMSetRenderTargets(1, targets, nullptr);
+
+	// Clear the back buffer.
+	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::Transparent);
+
 	// Updates view matrix.
 	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
 	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
@@ -286,11 +308,3 @@ void CubeRenderer::Render()
 	context->DrawIndexed(m_indexCount, 0, 0);
 #endif // STEREO_OUTPUT_MODE
 }
-
-#ifdef STEREO_OUTPUT_MODE
-void CubeRenderer::UpdateViewMatrices(const XMFLOAT4X4& viewLeft, const XMFLOAT4X4& viewRight)
-{
-	m_constantBufferDataLeft.view = viewLeft;
-	m_constantBufferDataRight.view = viewRight;
-}
-#endif // STEREO_OUTPUT_MODE

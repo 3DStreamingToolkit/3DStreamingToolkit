@@ -56,7 +56,6 @@ NVENCSTATUS VideoHelper::Initialize(IDXGISwapChain* swapChain)
 	return NV_ENC_SUCCESS;
 }
 
-
 // Initializes the IO buffers without access to a swapchain
 NVENCSTATUS VideoHelper::Initialize(ID3D11Texture2D* frameBuffer, DXGI_FORMAT format, int width, int height)
 {
@@ -79,8 +78,6 @@ NVENCSTATUS VideoHelper::Initialize(ID3D11Texture2D* frameBuffer, DXGI_FORMAT fo
 
 	return NV_ENC_SUCCESS;
 }
-
-
 
 // Cleanup resources.
 NVENCSTATUS VideoHelper::Deinitialize()

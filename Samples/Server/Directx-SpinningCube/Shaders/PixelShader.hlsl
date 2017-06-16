@@ -1,8 +1,8 @@
 // Per-pixel color data passed through the pixel shader.
 struct PixelShaderInput
 {
-	float4 pos : SV_POSITION;
-	float3 color : COLOR0;
+	min16float4 pos         : SV_POSITION;
+	min16float3 color       : COLOR0;
 };
 
 // A pass-through function for the (interpolated) color data.
