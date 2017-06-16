@@ -5,7 +5,9 @@
 using namespace DX;
 
 // Constructor for DeviceResources.
-DeviceResources::DeviceResources()
+DeviceResources::DeviceResources() :
+	m_swapChain(nullptr),
+	m_frameBuffer(nullptr)
 {
 	CreateDeviceResources();
 }
@@ -23,6 +25,7 @@ void DeviceResources::CleanupResources()
 	SAFE_RELEASE(m_d3dRenderTargetView);
 	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_d3dDevice);
+	SAFE_RELEASE(m_frameBuffer);
 }
 
 SIZE DeviceResources::GetOutputSize() const
@@ -43,6 +46,11 @@ ID3D11DeviceContext1* DeviceResources::GetD3DDeviceContext() const
 IDXGISwapChain1* DeviceResources::GetSwapChain() const
 {
 	return m_swapChain;
+}
+
+ID3D11Texture2D* DeviceResources::GetFrameBuffer() const
+{
+	return m_frameBuffer;
 }
 
 ID3D11RenderTargetView* DeviceResources::GetBackBufferRenderTargetView() const
@@ -101,6 +109,32 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 {
 	// Obtains DXGI factory from device.
 	HRESULT hr = S_OK;
+	ID3D11Texture2D* frameBuffer = nullptr;
+
+#ifdef NO_UI
+	D3D11_TEXTURE2D_DESC description;
+
+	memset(&description, 0, sizeof(D3D11_TEXTURE2D_DESC));
+
+	description.Height = FRAME_BUFFER_HEIGHT;
+	description.Width = FRAME_BUFFER_WIDTH;
+	description.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	description.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	description.Usage = D3D11_USAGE_DEFAULT;
+	description.MipLevels = 1;
+	description.ArraySize = 1;
+	description.SampleDesc.Count = 1;
+	description.SampleDesc.Quality = 0;
+	description.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+
+	hr = m_d3dDevice->CreateTexture2D(&description, nullptr, &m_frameBuffer);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	frameBuffer = m_frameBuffer;
+#else
 	IDXGIDevice* dxgiDevice = nullptr;
 	IDXGIFactory1* dxgiFactory = nullptr;
 	hr = m_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
@@ -156,12 +190,13 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	SAFE_RELEASE(dxgiFactory);
 
 	// Creates the render target view.
-	ID3D11Texture2D* frameBuffer = nullptr;
+	
 	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
 	if (FAILED(hr))
 	{
 		return hr;
 	}
+#endif
 
 	hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
 	SAFE_RELEASE(frameBuffer);
@@ -212,5 +247,8 @@ void DeviceResources::SetWindow(HWND hWnd)
 // Presents the contents of the swap chain to the screen.
 void DeviceResources::Present()
 {
-	m_swapChain->Present(1, 0);
+	if (m_swapChain != nullptr)
+	{
+		m_swapChain->Present(1, 0);
+	}
 }

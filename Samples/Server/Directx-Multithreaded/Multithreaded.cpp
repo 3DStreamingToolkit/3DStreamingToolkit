@@ -531,9 +531,14 @@ int InitWebRTC(char* server, int port)
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(
 		DXUTGetD3D11Device(),
-		DXUTGetD3D11DeviceContext());
+		DXUTGetD3D11DeviceContext()
+		);
 
+#ifdef NO_UI
+	g_videoHelper->Initialize(DXUTGetD3D11FrameBuffer(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+#else
 	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
+#endif
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
@@ -1692,12 +1697,33 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
     return S_OK;
 }
 
+void OnResize(int width, int height)
+{
+	// Setup the camera's projection parameters
+#ifdef STEREO_OUTPUT_MODE
+	float bufferWidth = width / 2;
+#else // STEREO_OUTPUT_MODE
+	float bufferWidth = width;
+#endif // STEREO_OUTPUT_MODE
+
+	float fAspectRatio = bufferWidth / (FLOAT) height;
+	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
+	g_Camera.SetWindow(bufferWidth, height);
+	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
+
+#ifndef TEST_RUNNER
+	g_HUD.SetLocation(bufferWidth - 170, 0);
+	g_HUD.SetSize(170, 170);
+	g_SampleUI.SetLocation(bufferWidth - 170, height - 300);
+	g_SampleUI.SetSize(170, 300);
+#endif // !TEST_RUNNER
+
+}
 
 //--------------------------------------------------------------------------------------
 HRESULT CALLBACK OnD3D11ResizedSwapChain(
 	ID3D11Device* pd3dDevice,
-	IDXGISwapChain* 
-	pSwapChain,
+	IDXGISwapChain* pSwapChain,
 	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 	void* pUserContext)
 {
@@ -1706,28 +1732,28 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(
     V_RETURN( g_DialogResourceManager.OnD3D11ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
     V_RETURN( g_D3DSettingsDlg.OnD3D11ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
 
-    // Setup the camera's projection parameters
-#ifdef STEREO_OUTPUT_MODE
-	float bufferWidth = pBackBufferSurfaceDesc->Width / 2;
-#else // STEREO_OUTPUT_MODE
-	float bufferWidth = pBackBufferSurfaceDesc->Width;
-#endif // STEREO_OUTPUT_MODE
-
-	float fAspectRatio = bufferWidth / (FLOAT)pBackBufferSurfaceDesc->Height;
-	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
-	g_Camera.SetWindow(bufferWidth, pBackBufferSurfaceDesc->Height);
-	g_Camera.SetButtonMasks(MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON);
-
-#ifndef TEST_RUNNER
-	g_HUD.SetLocation(bufferWidth - 170, 0);
-	g_HUD.SetSize(170, 170);
-	g_SampleUI.SetLocation(bufferWidth - 170, pBackBufferSurfaceDesc->Height - 300);
-	g_SampleUI.SetSize(170, 300);
-#endif // !TEST_RUNNER
+	OnResize(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
 
     return S_OK;
 }
 
+
+//--------------------------------------------------------------------------------------
+HRESULT CALLBACK OnD3D11ResizedFrameBuffer(
+	ID3D11Device* pd3dDevice,
+	ID3D11Texture2D* pFrameBuffer,
+	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
+	void* pUserContext)
+{
+	HRESULT hr;
+
+	V_RETURN(g_DialogResourceManager.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
+	V_RETURN(g_D3DSettingsDlg.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
+	
+	OnResize(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
+	
+	return S_OK;
+}
 
 //--------------------------------------------------------------------------------------
 // Figure out the ViewProj matrix from the light's perspective

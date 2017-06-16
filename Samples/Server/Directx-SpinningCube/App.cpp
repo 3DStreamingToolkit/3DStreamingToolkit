@@ -84,7 +84,13 @@ int InitWebRTC(char* server, int port)
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext());
 
+#ifdef NO_UI
+	g_videoHelper->Initialize(g_deviceResources->GetFrameBuffer(), DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+#else
 	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
+#endif
+	
+	
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;

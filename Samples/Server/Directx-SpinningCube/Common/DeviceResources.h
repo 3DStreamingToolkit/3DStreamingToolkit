@@ -17,6 +17,7 @@ namespace DX
 		ID3D11Device1*								GetD3DDevice() const;
 		ID3D11DeviceContext1*						GetD3DDeviceContext() const;
 		IDXGISwapChain1*							GetSwapChain() const;
+		ID3D11Texture2D*							GetFrameBuffer() const;
 		ID3D11RenderTargetView*						GetBackBufferRenderTargetView() const;
 		D3D11_VIEWPORT*								GetScreenViewport() const;
 
@@ -25,6 +26,7 @@ namespace DX
 		ID3D11Device1*								m_d3dDevice;
 		ID3D11DeviceContext1*						m_d3dContext;
 		IDXGISwapChain1*							m_swapChain;
+		ID3D11Texture2D*							m_frameBuffer;
 
 		// Direct3D rendering objects. Required for 3D.
 		ID3D11RenderTargetView*						m_d3dRenderTargetView;

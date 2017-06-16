@@ -302,6 +302,7 @@ bool    WINAPI DXUTGetMSAASwapChainCreated();
 // Direct3D 11
 IDXGIFactory1*           WINAPI DXUTGetDXGIFactory(); // Does not addref unlike typical Get* APIs
 IDXGISwapChain*          WINAPI DXUTGetDXGISwapChain(); // Does not addref unlike typical Get* APIs
+ID3D11Texture2D*		 WINAPI DXUTGetD3D11FrameBuffer(); // Does not addref unlike typical Get* APIs
 const DXGI_SURFACE_DESC* WINAPI DXUTGetDXGIBackBufferSurfaceDesc();
 ID3D11Device*            WINAPI DXUTGetD3D11Device(); // Does not addref unlike typical Get* APIs
 ID3D11DeviceContext*     WINAPI DXUTGetD3D11DeviceContext(); // Does not addref unlike typical Get* APIs

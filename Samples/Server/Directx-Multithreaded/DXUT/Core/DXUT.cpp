@@ -76,6 +76,7 @@ protected:
         IDXGIOutput**           m_DXGIOutputArray;        // The array of output obj for the D3D11 adapter obj
         UINT                    m_DXGIOutputArraySize;    // Number of elements in m_D3D11OutputArray
         IDXGISwapChain*         m_DXGISwapChain;          // the D3D11 swapchain
+		ID3D11Texture2D*        m_D3D11FrameBuffer;          // the D3D11 frame buffer
         DXGI_SURFACE_DESC       m_BackBufferSurfaceDescDXGI; // D3D11 back buffer surface description
         bool                    m_RenderingOccluded;       // Rendering is occluded by another window
         bool                    m_DoNotStoreBufferSize;    // Do not store the buffer size on WM_SIZE messages
@@ -283,6 +284,7 @@ public:
     GET_SET_ACCESSOR( IDXGIOutput**, DXGIOutputArray );
     GET_SET_ACCESSOR( UINT, DXGIOutputArraySize );
     GET_SET_ACCESSOR( IDXGISwapChain*, DXGISwapChain );
+	GET_SET_ACCESSOR(ID3D11Texture2D*, D3D11FrameBuffer);
     GETP_SETP_ACCESSOR( DXGI_SURFACE_DESC, BackBufferSurfaceDescDXGI );
     GET_SET_ACCESSOR( bool, RenderingOccluded );
     GET_SET_ACCESSOR( bool, DoNotStoreBufferSize );
@@ -558,6 +560,7 @@ D3D_FEATURE_LEVEL	 WINAPI DXUTGetD3D11DeviceFeatureLevel() { return GetDXUTState
 ID3D11DeviceContext* WINAPI DXUTGetD3D11DeviceContext()    { return GetDXUTState().GetD3D11DeviceContext(); }
 ID3D11DeviceContext1* WINAPI DXUTGetD3D11DeviceContext1()  { return GetDXUTState().GetD3D11DeviceContext1(); }
 IDXGISwapChain* WINAPI DXUTGetDXGISwapChain()              { return GetDXUTState().GetDXGISwapChain(); }
+ID3D11Texture2D* WINAPI DXUTGetD3D11FrameBuffer()		   { return GetDXUTState().GetD3D11FrameBuffer(); }
 ID3D11RenderTargetView* WINAPI DXUTGetD3D11RenderTargetView() { return GetDXUTState().GetD3D11RenderTargetView(); }
 D3D11_VIEWPORT* WINAPI DXUTGetD3D11ScreenViewport()        { return GetDXUTState().GetD3D11ScreenViewport(); }
 ID3D11DepthStencilView* WINAPI DXUTGetD3D11DepthStencilView() { return GetDXUTState().GetD3D11DepthStencilView(); }
@@ -2264,17 +2267,25 @@ HRESULT DXUTCreateD3D11Views( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3
                              DXUTDeviceSettings* pDeviceSettings )
 {
     HRESULT hr = S_OK;
-    IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
     ID3D11DepthStencilView* pDSV = nullptr;
     ID3D11RenderTargetView* pRTV = nullptr;
 
     // Get the back buffer and desc
     ID3D11Texture2D* pBackBuffer;
+
+#ifdef NO_UI
+	pBackBuffer = DXUTGetD3D11FrameBuffer();
+#else
+	IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
+
     hr = pSwapChain->GetBuffer( 0, __uuidof( *pBackBuffer ), ( LPVOID* )&pBackBuffer );
     if( FAILED( hr ) )
         return hr;
+#endif
+
     D3D11_TEXTURE2D_DESC backBufferSurfaceDesc;
     pBackBuffer->GetDesc( &backBufferSurfaceDesc );
+
 
     // Create the render target view
     hr = pd3dDevice->CreateRenderTargetView( pBackBuffer, nullptr, &pRTV );
@@ -2341,7 +2352,12 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
     ID3D11DeviceContext* pd3dImmediateContext = nullptr;
     D3D_FEATURE_LEVEL FeatureLevel = D3D_FEATURE_LEVEL_11_1;
 
+#ifdef NO_UI
+	ID3D11Texture2D *pFrameBuffer = nullptr;
+#else
     IDXGISwapChain* pSwapChain = nullptr;
+#endif
+
     DXUTDeviceSettings* pNewDeviceSettings = GetDXUTState().GetCurrentDeviceSettings();
     assert( pNewDeviceSettings );
     _Analysis_assume_( pNewDeviceSettings );
@@ -2519,6 +2535,29 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
 		pNewDeviceSettings->d3d11.sd.BufferDesc.Height = FRAME_BUFFER_HEIGHT;
 #endif // REMOTE_RENDERING
 
+#ifdef NO_UI
+		D3D11_TEXTURE2D_DESC description;
+		
+		memset(&description, 0, sizeof(D3D11_TEXTURE2D_DESC));
+		
+		description.Height = FRAME_BUFFER_HEIGHT;
+		description.Width = FRAME_BUFFER_WIDTH;
+		description.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		description.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+		description.Usage = D3D11_USAGE_DEFAULT;
+		description.MipLevels = 1;
+		description.ArraySize = 1;
+		description.SampleDesc.Count = 1;
+		description.SampleDesc.Quality = 0;
+		description.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
+		
+		HRESULT hr = pd3d11Device->CreateTexture2D(&description, nullptr, &pFrameBuffer);
+		if (FAILED(hr))
+		{
+			DXUT_ERR(L"CreateFrameBuffer", hr);
+			return DXUTERR_CREATINGDEVICE;
+		}
+#else
         // Create the swapchain
         hr = pDXGIFactory->CreateSwapChain( pd3d11Device, &pNewDeviceSettings->d3d11.sd, &pSwapChain );
         if( FAILED( hr ) )
@@ -2526,6 +2565,7 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
             DXUT_ERR( L"CreateSwapChain", hr );
             return DXUTERR_CREATINGDEVICE;
         }
+#endif
     }
     else
     {
@@ -2536,7 +2576,11 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
     GetDXUTState().SetD3D11Device( pd3d11Device );
     GetDXUTState().SetD3D11DeviceContext( pd3dImmediateContext );
     GetDXUTState().SetD3D11FeatureLevel( FeatureLevel );
+#ifdef NO_UI
+	GetDXUTState().SetD3D11FrameBuffer(pFrameBuffer);
+#else
     GetDXUTState().SetDXGISwapChain( pSwapChain );
+#endif
 
     assert( pd3d11Device );
     _Analysis_assume_( pd3d11Device );
@@ -2609,6 +2653,7 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
     // Create performance counters
     //DXUTCreateD3D11Counters( pd3d11Device );
 
+#ifndef NO_UI
     // Call the app's swap chain reset callback if non-NULL
     GetDXUTState().SetInsideDeviceCallback( true );
     LPDXUTCALLBACKD3D11SWAPCHAINRESIZED pCallbackSwapChainResized = GetDXUTState().GetD3D11SwapChainResizedFunc();
@@ -2617,6 +2662,8 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
         hr = pCallbackSwapChainResized( DXUTGetD3D11Device(), pSwapChain, pBackBufferSurfaceDesc,
                                         GetDXUTState().GetD3D11SwapChainResizedFuncUserContext() );
     GetDXUTState().SetInsideDeviceCallback( false );
+#endif
+
     if( !DXUTGetD3D11Device() ) // Handle DXUTShutdown from inside callback
         return E_FAIL;
     if( FAILED( hr ) )
@@ -2744,9 +2791,15 @@ void WINAPI DXUTRender3DEnvironment()
     if( !pd3dImmediateContext )
         return;
 
+#ifdef NO_UI
+	ID3D11Texture2D* pFrameBuffer = DXUTGetD3D11FrameBuffer();
+	if (!pFrameBuffer)
+		return;
+#else
     IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
     if( !pSwapChain )
         return;
+#endif
 
     if( DXUTIsRenderingPaused() || !DXUTIsActive() || GetDXUTState().GetRenderingOccluded() )
     {
@@ -2835,8 +2888,10 @@ void WINAPI DXUTRender3DEnvironment()
 #ifdef REMOTE_RENDERING
 	hr = S_OK;
 #else // REMOTE_RENDERING
+#ifndef NO_UI
 	// Show the frame on the primary surface.
 	hr = pSwapChain->Present(GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval, dwFlags);
+#endif
 #endif // REMOTE_RENDERING
 
     if( DXGI_STATUS_OCCLUDED == hr )
@@ -3887,6 +3942,17 @@ HRESULT DXUTHandleDeviceRemoved()
 void DXUTUpdateBackBufferDesc()
 {
     HRESULT hr;
+
+#ifdef NO_UI
+	DXGI_SURFACE_DESC* pBBufferSurfaceDesc = GetDXUTState().GetBackBufferSurfaceDescDXGI();
+	ZeroMemory(pBBufferSurfaceDesc, sizeof(DXGI_SURFACE_DESC));
+
+	pBBufferSurfaceDesc->Height = FRAME_BUFFER_HEIGHT;
+	pBBufferSurfaceDesc->Width = FRAME_BUFFER_WIDTH;
+	pBBufferSurfaceDesc->Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	pBBufferSurfaceDesc->SampleDesc.Count = 1;
+	pBBufferSurfaceDesc->SampleDesc.Quality = 0;
+#else
     ID3D11Texture2D* pBackBuffer;
     IDXGISwapChain* pSwapChain = GetDXUTState().GetDXGISwapChain();
     assert( pSwapChain );
@@ -3905,6 +3971,7 @@ void DXUTUpdateBackBufferDesc()
         pBBufferSurfaceDesc->SampleDesc = TexDesc.SampleDesc;
         SAFE_RELEASE( pBackBuffer );
     }
+#endif
 }
 
 
