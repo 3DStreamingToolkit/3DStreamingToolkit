@@ -394,9 +394,13 @@ bool CALLBACK IsD3D11DeviceAcceptable( const CD3D11EnumAdapterInfo *AdapterInfo,
                                        DXGI_FORMAT BackBufferFormat, bool bWindowed, void* pUserContext );
 HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
                                       void* pUserContext );
+
+#ifndef NO_UI
 HRESULT CALLBACK OnD3D11ResizedSwapChain( ID3D11Device* pd3dDevice, IDXGISwapChain* pSwapChain,
                                           const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext );
 void CALLBACK OnD3D11ReleasingSwapChain( void* pUserContext );
+#endif
+
 void CALLBACK OnD3D11DestroyDevice( void* pUserContext );
 void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dImmediateContext, double fTime,
                                   float fElapsedTime, void* pUserContext );
@@ -595,9 +599,13 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     DXUTSetCallbackD3D11DeviceAcceptable( IsD3D11DeviceAcceptable );
     DXUTSetCallbackD3D11DeviceCreated( OnD3D11CreateDevice );
+	DXUTSetCallbackD3D11FrameRender(OnD3D11FrameRender);
+
+#ifndef NO_UI
     DXUTSetCallbackD3D11SwapChainResized( OnD3D11ResizedSwapChain );
-    DXUTSetCallbackD3D11FrameRender( OnD3D11FrameRender );
     DXUTSetCallbackD3D11SwapChainReleasing( OnD3D11ReleasingSwapChain );
+#endif
+
     DXUTSetCallbackD3D11DeviceDestroyed( OnD3D11DestroyDevice );
     
     InitApp();
@@ -608,10 +616,12 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DXUTCreateWindow( L"MultithreadedRendering11" );
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
+#ifndef NO_UI
 #ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
 #endif// TEST_RUNNER
+#endif
 
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
@@ -1720,6 +1730,26 @@ void OnResize(int width, int height)
 
 }
 
+#ifdef NO_UI
+//--------------------------------------------------------------------------------------
+HRESULT CALLBACK OnD3D11ResizedFrameBuffer(
+	ID3D11Device* pd3dDevice,
+	ID3D11Texture2D* pFrameBuffer,
+	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
+	void* pUserContext)
+{
+	HRESULT hr;
+
+	V_RETURN(g_DialogResourceManager.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
+	V_RETURN(g_D3DSettingsDlg.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
+
+	OnResize(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
+
+	return S_OK;
+}
+
+
+#else
 //--------------------------------------------------------------------------------------
 HRESULT CALLBACK OnD3D11ResizedSwapChain(
 	ID3D11Device* pd3dDevice,
@@ -1736,24 +1766,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(
 
     return S_OK;
 }
-
-
-//--------------------------------------------------------------------------------------
-HRESULT CALLBACK OnD3D11ResizedFrameBuffer(
-	ID3D11Device* pd3dDevice,
-	ID3D11Texture2D* pFrameBuffer,
-	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
-	void* pUserContext)
-{
-	HRESULT hr;
-
-	V_RETURN(g_DialogResourceManager.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
-	V_RETURN(g_D3DSettingsDlg.OnD3D11ResizedSwapChain(pd3dDevice, pBackBufferSurfaceDesc));
-	
-	OnResize(pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height);
-	
-	return S_OK;
-}
+#endif
 
 //--------------------------------------------------------------------------------------
 // Figure out the ViewProj matrix from the light's perspective
@@ -2648,7 +2661,7 @@ void CALLBACK OnD3D11FrameRender( ID3D11Device* pd3dDevice, ID3D11DeviceContext*
 #endif // TEST_RUNNER
 }
 
-
+#ifndef NO_UI
 //--------------------------------------------------------------------------------------
 // Release D3D11 resources created in OnD3D11ResizedSwapChain 
 //--------------------------------------------------------------------------------------
@@ -2656,7 +2669,7 @@ void CALLBACK OnD3D11ReleasingSwapChain( void* pUserContext )
 {
     g_DialogResourceManager.OnD3D11ReleasingSwapChain();
 }
-
+#endif
 
 //--------------------------------------------------------------------------------------
 // Release D3D11 resources created in OnD3D11CreateDevice 

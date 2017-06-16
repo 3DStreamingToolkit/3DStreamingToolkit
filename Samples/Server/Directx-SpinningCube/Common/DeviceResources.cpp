@@ -6,8 +6,11 @@ using namespace DX;
 
 // Constructor for DeviceResources.
 DeviceResources::DeviceResources() :
-	m_swapChain(nullptr),
+#ifdef NO_UI
 	m_frameBuffer(nullptr)
+#else
+	m_swapChain(nullptr)
+#endif
 {
 	CreateDeviceResources();
 }
@@ -23,9 +26,13 @@ void DeviceResources::CleanupResources()
 	delete []m_screenViewport;
 	SAFE_RELEASE(m_d3dContext);
 	SAFE_RELEASE(m_d3dRenderTargetView);
-	SAFE_RELEASE(m_swapChain);
 	SAFE_RELEASE(m_d3dDevice);
+
+#ifdef NO_UI
 	SAFE_RELEASE(m_frameBuffer);
+#else
+	SAFE_RELEASE(m_swapChain);
+#endif
 }
 
 SIZE DeviceResources::GetOutputSize() const
@@ -43,15 +50,17 @@ ID3D11DeviceContext1* DeviceResources::GetD3DDeviceContext() const
 	return m_d3dContext;
 }
 
-IDXGISwapChain1* DeviceResources::GetSwapChain() const
-{
-	return m_swapChain;
-}
-
+#ifdef NO_UI
 ID3D11Texture2D* DeviceResources::GetFrameBuffer() const
 {
 	return m_frameBuffer;
 }
+#else
+IDXGISwapChain1* DeviceResources::GetSwapChain() const
+{
+	return m_swapChain;
+}
+#endif
 
 ID3D11RenderTargetView* DeviceResources::GetBackBufferRenderTargetView() const
 {
@@ -247,8 +256,10 @@ void DeviceResources::SetWindow(HWND hWnd)
 // Presents the contents of the swap chain to the screen.
 void DeviceResources::Present()
 {
+#ifndef NO_UI
 	if (m_swapChain != nullptr)
 	{
 		m_swapChain->Present(1, 0);
 	}
+#endif
 }

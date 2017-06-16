@@ -75,8 +75,13 @@ protected:
         IDXGIAdapter1*          m_DXGIAdapter;            // The DXGI adapter object for the D3D11 device
         IDXGIOutput**           m_DXGIOutputArray;        // The array of output obj for the D3D11 adapter obj
         UINT                    m_DXGIOutputArraySize;    // Number of elements in m_D3D11OutputArray
-        IDXGISwapChain*         m_DXGISwapChain;          // the D3D11 swapchain
+
+#ifdef NO_UI
 		ID3D11Texture2D*        m_D3D11FrameBuffer;          // the D3D11 frame buffer
+#else
+        IDXGISwapChain*         m_DXGISwapChain;          // the D3D11 swapchain
+#endif
+		
         DXGI_SURFACE_DESC       m_BackBufferSurfaceDescDXGI; // D3D11 back buffer surface description
         bool                    m_RenderingOccluded;       // Rendering is occluded by another window
         bool                    m_DoNotStoreBufferSize;    // Do not store the buffer size on WM_SIZE messages
@@ -203,8 +208,10 @@ protected:
 
         LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE   m_IsD3D11DeviceAcceptableFunc;  // D3D11 is device acceptable callback
         LPDXUTCALLBACKD3D11DEVICECREATED        m_D3D11DeviceCreatedFunc;       // D3D11 device created callback
+#ifndef NO_UI
         LPDXUTCALLBACKD3D11SWAPCHAINRESIZED     m_D3D11SwapChainResizedFunc;    // D3D11 SwapChain reset callback
         LPDXUTCALLBACKD3D11SWAPCHAINRELEASING   m_D3D11SwapChainReleasingFunc;  // D3D11 SwapChain lost callback
+#endif
         LPDXUTCALLBACKD3D11DEVICEDESTROYED      m_D3D11DeviceDestroyedFunc;     // D3D11 device destroyed callback
         LPDXUTCALLBACKD3D11FRAMERENDER          m_D3D11FrameRenderFunc;         // D3D11 frame render callback
 
@@ -217,8 +224,10 @@ protected:
 
         void* m_IsD3D11DeviceAcceptableFuncUserContext;  // user context for is D3D11 device acceptable callback
         void* m_D3D11DeviceCreatedFuncUserContext;       // user context for D3D11 device created callback
+#ifndef NO_UI
         void* m_D3D11SwapChainResizedFuncUserContext;    // user context for D3D11 SwapChain resized callback
         void* m_D3D11SwapChainReleasingFuncUserContext;  // user context for D3D11 SwapChain releasing callback
+#endif
         void* m_D3D11DeviceDestroyedFuncUserContext;     // user context for D3D11 device destroyed callback
         void* m_D3D11FrameRenderFuncUserContext;         // user context for D3D11 frame render callback
 
@@ -283,8 +292,11 @@ public:
     GET_SET_ACCESSOR( IDXGIAdapter1*, DXGIAdapter );
     GET_SET_ACCESSOR( IDXGIOutput**, DXGIOutputArray );
     GET_SET_ACCESSOR( UINT, DXGIOutputArraySize );
-    GET_SET_ACCESSOR( IDXGISwapChain*, DXGISwapChain );
+#ifdef NO_UI
 	GET_SET_ACCESSOR(ID3D11Texture2D*, D3D11FrameBuffer);
+#else
+    GET_SET_ACCESSOR( IDXGISwapChain*, DXGISwapChain );
+#endif
     GETP_SETP_ACCESSOR( DXGI_SURFACE_DESC, BackBufferSurfaceDescDXGI );
     GET_SET_ACCESSOR( bool, RenderingOccluded );
     GET_SET_ACCESSOR( bool, DoNotStoreBufferSize );
@@ -406,8 +418,10 @@ public:
 
     GET_SET_ACCESSOR( LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE, IsD3D11DeviceAcceptableFunc );
     GET_SET_ACCESSOR( LPDXUTCALLBACKD3D11DEVICECREATED, D3D11DeviceCreatedFunc );
+#ifndef NO_UI
     GET_SET_ACCESSOR( LPDXUTCALLBACKD3D11SWAPCHAINRESIZED, D3D11SwapChainResizedFunc );
     GET_SET_ACCESSOR( LPDXUTCALLBACKD3D11SWAPCHAINRELEASING, D3D11SwapChainReleasingFunc );
+#endif
     GET_SET_ACCESSOR( LPDXUTCALLBACKD3D11DEVICEDESTROYED, D3D11DeviceDestroyedFunc );
     GET_SET_ACCESSOR( LPDXUTCALLBACKD3D11FRAMERENDER, D3D11FrameRenderFunc );
 
@@ -421,8 +435,10 @@ public:
     GET_SET_ACCESSOR( void*, IsD3D11DeviceAcceptableFuncUserContext );
     GET_SET_ACCESSOR( void*, D3D11DeviceCreatedFuncUserContext );
     GET_SET_ACCESSOR( void*, D3D11DeviceDestroyedFuncUserContext );
+#ifndef NO_UI
     GET_SET_ACCESSOR( void*, D3D11SwapChainResizedFuncUserContext );
     GET_SET_ACCESSOR( void*, D3D11SwapChainReleasingFuncUserContext );
+#endif
     GET_SET_ACCESSOR( void*, D3D11FrameRenderFuncUserContext );
 
     GET_SET_ACCESSOR( std::vector<DXUT_TIMER>*, TimerList );
@@ -559,8 +575,13 @@ ID3D11Device1* WINAPI DXUTGetD3D11Device1()                { return GetDXUTState
 D3D_FEATURE_LEVEL	 WINAPI DXUTGetD3D11DeviceFeatureLevel() { return GetDXUTState().GetD3D11FeatureLevel(); }
 ID3D11DeviceContext* WINAPI DXUTGetD3D11DeviceContext()    { return GetDXUTState().GetD3D11DeviceContext(); }
 ID3D11DeviceContext1* WINAPI DXUTGetD3D11DeviceContext1()  { return GetDXUTState().GetD3D11DeviceContext1(); }
+
+#ifdef NO_UI
+ID3D11Texture2D* WINAPI DXUTGetD3D11FrameBuffer() { return GetDXUTState().GetD3D11FrameBuffer(); }
+#else
 IDXGISwapChain* WINAPI DXUTGetDXGISwapChain()              { return GetDXUTState().GetDXGISwapChain(); }
-ID3D11Texture2D* WINAPI DXUTGetD3D11FrameBuffer()		   { return GetDXUTState().GetD3D11FrameBuffer(); }
+#endif
+
 ID3D11RenderTargetView* WINAPI DXUTGetD3D11RenderTargetView() { return GetDXUTState().GetD3D11RenderTargetView(); }
 D3D11_VIEWPORT* WINAPI DXUTGetD3D11ScreenViewport()        { return GetDXUTState().GetD3D11ScreenViewport(); }
 ID3D11DepthStencilView* WINAPI DXUTGetD3D11DepthStencilView() { return GetDXUTState().GetD3D11DepthStencilView(); }
@@ -605,9 +626,12 @@ void WINAPI DXUTSetCallbackMsgProc( _In_ LPDXUTCALLBACKMSGPROC pCallback, _In_op
 // Direct3D 11 callbacks
 void WINAPI DXUTSetCallbackD3D11DeviceAcceptable( _In_ LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE pCallback, _In_opt_ void* pUserContext )   { GetDXUTState().SetIsD3D11DeviceAcceptableFunc( pCallback ); GetDXUTState().SetIsD3D11DeviceAcceptableFuncUserContext( pUserContext ); }
 void WINAPI DXUTSetCallbackD3D11DeviceCreated( _In_ LPDXUTCALLBACKD3D11DEVICECREATED pCallback, _In_opt_ void* pUserContext )           { GetDXUTState().SetD3D11DeviceCreatedFunc( pCallback ); GetDXUTState().SetD3D11DeviceCreatedFuncUserContext( pUserContext ); }
+
+#ifndef NO_UI
 void WINAPI DXUTSetCallbackD3D11SwapChainResized( _In_ LPDXUTCALLBACKD3D11SWAPCHAINRESIZED pCallback, _In_opt_ void* pUserContext )     { GetDXUTState().SetD3D11SwapChainResizedFunc( pCallback );  GetDXUTState().SetD3D11SwapChainResizedFuncUserContext( pUserContext ); }
-void WINAPI DXUTSetCallbackD3D11FrameRender( _In_ LPDXUTCALLBACKD3D11FRAMERENDER pCallback, _In_opt_ void* pUserContext )               { GetDXUTState().SetD3D11FrameRenderFunc( pCallback );  GetDXUTState().SetD3D11FrameRenderFuncUserContext( pUserContext ); }
-void WINAPI DXUTSetCallbackD3D11SwapChainReleasing( _In_ LPDXUTCALLBACKD3D11SWAPCHAINRELEASING pCallback, _In_opt_ void* pUserContext ) { GetDXUTState().SetD3D11SwapChainReleasingFunc( pCallback );  GetDXUTState().SetD3D11SwapChainReleasingFuncUserContext( pUserContext ); }
+void WINAPI DXUTSetCallbackD3D11SwapChainReleasing(_In_ LPDXUTCALLBACKD3D11SWAPCHAINRELEASING pCallback, _In_opt_ void* pUserContext) { GetDXUTState().SetD3D11SwapChainReleasingFunc(pCallback);  GetDXUTState().SetD3D11SwapChainReleasingFuncUserContext(pUserContext); }
+#endif
+void WINAPI DXUTSetCallbackD3D11FrameRender(_In_ LPDXUTCALLBACKD3D11FRAMERENDER pCallback, _In_opt_ void* pUserContext) { GetDXUTState().SetD3D11FrameRenderFunc(pCallback);  GetDXUTState().SetD3D11FrameRenderFuncUserContext(pUserContext); }
 void WINAPI DXUTSetCallbackD3D11DeviceDestroyed( _In_ LPDXUTCALLBACKD3D11DEVICEDESTROYED pCallback, _In_opt_ void* pUserContext )       { GetDXUTState().SetD3D11DeviceDestroyedFunc( pCallback );  GetDXUTState().SetD3D11DeviceDestroyedFuncUserContext( pUserContext ); }
 void DXUTGetCallbackD3D11DeviceAcceptable( _In_ LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE* ppCallback, _Outptr_ void** ppUserContext )      { *ppCallback = GetDXUTState().GetIsD3D11DeviceAcceptableFunc(); *ppUserContext = GetDXUTState().GetIsD3D11DeviceAcceptableFuncUserContext(); }
 
@@ -1218,6 +1242,7 @@ LRESULT CALLBACK DXUTStaticWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 
     switch( uMsg )
     {
+#ifndef NO_UI
         case WM_PAINT:
         {          
             // Handle paint messages when the app is paused
@@ -1269,7 +1294,7 @@ LRESULT CALLBACK DXUTStaticWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
             }
             break;
         }
-
+#endif
         case WM_SIZE:
             
            if( SIZE_MINIMIZED == wParam )
@@ -2687,6 +2712,7 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
 //--------------------------------------------------------------------------------------
 HRESULT DXUTReset3DEnvironment11()
 {
+#ifndef NO_UI
     HRESULT hr;
 
     GetDXUTState().SetDeviceObjectsReset( false );
@@ -2694,6 +2720,7 @@ HRESULT DXUTReset3DEnvironment11()
 
     bool bDeferredDXGIAction = false;
     DXUTDeviceSettings* pDeviceSettings = GetDXUTState().GetCurrentDeviceSettings();
+
     IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
     assert( pSwapChain );
     _Analysis_assume_( pSwapChain );
@@ -2767,6 +2794,7 @@ HRESULT DXUTReset3DEnvironment11()
     if( !bDeferredDXGIAction )
         GetDXUTState().SetDeviceObjectsReset( true );
     DXUTPause( false, false );
+#endif
 
     return S_OK;
 }
@@ -2988,10 +3016,12 @@ void DXUTCleanup3DEnvironment( _In_ bool bReleaseSettings )
         GetDXUTState().SetInsideDeviceCallback( true );
         if( GetDXUTState().GetDeviceObjectsReset() )
         {
+#ifndef NO_UI
             LPDXUTCALLBACKD3D11SWAPCHAINRELEASING pCallbackSwapChainReleasing =
                 GetDXUTState().GetD3D11SwapChainReleasingFunc();
             if( pCallbackSwapChainReleasing )
                 pCallbackSwapChainReleasing( GetDXUTState().GetD3D11SwapChainReleasingFuncUserContext() );
+#endif
             GetDXUTState().SetDeviceObjectsReset( false );
         }
 
@@ -3019,6 +3049,9 @@ void DXUTCleanup3DEnvironment( _In_ bool bReleaseSettings )
 
         GetDXUTState().SetInsideDeviceCallback( false );
 
+#ifdef NO_UI
+		GetDXUTState().SetD3D11FrameBuffer(nullptr);
+#else
         // Release the swap chain
         GetDXUTState().SetReleasingSwapChain( true );
         IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
@@ -3030,6 +3063,7 @@ void DXUTCleanup3DEnvironment( _In_ bool bReleaseSettings )
         SAFE_RELEASE( pSwapChain );
         GetDXUTState().SetDXGISwapChain( nullptr );
         GetDXUTState().SetReleasingSwapChain( false );
+#endif
 
         // Release the outputs.
         IDXGIOutput** ppOutputArray = GetDXUTState().GetDXGIOutputArray();
@@ -3575,6 +3609,7 @@ HRESULT WINAPI DXUTToggleREF()
 //--------------------------------------------------------------------------------------
 void DXUTCheckForDXGIFullScreenSwitch()
 {
+#ifndef NO_UI
     DXUTDeviceSettings* pDeviceSettings = GetDXUTState().GetCurrentDeviceSettings();
     IDXGISwapChain* pSwapChain = DXUTGetDXGISwapChain();
     assert( pSwapChain );
@@ -3601,11 +3636,13 @@ void DXUTCheckForDXGIFullScreenSwitch()
             GetDXUTState().SetFullScreenBackBufferHeightAtModeChange( deviceSettings.d3d11.sd.BufferDesc.Height );
         }
     }
+#endif
 }
 
 _Use_decl_annotations_
 void DXUTResizeDXGIBuffers( UINT Width, UINT Height, BOOL bFullScreen )
 {
+#ifndef NO_UI
     HRESULT hr = S_OK;
     RECT rcCurrentClient;
     GetClientRect( DXUTGetHWND(), &rcCurrentClient );
@@ -3717,6 +3754,7 @@ void DXUTResizeDXGIBuffers( UINT Width, UINT Height, BOOL bFullScreen )
         GetDXUTState().SetDeviceObjectsReset( true );
         DXUTPause( false, false );
     }
+#endif
 }
 
 //--------------------------------------------------------------------------------------
@@ -3724,6 +3762,7 @@ void DXUTResizeDXGIBuffers( UINT Width, UINT Height, BOOL bFullScreen )
 //--------------------------------------------------------------------------------------
 void DXUTCheckForDXGIBufferChange()
 {
+#ifndef NO_UI
     if(DXUTGetDXGISwapChain() && !GetDXUTState().GetReleasingSwapChain() )
     {
         //DXUTgetdxgi
@@ -3744,6 +3783,7 @@ void DXUTCheckForDXGIBufferChange()
 
         ShowWindow( DXUTGetHWND(), SW_SHOW );
     }
+#endif
 }
 
 //--------------------------------------------------------------------------------------
