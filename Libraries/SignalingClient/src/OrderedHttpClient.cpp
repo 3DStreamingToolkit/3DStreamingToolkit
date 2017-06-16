@@ -49,7 +49,7 @@ namespace SignalingClient
             {
                 pending_request_.wait();
             }
-            catch (const exception& ex)
+            catch (const exception&)
             {
                 // swallow failures in the underlying task, as we're trying to kill it
             }

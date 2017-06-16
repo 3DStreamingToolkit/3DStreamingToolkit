@@ -93,7 +93,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="inc\BasePeerConnectionClient.h" />
     <ClInclude Include="inc\OrderedHttpClient.h" />
+    <ClInclude Include="inc\PeerConnectionClientObserver.h" />
     <ClInclude Include="inc\peer_connection_async.h" />
     <ClInclude Include="inc\peer_connection_client.h" />
   </ItemGroup>

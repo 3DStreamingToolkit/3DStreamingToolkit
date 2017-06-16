@@ -24,6 +24,12 @@
     <ClInclude Include="inc\OrderedHttpClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\BasePeerConnectionClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\PeerConnectionClientObserver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\peer_connection_client.cpp">
