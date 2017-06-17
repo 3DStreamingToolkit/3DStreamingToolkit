@@ -19,12 +19,12 @@ public:
 	/// <summary>
 	/// Default ctor
 	/// </summary>
-    PeerConnectionClient();
+	PeerConnectionClient();
 
 	/// <summary>
 	/// Default dtor
 	/// </summary>
-    ~PeerConnectionClient();
+	~PeerConnectionClient();
 
 	virtual void SignIn(string hostname, uint32_t port, string clientName);
 
@@ -48,14 +48,14 @@ private:
 	/// Internal polling method that handles constant polling for messages
 	/// and peer updates from the signaling server
 	/// </summary>
-    void Poll();
+	void Poll();
 
 	/// <summary>
 	/// Helper method that parses peer data from an http response body
 	/// and updates peers_ accordingly
 	/// </summary>
 	/// <param name="body">the http response body to parse</param>
-    void UpdatePeers(string body);
+	void UpdatePeers(string body);
 
 	/// <summary>
 	/// Helper method to wrap a function and invoke it on
@@ -66,37 +66,37 @@ private:
 	/// This is necessary for webrtc logic that's triggered
 	/// inside observer_ callbacks
 	/// </remarks>
-    void RTCWrapAndCall(const function<void()>& func);
+	void RTCWrapAndCall(const function<void()>& func);
 
 	/// <summary>
 	/// the http client we use to make requests related to signaling
 	/// </summary>
-    OrderedHttpClient m_controlClient;
+	OrderedHttpClient m_controlClient;
 
 	/// <summary>
 	/// the http client we use to make a single long poll hanging request
 	/// </summary>
-    OrderedHttpClient m_pollingClient;
+	OrderedHttpClient m_pollingClient;
 
 	/// <summary>
 	/// The task representing pending sign in operations
 	/// </summary>
-    task<void> m_signInChain;
+	task<void> m_signInChain;
 
 	/// <summary>
 	/// The task representing pending sign out operations
 	/// </summary>
-    task<void> m_signOutChain;
+	task<void> m_signOutChain;
 
 	/// <summary>
 	/// The task representing pending send to peer operations
 	/// </summary>
-    task<void> m_sendToPeerChain;
+	task<void> m_sendToPeerChain;
 
 	/// <summary>
 	/// The task representing pending polling operations
 	/// </summary>
-    task<void> m_pollChain;
+	task<void> m_pollChain;
 
 	/// <summary>
 	/// Flag that when true, allows polling to continue
@@ -109,26 +109,26 @@ private:
 	/// <summary>
 	/// Mutex used to ensure we only call one observer_ callback at a time
 	/// </summary>
-    mutex m_wrapAndCallMutex;
+	mutex m_wrapAndCallMutex;
 
 	/// <summary>
 	/// Pointer to the thread we use for signaling
 	/// </summary>
-    rtc::Thread* m_signalingThread;
+	rtc::Thread* m_signalingThread;
 
 	/// <summary>
 	/// Internally represents both an http response body, and it's pragma header
 	/// </summary>
-    struct BodyAndPragma
-    {
+	struct BodyAndPragma
+	{
 		/// <summary>
 		/// the body of an http response
 		/// </summary>
-        string body;
+		string body;
 
 		/// <summary>
 		/// the pragma header of an http response
 		/// </summary>
-        string pragma;
-    };
+		string pragma;
+	};
 };
