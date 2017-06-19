@@ -51,6 +51,18 @@ void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientN
     }
 
     uri_builder baseUriBuilder;
+
+	if (hostname.substr(0, 7).compare("http://") == 0)
+	{
+		baseUriBuilder.set_scheme(L"http");
+		hostname = hostname.substr(7);
+	}
+	else if (hostname.substr(0, 8).compare("https://") == 0)
+	{
+		baseUriBuilder.set_scheme(L"https");
+		hostname = hostname.substr(8);
+	}
+
     baseUriBuilder.set_host(conversions::to_utf16string(hostname));
     baseUriBuilder.set_port(port);
 
