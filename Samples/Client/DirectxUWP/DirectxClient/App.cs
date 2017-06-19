@@ -133,7 +133,7 @@ namespace StreamingDirectXHololensClient
         {
             Task.Run(() =>
             {
-                Conductor.Instance.StartLogin("127.0.0.1", "8888");
+                Conductor.Instance.StartLogin("192.168.1.2", "8888");
             });
 
             _appCallbacks.Run();

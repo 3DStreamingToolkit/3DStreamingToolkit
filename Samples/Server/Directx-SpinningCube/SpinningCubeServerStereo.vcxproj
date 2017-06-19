@@ -122,7 +122,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>STEREO_OUTPUT_MODE;_DEBUG;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>REMOTE_RENDERING;STEREO_OUTPUT_MODE;_DEBUG;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir);Common;Content;$(ProjectDir)..\..\..\Plugins\NativeServerPlugin\inc;$(ProjectDir)..\..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

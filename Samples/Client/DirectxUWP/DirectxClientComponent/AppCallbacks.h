@@ -57,7 +57,10 @@ namespace DirectXClientComponent
 			uint8** dataV,
 			int* strideV);
 
+#ifdef HOLOLENS
+		void UpdateInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
 		void SendInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
+#endif // HOLOLENS
 
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
 		VideoRenderer*											m_videoRenderer;
@@ -69,6 +72,7 @@ namespace DirectXClientComponent
 		std::unique_ptr<HolographicAppMain>						m_main;
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;
+		String^													m_messageToSend;
 #endif // HOLOLENS
     };
 }

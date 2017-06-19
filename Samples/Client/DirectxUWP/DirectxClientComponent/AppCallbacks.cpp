@@ -9,8 +9,11 @@ using namespace DirectX;
 using namespace Platform;
 using namespace Windows::System::Profile;
 #ifdef HOLOLENS
+using namespace Windows::Foundation::Numerics;
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Perception;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::UI::Input::Spatial;
 #endif // HOLOLENS
 
 static uint8_t* s_videoYUVFrame = nullptr;
@@ -82,17 +85,13 @@ void AppCallbacks::Run()
 #ifdef HOLOLENS
 		if (m_videoRenderer)
 		{
-			// Updates.
 			HolographicFrame^ holographicFrame = m_main->Update();
-
-			// Renders.
+			UpdateInputData(holographicFrame);
 			if (m_main->Render(holographicFrame))
 			{
 				// The holographic frame has an API that presents the swap chain for each
 				// holographic camera.
 				m_deviceResources->Present(holographicFrame);
-
-				// Sends view matrix.
 				SendInputData(holographicFrame);
 			}
 		}
@@ -133,20 +132,12 @@ void AppCallbacks::OnFrame(
 
 	m_videoRenderer->UpdateFrame(s_videoRGBFrame);
 
-#ifdef HOLOLENS
-	HolographicFrame^ holographicFrame = m_main->Update();
-	if (m_main->Render(holographicFrame))
-	{
-		// The holographic frame has an API that presents the swap chain for each
-		// holographic camera.
-		m_deviceResources->Present(holographicFrame);
-	}
-#else // HOLOLENS
+#ifndef HOLOLENS
 	m_videoRenderer->Render();
 	m_deviceResources->Present();
 #endif // HOLOLENS
 }
-
+float fff = 0;
 void AppCallbacks::OnEncodedFrame(
 	uint32_t width,
 	uint32_t height,
@@ -224,7 +215,6 @@ void AppCallbacks::OnEncodedFrame(
 			height);
 
 		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-
 #ifndef HOLOLENS
 		m_videoRenderer->Render();
 		m_deviceResources->Present();
@@ -254,61 +244,146 @@ void AppCallbacks::ReadI420Buffer(
 	memcpy(*dataV, buffer + *strideY * height + *strideU * ((height + 1) / 2), size_uv);
 }
 
-void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
+#ifdef HOLOLENS
+void AppCallbacks::UpdateInputData(HolographicFrame^ holographicFrame)
 {
-	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
+	m_messageToSend = "";
 	SpatialCoordinateSystem^ currentCoordinateSystem =
 		m_main->GetReferenceFrame()->CoordinateSystem;
 
-	for (auto cameraPose : prediction->CameraPoses)
+	SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(
+		currentCoordinateSystem,
+		holographicFrame->CurrentPrediction->Timestamp);
+
+	if (!pose)
 	{
-		HolographicStereoTransform cameraProjectionTransform =
-			cameraPose->ProjectionTransform;
-
-		Platform::IBox<HolographicStereoTransform>^ viewTransformContainer =
-			cameraPose->TryGetViewTransform(currentCoordinateSystem);
-
-		if (viewTransformContainer != nullptr)
-		{
-			HolographicStereoTransform viewCoordinateSystemTransform =
-				viewTransformContainer->Value;
-
-			XMFLOAT4X4 leftViewMatrix;
-			XMStoreFloat4x4(
-				&leftViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left))
-			);
-
-			XMFLOAT4X4 rightViewMatrix;
-			XMStoreFloat4x4(
-				&rightViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right))
-			);
-
-			// Builds the camera transform message.
-			String^ leftCameraTransform = "";
-			String^ rightCameraTransform = "";
-			for (int i = 0; i < 4; i++)
-			{
-				for (int j = 0; j < 4; j++)
-				{
-					leftCameraTransform += leftViewMatrix.m[i][j] + ",";
-					rightCameraTransform += rightViewMatrix.m[i][j];
-					if (i != 3 || j != 3)
-					{
-						rightCameraTransform += ",";
-					}
-				}
-			}
-
-			String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
-			String^ msg =
-				"{" +
-				"  \"type\":\"camera-transform-stereo\"," +
-				"  \"body\":\"" + cameraTransformBody + "\"" +
-				"}";
-
-			m_sendInputDataHandler(msg);
-		}
+		return;
 	}
+
+	XMVECTOR pos =
+	{
+		0,
+		0,
+		0
+	};
+
+	XMVECTOR dir =
+	{
+		pose->Head->ForwardDirection.x,
+		pose->Head->ForwardDirection.y,
+		pose->Head->ForwardDirection.z
+	};
+
+	XMVECTOR up =
+	{
+		pose->Head->UpDirection.x,
+		pose->Head->UpDirection.y,
+		pose->Head->UpDirection.z
+	};
+
+	XMFLOAT4X4 rotation;
+	XMStoreFloat4x4(&rotation, XMMatrixLookToRH(pos, dir, up));
+
+	// Stream type, version
+	m_messageToSend += "1,2,";
+
+	// Unknown fixed.
+	m_messageToSend += "1,12,";
+
+	// Unknown.
+	m_messageToSend += (GetTickCount64() * 10000) + ",";
+
+	// Unknown.
+	m_messageToSend += "2,";
+
+	// Rotation matrix (Column major).
+	m_messageToSend += 1 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 1 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 1 + ",";
+
+	// Translation vector.
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += 0 + ",";
+	m_messageToSend += "0,";
 }
+
+void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
+{
+	SpatialCoordinateSystem^ currentCoordinateSystem =
+		m_main->GetReferenceFrame()->CoordinateSystem;
+
+	SpatialPointerPose^ pose = SpatialPointerPose::TryGetAtTimestamp(
+		currentCoordinateSystem,
+		holographicFrame->CurrentPrediction->Timestamp);
+
+	PerceptionTimestamp^ timestamp = holographicFrame->CurrentPrediction->Timestamp;
+
+	XMVECTOR pos =
+	{
+		pose->Head->Position.x,
+		pose->Head->Position.y,
+		pose->Head->Position.z
+	};
+
+	XMVECTOR dir =
+	{
+		pose->Head->ForwardDirection.x,
+		pose->Head->ForwardDirection.y,
+		pose->Head->ForwardDirection.z
+	};
+
+	XMVECTOR up =
+	{
+		pose->Head->UpDirection.x,
+		pose->Head->UpDirection.y,
+		pose->Head->UpDirection.z
+	};
+
+	XMFLOAT4X4 rotation;
+	XMStoreFloat4x4(&rotation, XMMatrixLookToRH(pos, dir, up));
+
+	// Unknown.
+	m_messageToSend += (GetTickCount64() * 10000 + 1070000) + ",";
+
+	// Unknown.
+	m_messageToSend += "2,";
+
+	// Rotation matrix (Column major).
+	m_messageToSend += rotation.m[0][0] + ",";
+	m_messageToSend += rotation.m[0][1] + ",";
+	m_messageToSend += rotation.m[0][2] + ",";
+	m_messageToSend += rotation.m[1][0] + ",";
+	m_messageToSend += rotation.m[1][1] + ",";
+	m_messageToSend += rotation.m[1][2] + ",";
+	m_messageToSend += rotation.m[2][0] + ",";
+	m_messageToSend += rotation.m[2][1] + ",";
+	m_messageToSend += rotation.m[2][2] + ",";
+
+	// Translation vector.
+	m_messageToSend += "0,";
+	m_messageToSend += "0,";
+	m_messageToSend += "0,";
+	m_messageToSend += "0,";
+
+	// Timestamp.
+	m_messageToSend += timestamp->TargetTime.UniversalTime + ",";
+
+	// Unknown fixed.
+	m_messageToSend += "0,36";
+
+	String^ msg =
+		"{" +
+		"  \"type\":\"camera-transform-stereo\"," +
+		"  \"body\":\"" + m_messageToSend + "\"" +
+		"}";
+
+	m_sendInputDataHandler(msg);
+}
+#endif // HOLOLENS

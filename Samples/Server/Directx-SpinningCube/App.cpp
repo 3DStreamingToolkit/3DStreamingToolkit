@@ -108,6 +108,9 @@ public:
 				spTexture.Get(),
 				1,
 				nullptr);
+
+			DXGI_PRESENT_PARAMETERS parameters = { 0 };
+			ThrowIfFailed(g_deviceResources->GetSwapChain()->Present1(1, 0, &parameters));
 		}
 
 		g_spFrame = frame;
@@ -136,7 +139,7 @@ void InitResources(HWND handle)
     }
 
     DX::ThrowIfFailed(InitializePerceptionSimulation(
-		PerceptionSimulationControlFlags_None,
+		PerceptionSimulationControlFlags_WaitForCalibration,
         IID_PPV_ARGS(&g_spPerceptionSimulationControl)));
 
 	// Initializes the Holographic space and control stream.
@@ -174,6 +177,29 @@ void InitResources(HWND handle)
 		g_deviceResources->GetD3DDeviceContext());
 
 	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
+
+	FILE* f = fopen("c:/Downloads/Environment/calibration.bin", "rb");
+	byte temp[16 * 1024];
+	fseek(f, 0, SEEK_END);
+	int size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+	fread(temp, 1, size, f);
+	fclose(f);
+	g_spStreamSink->OnPacketReceived(size, temp);
+
+	for (int i = 0; i <= 10; i++)
+	{
+		char fileName[1024];
+		sprintf(fileName, "c:/Downloads/Environment/environment%d.bin", i);
+		FILE* f = fopen(fileName, "rb");
+		byte temp[16 * 1024];
+		fseek(f, 0, SEEK_END);
+		int size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		fread(temp, 1, size, f);
+		fclose(f);
+		g_spStreamSink->OnPacketReceived(size, temp);
+	}
 }
 
 void CleanupResources()
@@ -186,84 +212,9 @@ void CleanupResources()
 #endif // STEREO_OUTPUT_MODE
 }
 
-int count = 0;
 void FrameUpdate()
 {
 #ifdef STEREO_OUTPUT_MODE
-	byte buf[164] = { 0 };
-	int dataLength = 164;
-	int offset = 0;
-	++count;
-
-	// Header
-	*((int*)(buf + 0))		= 1; // Stream type
-	*((int*)(buf + 4))		= 2; // Version
-
-	// Unknown
-	*((int*)(buf + 8))		= 1;
-	*((int*)(buf + 12))		= 12;
-
-	// Unknown1 ???
-	*((int*)(buf + 16))		= -185552 + count;
-
-	// Unknown
-	*((int*)(buf + 20))		= 33;
-	*((int*)(buf + 24))		= 2;
-
-	// Rotation matrix (Column major)
-	*((float*)(buf + 28))	= 1.0f;
-	*((float*)(buf + 32))	= 0.0f;
-	*((float*)(buf + 36))	= 0.0f;
-	*((float*)(buf + 40))	= 0.0f;
-	*((float*)(buf + 44))	= 1.0f;
-	*((float*)(buf + 48))	= 0.0f;
-	*((float*)(buf + 52))	= 0.0f;
-	*((float*)(buf + 56))	= 0.0f;
-	*((float*)(buf + 60))	= 1.0f;
-
-	// Translation vector
-	*((float*)(buf + 64))	= 0.0f;
-	*((float*)(buf + 68))	= 0.0f;
-	*((float*)(buf + 72))	= 0.0f;
-
-	// 76 - 80: ignored
-
-	// Unknown2 ???
-	*((int*)(buf + 80))		= -79896 + count;
-
-	// Unknown
-	*((int*)(buf + 84))		= 33;
-	*((int*)(buf + 88))		= 2;
-
-	// Rotation matrix (Column major)
-	*((float*)(buf + 92))	= 1.0f;
-	*((float*)(buf + 96))	= 0.0f;
-	*((float*)(buf + 100))	= 0.0f;
-	*((float*)(buf + 104))	= 0.0f;
-	*((float*)(buf + 108))	= 1.0f;
-	*((float*)(buf + 112))	= 0.0f;
-	*((float*)(buf + 116))	= 0.0f;
-	*((float*)(buf + 120))	= 0.0f;
-	*((float*)(buf + 124))	= 1.0f;
-
-	// Translation vector
-	*((float*)(buf + 128))	= 0.0f;
-	*((float*)(buf + 132))	= 0.0f;
-	*((float*)(buf + 136))	= 0.0f;
-
-	// 140 - 144: ignored
-
-	// Unknown 3
-	*((int*)(buf + 144))	= 118363 + count;
-	*((int*)(buf + 148))	= 104577;
-
-	// Unknown
-	*((int*)(buf + 152))	= 0;
-	*((int*)(buf + 158))	= 64;
-	*((int*)(buf + 160))	= 36;
-
-	g_spStreamSink->OnPacketReceived(dataLength, buf);
-
 	if (g_main)
 	{
 		// When running on Windows Holographic, we can use the holographic rendering system.
@@ -294,11 +245,11 @@ void FrameUpdate()
 }
 
 #ifdef REMOTE_RENDERING
-
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	char data[1024];
+	char data[1024] = { 0 };
+	byte buffer[164] = { 0 };
 	Json::Reader reader;
 	Json::Value msg = NULL;
 	reader.parse(message, msg, false);
@@ -318,27 +269,106 @@ void InputUpdate(const std::string& message)
 				std::istringstream datastream(data);
 				std::string token;
 
-				// Parses the left view matrix.
-				DirectX::XMFLOAT4X4 viewLeft;
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						getline(datastream, token, ',');
-						viewLeft.m[i][j] = stof(token);
-					}
-				}
+				// Header.
+				getline(datastream, token, ',');
+				*((int*)(buffer + 0)) = stoi(token); // Stream type
+				getline(datastream, token, ',');
+				*((int*)(buffer + 4)) = stoi(token); // Version
 
-				// Parses the right view matrix.
-				DirectX::XMFLOAT4X4 viewRight;
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						getline(datastream, token, ',');
-						viewRight.m[i][j] = stof(token);
-					}
-				}
+				// Unknown fixed.
+				getline(datastream, token, ',');
+				*((int*)(buffer + 8)) = stoi(token);
+				getline(datastream, token, ',');
+				*((int*)(buffer + 12)) = stoi(token);
+
+				// Target time.
+				getline(datastream, token, ',');
+				*((long long*)(buffer + 16)) = stoll(token);
+
+				// Unknown fixed.
+				getline(datastream, token, ',');
+				*((int*)(buffer + 24)) = stoi(token);
+
+				// Rotation matrix (Column major)
+				getline(datastream, token, ',');
+				*((float*)(buffer + 28)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 32)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 36)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 40)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 44)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 48)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 52)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 56)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 60)) = stof(token);
+
+				// Translation vector
+				getline(datastream, token, ',');
+				*((float*)(buffer + 64)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 68)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 72)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 76)) = stoi(token); // always 0
+
+				// Target time.
+				getline(datastream, token, ',');
+				*((long long*)(buffer + 80)) = stoll(token);
+
+				// Unknown fixed.
+				getline(datastream, token, ',');
+				*((int*)(buffer + 88)) = stoi(token);
+
+				// Rotation matrix (Column major)
+				getline(datastream, token, ',');
+				*((float*)(buffer + 92)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 96)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 100)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 104)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 108)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 112)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 116)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 120)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 124)) = stof(token);
+
+				// Translation vector
+				getline(datastream, token, ',');
+				*((float*)(buffer + 128)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 132)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 136)) = stof(token);
+				getline(datastream, token, ',');
+				*((float*)(buffer + 140)) = stof(token); // always 0
+
+				// Pose timestamp.
+				getline(datastream, token, ',');
+				*((long long*)(buffer + 144)) = stoll(token);
+
+				// Unknown fixed.
+				getline(datastream, token, ',');
+				*((long*)(buffer + 152)) = stol(token);
+				getline(datastream, token, ',');
+				*((int*)(buffer + 160)) = stoi(token);
+
+				// Updates the control stream.
+				g_spStreamSink->OnPacketReceived(164, buffer);
 			}
 		}
 #endif // STEREO_OUTPUT_MODE
@@ -495,7 +525,6 @@ HRESULT InitWindow()
 void Render()
 {
 	FrameUpdate();
-	g_deviceResources->Present();
 }
 
 #endif // REMOTE_RENDERING
