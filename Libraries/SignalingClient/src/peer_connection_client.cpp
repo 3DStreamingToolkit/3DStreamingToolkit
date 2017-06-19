@@ -13,6 +13,12 @@ PeerConnectionClient::PeerConnectionClient() :
     }
 
     m_signalingThread = wrapped;
+
+    // initialize our chains
+    m_signInChain = create_task([] {});
+    m_signOutChain = create_task([] {});
+    m_sendToPeerChain = create_task([] {});
+    m_pollChain = create_task([] {});
 }
 
 PeerConnectionClient::~PeerConnectionClient()
@@ -32,6 +38,9 @@ PeerConnectionClient::~PeerConnectionClient()
     {
         // swallow failures in the underlying task, as we're trying to kill it
     }
+
+    // wonder if this will fix mutex crash on shutdown
+    lock_guard<recursive_mutex> guard(m_wrapAndCallMutex);
 }
 
 void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientName)
@@ -53,43 +62,46 @@ void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientN
 
     name_ = clientName;
 
-    uri_builder endpointUriBuilder;
-    endpointUriBuilder.append_path(L"/sign_in");
-    endpointUriBuilder.append_query(utility::conversions::to_string_t(clientName));
-
-    m_signInChain = m_controlClient.Issue(methods::GET, endpointUriBuilder.to_string())
-        .then([&](http_response res)
+    m_signInChain = m_signInChain.then([&, clientName]
     {
-        auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
+        uri_builder endpointUriBuilder;
+        endpointUriBuilder.append_path(L"/sign_in");
+        endpointUriBuilder.append_query(utility::conversions::to_string_t(clientName));
 
-        return res.extract_utf8string(true)
-            .then([&, pragmaHeader](string body)
+        m_controlClient.Issue(methods::GET, endpointUriBuilder.to_string())
+            .then([&](http_response res)
         {
-            BodyAndPragma box;
-            box.body = body;
-            box.pragma = pragmaHeader;
+            auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
 
-            return box;
-        });
-    })
-        .then([&](BodyAndPragma box)
-    {
-        id_ = atoi(box.pragma.c_str());
-
-        UpdatePeers(box.body);
-    })
-        .then([&]
-    {
-        // notify our observer
-        RTCWrapAndCall([&] {
-            if (observer_ != nullptr)
+            return res.extract_utf8string(true)
+                .then([&, pragmaHeader](string body)
             {
-                observer_->OnSignedIn();
-            }
-        });
+                BodyAndPragma box;
+                box.body = body;
+                box.pragma = pragmaHeader;
 
-        // issue a polling request (will self-sustain)
-        Poll();
+                return box;
+            });
+        })
+            .then([&](BodyAndPragma box)
+        {
+            id_ = atoi(box.pragma.c_str());
+
+            UpdatePeers(box.body);
+        })
+            .then([&]
+        {
+            // notify our observer
+            RTCWrapAndCall([&] {
+                if (observer_ != nullptr)
+                {
+                    observer_->OnSignedIn();
+                }
+            });
+
+            // issue a polling request (will self-sustain)
+            Poll();
+        });
     });
 }
 
@@ -100,26 +112,29 @@ void PeerConnectionClient::SignOut()
         return;
     }
 
-    uri_builder builder;
-    builder.append_path(L"sign_out");
-    builder.append_query(L"peer_id", std::to_wstring(id_));
-
-    m_signOutChain = m_controlClient.Issue(methods::GET, builder.to_string())
-        .then([&](http_response) { id_ = -1; })
-        .then([&]
+    m_signOutChain = m_signOutChain.then([&]
     {
-		m_allowPolling = false;
-		m_controlClient.CancelAll();
-        m_pollingClient.CancelAll();
+        uri_builder builder;
+        builder.append_path(L"sign_out");
+        builder.append_query(L"peer_id", std::to_wstring(id_));
 
-        peers_.clear();
+        m_controlClient.Issue(methods::GET, builder.to_string())
+            .then([&](http_response) { id_ = -1; })
+            .then([&]
+        {
+            m_allowPolling = false;
+            m_controlClient.CancelAll();
+            m_pollingClient.CancelAll();
 
-        // notify our observer
-        RTCWrapAndCall([&] {
-            if (observer_ != nullptr)
-            {
-				observer_->OnDisconnected();
-            }
+            peers_.clear();
+
+            // notify our observer
+            RTCWrapAndCall([&] {
+                if (observer_ != nullptr)
+                {
+                    observer_->OnDisconnected();
+                }
+            });
         });
     });
 }
@@ -151,22 +166,25 @@ void PeerConnectionClient::SendToPeer(int clientId, string data)
         return;
     }
 
-    uri_builder builder;
-    builder.append_path(L"message");
-    builder.append_query(L"peer_id", std::to_wstring(id_));
-    builder.append_query(L"to", std::to_wstring(clientId));
-
-    m_sendToPeerChain = m_controlClient.Issue(methods::POST, builder.to_string(), utility::conversions::to_string_t(data))
-        .then([&](http_response res)
+    m_sendToPeerChain = m_sendToPeerChain.then([&, clientId, data]
     {
-        auto status = res.status_code();
+        uri_builder builder;
+        builder.append_path(L"message");
+        builder.append_query(L"peer_id", std::to_wstring(id_));
+        builder.append_query(L"to", std::to_wstring(clientId));
 
-        // notify our observer
-        RTCWrapAndCall([&, status] {
-            if (observer_ != nullptr)
-            {
-                observer_->OnMessageSent(status);
-            }
+        m_controlClient.Issue(methods::POST, builder.to_string(), utility::conversions::to_string_t(data))
+            .then([&](http_response res)
+        {
+            auto status = res.status_code();
+
+            // notify our observer
+            RTCWrapAndCall([&, status] {
+                if (observer_ != nullptr)
+                {
+                    observer_->OnMessageSent(status);
+                }
+            });
         });
     });
 }
@@ -207,58 +225,61 @@ void PeerConnectionClient::Poll()
         return;
     }
 
-    uri_builder builder;
-    builder.append_path(L"wait");
-    builder.append_query(L"peer_id", std::to_wstring(id_));
-
-    m_pollChain = m_pollingClient.Issue(methods::GET, builder.to_string())
-        .then([&](http_response res)
+    m_pollChain = m_pollChain.then([&]
     {
-        auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
+        uri_builder builder;
+        builder.append_path(L"wait");
+        builder.append_query(L"peer_id", std::to_wstring(id_));
 
-        return res.extract_utf8string(true)
-            .then([&, pragmaHeader](string body)
+        m_pollingClient.Issue(methods::GET, builder.to_string())
+            .then([&](http_response res)
         {
-            BodyAndPragma box;
-            box.body = body;
-            box.pragma = pragmaHeader;
+            auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
 
-            return box;
-        });
-    })
-        .then([&](BodyAndPragma box)
-    {
-        auto senderId = atoi(box.pragma.c_str());
-        auto body = box.body;
+            return res.extract_utf8string(true)
+                .then([&, pragmaHeader](string body)
+            {
+                BodyAndPragma box;
+                box.body = body;
+                box.pragma = pragmaHeader;
 
-        if (senderId == id_)
-        {
-            // note: we notify the observer of peer changes INSIDE UpdatePeers()
-            UpdatePeers(body);
-        }
-        else
-        {
-            // notify our observer
-            RTCWrapAndCall([&, senderId, body] {
-                if (observer_ != nullptr)
-                {
-                    observer_->OnMessageFromPeer(senderId, body);
-                }
+                return box;
             });
-        }
-    })
-        .then([&](task<void> prevTask)
-    {
-        try
+        })
+            .then([&](BodyAndPragma box)
         {
-            prevTask.wait();
-        }
-        catch (exception&)
-        {
-            // swallow
-        }
+            auto senderId = atoi(box.pragma.c_str());
+            auto body = box.body;
 
-        Poll();
+            if (senderId == id_)
+            {
+                // note: we notify the observer of peer changes INSIDE UpdatePeers()
+                UpdatePeers(body);
+            }
+            else
+            {
+                // notify our observer
+                RTCWrapAndCall([&, senderId, body] {
+                    if (observer_ != nullptr)
+                    {
+                        observer_->OnMessageFromPeer(senderId, body);
+                    }
+                });
+            }
+        })
+            .then([&](task<void> prevTask)
+        {
+            try
+            {
+                prevTask.wait();
+            }
+            catch (exception&)
+            {
+                // swallow
+            }
+
+            Poll();
+        });
     });
 }
 
@@ -334,7 +355,7 @@ void PeerConnectionClient::UpdatePeers(string body)
 void PeerConnectionClient::RTCWrapAndCall(const function<void()>& func)
 {
     // lock our mutex and release at end of scope
-    lock_guard<mutex> guard(m_wrapAndCallMutex);
+    lock_guard<recursive_mutex> guard(m_wrapAndCallMutex);
 
     m_signalingThread->Invoke<void>(RTC_FROM_HERE, func);
 }

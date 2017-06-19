@@ -109,7 +109,7 @@ private:
 	/// <summary>
 	/// Mutex used to ensure we only call one observer_ callback at a time
 	/// </summary>
-	mutex m_wrapAndCallMutex;
+	recursive_mutex m_wrapAndCallMutex;
 
 	/// <summary>
 	/// Pointer to the thread we use for signaling
