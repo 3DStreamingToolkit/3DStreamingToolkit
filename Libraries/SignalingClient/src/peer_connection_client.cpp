@@ -1,456 +1,361 @@
-/*
- *  Copyright 2012 The WebRTC Project Authors. All rights reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
-
 #include "peer_connection_client.h"
-#include "webrtc/base/logging.h"
-
-namespace
-{
-	// This is our magical hangup signal.
-	const char kByeMessage[] = "BYE";
-
-	// Delay between server connection retries, in milliseconds
-	const int kReconnectDelay = 2000;
-}
 
 PeerConnectionClient::PeerConnectionClient() :
-	callback_(NULL),
-	state_(NOT_CONNECTED),
-	my_id_(-1)
+    m_allowPolling(true)
 {
+    // we need a "signaling_thread" so that all our webrtc calls occur
+    // on the same rtc::Thread
+    auto wrapped = rtc::Thread::Current();
+
+    if (wrapped == nullptr)
+    {
+        wrapped = rtc::ThreadManager::Instance()->WrapCurrentThread();
+    }
+
+    m_signalingThread = wrapped;
+
+    // initialize our chains
+    m_signInChain = create_task([] {});
+    m_signOutChain = create_task([] {});
+    m_sendToPeerChain = create_task([] {});
+    m_pollChain = create_task([] {});
 }
 
 PeerConnectionClient::~PeerConnectionClient()
 {
-	// cancel any pending requests
-	if (request_async_src_ != nullptr)
-	{
-		request_async_src_->cancel();
-	}
+    m_allowPolling = false;
+
+    // these occur when we cancel a task (as we did just)
+    // and is legal behavior in a destruction scenario
+    try
+    {
+        m_signInChain.wait();
+        m_signOutChain.wait();
+        m_sendToPeerChain.wait();
+        m_pollChain.wait();
+    }
+    catch (const exception&)
+    {
+        // swallow failures in the underlying task, as we're trying to kill it
+    }
+
+    // wonder if this will fix mutex crash on shutdown
+    lock_guard<recursive_mutex> guard(m_wrapAndCallMutex);
 }
 
-int PeerConnectionClient::id() const
+void PeerConnectionClient::SignIn(string hostname, uint32_t port, string clientName)
 {
-	return my_id_;
+    if (id_ != DefaultId)
+    {
+        return;
+    }
+
+    uri_builder baseUriBuilder;
+    baseUriBuilder.set_host(conversions::to_utf16string(hostname));
+    baseUriBuilder.set_port(port);
+
+    m_controlClient.SetUri(baseUriBuilder.to_uri());
+    m_pollingClient.SetUri(baseUriBuilder.to_uri());
+
+    auto existingPollingConfig = m_pollingClient.config();
+    existingPollingConfig.set_timeout(utility::seconds::max());
+
+    name_ = clientName;
+
+    m_signInChain = m_signInChain.then([&, clientName]
+    {
+        uri_builder endpointUriBuilder;
+        endpointUriBuilder.append_path(L"/sign_in");
+        endpointUriBuilder.append_query(utility::conversions::to_string_t(clientName));
+
+        m_controlClient.Issue(methods::GET, endpointUriBuilder.to_string())
+            .then([&](http_response res)
+        {
+            auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
+
+            return res.extract_utf8string(true)
+                .then([&, pragmaHeader](string body)
+            {
+                BodyAndPragma box;
+                box.body = body;
+                box.pragma = pragmaHeader;
+
+                return box;
+            });
+        })
+            .then([&](BodyAndPragma box)
+        {
+            id_ = atoi(box.pragma.c_str());
+
+            UpdatePeers(box.body);
+        })
+            .then([&]
+        {
+            // notify our observer
+            RTCWrapAndCall([&] {
+                if (observer_ != nullptr)
+                {
+                    observer_->OnSignedIn();
+                }
+            });
+
+            // issue a polling request (will self-sustain)
+            Poll();
+        });
+    });
 }
 
-bool PeerConnectionClient::is_connected() const 
+void PeerConnectionClient::SignOut()
 {
-	return my_id_ != -1;
+    if (id_ == DefaultId)
+    {
+        return;
+    }
+
+    m_signOutChain = m_signOutChain.then([&]
+    {
+        uri_builder builder;
+        builder.append_path(L"sign_out");
+        builder.append_query(L"peer_id", std::to_wstring(id_));
+
+        m_controlClient.Issue(methods::GET, builder.to_string())
+            .then([&](http_response) { id_ = -1; })
+            .then([&]
+        {
+            m_allowPolling = false;
+            m_controlClient.CancelAll();
+            m_pollingClient.CancelAll();
+
+            peers_.clear();
+
+            // notify our observer
+            RTCWrapAndCall([&] {
+                if (observer_ != nullptr)
+                {
+                    observer_->OnDisconnected();
+                }
+            });
+        });
+    });
 }
 
-const Peers& PeerConnectionClient::peers() const 
+void PeerConnectionClient::SetProxy(const string& proxy)
 {
-	return peers_;
+    if (proxy.length() <= 0)
+    {
+        return;
+    }
+
+    {
+        auto existing = m_controlClient.config();
+        existing.set_proxy(web_proxy(uri(utility::conversions::to_string_t(proxy))));
+        m_controlClient.SetConfig(existing);
+    }
+
+    {
+        auto existing = m_pollingClient.config();
+        existing.set_proxy(web_proxy(uri(utility::conversions::to_string_t(proxy))));
+        m_pollingClient.SetConfig(existing);
+    }
 }
 
-void PeerConnectionClient::RegisterObserver(PeerConnectionClientObserver* callback)
+void PeerConnectionClient::SendToPeer(int clientId, string data)
 {
-	RTC_DCHECK(!callback_);
-	callback_ = callback;
+    if (id_ == DefaultId)
+    {
+        return;
+    }
+
+    m_sendToPeerChain = m_sendToPeerChain.then([&, clientId, data]
+    {
+        uri_builder builder;
+        builder.append_path(L"message");
+        builder.append_query(L"peer_id", std::to_wstring(id_));
+        builder.append_query(L"to", std::to_wstring(clientId));
+
+        m_controlClient.Issue(methods::POST, builder.to_string(), utility::conversions::to_string_t(data))
+            .then([&](http_response res)
+        {
+            auto status = res.status_code();
+
+            // notify our observer
+            RTCWrapAndCall([&, status] {
+                if (observer_ != nullptr)
+                {
+                    observer_->OnMessageSent(status);
+                }
+            });
+        });
+    });
 }
 
-void PeerConnectionClient::Connect(const std::string& server, int port, 
-	const std::string& client_name)
+void PeerConnectionClient::SendHangUp(int clientId)
 {
-	RTC_DCHECK(!server.empty());
-	RTC_DCHECK(!client_name.empty());
-
-	if (state_ != NOT_CONNECTED)
-	{
-		LOG(WARNING) << "The client must not be connected before you can call Connect()";
-		callback_->OnServerConnectionFailure();
-		return;
-	}
-
-	if (server.empty() || port <= 0 || client_name.empty())
-	{
-		callback_->OnServerConnectionFailure();
-		return;
-	}
-
-	std::string hostname;
-	web::uri_builder uri;
-
-	if (server.substr(0, 7).compare("http://") == 0)
-	{
-		uri.set_scheme(L"http");
-		hostname = server.substr(7);
-	}
-	else if (server.substr(0, 8).compare("https://") == 0)
-	{
-		uri.set_scheme(L"https");
-		hostname = server.substr(8);
-	}
-	else
-	{
-		hostname = server;
-	}
-
-	uri.set_host(utility::conversions::to_string_t(hostname));
-	uri.set_port(utility::conversions::to_string_t(std::to_string(port)));
-
-	server_address_ = uri.to_uri();
-	client_name_ = utility::conversions::to_string_t(client_name);
-
-	auto config = CreateHttpConfig();
-
-	// cancel any pending requests
-	if (request_async_src_ != nullptr)
-	{
-		request_async_src_->cancel();
-	}
-
-	http_client_.reset(new web::http::client::http_client(server_address_, config));
-	request_async_src_.reset(new concurrency::cancellation_token_source());
-
-	DoConnect();
+    SendToPeer(clientId, "BYE");
 }
 
-void PeerConnectionClient::DoConnect()
+// ignore msg; there is currently only one supported message ("retry")
+void PeerConnectionClient::OnMessage(rtc::Message*)
 {
-	if (state_ == CONNECTED || state_ == SIGNING_IN)
-	{
-		return;
-	}
+    if (OrderedHttpClient::IsDefaultInitialized(m_controlClient) ||
+        OrderedHttpClient::IsDefaultInitialized(m_pollingClient) ||
+        name_.length() <= 0)
+    {
+        // ERROR, default initialized means we can't "retry"
+        return;
+    }
 
-	web::uri_builder builder(server_address_);
-	builder.append_path(L"sign_in");
-	builder.append_query(client_name_);
+    // use our existing uri values to reconnect
+    auto uri = m_controlClient.uri();
+    auto hostAsStr = utility::conversions::to_utf8string(uri.host());
 
-	state_ = SIGNING_IN;
-
-	// schedule the async work to make the request and process it's body (calling the callbacks)
-	http_client_->request(web::http::methods::GET, builder.to_string(), request_async_src_->get_token())
-		.then(RequestErrorHandler("sign in error", [&](std::exception) { callback_->OnServerConnectionFailure(); }))
-		.then([&](web::http::http_response res)
-	{
-		if (res.status_code() == web::http::status_codes::OK)
-		{
-			auto pragmaHeader = res.headers()[L"Pragma"];
-			my_id_ = static_cast<int>(wcstol(pragmaHeader.c_str(), nullptr, 10));
-
-			// return the async operation of parsing and processing the body
-			return res.extract_string()
-				.then([&](std::wstring body) { return NotificationBodyParser(body); })
-				.then([&](std::vector<std::wstring> lines)
-			{
-				// parse each line as a peer and fire the callback
-				for each (auto line in lines)
-				{
-					int id = 0;
-					std::string name;
-					bool connected;
-
-					if (ParseEntry(line, &name, &id, &connected) && id != my_id_)
-					{
-						peers_[id] = name;
-						callback_->OnPeerConnected(id, name);
-					}
-				}
-			}).then([&]()
-			{
-				// starting waiting after signing in
-				ConfigureHangingGet();
-
-				state_ = CONNECTED;
-				callback_->OnSignedIn();
-			});
-		}
-		else
-		{
-            state_ = NOT_CONNECTED;
-			callback_->OnServerConnectionFailure();
-
-			// just return a task to keep the return type constant here
-			return concurrency::create_task([] {});
-		}
-	});
+    // try connecting
+    SignIn(hostAsStr, uri.port(), name_);
 }
 
-void PeerConnectionClient::ConfigureHangingGet()
+rtc::Thread* PeerConnectionClient::signaling_thread()
 {
-	if (hanging_http_client_ == nullptr)
-	{
-		auto config = CreateHttpConfig();
-
-		hanging_http_client_.reset(new web::http::client::http_client(server_address_, config));
-	}
-
-	web::uri_builder builder(server_address_);
-	builder.append_path(L"wait");
-	builder.append_query(L"peer_id", std::to_wstring(my_id_));
-
-	// schedule the async work to make the request and process it's body (calling the callbacks)
-	hanging_http_client_->request(web::http::methods::GET, builder.to_string(), request_async_src_->get_token())
-		.then(RequestErrorHandler("waiting error"))
-		.then([&](web::http::http_response res)
-	{
-		if (res.status_code() != web::http::status_codes::OK)
-		{
-			// just return a task to keep the chain going
-			// but don't proceed with the logic in this continuation block
-			return concurrency::create_task([] {});
-		}
-
-		auto pragmaHeader = res.headers()[L"Pragma"];
-		auto peer_id = static_cast<int>(wcstol(pragmaHeader.c_str(), nullptr, 10));
-
-		// parse peers list, or pass message upward
-		return res.extract_string()
-			.then([&, peer_id](std::wstring body)
-		{
-			if (my_id_ == peer_id)
-			{
-				auto lines = NotificationBodyParser(body);
-
-				for each (auto line in lines)
-				{
-					int id = 0;
-					std::string name;
-					bool connected;
-
-					if (ParseEntry(line, &name, &id, &connected))
-					{
-						if (connected)
-						{
-							peers_[id] = name;
-							callback_->OnPeerConnected(id, name);
-						}
-						else
-						{
-							peers_.erase(id);
-							callback_->OnPeerDisconnected(id);
-						}
-					}
-				}
-			}
-			else
-			{
-				OnMessageFromPeer(peer_id, body);
-			}
-		});
-	})
-		.then([&]()
-	{
-		// start another hanging get
-		if (state_ == CONNECTED)
-		{
-			ConfigureHangingGet();
-		}
-	});
+	return m_signalingThread;
 }
 
-bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
+void PeerConnectionClient::Poll()
 {
-	if (state_ != CONNECTED)
-	{
-		return false;
-	}
+    if (!m_allowPolling)
+    {
+        return;
+    }
 
-	RTC_DCHECK(is_connected());
-	if (!is_connected() || peer_id == -1)
-	{
-		return false;
-	}
+    m_pollChain = m_pollChain.then([&]
+    {
+        uri_builder builder;
+        builder.append_path(L"wait");
+        builder.append_query(L"peer_id", std::to_wstring(id_));
 
-	web::uri_builder builder(server_address_);
-	builder.append_path(L"message");
+        m_pollingClient.Issue(methods::GET, builder.to_string())
+            .then([&](http_response res)
+        {
+            auto pragmaHeader = utility::conversions::to_utf8string(res.headers()[L"Pragma"]);
 
-	// the naming here isn't a bug, it's just confusing
-	builder.append_query(L"peer_id", std::to_wstring(my_id_));
-	builder.append_query(L"to", std::to_wstring(peer_id));
+            return res.extract_utf8string(true)
+                .then([&, pragmaHeader](string body)
+            {
+                BodyAndPragma box;
+                box.body = body;
+                box.pragma = pragmaHeader;
 
-	// make the request
-	http_client_->request(web::http::methods::POST, builder.to_string(), utility::conversions::to_string_t(message), request_async_src_->get_token())
-		.then(RequestErrorHandler("send to peer error"))
-		.then([&](web::http::http_response res)
-	{
-		callback_->OnMessageSent(res.status_code());
-	});
+                return box;
+            });
+        })
+            .then([&](BodyAndPragma box)
+        {
+            auto senderId = atoi(box.pragma.c_str());
+            auto body = box.body;
 
-	return true;
+            if (senderId == id_)
+            {
+                // note: we notify the observer of peer changes INSIDE UpdatePeers()
+                UpdatePeers(body);
+            }
+            else
+            {
+                // notify our observer
+                RTCWrapAndCall([&, senderId, body] {
+                    if (observer_ != nullptr)
+                    {
+                        observer_->OnMessageFromPeer(senderId, body);
+                    }
+                });
+            }
+        })
+            .then([&](task<void> prevTask)
+        {
+            try
+            {
+                prevTask.wait();
+            }
+            catch (exception&)
+            {
+                // swallow
+            }
+
+            Poll();
+        });
+    });
 }
 
-bool PeerConnectionClient::SendHangUp(int peer_id)
+void PeerConnectionClient::UpdatePeers(string body)
 {
-	return SendToPeer(peer_id, kByeMessage);
+    // split body into lines 
+    vector<string> lines;
+    auto linesInserter = back_inserter(lines);
+
+    stringstream ss;
+    ss.str(body);
+
+    string item;
+    while (getline(ss, item, '\n'))
+    {
+        (linesInserter++) = item;
+    }
+
+    // iterate over each line (parsing as we go)
+    for each (auto line in lines)
+    {
+        int id = 0;
+        string name;
+        bool connected = false;
+
+        size_t separator = line.find(',');
+        if (separator != std::string::npos)
+        {
+            // assumption here is that the id of an entry is representable as an int
+            id = atoi(&line[separator + 1]);
+
+            name = line.substr(0, separator);
+            separator = line.find(',', separator + 1);
+
+            if (separator != std::string::npos)
+            {
+                connected = atoi(&line[separator + 1]) ? true : false;
+            }
+        }
+
+        // if we're parsed successfully, update m_peers
+        // note: we don't count anything with our id as a peer
+        if (name.length() > 0 && id != id_)
+        {
+            if (connected)
+            {
+				peers_[id] = name;
+
+                // notify our observer
+                RTCWrapAndCall([&, id, name] {
+                    if (observer_ != nullptr)
+                    {
+                        observer_->OnPeerConnected(id, name);
+                    }
+                });
+            }
+            else
+            {
+                // notify our observer
+                RTCWrapAndCall([&, id] {
+                    if (observer_ != nullptr)
+                    {
+                        observer_->OnPeerDisconnected(id);
+                    }
+                });
+                
+				peers_.erase(id);
+            }
+        }
+    }
 }
 
-bool PeerConnectionClient::IsSendingMessage()
+void PeerConnectionClient::RTCWrapAndCall(const function<void()>& func)
 {
-	// since our http implementation internally buffers messages
-	// we can always "send" more, so we mark ourselves as never stuck sending messages
-	return false;
-}
+    // lock our mutex and release at end of scope
+    lock_guard<recursive_mutex> guard(m_wrapAndCallMutex);
 
-bool PeerConnectionClient::SignOut()
-{
-	if (state_ == NOT_CONNECTED || state_ == SIGNING_OUT)
-	{
-		return true;
-	}
-
-	state_ = SIGNING_OUT;
-
-	if (my_id_ != -1)
-	{
-		web::uri_builder builder(server_address_);
-		builder.append_path(L"sign_out");
-		builder.append_query(L"peer_id", std::to_wstring(my_id_));
-
-		state_ = SIGNING_OUT_WAITING;
-
-		// make the request
-		http_client_->request(web::http::methods::GET, builder.to_string(), request_async_src_->get_token())
-			.then(RequestErrorHandler("sign out error"))
-			.then([&](web::http::http_response res)
-		{
-			if (res.status_code() == web::http::status_codes::OK)
-			{
-				Close();
-				callback_->OnDisconnected();
-			}
-		});
-
-		return true;
-	}
-	else
-	{
-		// Can occur if the app is closed before we finish connecting.
-		return true;
-	}
-
-	return true;
-}
-
-void PeerConnectionClient::Close()
-{
-	peers_.clear();
-
-	if (request_async_src_ != nullptr)
-	{
-		request_async_src_->cancel();
-	}
-
-	my_id_ = -1;
-	state_ = NOT_CONNECTED;
-}
-
-void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::wstring& message)
-{
-	auto convertedMessage = utility::conversions::to_utf8string(message);
-
-	if (convertedMessage.length() == (sizeof(kByeMessage) - 1) &&
-		convertedMessage.compare(kByeMessage) == 0)
-	{
-		callback_->OnPeerDisconnected(peer_id);
-	}
-	else
-	{
-		callback_->OnMessageFromPeer(peer_id, convertedMessage);
-	}
-}
-
-web::http::client::http_client_config PeerConnectionClient::CreateHttpConfig()
-{
-	web::http::client::http_client_config config;
-	config.set_timeout(utility::seconds(60 * 5));
-	config.set_validate_certificates(true);
-
-	if (proxy_address_.length() > 0)
-	{
-		config.set_proxy(web::web_proxy(utility::conversions::to_string_t(proxy_address_)));
-	}
-
-	return config;
-}
-
-bool PeerConnectionClient::ParseEntry(const std::wstring& entry, std::string* name, 
-	int* id, bool* connected)
-{
-	RTC_DCHECK(name != NULL);
-	RTC_DCHECK(id != NULL);
-	RTC_DCHECK(connected != NULL);
-	RTC_DCHECK(!entry.empty());
-
-	*connected = false;
-	size_t separator = entry.find(',');
-	if (separator != std::string::npos) 
-	{
-		// assumption here is that the id of an entry is representable as an int
-		*id = wcstol(&entry[separator + 1], nullptr, 10);
-
-		name->assign(utility::conversions::to_utf8string(entry.substr(0, separator)));
-		separator = entry.find(',', separator + 1);
-
-		if (separator != std::wstring::npos) 
-		{
-			*connected = wcstol(&entry[separator + 1], nullptr, 10) ? true : false;
-		}
-	}
-
-	return !name->empty();
-}
-
-std::vector<std::wstring> PeerConnectionClient::NotificationBodyParser(std::wstring body)
-{
-	// split the body by \n into a vector
-	std::vector<std::wstring> result;
-	auto resultInserter = std::back_inserter(result);
-	std::wstringstream ss;
-	ss.str(body);
-	std::wstring item;
-	while (std::getline(ss, item, wchar_t('\n')))
-	{
-		(resultInserter++) = item;
-	}
-	return result;
-}
-
-std::function<web::http::http_response(concurrency::task<web::http::http_response>)> PeerConnectionClient::RequestErrorHandler(std::string errorContext,
-	std::function<void(std::exception)> callback)
-{
-	return [errorContext, callback](concurrency::task<web::http::http_response> previousTask)
-	{
-		try
-		{
-			return previousTask.get();
-		}
-		catch (std::exception& ex)
-		{
-			LOG(WARNING) << "Request failed " << ex.what() << "(" << errorContext << ")";
-
-			if (callback != nullptr)
-			{
-				callback(ex);
-			}
-		}
-
-		// an empty response with a status code that indicates the error
-		return web::http::http_response(web::http::status_codes::PreconditionFailed);
-	};
-}
-
-void PeerConnectionClient::OnMessage(rtc::Message* msg) 
-{
-	// ignore msg; there is currently only one supported message ("retry")
-	DoConnect();
-}
-
-void PeerConnectionClient::set_proxy(const std::string& proxy)
-{
-	proxy_address_ = proxy;
-}
-
-const std::string& PeerConnectionClient::proxy() const
-{
-	return proxy_address_;
+    m_signalingThread->Invoke<void>(RTC_FROM_HERE, func);
 }
