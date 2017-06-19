@@ -137,7 +137,7 @@ void AppCallbacks::OnFrame(
 	m_deviceResources->Present();
 #endif // HOLOLENS
 }
-float fff = 0;
+
 void AppCallbacks::OnEncodedFrame(
 	uint32_t width,
 	uint32_t height,
@@ -284,16 +284,16 @@ void AppCallbacks::UpdateInputData(HolographicFrame^ holographicFrame)
 	XMFLOAT4X4 rotation;
 	XMStoreFloat4x4(&rotation, XMMatrixLookToRH(pos, dir, up));
 
-	// Stream type, version
+	// Stream type and version (1 = HEAD)
 	m_messageToSend += "1,2,";
 
-	// Unknown fixed.
+	// Unknown fixed numbers.
 	m_messageToSend += "1,12,";
 
-	// Unknown.
+	// Tick count 1.
 	m_messageToSend += (GetTickCount64() * 10000) + ",";
 
-	// Unknown.
+	// Unknown fixed number.
 	m_messageToSend += "2,";
 
 	// Rotation matrix (Column major).
@@ -308,9 +308,9 @@ void AppCallbacks::UpdateInputData(HolographicFrame^ holographicFrame)
 	m_messageToSend += 1 + ",";
 
 	// Translation vector.
-	m_messageToSend += 0 + ",";
-	m_messageToSend += 0 + ",";
-	m_messageToSend += 0 + ",";
+	m_messageToSend += "0,";
+	m_messageToSend += "0,";
+	m_messageToSend += "0,";
 	m_messageToSend += "0,";
 }
 
@@ -349,10 +349,10 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 	XMFLOAT4X4 rotation;
 	XMStoreFloat4x4(&rotation, XMMatrixLookToRH(pos, dir, up));
 
-	// Unknown.
+	// Tick count 2.
 	m_messageToSend += (GetTickCount64() * 10000 + 1070000) + ",";
 
-	// Unknown.
+	// Unknown fixed number.
 	m_messageToSend += "2,";
 
 	// Rotation matrix (Column major).
@@ -375,7 +375,7 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 	// Timestamp.
 	m_messageToSend += timestamp->TargetTime.UniversalTime + ",";
 
-	// Unknown fixed.
+	// Unknown fixed numbers.
 	m_messageToSend += "0,36";
 
 	String^ msg =
