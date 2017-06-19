@@ -25,6 +25,7 @@ DEFINE_bool(autoconnect, false, "Connect to the server without user "
 DEFINE_string(server, "signalingserver.centralus.cloudapp.azure.com", "The server to connect to.");
 DEFINE_int(port, kDefaultServerPort,
            "The port on which the server is listening.");
+DEFINE_string(proxy, "", "The proxy to use.");
 DEFINE_bool(autocall, false, "Call the first available other client on "
   "the server without user intervention.  Note: this flag should only be set "
   "to true on one of the two clients.");

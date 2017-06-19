@@ -18,9 +18,21 @@
     <ClInclude Include="inc\peer_connection_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\OrderedHttpClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\BasePeerConnectionClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\PeerConnectionClientObserver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\peer_connection_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\OrderedHttpClient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
