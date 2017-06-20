@@ -212,7 +212,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Import Project="$(SolutionDir)\Libraries\SignalingClient\exports.props" />
+  <Import Project="$(MsBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
