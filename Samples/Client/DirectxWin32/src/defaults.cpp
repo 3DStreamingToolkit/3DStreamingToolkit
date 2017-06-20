@@ -57,7 +57,9 @@ std::string GetDefaultServerName()
 std::string GetPeerName()
 {
 	char computer_name[256];
-	std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
+	std::string ret("renderingclient_");
+
+	ret += GetEnvVarOrDefault("USERNAME", "user");
 	ret += '@';
 	if (gethostname(computer_name, arraysize(computer_name)) == 0)
 	{
