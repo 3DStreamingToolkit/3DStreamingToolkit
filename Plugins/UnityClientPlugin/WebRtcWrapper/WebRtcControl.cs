@@ -27,7 +27,7 @@ namespace WebRtcWrapper
         public event Action<int, IDataChannelMessage> OnPeerDataChannelReceived;
 
         public RawVideoSource rawVideo;
-        public EncodedVideoSource encodedVideoSource;
+        public DecodedVideoSource encodedVideoSource;
 
         // Message Data Type
         private static readonly string kMessageDataType = "message";
@@ -56,7 +56,7 @@ namespace WebRtcWrapper
             // Detect Comm Hardware
             foreach (MediaDevice videoCaptureDevice in Conductor.Instance.Media.GetVideoCaptureDevices())
             {
-                Cameras.Add(videoCaptureDevice);
+                // Cameras.Add(videoCaptureDevice);
             }
             foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
             {
@@ -334,6 +334,7 @@ namespace WebRtcWrapper
                     {
                         jsonPackage.Add(o.Key, o.Value);
                     }
+
                     await Conductor.Instance.Signaller.SendToPeer(SelectedPeer.Id, jsonPackage);
                 }
             }).Start();
@@ -1018,8 +1019,17 @@ namespace WebRtcWrapper
         private ObservableCollection<String> _allCapRes;
         public ObservableCollection<String> AllCapRes
         {
-            get => _allCapRes ?? (_allCapRes = new ObservableCollection<String>());
-            set => _allCapRes = value;
+            get
+            {
+                if (_allCapRes != null)
+                    return _allCapRes;
+                else
+                    return _allCapRes = new ObservableCollection<String>();
+            }
+            set
+            {
+                _allCapRes = value;
+            }
         }
 
         private String _selectedCapResItem = null;

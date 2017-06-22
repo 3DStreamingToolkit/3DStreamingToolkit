@@ -282,7 +282,6 @@
     <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D9.h" />
     <ClInclude Include="UnityPluginAPI\IUnityGraphicsMetal.h" />
     <ClInclude Include="UnityPluginAPI\IUnityInterface.h" />
-    <ClInclude Include="VideoDecoder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
@@ -295,7 +294,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="VideoDecoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TexturesUWP.def" />
