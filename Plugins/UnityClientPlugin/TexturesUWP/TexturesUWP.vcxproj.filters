@@ -10,7 +10,6 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="TexturesUWP.cpp" />
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="VideoDecoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TexturesUWP.h" />
@@ -25,7 +24,6 @@
     <ClInclude Include="UnityPluginAPI\IUnityInterface.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="macros.h" />
-    <ClInclude Include="VideoDecoder.h" />
     <ClInclude Include="libyuv\basic_types.h" />
     <ClInclude Include="libyuv\compare.h" />
     <ClInclude Include="libyuv\compare_row.h" />

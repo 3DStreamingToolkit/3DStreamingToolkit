@@ -1123,8 +1123,11 @@ MonoBehaviour:
   ServerInputTextField: {fileID: 1934395800}
   PeerInputTextField: {fileID: 378157345}
   MessageInputField: {fileID: 536000280}
+  VirtualCamera: {fileID: 820444785}
   LeftCanvas: {fileID: 1021261825}
   RightCanvas: {fileID: 524280183}
+  TextureScale: 1
+  PluginMode: 0
 --- !u!1 &677331402
 GameObject:
   m_ObjectHideFlags: 0
