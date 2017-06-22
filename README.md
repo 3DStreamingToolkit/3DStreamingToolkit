@@ -5,6 +5,14 @@ and stream to devices. :muscle: :eye: :cloud:
 
 > Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
 
+## Grabbing latest prebuilt binaries
+
+[CI Builds](https://3dtoolkitstorage.blob.core.windows.net/builds/index.html) - Not recommended
+
+[Pull Request CI Builds](https://3dtoolkitstorage.blob.core.windows.net/pullrequests/index.html) - Not recommended
+
+[Release/Stable Tagged Builds](https://3dtoolkitstorage.blob.core.windows.net/releases/index.html)
+
 ## Installing Prebuilt Libraries for /3dtoolkit-directx
 
 After cloning this repository, run `.\setup.cmd` before opening the Project/Solution structure.
