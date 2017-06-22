@@ -74,10 +74,10 @@ public class ControlScript : MonoBehaviour
     void Awake()
     {
         // Azure Host Details
-        // ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+         ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
         
         // Local Dev Setup - Define Host Workstation IP Address
-        ServerInputTextField.text = "127.0.0.1:8888";
+        //ServerInputTextField.text = "127.0.0.1:8888";
     }
 
     void Start()
