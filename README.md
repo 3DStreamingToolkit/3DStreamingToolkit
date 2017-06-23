@@ -5,6 +5,14 @@ and stream to devices. :muscle: :eye: :cloud:
 
 > Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
 
+## Grabbing latest prebuilt binaries
+
+[CI Builds](https://3dtoolkitstorage.blob.core.windows.net/builds/index.html) - Not recommended
+
+[Pull Request CI Builds](https://3dtoolkitstorage.blob.core.windows.net/pullrequests/index.html) - Not recommended
+
+[Release/Stable Tagged Builds](https://3dtoolkitstorage.blob.core.windows.net/releases/index.html)
+
 ## Installing Prebuilt Libraries for /3dtoolkit-directx
 
 After cloning this repository, run `.\setup.cmd` before opening the Project/Solution structure.
@@ -26,6 +34,30 @@ Build the solution from Visual Studio, and look in:
 + `\3dtoolkit-directx\Samples\**\Build\**` for server binaries.
 + `\WebRTCNativeClient\Build\**` for the native client binaries.
 + `\WebRTCLibs\**\Exe\**` for the sample signaling, turn and stun server binaries.
+
+## Building HoloLens Unity client 
+
+ > Note: Make sure you have Unity version 5.6.1f1 with UWP tools support. 
+
+You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The HoloLens client is using a native dll library for video decoding that needs to be built before you open the sample in Unity. Follow these steps:
++ Open `3DStreamingToolKit.sln` from the root folder 
++ Switch the build configuration to Release mode and x86. 
++ Under `Plugins -> UnityClient`, find TexturesUWP project and open TexturesUWP.cpp.
++ Build TexturesUWP and WebRtcWrapper. This will copy the necessary dll's to the Unity project folder. 
++ Open Unity and open the HoloLens client folder `\Samples\Client\Unity` and open StereoSideBySideTexture scene.
++ Open ControlScript.cs under the Scripts folder. (For now) You need to manually set the texture resolution depending on what server you are using. 
++ Modify the constant attributes textureWidth and textureHeight. These are the resolutions for our current server implementations:
+    - MultithreadedServer - 1280 x 720
+    - MultithreadedServerStereo - 2560 x 720
+	- SpinningCubeServer - 640 x 480
+	- SpinningCubeServerStereo - 1280 x 480
++ In the Awake() function, uncomment //Azure Host Details to use the Azure signalling server or use the local host address to test on your machine.
++ Go to `File -> Build Settings` and select Windows Store platform. If that is not available, you need to add UWP support to your Unity installation. 
++ Select SDK: Universal 10; Target Device: HoloLens; UWP Build type: D3D and UWP SDK: Latest Installed. 
++ Build the project to an empty folder and open the generated UnityX86.sln.
++ Switch configuration to Release mode and x86. 
++ Deploy to your machine or HoloLens. Make sure the server is running, the app will automatically connect to the ip address that was set in the step above.
++ Open the desired server and connect to the Unity client. 
 
 ## Distributing binaries
 

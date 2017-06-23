@@ -21,7 +21,6 @@ AppCallbacks::AppCallbacks() :
 #ifndef HOLOLENS
 	m_videoDecoder(nullptr)
 #else // HOLOLENS
-	m_videoDecoder(nullptr),
 	m_holographicSpace(nullptr)
 #endif // HOLOLENS
 {
@@ -36,7 +35,6 @@ AppCallbacks::AppCallbacks() :
 AppCallbacks::~AppCallbacks()
 {
 	delete m_videoRenderer;
-	delete m_videoDecoder;
 	delete []s_videoYUVFrame;
 	delete []s_videoRGBFrame;
 	delete []s_videoDataY;
@@ -130,7 +128,7 @@ void AppCallbacks::OnFrame(
 #endif // HOLOLENS
 }
 
-void AppCallbacks::OnEncodedFrame(
+void AppCallbacks::OnDecodedFrame(
 	uint32_t width,
 	uint32_t height,
 	const Array<uint8_t>^ encodedData)
@@ -143,10 +141,6 @@ void AppCallbacks::OnEncodedFrame(
 #ifdef HOLOLENS
 		m_main->SetVideoRender(m_videoRenderer);
 #endif // HOLOLENS
-
-		// Initializes the video decoder.
-		m_videoDecoder = new VideoDecoder();
-		m_videoDecoder->Initialize(width, height);
 
 		// Initalizes the temp buffers.
 		int bufferSize = width * height * 4;
@@ -170,42 +164,14 @@ void AppCallbacks::OnEncodedFrame(
 		memset(s_videoDataY, 0, size_uv);
 	}
 
-	int decodedLength = 0;
-	if (!m_videoDecoder->DecodeH264VideoFrame(
+	if (!libyuv::YUY2ToARGB(
 		encodedData->Data,
-		encodedData->Length,
+		width * 2,
+		s_videoRGBFrame,
+		width * 4,
 		width,
-		height,
-		&s_videoYUVFrame,
-		&decodedLength))
+		height))
 	{
-		int strideY = 0;
-		int strideU = 0;
-		int strideV = 0;
-
-		ReadI420Buffer(
-			width,
-			height,
-			s_videoYUVFrame,
-			&s_videoDataY,
-			&strideY,
-			&s_videoDataU,
-			&strideU,
-			&s_videoDataV,
-			&strideV);
-
-		libyuv::I420ToARGB(
-			s_videoDataY,
-			strideY,
-			s_videoDataU,
-			strideU,
-			s_videoDataV,
-			strideV,
-			s_videoRGBFrame,
-			width * 4,
-			width,
-			height);
-
 		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
 
 #ifdef HOLOLENS

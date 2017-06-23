@@ -58,9 +58,6 @@
     <ClInclude Include="inc\webrtc.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\custom_video_capturer.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\arc_ball.h">
       <Filter>Headers</Filter>
     </ClInclude>
