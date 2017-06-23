@@ -9,7 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
     <ClCompile Include="src\conductor.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -22,7 +21,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="src\peer_connection_client.cpp">
+    <ClCompile Include="src\custom_video_capturer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="src\data_channel_handler.cpp">
@@ -31,6 +30,7 @@
     <ClCompile Include="src\win32_data_channel_handler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -53,9 +53,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\main_window.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\peer_connection_client.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\webrtc.h">

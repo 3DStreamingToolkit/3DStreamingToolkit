@@ -54,7 +54,7 @@ void FrameUpdate()
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port)
+int InitWebRTC(char* server, int port, char* proxy)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -89,6 +89,8 @@ int InitWebRTC(char* server, int port)
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
 
+    client.SetProxy(proxy);
+
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
 			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper));
@@ -105,9 +107,9 @@ int InitWebRTC(char* server, int port)
 		}
 	}
 
-	if (conductor->connection_active() || client.is_connected())
+	if (conductor->connection_active())
 	{
-		while ((conductor->connection_active() || client.is_connected()) &&
+		while ((conductor->connection_active()) &&
 			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 		{
 			if (!wnd.PreTranslateMessage(&msg))
@@ -306,8 +308,11 @@ int WINAPI wWinMain(
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
+    char proxy[1024];
+    strcpy(proxy, FLAG_proxy);
 	int port = FLAG_port;
-	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+    
+    LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
 	if (szArglist && nArgs == 2)
@@ -315,6 +320,12 @@ int WINAPI wWinMain(
 		wcstombs(server, szArglist[0], sizeof(server));
 		port = _wtoi(szArglist[1]);
 	}
+    else if (szArglist && nArgs == 3)
+    {
+        wcstombs(server, szArglist[0], sizeof(server));
+        port = _wtoi(szArglist[1]);
+        wcstombs(proxy, szArglist[2], sizeof(proxy));
+    }
 	else // Try parsing config file.
 	{
 		std::string configFilePath = ExePath("webrtcConfig.json");
@@ -333,9 +344,14 @@ int WINAPI wWinMain(
 			{
 				port = root.get("port", FLAG_port).asInt();
 			}
+
+            if (root.isMember("proxy"))
+            {
+                strcpy(proxy, root.get("proxy", FLAG_proxy).asCString());
+            }
 		}
 	}
 
-	return InitWebRTC(server, port);
+	return InitWebRTC(server, port, proxy);
 #endif // REMOTE_RENDERING
 }

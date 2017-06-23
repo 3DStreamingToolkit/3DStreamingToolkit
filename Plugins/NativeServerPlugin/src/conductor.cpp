@@ -94,25 +94,6 @@ bool Conductor::connection_active() const
 void Conductor::Close() 
 {
 	client_->SignOut();
-	client_->Shutdown();
-
-	if (peer_connection_ != nullptr)
-	{
-		peer_connection_->Close();
-	}
-	
-	if (data_channel_ != nullptr)
-	{
-		data_channel_->Close();
-	}
-
-	bool isopen = false;
-
-	if (data_channel_observer_ != nullptr)
-	{
-		isopen = data_channel_observer_->IsOpen();
-	}
-
 	DeletePeerConnection();
 }
 
@@ -255,7 +236,6 @@ void Conductor::DeletePeerConnection()
 {
 	peer_connection_ = NULL;
 	active_streams_.clear();
-
 	main_window_->StopLocalRenderer();
 	main_window_->StopRemoteRenderer();
 	peer_connection_factory_ = NULL;
@@ -518,21 +498,13 @@ void Conductor::OnServerConnectionFailure()
 
 void Conductor::StartLogin(const std::string& server, int port)
 {
-	if (client_->is_connected())
-	{
-		return;
-	}
-
 	server_ = server;
-	client_->Connect(server, port, GetPeerName());
+	client_->SignIn(server, port, GetPeerName());
 }
 
 void Conductor::DisconnectFromServer()
 {
-	if (client_->is_connected())
-	{
-		client_->SignOut();
-	}
+	client_->SignOut();
 }
 
 void Conductor::ConnectToPeer(int peer_id) 
@@ -680,7 +652,7 @@ void Conductor::UIThreadCallback(int msg_id, void* data)
 
 			if (main_window_->IsWindow())
 			{
-				if (client_->is_connected())
+				if (client_->id() != PeerConnectionClient::DefaultId)
 				{
 					main_window_->SwitchToPeerList(client_->peers());
 				}
@@ -709,16 +681,21 @@ void Conductor::UIThreadCallback(int msg_id, void* data)
 				pending_messages_.push_back(msg);
 			}
 
-			if (!pending_messages_.empty() && !client_->IsSendingMessage())
+			if (!pending_messages_.empty())
 			{
 				msg = pending_messages_.front();
 				pending_messages_.pop_front();
 
-				if (!client_->SendToPeer(peer_id_, *msg) && peer_id_ != -1)
+
+				if (peer_id_ == PeerConnectionClient::DefaultId)
 				{
 					LOG(LS_ERROR) << "SendToPeer failed";
 					DisconnectFromServer();
 				}
+                else
+                {
+                    client_->SendToPeer(peer_id_, *msg);
+                }
 
 				delete msg;
 			}

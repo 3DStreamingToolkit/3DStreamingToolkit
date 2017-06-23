@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <string>
 #include <stdlib.h>
 #include <shellapi.h>
 #include <fstream>
@@ -36,7 +37,7 @@ std::string GetAbsolutePath(std::string fileName)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port)
+int InitWebRTC(char* server, int port, std::string proxy)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -52,6 +53,7 @@ int InitWebRTC(char* server, int port)
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
+	client.SetProxy(proxy);
 
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(&client, &wnd));
@@ -90,6 +92,8 @@ int WINAPI wWinMain(
 	char server[1024];
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
+    char proxy[1024];
+    strcpy(proxy, FLAG_proxy);
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
@@ -98,6 +102,12 @@ int WINAPI wWinMain(
 		wcstombs(server, szArglist[0], sizeof(server));
 		port = _wtoi(szArglist[1]);
 	}
+    else if (szArglist && nArgs == 3)
+    {
+        wcstombs(server, szArglist[0], sizeof(server));
+        port = _wtoi(szArglist[1]);
+        wcstombs(proxy, szArglist[2], sizeof(proxy));
+    }
 	else // Try parsing config file.
 	{
 		std::string configFilePath = GetAbsolutePath("webrtcConfig.json");
@@ -116,8 +126,13 @@ int WINAPI wWinMain(
 			{
 				port = root.get("port", FLAG_port).asInt();
 			}
+
+			if (root.isMember("proxy"))
+			{
+				strcpy(proxy, root.get("proxy", FLAG_proxy).asCString());
+			}
 		}
 	}
 
-	return InitWebRTC(server, port);
+	return InitWebRTC(server, port, proxy);
 }
