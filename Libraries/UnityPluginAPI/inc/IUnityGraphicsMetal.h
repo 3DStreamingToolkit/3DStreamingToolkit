@@ -14,6 +14,9 @@
 @protocol MTLCommandEncoder;
 @protocol MTLTexture;
 
+struct RenderSurfaceBase;
+typedef struct RenderSurfaceBase* UnityRenderBuffer;
+
 // Should only be used on the rendering thread unless noted otherwise.
 UNITY_DECLARE_INTERFACE(IUnityGraphicsMetal)
 {

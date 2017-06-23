@@ -32,7 +32,7 @@ namespace XamlTestApp
         WebRtcControl _webRtcControl;
 
         public RawVideoSource rawVideo;
-        public EncodedVideoSource encodedVideo;
+        public DecodedVideoSource encodedVideo;
         private MediaVideoTrack _peerVideoTrack;
         private readonly CoreDispatcher _uiDispatcher;
         private int frameCounter = 0;
@@ -109,10 +109,12 @@ namespace XamlTestApp
             rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
             rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
 #else
-                         encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
-                        encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
+                         encodedVideo = Media.CreateMedia().CreateDecodedVideoSource(_peerVideoTrack);
+                        encodedVideo.OnDecodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
+
+
 #endif
-                     }
+                    }
                     else
                     {
                         System.Diagnostics.Debug.WriteLine("Conductor_OnAddRemoteStream() - peerVideoTrack NULL");
@@ -172,7 +174,7 @@ namespace XamlTestApp
                 {
                     if (encodedVideo != null)
                     {
-                        encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;
+                        encodedVideo.OnDecodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;
                     }
                     _webRtcControl.DisconnectFromPeer();
                 }

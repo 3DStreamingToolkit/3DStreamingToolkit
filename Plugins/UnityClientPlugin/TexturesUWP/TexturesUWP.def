@@ -8,3 +8,4 @@ EXPORTS
    UnityPluginUnload   
    SetTextureFromUnity   
    GetRenderEventFunc
+   SetPluginMode

@@ -1,6 +1,4 @@
-﻿//#define HACK_VP8
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -8,40 +6,41 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
-using WebRtcWrapper;
 
 #if !UNITY_EDITOR
 using Org.WebRtc;
-using PeerConnectionClient.Model;
+using WebRtcWrapper;
 using PeerConnectionClient.Signalling;
-using PeerConnectionClient.Utilities;
 #endif
 
 public class ControlScript : MonoBehaviour
 {
     private const int textureWidth = 1280;
-    private const int textureHeight = 720;
+    private const int textureHeight = 480;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
     public InputField PeerInputTextField;
     public InputField MessageInputField;
-    public Renderer RenderTexture;
     public Transform VirtualCamera;
+
+    public RawImage LeftCanvas;
+    public RawImage RightCanvas;
+    public float TextureScale = 1f;
+    public int PluginMode = 0;
 
     private Transform camTransform;
     private Vector3 prevPos;
-    private Quaternion prevRot;    
-
-    private WebRtcControl _webRtcControl;
+    private Quaternion prevRot;
 
     private int frameCounter = 0;
     private int fpsCounter = 0;
     private float fpsCount = 0f;
     private float startTime = 0;
     private float endTime = 0;
-
+    
 #if !UNITY_EDITOR
+    private WebRtcControl _webRtcControl;
     private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
 #else
     private static readonly Queue<Action> _executionQueue = new Queue<Action>();
@@ -49,49 +48,35 @@ public class ControlScript : MonoBehaviour
     private bool frame_ready_receive = true;
     private string messageText;
 
-#region Graphics Low-Level Plugin DLL Setup
+    #region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
-    public RawVideoSource rawVideo;
-    public EncodedVideoSource encodedVideo;
+    public DecodedVideoSource decodedVideo;
     private MediaVideoTrack _peerVideoTrack;
-#endif
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
     [DllImport("TexturesUWP")]
-#endif
     private static extern void SetTextureFromUnity(System.IntPtr texture, int w, int h);
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
     [DllImport("TexturesUWP")]
-#endif
     private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
         IntPtr vPlane, uint vStride);
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
     [DllImport("TexturesUWP")]
-#endif
-    private static extern void ProcessH264Frame(uint w, uint h, IntPtr data, uint dataSize);
+    private static extern void ProcessRawH264Frame(uint w, uint h, IntPtr data, uint dataSize);
 
-#if UNITY_EDITOR
-    [DllImport("TexturesWin32")]
-#else
     [DllImport("TexturesUWP")]
-#endif
     private static extern IntPtr GetRenderEventFunc();
-#endregion
+
+    [DllImport("TexturesUWP")]
+    private static extern void SetPluginMode(int mode);
+#endif
+    #endregion
 
     void Awake()
     {
         // Azure Host Details
-        ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+         ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
         
-        // Local Dev Setup
+        // Local Dev Setup - Define Host Workstation IP Address
         //ServerInputTextField.text = "127.0.0.1:8888";
     }
 
@@ -101,44 +86,45 @@ public class ControlScript : MonoBehaviour
         prevPos = camTransform.position;
         prevRot = camTransform.rotation;
 
-        //_webRtcUtils = new WebRtcUtils();
+#if !UNITY_EDITOR        
         _webRtcControl = new WebRtcControl();
         _webRtcControl.OnInitialized += WebRtcControlOnInitialized;
         _webRtcControl.OnPeerMessageDataReceived += WebRtcControlOnPeerMessageDataReceived;
         _webRtcControl.OnStatusMessageUpdate += WebRtcControlOnStatusMessageUpdate;
 
-#if !UNITY_EDITOR
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
-#endif
         _webRtcControl.Initialize();
 
-        // Setup Low-Level Graphics Plugin
-        CreateTextureAndPassToPlugin();
+        // Setup Low-Level Graphics Plugin        
+        CreateTextureAndPassToPlugin(textureWidth, textureHeight);
+        SetPluginMode(PluginMode);
         StartCoroutine(CallPluginAtEndOfFrames());
+#endif
+    }
+
+    private void SetupTexturePlugin(uint width, uint height)
+    {
+#if !UNITY_EDITOR
+        // Setup Low-Level Graphics Plugin        
+        CreateTextureAndPassToPlugin(width, height);
+        SetPluginMode(PluginMode);
+        StartCoroutine(CallPluginAtEndOfFrames());
+#endif
     }
 
 #if !UNITY_EDITOR
     private void Conductor_OnAddRemoteStream(MediaStreamEvent evt)
-    {        
+    {
         System.Diagnostics.Debug.WriteLine("Conductor_OnAddRemoteStream()");
-
         _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
         if (_peerVideoTrack != null)
         {
             System.Diagnostics.Debug.WriteLine(
                 "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
                 evt.Stream.GetVideoTracks().Count);
-            // Raw Video from VP8 Encoded Sender
-            // H264 Encoded Stream does not trigger this event
 
-            // TODO:  Switch between RAW or ENCODED Frame
-#if HACK_VP8
-            rawVideo = Media.CreateMedia().CreateRawVideoSource(_peerVideoTrack);
-            rawVideo.OnRawVideoFrame += Source_OnRawVideoFrame;
-#else
-            encodedVideo = Media.CreateMedia().CreateEncodedVideoSource(_peerVideoTrack);
-            encodedVideo.OnEncodedVideoFrame += EncodedVideo_OnEncodedVideoFrame;
-#endif
+            decodedVideo = Media.CreateMedia().CreateDecodedVideoSource(_peerVideoTrack);
+            decodedVideo.OnDecodedVideoFrame += DecodedVideo_OnDecodedVideoFrame;
         }
         else
         {
@@ -147,13 +133,11 @@ public class ControlScript : MonoBehaviour
         _webRtcControl.IsReadyToDisconnect = true;
     }
 
-    private void EncodedVideo_OnEncodedVideoFrame(uint w, uint h, byte[] data)
+    private void DecodedVideo_OnDecodedVideoFrame(uint w, uint h, byte[] data)
     {
         frameCounter++;
         fpsCounter++;
-
         messageText = data.Length.ToString();
-
         if (data.Length == 0)
             return;
 
@@ -161,9 +145,9 @@ public class ControlScript : MonoBehaviour
             frame_ready_receive = false;
         else
             return;
-
+        
         GCHandle buf = GCHandle.Alloc(data, GCHandleType.Pinned);
-        ProcessH264Frame(w, h, buf.AddrOfPinnedObject(), (uint)data.Length);
+        ProcessRawH264Frame(w, h, buf.AddrOfPinnedObject(), (uint)data.Length);
         buf.Free();
     }
 
@@ -172,7 +156,7 @@ public class ControlScript : MonoBehaviour
         frameCounter++;
         fpsCounter++;
 
-        messageText = string.Format("{0}-{1}\n{2}-{3}\n{4}-{5}", 
+        messageText = string.Format("{0}-{1}\n{2}-{3}\n{4}-{5}",
             yPlane != null ? yPlane.Length.ToString() : "X", yStride,
             vPlane != null ? vPlane.Length.ToString() : "X", vStride,
             uPlane != null ? uPlane.Length.ToString() : "X", uStride);
@@ -192,23 +176,24 @@ public class ControlScript : MonoBehaviour
             vP.AddrOfPinnedObject(), vStride);
         yP.Free();
         uP.Free();
-        vP.Free();        
+        vP.Free();
     }
 #endif
-    
+
     private void WebRtcControlOnInitialized()
     {
         EnqueueAction(OnInitialized);
-    }
 
+        ConnectToServer();
+    }
 
     private void OnInitialized()
     {
 #if !UNITY_EDITOR
         // _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
         // _webRtcUtils.IsMicrophoneEnabled = false;
-//      //  PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
-#if HACK_VP8
+        //      //  PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
+#if VP8_ENCODING
         _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
 #else
         _webRtcControl.SelectedVideoCodec = _webRtcControl.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
@@ -218,13 +203,12 @@ public class ControlScript : MonoBehaviour
     }
 
     private void WebRtcControlOnPeerMessageDataReceived(int peerId, string message)
-    {        
+    {
         EnqueueAction(() => UpdateMessageText(string.Format("{0}-{1}", peerId, message)));
     }
-
-
+    
     private void WebRtcControlOnStatusMessageUpdate(string msg)
-    {        
+    {
         EnqueueAction(() => UpdateStatusText(string.Format("{0}\n", msg)));
     }
 
@@ -253,19 +237,23 @@ public class ControlScript : MonoBehaviour
             host = signalhost[0];
             port = "8888";
         }
+#if !UNITY_EDITOR
         _webRtcControl.ConnectToServer(host, port, PeerInputTextField.text);
+#endif
     }
 
     public void DisconnectFromServer()
-    {        
+    {
+#if !UNITY_EDITOR
         _webRtcControl.DisconnectFromServer();
+#endif
     }
 
     public void ConnectToPeer()
     {
         // TODO: Support Peer Selection        
 #if !UNITY_EDITOR
-        if(_webRtcControl.Peers.Count > 0)
+        if (_webRtcControl.Peers.Count > 0)
         {
             _webRtcControl.SelectedPeer = _webRtcControl.Peers[0];
             _webRtcControl.ConnectToPeer();
@@ -277,17 +265,20 @@ public class ControlScript : MonoBehaviour
     public void DisconnectFromPeer()
     {
 #if !UNITY_EDITOR
-        if(encodedVideo != null)
+        if (decodedVideo != null)
         {
-            encodedVideo.OnEncodedVideoFrame -= EncodedVideo_OnEncodedVideoFrame;            
+            decodedVideo.OnDecodedVideoFrame -= DecodedVideo_OnDecodedVideoFrame;
         }
-#endif
+
         _webRtcControl.DisconnectFromPeer();
+#endif
     }
 
     public void SendMessageToPeer()
-    {        
+    {
+#if !UNITY_EDITOR
         _webRtcControl.SendPeerMessageData(MessageInputField.text);
+#endif
     }
 
     public void ClearStatusText()
@@ -297,7 +288,7 @@ public class ControlScript : MonoBehaviour
 
     public void ClearMessageText()
     {
-        MessageText.text = string.Empty;        
+        MessageText.text = string.Empty;
     }
 
     public void EnqueueAction(Action action)
@@ -307,52 +298,36 @@ public class ControlScript : MonoBehaviour
             _executionQueue.Enqueue(action);
         }
     }
-    
+
     void Update()
     {
-#region Main Camera Control
-//        if (Vector3.Distance(prevPos, camTransform.position) > 0.05f ||
-//    Quaternion.Angle(prevRot, camTransform.rotation) > 2f)
+        #region Virtual Camera Control
+//        TODO: Update Input data to latest changes.
+//        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
+//            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
 //        {
-//            prevPos = camTransform.position;
-//            prevRot = camTransform.rotation;
+//            prevPos = VirtualCamera.position;
+//            prevRot = VirtualCamera.rotation;
 //            var eulerRot = prevRot.eulerAngles;
+//            var lookAt = VirtualCamera.forward;
+//            var upVector = VirtualCamera.up;
 //            var camMsg = string.Format(
-//                @"{{""camera-transform"":""{0},{1},{2},{3},{4},{5}""}}",
+//                @"{{""camera-transform-lookat"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}",
 //                prevPos.x,
 //                prevPos.y,
 //                prevPos.z,
-//                eulerRot.x,
-//                eulerRot.y,
-//                eulerRot.z);
-//
-//            _webRtcUtils.SendPeerMessageDataExecute(camMsg);
+//                lookAt.x,
+//                lookAt.y,
+//                lookAt.z,
+//                upVector.x,
+//                upVector.y,
+//                upVector.z);
+//#if !UNITY_EDITOR
+//            _webRtcControl.SendPeerMessageData(camMsg);
+//#endif
 //        }
-#endregion
-
-
-#region Virtual Camera Control
-        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
-            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
-        {
-            prevPos = VirtualCamera.position;
-            prevRot = VirtualCamera.rotation;
-            var eulerRot = prevRot.eulerAngles;
-            var camMsg = string.Format(
-                @"{{""camera-transform"":""{0},{1},{2},{3},{4},{5}""}}",
-                prevPos.x,
-                prevPos.y,
-                prevPos.z,
-                eulerRot.x,
-                eulerRot.y,
-                eulerRot.z);
-
-            //_webRtcUtils.SendPeerMessageDataExecute(camMsg);
-            _webRtcControl.SendPeerMessageData(camMsg);
-        }
-#endregion
-
-
+        #endregion
+        
         if (Time.time > endTime)
         {
             fpsCount = (float)fpsCounter / (Time.time - startTime);
@@ -363,14 +338,14 @@ public class ControlScript : MonoBehaviour
         MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
 
 #if !UNITY_EDITOR
-        lock (_executionQueue)            
+        lock (_executionQueue)
         {
             while (!_executionQueue.IsEmpty)
             {
                 Action qa;
                 if (_executionQueue.TryDequeue(out qa))
                 {
-                    if(qa != null)
+                    if (qa != null)
                         qa.Invoke();
                 }
             }
@@ -378,17 +353,18 @@ public class ControlScript : MonoBehaviour
 #endif
     }
 
-    private void CreateTextureAndPassToPlugin()
+    private void CreateTextureAndPassToPlugin(uint width, uint height)
     {
-        RenderTexture.transform.localScale = new Vector3(-1f, (float) textureHeight / textureWidth, 1f) * 2f;
-
-        Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.ARGB32, false);
-        // Workaround for Unity Color Space Shift issue
-        //Texture2D tex = new Texture2D(textureWidth, textureHeight, TextureFormat.BGRA32, false);
-        tex.filterMode = FilterMode.Point;       
+#if !UNITY_EDITOR
+        Texture2D tex = new Texture2D((int)width, (int)height, TextureFormat.ARGB32, false);
+        tex.filterMode = FilterMode.Point;
         tex.Apply();
-        RenderTexture.material.mainTexture = tex;
+
+        LeftCanvas.texture = tex;
+        RightCanvas.texture = tex;
+
         SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
+#endif
     }
 
     private IEnumerator CallPluginAtEndOfFrames()
@@ -403,11 +379,22 @@ public class ControlScript : MonoBehaviour
             // things it needs to do based on this ID.
             // For our simple plugin, it does not matter which ID we pass here.
 
-            if (!frame_ready_receive)
+#if !UNITY_EDITOR
+
+            switch (PluginMode)
             {
-                GL.IssuePluginEvent(GetRenderEventFunc(), 1);              
-                frame_ready_receive = true;               
+                case 0:
+                    if (!frame_ready_receive)
+                    {
+                        GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+                        frame_ready_receive = true;
+                    }
+                    break;
+                default:
+                    GL.IssuePluginEvent(GetRenderEventFunc(), 1);
+                    break;
             }
+#endif
         }
     }
 }
