@@ -51,6 +51,63 @@ void FrameUpdate()
 
 #ifdef REMOTE_RENDERING
 
+// Handles input from client.
+void InputUpdate(const std::string& message)
+{
+	char data[1024];
+	Json::Reader reader;
+	Json::Value msg = NULL;
+	reader.parse(message, msg, false);
+
+	if (msg.isMember("type"))
+	{
+		strcpy(data, msg.get("type", "").asCString());
+
+		if (strcmp(data, "camera-transform-lookat") == 0)
+		{
+			if (msg.isMember("body"))
+			{
+				strcpy(data, msg.get("body", "").asCString());
+
+				// Parses the camera transformation data.
+				std::istringstream datastream(data);
+				std::string token;
+
+				// Eye point.
+				getline(datastream, token, ',');
+				float eyeX = stof(token);
+				getline(datastream, token, ',');
+				float eyeY = stof(token);
+				getline(datastream, token, ',');
+				float eyeZ = stof(token);
+
+				// Focus point.
+				getline(datastream, token, ',');
+				float focusX = stof(token);
+				getline(datastream, token, ',');
+				float focusY = stof(token);
+				getline(datastream, token, ',');
+				float focusZ = stof(token);
+
+				// Up vector.
+				getline(datastream, token, ',');
+				float upX = stof(token);
+				getline(datastream, token, ',');
+				float upY = stof(token);
+				getline(datastream, token, ',');
+				float upZ = stof(token);
+
+				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
+
+				// Initializes the eye position vector.
+				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+				g_cubeRenderer->UpdateView(eye, lookAt, up);
+			}
+		}
+	}
+}
+
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
@@ -91,7 +148,7 @@ int InitWebRTC(char* server, int port)
 
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, nullptr, g_videoHelper));
+			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
 
 	// Main loop.
 	MSG msg;
