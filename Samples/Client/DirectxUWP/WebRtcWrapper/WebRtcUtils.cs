@@ -65,7 +65,7 @@ namespace WebRtcWrapper
 
             foreach (MediaDevice videoCaptureDevice in Conductor.Instance.Media.GetVideoCaptureDevices())
             {
-                Cameras.Add(videoCaptureDevice);
+                // Cameras.Add(videoCaptureDevice);
             }
             foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
             {

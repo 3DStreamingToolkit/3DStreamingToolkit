@@ -198,7 +198,6 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\conductor.cpp" />
-    <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\data_channel_handler.cpp" />
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\default_main_window.cpp" />
@@ -209,7 +208,6 @@
   <ItemGroup>
     <ClInclude Include="inc\arc_ball.h" />
     <ClInclude Include="inc\conductor.h" />
-    <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\data_channel_handler.h" />
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\default_main_window.h" />

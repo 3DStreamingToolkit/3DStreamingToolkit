@@ -181,9 +181,6 @@
     <ClInclude Include="HolographicAppMain.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="AppCallbacks.h" />
-    <ClInclude Include="VideoDecoder\defs.h" />
-    <ClInclude Include="VideoDecoder\macros.h" />
-    <ClInclude Include="VideoDecoder\VideoDecoder.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common\CameraResources.cpp" />
@@ -197,7 +194,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="AppCallbacks.cpp" />
-    <ClCompile Include="VideoDecoder\VideoDecoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\GeometryShaderHoloLens.hlsl">
