@@ -3,7 +3,6 @@
 #include "pch.h"
 #include "DeviceResources.h"
 #include "VideoRenderer.h"
-#include "VideoDecoder.h"
 #ifdef HOLOLENS
 #include "HolographicAppMain.h"
 #endif // HOLOLENS
@@ -38,10 +37,10 @@ namespace DirectXClientComponent
 			const Array<uint8_t>^ dataV,
 			uint32_t strideV);
 
-		void OnEncodedFrame(
+		void OnDecodedFrame(
 			uint32_t width,
 			uint32_t height,
-			const Array<uint8_t>^ encodedData);
+			const Array<uint8_t>^ decodedData);
 
 	private:
 		void ReadI420Buffer(
@@ -57,7 +56,6 @@ namespace DirectXClientComponent
 
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
 		VideoRenderer*											m_videoRenderer;
-		VideoDecoder*											m_videoDecoder;
 
 		bool													m_isHolographic;
 #ifdef HOLOLENS
