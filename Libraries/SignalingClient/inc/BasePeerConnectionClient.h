@@ -28,6 +28,11 @@ namespace SignalingClient
 		constexpr static int DefaultId = -1;
 
 		/// <summary>
+		/// The bye message that a client sends on disconnect
+		/// </summary>
+		constexpr static const char ByeMessage[] = "BYE";
+
+		/// <summary>
 		/// Default dtor
 		/// </summary>
 		virtual ~BasePeerConnectionClient() {}

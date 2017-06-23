@@ -203,7 +203,7 @@ void PeerConnectionClient::SendToPeer(int clientId, string data)
 
 void PeerConnectionClient::SendHangUp(int clientId)
 {
-	SendToPeer(clientId, "BYE");
+	SendToPeer(clientId, BasePeerConnectionClient::ByeMessage);
 }
 
 // ignore msg; there is currently only one supported message ("retry")
@@ -267,6 +267,16 @@ void PeerConnectionClient::Poll()
 			{
 				// note: we notify the observer of peer changes INSIDE UpdatePeers()
 				UpdatePeers(body);
+			}
+			else if (body.compare(BasePeerConnectionClient::ByeMessage) == 0)
+			{
+				// notify our observer
+				RTCWrapAndCall([&, senderId, body] {
+					if (observer_ != nullptr)
+					{
+						observer_->OnPeerDisconnected(senderId);
+					}
+				});
 			}
 			else
 			{
