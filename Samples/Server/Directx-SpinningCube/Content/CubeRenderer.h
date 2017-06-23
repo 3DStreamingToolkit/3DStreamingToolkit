@@ -27,6 +27,7 @@ namespace Toolkit3DSample
 		void									InitPipeline();
 		void									Update();
 		void									Render();
+		void									UpdateView(const DirectX::XMVECTORF32 &eye, const DirectX::XMVECTORF32 &lookAt, const DirectX::XMVECTORF32 &up);
 
 	private:
 		// Cached pointer to device resources.
