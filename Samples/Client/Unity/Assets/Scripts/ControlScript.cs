@@ -302,32 +302,34 @@ public class ControlScript : MonoBehaviour
     void Update()
     {
         #region Virtual Camera Control
-//        TODO: Update Input data to latest changes.
-//        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
-//            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
-//        {
-//            prevPos = VirtualCamera.position;
-//            prevRot = VirtualCamera.rotation;
-//            var eulerRot = prevRot.eulerAngles;
-//            var lookAt = VirtualCamera.forward;
-//            var upVector = VirtualCamera.up;
-//            var camMsg = string.Format(
-//                @"{{""camera-transform-lookat"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}",
-//                prevPos.x,
-//                prevPos.y,
-//                prevPos.z,
-//                lookAt.x,
-//                lookAt.y,
-//                lookAt.z,
-//                upVector.x,
-//                upVector.y,
-//                upVector.z);
-//#if !UNITY_EDITOR
-//            _webRtcControl.SendPeerMessageData(camMsg);
-//#endif
-//        }
+
+        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
+            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
+        {
+            prevPos = VirtualCamera.position;
+            prevRot = VirtualCamera.rotation;
+            var eulerRot = prevRot.eulerAngles;
+            var lookAt = VirtualCamera.forward;
+            var upVector = -VirtualCamera.up;
+            var format = @"{{""type"":""camera-transform-lookat"",""body"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}";
+
+            var camMsg = string.Format(
+                format,
+                prevPos.x,
+                prevPos.y,
+                prevPos.z,
+                lookAt.x,
+                lookAt.y,
+                lookAt.z,
+                upVector.x,
+                upVector.y,
+                upVector.z);
+#if !UNITY_EDITOR
+            _webRtcControl.SendPeerDataChannelMessage(camMsg);
+#endif
+        }
         #endregion
-        
+
         if (Time.time > endTime)
         {
             fpsCount = (float)fpsCounter / (Time.time - startTime);
