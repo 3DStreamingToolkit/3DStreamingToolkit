@@ -174,6 +174,8 @@ void DX::DeviceResources::AddHolographicCamera(HolographicCamera^ camera)
 	{
 		cameraResourceMap[camera->Id] = std::make_unique<CameraResources>(camera);
 	});
+
+	m_d3dRenderTargetSize = camera->RenderTargetSize;
 }
 
 // Deallocates resources for a camera and removes the camera from the set.

@@ -74,31 +74,31 @@ void InputUpdate(const std::string& message)
 				std::istringstream datastream(data);
 				std::string token;
 
-				// Parses the left view matrix.
-				DirectX::XMFLOAT4X4 viewLeft;
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewLeft.m[i][j] = stof(token);
+						viewProjectionLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view matrix.
-				DirectX::XMFLOAT4X4 viewRight;
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewRight.m[i][j] = stof(token);
+						viewProjectionRight.m[i][j] = stof(token);
 					}
 				}
 
 				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateViewMatrices(
-					viewLeft, viewRight);
+				g_cubeRenderer->UpdateViewProjectionMatrices(
+					viewProjectionLeft, viewProjectionRight);
 			}
 		}
 #endif // STEREO_OUTPUT_MODE

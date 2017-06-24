@@ -23,26 +23,29 @@ VideoRenderer::VideoRenderer(
 
 void VideoRenderer::CreateDeviceDependentResources()
 {
+#ifdef HOLOLENS
+	int width = m_deviceResources->GetRenderTargetSize().Width;
+	int height = m_deviceResources->GetRenderTargetSize().Height;
+#endif // HOLOLENS
+
 	VertexPositionTexture vertices[] =
 	{
 #ifdef HOLOLENS
-		// TODO: Positions the world-locked hologram two meters in front of the user.
-
 		// Left camera.
-		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(	  0.0f,	  0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(1268.0f, 720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
-		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3(   0.0f, 720.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3( 0.0f,	0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 
 		// Right camera
-		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
-		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(   0.0f,	  0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
-		{ XMFLOAT3(1268.0f, 720.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(1268.0f,	  0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(   0.0f,	720.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3( 0.0f,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
 #else // HOLOLENS
 		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) },
 		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) },

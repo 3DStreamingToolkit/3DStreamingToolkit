@@ -509,30 +509,30 @@ void InputUpdate(const std::string& message)
 				std::string token;
 
 				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewLeft;
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewLeft.m[i][j] = stof(token);
+						viewProjectionLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view matrix.
-				DirectX::XMFLOAT4X4 viewRight;
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewRight.m[i][j] = stof(token);
+						viewProjectionRight.m[i][j] = stof(token);
 					}
 				}
 
 				// Updates the camera's matrices.
-				g_Camera.SetViewMatrices(
-					viewLeft, viewRight);
+				g_Camera.SetViewProjMatrices(
+					viewProjectionLeft, viewProjectionRight);
 
 				g_Camera.FrameMove(0);
 			}
@@ -2334,7 +2334,7 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 
 #ifdef STEREO_OUTPUT_MODE
 	// Render scene in the left eye.
-	mvp = g_Camera.GetViewMatrixLeft();
+	mvp = g_Camera.GetViewProjMatrixLeft();
 
 	SceneParamsDynamic DynamicParamsLeft;
 	XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
@@ -2346,7 +2346,7 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 		STEREO_OUTPUT_TYPE::LEFT_EYE));
 
 	// Render scene in the right eye.
-	mvp = g_Camera.GetViewMatrixRight();
+	mvp = g_Camera.GetViewProjMatrixRight();
 
 	SceneParamsDynamic DynamicParamsRight;
 	XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);

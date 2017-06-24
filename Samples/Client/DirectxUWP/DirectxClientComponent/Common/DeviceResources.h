@@ -37,6 +37,9 @@ namespace DX
 #ifdef HOLOLENS
 		// DXGI acessors.
 		IDXGIAdapter3*				GetDXGIAdapter() const					{ return m_dxgiAdapter.Get(); }
+
+		// Render target properties.
+		Windows::Foundation::Size	GetRenderTargetSize()	const			{ return m_d3dRenderTargetSize; }
 #else // HOLOLENS
 		IDXGISwapChain1*			GetSwapChain() const					{ return m_swapChain.Get(); }
 		ID3D11RenderTargetView*		GetBackBufferRenderTargetView() const	{ return m_d3dRenderTargetView.Get(); }
@@ -66,6 +69,7 @@ namespace DX
 		// Back buffer resources, etc. for attached holographic cameras.
 		std::map<UINT32, std::unique_ptr<CameraResources>>			m_cameraResources;
 		std::mutex													m_cameraResourcesLock;
+		Windows::Foundation::Size									m_d3dRenderTargetSize;
 #else // HOLOLENS
 		Microsoft::WRL::ComPtr<IDXGISwapChain1>						m_swapChain;
 

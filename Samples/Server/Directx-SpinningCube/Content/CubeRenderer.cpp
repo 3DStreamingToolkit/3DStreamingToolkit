@@ -76,7 +76,11 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
+#ifdef STEREO_OUTPUT_MODE
+	errno_t error = fopen_s(&vertexShaderFile, "StereoVertexShader.cso", "rb");
+#else // STEREO_OUTPUT_MODE
 	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+#endif // STEREO_OUTPUT_MODE
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -133,11 +137,9 @@ void CubeRenderer::InitPipeline()
 	CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
 	m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_constantBuffer);
 
+#ifndef STEREO_OUTPUT_MODE
 	// Initializes the projection matrix.
 	SIZE outputSize = m_deviceResources->GetOutputSize();
-#ifdef STEREO_OUTPUT_MODE
-	outputSize.cy = outputSize.cy * 2;
-#endif // STEREO_OUTPUT_MODE
 
 	float aspectRatio = (float)outputSize.cx / outputSize.cy;
 	float fovAngleY = 70.0f * XM_PI / 180.0f;
@@ -160,57 +162,6 @@ void CubeRenderer::InitPipeline()
 	// Ignores the orientation.
 	XMMATRIX orientationMatrix = XMMatrixIdentity();
 
-#ifdef STEREO_OUTPUT_MODE
-	//XMStoreFloat4x4(
-	//	&m_constantBufferDataLeft.projection,
-	//	XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	//);
-
-	//XMStoreFloat4x4(
-	//	&m_constantBufferDataRight.projection,
-	//	XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	//);
-
-	m_constantBufferDataLeft.projection.m[0][0] = 3.76372361;
-	m_constantBufferDataLeft.projection.m[0][1] = -0.00703282235;
-	m_constantBufferDataLeft.projection.m[0][2] = 0.0278869867;
-	m_constantBufferDataLeft.projection.m[0][3] = 0.000000000;
-
-	m_constantBufferDataLeft.projection.m[1][0] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[1][1] = 6.65269279;
-	m_constantBufferDataLeft.projection.m[1][2] = -0.0103124380;
-	m_constantBufferDataLeft.projection.m[1][3] = 0.000000000;
-
-	m_constantBufferDataLeft.projection.m[2][0] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[2][1] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[2][2] = -1.00502515;
-	m_constantBufferDataLeft.projection.m[2][3] = -0.100502513;
-
-	m_constantBufferDataLeft.projection.m[3][0] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[3][1] = 0.000000000;
-	m_constantBufferDataLeft.projection.m[3][2] = -1.00000000;
-	m_constantBufferDataLeft.projection.m[3][3] = 0.000000000;
-
-	m_constantBufferDataRight.projection.m[0][0] = 3.76920915;
-	m_constantBufferDataRight.projection.m[0][1] = -0.000568702759;
-	m_constantBufferDataRight.projection.m[0][2] = -0.0304735899;
-	m_constantBufferDataRight.projection.m[0][3] = 0.000000000;
-
-	m_constantBufferDataRight.projection.m[1][0] = 0.000000000;
-	m_constantBufferDataRight.projection.m[1][1] = 6.66007090;
-	m_constantBufferDataRight.projection.m[1][2] = -0.000967204571;
-	m_constantBufferDataRight.projection.m[1][3] = 0.000000000;
-
-	m_constantBufferDataRight.projection.m[2][0] = 0.000000000;
-	m_constantBufferDataRight.projection.m[2][1] = 0.000000000;
-	m_constantBufferDataRight.projection.m[2][2] = -1.00502515;
-	m_constantBufferDataRight.projection.m[2][3] = -0.100502513;
-
-	m_constantBufferDataRight.projection.m[3][0] = 0.000000000;
-	m_constantBufferDataRight.projection.m[3][1] = 0.000000000;
-	m_constantBufferDataRight.projection.m[3][2] = -1.00000000;
-	m_constantBufferDataRight.projection.m[3][3] = 0.000000000;
-#else // STEREO_OUTPUT_MODE
 	XMStoreFloat4x4(
 		&m_constantBufferData.projection,
 		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
@@ -288,9 +239,9 @@ void CubeRenderer::Render()
 }
 
 #ifdef STEREO_OUTPUT_MODE
-void CubeRenderer::UpdateViewMatrices(const XMFLOAT4X4& viewLeft, const XMFLOAT4X4& viewRight)
+void CubeRenderer::UpdateViewProjectionMatrices(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
 {
-	m_constantBufferDataLeft.view = viewLeft;
-	m_constantBufferDataRight.view = viewRight;
+	m_constantBufferDataLeft.viewProjection = viewProjectionLeft;
+	m_constantBufferDataRight.viewProjection = viewProjectionRight;
 }
 #endif // STEREO_OUTPUT_MODE

@@ -273,16 +273,16 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 			HolographicStereoTransform viewCoordinateSystemTransform =
 				viewTransformContainer->Value;
 
-			XMFLOAT4X4 leftViewMatrix;
+			XMFLOAT4X4 leftViewProjectionMatrix;
 			XMStoreFloat4x4(
-				&leftViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left))
+				&leftViewProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
 			);
 
-			XMFLOAT4X4 rightViewMatrix;
+			XMFLOAT4X4 rightViewProjectionMatrix;
 			XMStoreFloat4x4(
-				&rightViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right))
+				&rightViewProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
 			);
 
 			// Builds the camera transform message.
@@ -292,8 +292,8 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 			{
 				for (int j = 0; j < 4; j++)
 				{
-					leftCameraTransform += leftViewMatrix.m[i][j] + ",";
-					rightCameraTransform += rightViewMatrix.m[i][j];
+					leftCameraTransform += leftViewProjectionMatrix.m[i][j] + ",";
+					rightCameraTransform += rightViewProjectionMatrix.m[i][j];
 					if (i != 3 || j != 3)
 					{
 						rightCameraTransform += ",";

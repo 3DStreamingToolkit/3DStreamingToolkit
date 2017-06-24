@@ -215,12 +215,12 @@ void DX::CameraResources::UpdateProjectionBuffer(
 		XMStoreFloat4x4(
 			&projectionConstantBufferData.projection[0],
 			XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(
-				0, 1268.0f, 0.0f, 720.0f, 0.0f, 1.0f)));
+				0, m_d3dRenderTargetSize.Width, 0.0f, m_d3dRenderTargetSize.Height, 0.0f, 1.0f)));
 
 		XMStoreFloat4x4(
 			&projectionConstantBufferData.projection[1],
 			XMMatrixTranspose(XMMatrixOrthographicOffCenterLH(
-				0, 1268.0f, 0.0f, 720.0f, 0.0f, 1.0f)));
+				0, m_d3dRenderTargetSize.Width, 0.0f, m_d3dRenderTargetSize.Height, 0.0f, 1.0f)));
     }
 
     // Use the D3D device context to update Direct3D device-based resources.
