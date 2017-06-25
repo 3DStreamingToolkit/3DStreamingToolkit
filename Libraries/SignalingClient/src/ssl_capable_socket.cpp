@@ -42,9 +42,9 @@ void SslCapableSocket::SetUseSsl(const bool& useSsl)
 {
 	if (useSsl && ssl_adapter_.get() == nullptr)
 	{
-			ssl_adapter_.reset(SSLAdapter::Create(socket_));
-			ssl_adapter_->SetMode(rtc::SSL_MODE_TLS);
-			MapUnderlyingEvents(ssl_adapter_.get(), socket_);
+		ssl_adapter_.reset(SSLAdapter::Create(socket_));
+		ssl_adapter_->SetMode(rtc::SSL_MODE_TLS);
+		MapUnderlyingEvents(ssl_adapter_.get(), socket_);
 	}
 	else if (!useSsl && ssl_adapter_.get() != nullptr)
 	{
