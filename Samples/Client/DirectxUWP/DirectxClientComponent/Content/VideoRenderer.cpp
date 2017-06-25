@@ -14,23 +14,18 @@ VideoRenderer::VideoRenderer(
 		m_width(width),
 		m_height(height)
 {
-#ifdef HOLOLENS
 	m_position = { 0.f, 0.f, -2.f };
-#endif // HOLOLENS
 
 	CreateDeviceDependentResources();
 }
 
 void VideoRenderer::CreateDeviceDependentResources()
 {
-#ifdef HOLOLENS
 	int width = m_deviceResources->GetRenderTargetSize().Width;
 	int height = m_deviceResources->GetRenderTargetSize().Height;
-#endif // HOLOLENS
 
 	VertexPositionTexture vertices[] =
 	{
-#ifdef HOLOLENS
 		// Left camera.
 		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
@@ -46,14 +41,6 @@ void VideoRenderer::CreateDeviceDependentResources()
 		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
-#else // HOLOLENS
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 1.0f) },
-		{ XMFLOAT3(	1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 0.0f) },
-		{ XMFLOAT3(	1.0f, -1.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f) },
-		{ XMFLOAT3(-1.0f,  1.0f, 0.0f), DirectX::XMFLOAT2(0.0f, 0.0f) }
-#endif // HOLOLENS
 	};
 
 	D3D11_BUFFER_DESC bufferDesc = { 0 };
@@ -140,12 +127,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 		m_sampler.GetAddressOf()
 	);
 
-#ifdef HOLOLENS
 	auto loadVertexShaderTask = DX::ReadDataAsync(L"VprtVertexShader.cso");
-#else // HOLOLENS
-	auto loadVertexShaderTask = DX::ReadDataAsync(L"VertexShader.cso");
-#endif // HOLOLENS
-
 	loadVertexShaderTask.then([this](std::vector<byte> file)
 	{
 		m_deviceResources->GetD3DDevice()->CreateVertexShader(
@@ -154,11 +136,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 		D3D11_INPUT_ELEMENT_DESC elementDesc[] =
 		{
 			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-#ifdef HOLOLENS
 			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-#else // HOLOLENS
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-#endif // HOLOLENS
 		};
 
 		m_deviceResources->GetD3DDevice()->CreateInputLayout(
@@ -212,16 +190,6 @@ void VideoRenderer::Render()
 	// Gets the device context.
 	ID3D11DeviceContext* context = m_deviceResources->GetD3DDeviceContext();
 
-#ifndef HOLOLENS
-	// Sets the render target view.
-	ID3D11RenderTargetView *const targets[1] = 
-	{ 
-		m_deviceResources->GetBackBufferRenderTargetView() 
-	};
-
-	context->OMSetRenderTargets(1, targets, nullptr);
-#endif // HOLOLENS
-
 	// Updates the texture data.
 	D3D11_MAPPED_SUBRESOURCE mapped;
 	HRESULT result = m_deviceResources->GetD3DDeviceContext()->Map(
@@ -239,10 +207,5 @@ void VideoRenderer::Render()
 	UINT offset = 0;
 	context->IASetVertexBuffers(0, 1, m_vertexBuffer.GetAddressOf(), &stride, &offset);
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-#ifdef HOLOLENS
 	context->Draw(12, 0);
-#else // HOLOLENS
-	context->Draw(6, 0);
-#endif // HOLOLENS
 }

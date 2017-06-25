@@ -4,9 +4,7 @@
 #include "DeviceResources.h"
 #include "VideoRenderer.h"
 #include "VideoDecoder.h"
-#ifdef HOLOLENS
 #include "HolographicAppMain.h"
-#endif // HOLOLENS
 
 using namespace Platform;
 using namespace Windows::ApplicationModel::Core;
@@ -65,10 +63,8 @@ namespace DirectXClientComponent
 		SendInputDataHandler^									m_sendInputDataHandler;
 
 		bool													m_isHolographic;
-#ifdef HOLOLENS
 		std::unique_ptr<HolographicAppMain>						m_main;
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;
-#endif // HOLOLENS
     };
 }

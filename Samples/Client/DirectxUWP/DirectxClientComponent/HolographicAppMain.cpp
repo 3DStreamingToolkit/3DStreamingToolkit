@@ -1,7 +1,5 @@
 #include "pch.h"
 
-#ifdef HOLOLENS
-
 #include "HolographicAppMain.h"
 #include "DirectXHelper.h"
 
@@ -379,5 +377,3 @@ void HolographicAppMain::OnCameraRemoved(
     // not take long.
     m_deviceResources->RemoveHolographicCamera(args->Camera);
 }
-
-#endif // HOLOLENS
