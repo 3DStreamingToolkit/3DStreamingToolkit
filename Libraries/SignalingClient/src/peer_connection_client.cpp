@@ -149,8 +149,8 @@ void PeerConnectionClient::OnResolveResult(rtc::AsyncResolverInterface* resolver
 
 void PeerConnectionClient::DoConnect()
 {
-	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family()));
-	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family()));
+	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_));
+	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_));
 	InitSocketSignals();
 	char buffer[1024];
 	std::string clientName = client_name_;
