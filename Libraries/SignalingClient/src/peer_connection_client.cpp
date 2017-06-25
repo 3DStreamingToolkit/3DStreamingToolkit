@@ -9,7 +9,6 @@
  */
 
 #include "peer_connection_client.h"
-#include "defaults.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
@@ -28,21 +27,6 @@ namespace
 
 	// Delay between server connection retries, in milliseconds
 	const int kReconnectDelay = 2000;
-
-	rtc::AsyncSocket* CreateClientSocket(int family)
-	{
-#ifdef WIN32
-		rtc::Win32Socket* sock = new rtc::Win32Socket();
-		sock->CreateT(family, SOCK_STREAM);
-		return sock;
-#elif defined(WEBRTC_POSIX) // WIN32
-		rtc::Thread* thread = rtc::Thread::Current();
-		RTC_DCHECK(thread != NULL);
-		return thread->socketserver()->CreateAsyncSocket(family, SOCK_STREAM);
-#else // WIN32
-		#error Platform not supported.
-#endif // WIN32
-	}
 }
 
 PeerConnectionClient::PeerConnectionClient() :
@@ -114,7 +98,8 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
 
 	if (port <= 0)
 	{
-		port = kDefaultServerPort;
+		callback_->OnServerConnectionFailure();
+		return;
 	}
 
 	std::string parsedServer = server;
@@ -168,7 +153,7 @@ void PeerConnectionClient::DoConnect()
 	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family()));
 	InitSocketSignals();
 	char buffer[1024];
-	std::string clientName = "renderingserver_" + client_name_;
+	std::string clientName = client_name_;
 	std::string hostName = server_address_.hostname();
 	sprintfn(
 		buffer,
