@@ -2,7 +2,7 @@
 
 #include <d3d11_4.h>
 
-#include "defs.h"
+#include "plugindefs.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/nvEncodeAPI.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/nvCPUOPSys.h"
 
