@@ -20,7 +20,7 @@
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
 
-#include "../ssl_capable_socket.h"
+#include "ssl_capable_socket.h"
 
 typedef std::map<int, std::string> Peers;
 
