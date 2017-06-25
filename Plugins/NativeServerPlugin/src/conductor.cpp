@@ -524,7 +524,7 @@ void Conductor::StartLogin(const std::string& server, int port)
 	}
 
 	server_ = server;
-	client_->Connect(server, port, GetPeerName());
+	client_->Connect(server, port, "rendering_server_" + GetPeerName());
 }
 
 void Conductor::DisconnectFromServer()
