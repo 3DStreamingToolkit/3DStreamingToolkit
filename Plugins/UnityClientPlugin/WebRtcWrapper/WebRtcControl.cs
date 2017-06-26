@@ -1,7 +1,5 @@
-﻿// Based on PeerConnection Client Sample
-// https://github.com/webrtc-uwp/PeerCC
-
-// INTIAL WORK FOR UNITY SPECIFIC WRAPPER -- without XAML hooks
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +7,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Data.Json;
@@ -22,7 +19,6 @@ using PeerConnectionClient.Utilities;
 
 namespace WebRtcWrapper
 {
-    //public class WebRtcControl : DispatcherBindableBase
     public class WebRtcControl
     {
         public event Action OnInitialized;
@@ -31,9 +27,7 @@ namespace WebRtcWrapper
         public event Action<int, IDataChannelMessage> OnPeerDataChannelReceived;
 
         public RawVideoSource rawVideo;
-        public EncodedVideoSource encodedVideoSource;
-
-        
+        public DecodedVideoSource encodedVideoSource;
 
         // Message Data Type
         private static readonly string kMessageDataType = "message";
@@ -44,7 +38,6 @@ namespace WebRtcWrapper
 
         private readonly CoreDispatcher _uiDispatcher;
 
-        //public WebRtcControl() : base(CoreApplication.MainView.CoreWindow.Dispatcher)
         public WebRtcControl()
         {
             _uiDispatcher = CoreApplication.MainView.CoreWindow.Dispatcher;
@@ -63,7 +56,7 @@ namespace WebRtcWrapper
             // Detect Comm Hardware
             foreach (MediaDevice videoCaptureDevice in Conductor.Instance.Media.GetVideoCaptureDevices())
             {
-                Cameras.Add(videoCaptureDevice);
+                // Cameras.Add(videoCaptureDevice);
             }
             foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
             {
@@ -281,6 +274,9 @@ namespace WebRtcWrapper
 
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
             var peerCcServerIp = new ValidableNonEmptyString("signalingserver.centralus.cloudapp.azure.com");
+            IceServer turnServer = new IceServer("turnserver3dstreaming.centralus.cloudapp.azure.com:3478", IceServer.ServerType.TURN);
+                      turnServer.Username = "user";
+                      turnServer.Credential = "3Dstreaming0317";
             var peerCcPortInt = 3000;
 
             var configIceServers = new ObservableCollection<IceServer>();
@@ -290,27 +286,12 @@ namespace WebRtcWrapper
             {
                 // Default values:
                 configIceServers.Clear();
-                configIceServers.Add(new IceServer()
-                {
-                    Host = new ValidableNonEmptyString("turnserver3dstreaming.centralus.cloudapp.azure.com:3478"),
-                    Type = IceServer.ServerType.TURN,
-                    Username = "user",
-                    Credential = "3Dstreaming0317"
-                });
-
-                configIceServers.Add(new IceServer()
-                {
-                    Host = new ValidableNonEmptyString("backupservers3dstreaming.centralus.cloudapp.azure.com:3478"),
-                    Type = IceServer.ServerType.TURN,
-                    Username = "user",
-                    Credential = "3Dstreaming0317"
-                });
-
-                configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(turnServer);
+                //configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+                //configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+                //configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+                //configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+                //configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
             }
 
             RunOnUiThread(() =>
@@ -357,6 +338,7 @@ namespace WebRtcWrapper
                     {
                         jsonPackage.Add(o.Key, o.Value);
                     }
+
                     await Conductor.Instance.Signaller.SendToPeer(SelectedPeer.Id, jsonPackage);
                 }
             }).Start();

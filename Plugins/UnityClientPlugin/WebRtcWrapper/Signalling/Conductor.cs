@@ -457,7 +457,7 @@ namespace PeerConnectionClient.Signalling
                 return;
             }
 
-            double index = evt.Candidate.SdpMLineIndex != 0 ? (double)evt.Candidate.SdpMLineIndex : -1;
+            double index = null != evt.Candidate.SdpMLineIndex ? (double)evt.Candidate.SdpMLineIndex : -1;
 
             JsonObject json;
 #if ORTCLIB

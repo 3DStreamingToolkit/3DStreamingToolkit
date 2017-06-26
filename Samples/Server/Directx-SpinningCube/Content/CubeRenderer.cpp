@@ -6,10 +6,17 @@ using namespace DirectX;
 using namespace DX;
 using namespace Toolkit3DSample;
 
-// Eye is at (0, 0.1, 1.0), looking at point (0, 0.1, 0) with the up-vector along the y-axis.
+#ifdef STEREO_OUTPUT_MODE
+// Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
 static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
 static const XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
 static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+#else // STEREO_OUTPUT_MODE
+// Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
+static XMVECTORF32 eye = { 0.0f, 0.7f, 1.5f, 0.0f };
+static XMVECTORF32 at = { 0.0f, -0.1f, 0.0f, 0.0f };
+static XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+#endif // STEREO_OUTPUT_MODE
 
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	m_degreesPerSecond(45),
@@ -243,5 +250,12 @@ void CubeRenderer::UpdateViewProjectionMatrices(const XMFLOAT4X4& viewProjection
 {
 	m_constantBufferDataLeft.viewProjection = viewProjectionLeft;
 	m_constantBufferDataRight.viewProjection = viewProjectionRight;
+}
+#else // STEREO_OUTPUT_MODE
+void Toolkit3DSample::CubeRenderer::UpdateView(const DirectX::XMVECTORF32 &newEye, const DirectX::XMVECTORF32 &newLookAt, const DirectX::XMVECTORF32 &newUp)
+{
+	eye = newEye;
+	at = newLookAt;
+	up = newUp;
 }
 #endif // STEREO_OUTPUT_MODE

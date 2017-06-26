@@ -94,6 +94,25 @@ bool Conductor::connection_active() const
 void Conductor::Close() 
 {
 	client_->SignOut();
+	client_->Shutdown();
+
+	if (peer_connection_ != nullptr)
+	{
+		peer_connection_->Close();
+	}
+	
+	if (data_channel_ != nullptr)
+	{
+		data_channel_->Close();
+	}
+
+	bool isopen = false;
+
+	if (data_channel_observer_ != nullptr)
+	{
+		isopen = data_channel_observer_->IsOpen();
+	}
+
 	DeletePeerConnection();
 }
 
@@ -236,6 +255,7 @@ void Conductor::DeletePeerConnection()
 {
 	peer_connection_ = NULL;
 	active_streams_.clear();
+
 	main_window_->StopLocalRenderer();
 	main_window_->StopRemoteRenderer();
 	peer_connection_factory_ = NULL;

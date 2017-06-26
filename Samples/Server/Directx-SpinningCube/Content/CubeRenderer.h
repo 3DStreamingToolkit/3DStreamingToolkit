@@ -33,6 +33,8 @@ namespace Toolkit3DSample
 		void									Render();
 #ifdef STEREO_OUTPUT_MODE
 		void									UpdateViewProjectionMatrices(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
+#else // STEREO_OUTPUT_MODE
+		void									UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
 #endif // STEREO_OUTPUT_MODE
 
 	private:

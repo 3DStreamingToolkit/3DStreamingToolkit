@@ -73,7 +73,7 @@ void InputUpdate(const std::string& message)
 				// Parses the camera transformation data.
 				std::istringstream datastream(data);
 				std::string token;
-
+				
 				// Parses the left view projection matrix.
 				DirectX::XMFLOAT4X4 viewProjectionLeft;
 				for (int i = 0; i < 4; i++)
@@ -99,6 +99,49 @@ void InputUpdate(const std::string& message)
 				// Updates the cube's matrices.
 				g_cubeRenderer->UpdateViewProjectionMatrices(
 					viewProjectionLeft, viewProjectionRight);
+			}
+		}
+#else // STEREO_OUTPUT_MODE
+		if (strcmp(data, "camera-transform-lookat") == 0)
+		{
+			if (msg.isMember("body"))
+			{
+				strcpy(data, msg.get("body", "").asCString());
+
+				// Parses the camera transformation data.
+				std::istringstream datastream(data);
+				std::string token;
+				
+				// Eye point.
+				getline(datastream, token, ',');
+				float eyeX = stof(token);
+				getline(datastream, token, ',');
+				float eyeY = stof(token);
+				getline(datastream, token, ',');
+				float eyeZ = stof(token);
+
+				// Focus point.
+				getline(datastream, token, ',');
+				float focusX = stof(token);
+				getline(datastream, token, ',');
+				float focusY = stof(token);
+				getline(datastream, token, ',');
+				float focusZ = stof(token);
+
+				// Up vector.
+				getline(datastream, token, ',');
+				float upX = stof(token);
+				getline(datastream, token, ',');
+				float upY = stof(token);
+				getline(datastream, token, ',');
+				float upZ = stof(token);
+
+				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
+
+				// Initializes the eye position vector.
+				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+				g_cubeRenderer->UpdateView(eye, lookAt, up);
 			}
 		}
 #endif // STEREO_OUTPUT_MODE

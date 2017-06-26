@@ -77,6 +77,9 @@ std::thread *messageThread;
 std::string s_server = "signalingserver.centralus.cloudapp.azure.com";
 uint32_t s_port = 3000;
 
+bool s_closing = false;
+
+
 void FrameUpdate()
 {
 }
@@ -99,7 +102,7 @@ void InitWebRTC()
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 	rtc::InitializeSSL();
-
+	
 	PeerConnectionClient client;
 
 	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
@@ -119,7 +122,7 @@ void InitWebRTC()
 	// Main loop.
 	MSG msg;
 	BOOL gm;
-	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1 && !s_closing)
 	{
 		if (!wnd->PreTranslateMessage(&msg))
 		{
@@ -133,6 +136,8 @@ void InitWebRTC()
 			}
 		}
 	}
+
+	int aaa = 3;
 }
 
 
@@ -183,9 +188,10 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
         case kUnityGfxDeviceEventShutdown:
         {
-            s_Context.Reset();
+			s_Context.Reset();
             s_Device.Reset();
             s_DeviceType = kUnityGfxRendererNull;
+
             break;
         }
     }
@@ -214,9 +220,30 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 	g_videoHelper = new VideoHelper(s_Device.Get(), s_Context.Get());
 }
 
+extern "C" __declspec(dllexport) void Close()
+{
+	if (s_conductor != nullptr)
+	{
+		MainWindowCallback *callback = s_conductor;
+		callback->DisconnectFromCurrentPeer();
+		callback->DisconnectFromServer();
+
+		callback->Close();
+
+		s_conductor = nullptr;
+		
+		rtc::CleanupSSL();
+
+		s_closing = true;
+	}
+}
+
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
     s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
+
+	Close();
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
@@ -239,13 +266,6 @@ extern "C" __declspec(dllexport) void Login(char *server, int32_t port)
 	}
 }
 
-extern "C" __declspec(dllexport) void Close()
-{
-	if (s_conductor != nullptr)
-	{
-		s_conductor->Close();
-	}
-}
 
 
 extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
