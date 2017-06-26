@@ -1,0 +1,405 @@
+<html>
+
+<head>
+    <title>PeerConnection server test page</title>
+    <script src="https://secure.aadcdn.microsoftonline-p.com/lib/0.1.1/js/msal.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" class="pre"></script>
+</head>
+<script>
+    var request = null;
+    var hangingGet = null;
+    var localName;
+    var server;
+    var myId = -1;
+    var otherPeers = {};
+    var messageCounter = 0;
+    var pc;
+    var pcConfig;
+    var pcOptions = {
+        optional: [
+            { DtlsSrtpKeyAgreement: true }
+        ]
+    }
+    var mediaConstraints = {
+        'mandatory': {
+            'OfferToReceiveAudio': false,
+            'OfferToReceiveVideo': true
+        }
+    };
+    var remoteStream;
+
+    var applicationConfig = {
+        clientID: 'ffe8068f-03bb-4efd-92d6-cb51feb7530c',
+        authority: "https://login.microsoftonline.com/tfp/anzolochtest.onmicrosoft.com/b2c_1_signup",
+        b2cScopes: ["openid"],
+    };
+
+    var clientApplication = new Msal.UserAgentApplication(applicationConfig.clientID, applicationConfig.authority, function (errorDesc, token, error, tokenType) {
+    });
+
+    function login() {
+        clientApplication.loginPopup(applicationConfig.b2cScopes).then(function (idToken) {
+            clientApplication.acquireTokenSilent(applicationConfig.b2cScopes).then(function (accessToken) {
+                console.log(accessToken);
+                updateUI();
+                //callApiWithAccessToken(accessToken);
+            }, function (error) {
+                clientApplication.acquireTokenPopup(applicationConfig.b2cScopes).then(function (accessToken) {
+                    updateUI();
+                }, function (error) {
+                    console.log("Error acquiring the popup:\n" + error);
+                });
+            })
+        }, function (error) {
+            console.log("Error during login:\n" + error);
+        });
+    }
+
+
+    function updateUI() {
+        var userName = clientApplication.getUser().name;
+        console.log(clientApplication.getUser());
+        console.log("User '" + userName + "' logged-in");
+        var label = document.getElementById('authlabel');
+        label.innerText = "Hello " + userName;
+    }
+
+    function callApiWithAccessToken(accessToken) {
+        // Call the Web API with the AccessToken
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:3000/turnCreds",
+            headers: {
+                'Authorization': 'Bearer ' + accessToken,
+            },
+        }).done(function (data) {
+            console.log("Web APi returned:\n" + JSON.stringify(data));
+
+            pcConfig = {
+                "iceServers": [{
+                    "url": "turn:52.173.196.112:3478",
+                    "username": data.username,
+                    "credential": data.password
+                }],
+                "iceTransportPolicy": "relay"
+            };
+        })
+            .fail(function (jqXHR, textStatus) {
+                console.log("Error calling the Web api:\n" + textStatus);
+            })
+    }
+
+
+
+    RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+    RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
+    RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
+    getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+    URL = window.webkitURL || window.URL;
+
+    function createPeerConnection(peer_id) {
+        try {
+            pc = new RTCPeerConnection(pcConfig, pcOptions);
+            pc.onicecandidate = function (event) {
+                if (event.candidate) {
+                    var candidate = {
+                        sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        sdpMid: event.candidate.sdpMid,
+                        candidate: event.candidate.candidate
+                    };
+                    sendToPeer(peer_id, JSON.stringify(candidate));
+                } else {
+                    console.log("End of candidates.");
+                }
+            };
+            pc.onconnecting = onSessionConnecting;
+            pc.onopen = onSessionOpened;
+            pc.onaddstream = onRemoteStreamAdded;
+            pc.onremovestream = onRemoteStreamRemoved;
+            console.log("Created RTCPeerConnnection with config: " + JSON.stringify(pcConfig));
+        }
+        catch (e) {
+            console.log("Failed to create PeerConnection with " + connectionId + ", exception: " + e.message);
+        }
+    }
+
+
+    function onRemoteStreamAdded(event) {
+        console.log("Remote stream added:", URL.createObjectURL(event.stream));
+        var remoteVideoElement = document.getElementById('remote-video');
+        remoteVideoElement.src = URL.createObjectURL(event.stream);
+        remoteVideoElement.play();
+    }
+
+    function sld_success_cb() {
+    }
+
+    function sld_failure_cb() {
+        console.log("setLocalDescription failed");
+    }
+
+    function aic_success_cb() {
+    }
+
+    function aic_failure_cb() {
+        console.log("addIceCandidate failed");
+    }
+
+
+    function handlePeerMessage(peer_id, data) {
+        ++messageCounter;
+        var str = "Message from '" + otherPeers[peer_id] + ":" + data;
+        trace(str);
+
+        var dataJson = JSON.parse(data);
+        console.log("received ", dataJson);
+        if (data.search("offer") != -1) {
+            createPeerConnection(peer_id);
+            pc.setRemoteDescription(new RTCSessionDescription(dataJson), onRemoteSdpSucces, onRemoteSdpError);
+            pc.createAnswer(function (sessionDescription) {
+                console.log("Create answer:", sessionDescription);
+                pc.setLocalDescription(sessionDescription, sld_success_cb, sld_failure_cb);
+                var data = JSON.stringify(sessionDescription);
+                sendToPeer(peer_id, data);
+            }, function (error) { // error
+                console.log("Create answer error:", error);
+            }, mediaConstraints); // type error  ); //}, null          
+        }
+        else {
+            console.log("Adding ICE candiate ", dataJson);
+            var candidate = new RTCIceCandidate({ sdpMLineIndex: dataJson.sdpMLineIndex, candidate: dataJson.candidate });
+            pc.addIceCandidate(candidate, aic_success_cb, aic_failure_cb);
+        }
+    }
+
+    function trace(txt) {
+        var elem = document.getElementById("debug");
+        elem.innerHTML += txt + "<br>";
+    }
+
+    function handleServerNotification(data) {
+        trace("Server notification: " + data);
+        var parsed = data.split(',');
+        if (parseInt(parsed[2]) != 0)
+            otherPeers[parseInt(parsed[1])] = parsed[0];
+    }
+
+    function parseIntHeader(r, name) {
+        var val = r.getResponseHeader(name);
+        return val != null && val.length ? parseInt(val) : -1;
+    }
+
+    function hangingGetCallback() {
+        try {
+            if (hangingGet.readyState != 4)
+                return;
+            if (hangingGet.status != 200) {
+                trace("server error: " + hangingGet.statusText);
+                disconnect();
+            } else {
+                var peer_id = parseIntHeader(hangingGet, "Pragma");
+                console.log("Message from:", peer_id, ':', hangingGet.responseText);
+                if (peer_id == myId) {
+                    handleServerNotification(hangingGet.responseText);
+                } else {
+                    handlePeerMessage(peer_id, hangingGet.responseText);
+                }
+            }
+
+            if (hangingGet) {
+                hangingGet.abort();
+                hangingGet = null;
+            }
+
+            if (myId != -1)
+                window.setTimeout(startHangingGet, 0);
+        } catch (e) {
+            trace("Hanging get error: " + e.description);
+        }
+    }
+
+    function startHangingGet() {
+        try {
+            hangingGet = new XMLHttpRequest();
+            hangingGet.onreadystatechange = hangingGetCallback;
+            hangingGet.ontimeout = onHangingGetTimeout;
+            hangingGet.open("GET", server + "/wait?peer_id=" + myId, true);
+            hangingGet.send();
+        } catch (e) {
+            trace("error" + e.description);
+        }
+    }
+
+    function onHangingGetTimeout() {
+        trace("hanging get timeout. issuing again.");
+        hangingGet.abort();
+        hangingGet = null;
+        if (myId != -1)
+            window.setTimeout(startHangingGet, 0);
+    }
+
+    function signInCallback() {
+        try {
+            if (request.readyState == 4) {
+                if (request.status == 200) {
+                    var peers = request.responseText.split("\n");
+                    myId = parseInt(peers[0].split(',')[1]);
+                    trace("My id: " + myId);
+                    for (var i = 1; i < peers.length; ++i) {
+                        if (peers[i].length > 0) {
+                            trace("Peer " + i + ": " + peers[i]);
+                            var parsed = peers[i].split(',');
+                            otherPeers[parseInt(parsed[1])] = parsed[0];
+                        }
+                    }
+                    startHangingGet();
+                    request = null;
+                }
+            }
+        } catch (e) {
+            trace("error: " + e.description);
+        }
+    }
+
+    function signIn() {
+        try {
+            request = new XMLHttpRequest();
+            request.onreadystatechange = signInCallback;
+            request.open("GET", server + "/sign_in?" + localName, true);
+            request.send();
+        } catch (e) {
+            trace("error: " + e.description);
+        }
+    }
+
+    function dummy() {
+    }
+
+    function sendToPeer(peer_id, data) {
+        try {
+            console.log(peer_id, " Send ", data);
+            if (myId == -1) {
+                alert("Not connected");
+                return;
+            }
+            if (peer_id == myId) {
+                alert("Can't send a message to oneself :)");
+                return;
+            }
+            var r = new XMLHttpRequest();
+            r.onreadystatechange = dummy
+            r.open("POST", server + "/message?peer_id=" + myId + "&to=" + peer_id, true);
+            r.setRequestHeader("Content-Type", "text/plain");
+            r.send(data);
+        } catch (e) {
+            trace("send to peer error: " + e.description);
+        }
+    }
+
+    function connect() {
+        localName = document.getElementById("local").value.toLowerCase();
+        server = document.getElementById("server").value.toLowerCase();
+        if (localName.length == 0) {
+            alert("I need a name please.");
+            document.getElementById("local").focus();
+        } else {
+            document.getElementById("connect").disabled = true;
+            document.getElementById("disconnect").disabled = false;
+            signIn();
+        }
+    }
+
+    function disconnect() {
+        if (request) {
+            request.abort();
+            request = null;
+        }
+
+        if (hangingGet) {
+            hangingGet.abort();
+            hangingGet = null;
+        }
+
+        if (myId != -1) {
+            request = new XMLHttpRequest();
+            request.open("GET", server + "/sign_out?peer_id=" + myId, false);
+            request.send();
+            request = null;
+            myId = -1;
+        }
+
+        document.getElementById("connect").disabled = false;
+        document.getElementById("disconnect").disabled = true;
+    }
+
+    window.onbeforeunload = disconnect;
+
+    function send() {
+        var text = document.getElementById("message").value;
+        var peer_id = parseInt(document.getElementById("peer_id").value);
+        if (!text.length || peer_id == 0) {
+            alert("No text supplied or invalid peer id");
+        } else {
+            sendToPeer(peer_id, text);
+        }
+    }
+
+    function toggleMe(obj) {
+        var id = obj.id.replace("toggle", "msg");
+        var t = document.getElementById(id);
+        if (obj.innerText == "+") {
+            obj.innerText = "-";
+            t.style.display = "block";
+        } else {
+            obj.innerText = "+";
+            t.style.display = "none";
+        }
+    }
+
+    function onSessionConnecting(message) {
+        console.log("Session connecting.");
+    }
+
+    function onSessionOpened(message) {
+        console.log("Session opened.");
+    }
+
+    function onRemoteStreamRemoved(event) {
+        console.log("Remote stream removed.");
+    }
+
+    function onRemoteSdpError(event) {
+        console.error('onRemoteSdpError', event.name, event.message);
+    }
+
+    function onRemoteSdpSucces() {
+        console.log('onRemoteSdpSucces');
+    }
+
+</script>
+
+<body>
+
+
+
+    <button id="auth" onclick="login()">Login</button>
+    <br>
+    <div id="authlabel"></div>
+    <br> Server: <input type="text" id="server" value="http://signalingserver.centralus.cloudapp.azure.com:3000" /><br> Your
+    name:
+    <input type="text" id="local" value="myclient" />
+    <button id="connect" onclick="connect();">Connect</button>
+    <button disabled="true" id="disconnect" onclick="disconnect();">Disconnect</button>
+    <br>
+    <button onclick="document.getElementById('debug').innerHTML='';">Clear log</button>
+    <pre id="debug"></pre>
+    <br>
+    <hr>
+    <div id="container">
+        <div id="remote">
+            <video id="remote-video" width="1280" height="720"></video>
+        </div>
+    </div>
+</body>
+
+</html>
