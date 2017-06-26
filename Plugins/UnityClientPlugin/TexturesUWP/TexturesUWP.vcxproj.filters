@@ -5,45 +5,56 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Unity">
+      <UniqueIdentifier>{d4b65952-8be9-4e5d-bb31-83660139adab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MediaEngine">
+      <UniqueIdentifier>{2e2ec603-c4ea-49fa-a978-df4936c749f0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="TexturesUWP.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="mediaEngine\MediaEnginePlayback.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="mediaEngine\MediaHelpers.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TexturesUWP.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityEventQueue.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityGraphics.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D9.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D11.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D12.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityGraphicsMetal.h" />
-    <ClInclude Include="UnityPluginAPI\IUnityInterface.h" />
     <ClInclude Include="defs.h" />
-    <ClInclude Include="macros.h" />
-    <ClInclude Include="libyuv\basic_types.h" />
-    <ClInclude Include="libyuv\compare.h" />
-    <ClInclude Include="libyuv\compare_row.h" />
-    <ClInclude Include="libyuv\convert.h" />
-    <ClInclude Include="libyuv\convert_argb.h" />
-    <ClInclude Include="libyuv\convert_from.h" />
-    <ClInclude Include="libyuv\convert_from_argb.h" />
-    <ClInclude Include="libyuv\cpu_id.h" />
-    <ClInclude Include="libyuv\libyuv.h" />
-    <ClInclude Include="libyuv\mjpeg_decoder.h" />
-    <ClInclude Include="libyuv\planar_functions.h" />
-    <ClInclude Include="libyuv\rotate.h" />
-    <ClInclude Include="libyuv\rotate_argb.h" />
-    <ClInclude Include="libyuv\rotate_row.h" />
-    <ClInclude Include="libyuv\row.h" />
-    <ClInclude Include="libyuv\scale.h" />
-    <ClInclude Include="libyuv\scale_argb.h" />
-    <ClInclude Include="libyuv\scale_row.h" />
-    <ClInclude Include="libyuv\version.h" />
-    <ClInclude Include="libyuv\video_common.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityInterface.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityPluginAPI\IUnityEventQueue.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityPluginAPI\IUnityGraphics.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D9.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D11.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D12.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsMetal.h">
+      <Filter>Unity</Filter>
+    </ClInclude>
+    <ClInclude Include="mediaEngine\MediaEnginePlayback.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="mediaEngine\MediaHelpers.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="TexturesUWP.def" />
