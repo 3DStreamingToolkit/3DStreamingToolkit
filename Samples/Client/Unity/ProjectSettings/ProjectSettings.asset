@@ -515,7 +515,7 @@ PlayerSettings:
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
   metroCertificateIssuer: DefaultCompany
-  metroCertificateNotAfter: 00df98aaf0fdd301
+  metroCertificateNotAfter: 80ea3c88800bd401
   metroApplicationDescription: UnityX86
   wsaImages: {}
   metroTileShortName: UnityX86
