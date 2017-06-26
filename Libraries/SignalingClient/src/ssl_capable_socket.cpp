@@ -1,5 +1,7 @@
 #include "ssl_capable_socket.h"
 
+#include <chrono>
+
 #ifdef WIN32
 #include "webrtc/base/win32socketserver.h"
 #endif
@@ -75,6 +77,8 @@ int SslCapableSocket::Bind(const SocketAddress& addr)
 
 int SslCapableSocket::Connect(const SocketAddress& addr)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	if (ssl_adapter_.get() == nullptr)
 	{
 		return socket_->Connect(addr);
@@ -94,16 +98,22 @@ int SslCapableSocket::Connect(const SocketAddress& addr)
 
 int SslCapableSocket::Send(const void* pv, size_t cb)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	return ssl_adapter_.get() == nullptr ? socket_->Send(pv, cb) : ssl_adapter_->Send(pv, cb);
 }
 
 int SslCapableSocket::SendTo(const void* pv, size_t cb, const SocketAddress& addr)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	return ssl_adapter_.get() == nullptr ? socket_->SendTo(pv, cb, addr) : ssl_adapter_->SendTo(pv, cb, addr);
 }
 
 int SslCapableSocket::Recv(void* pv, size_t cb, int64_t* timestamp)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	return ssl_adapter_.get() == nullptr ? socket_->Recv(pv, cb, timestamp) : ssl_adapter_->Recv(pv, cb, timestamp);
 }
 
@@ -112,6 +122,8 @@ int SslCapableSocket::RecvFrom(void* pv,
 	SocketAddress* paddr,
 	int64_t* timestamp)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	return ssl_adapter_.get() == nullptr ? socket_->RecvFrom(pv, cb, paddr, timestamp) : ssl_adapter_->RecvFrom(pv, cb, paddr, timestamp);
 }
 
@@ -127,6 +139,8 @@ AsyncSocket* SslCapableSocket::Accept(SocketAddress* paddr)
 
 int SslCapableSocket::Close()
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	return ssl_adapter_.get() == nullptr ? socket_->Close() : ssl_adapter_->Close();
 }
 
@@ -178,20 +192,28 @@ void SslCapableSocket::MapUnderlyingEvents(AsyncSocket* provider, AsyncSocket* o
 
 void SslCapableSocket::RefireReadEvent(AsyncSocket* socket)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	this->SignalReadEvent.emit(socket);
 }
 
 void SslCapableSocket::RefireWriteEvent(AsyncSocket* socket)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	this->SignalWriteEvent.emit(socket);
 }
 
 void SslCapableSocket::RefireConnectEvent(AsyncSocket* socket)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	this->SignalConnectEvent.emit(socket);
 }
 
 void SslCapableSocket::RefireCloseEvent(AsyncSocket* socket, int err)
 {
+	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
 	this->SignalCloseEvent.emit(socket, err);
 }
