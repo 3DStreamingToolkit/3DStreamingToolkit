@@ -77,7 +77,6 @@
       <SubType>Designer</SubType>
     </AppxManifest>
     <Content Include="PixelShader.cso" />
-    <Content Include="VertexShader.cso" />
     <None Include="StreamingDirectxHololensClient_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
