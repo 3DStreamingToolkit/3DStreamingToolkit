@@ -34,7 +34,6 @@ using namespace Toolkit3DSample;
 HWND				g_hWnd = nullptr;
 DeviceResources*	g_deviceResources = nullptr;
 CubeRenderer*		g_cubeRenderer = nullptr;
-bool				g_isRunning = false;
 #ifdef TEST_RUNNER
 VideoTestRunner*	g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
@@ -55,93 +54,77 @@ void FrameUpdate()
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	char data[1024];
+	char type[256];
+	char body[1024];
 	Json::Reader reader;
 	Json::Value msg = NULL;
 	reader.parse(message, msg, false);
 
-	if (msg.isMember("type"))
+	if (msg.isMember("type") && msg.isMember("body"))
 	{
-		strcpy(data, msg.get("type", "").asCString());
+		strcpy(type, msg.get("type", "").asCString());
+		strcpy(body, msg.get("body", "").asCString());
+		std::istringstream datastream(body);
+		std::string token;
 
-		if (strcmp(data, "camera-transform-lookat") == 0)
-		{
-			if (msg.isMember("body"))
-			{
-				strcpy(data, msg.get("body", "").asCString());
+		if (strcmp(type, "camera-transform-lookat") == 0)
+		{			
+			// Eye point.
+			getline(datastream, token, ',');
+			float eyeX = stof(token);
+			getline(datastream, token, ',');
+			float eyeY = stof(token);
+			getline(datastream, token, ',');
+			float eyeZ = stof(token);
 
-				// Parses the camera transformation data.
-				std::istringstream datastream(data);
-				std::string token;
-				
-				// Eye point.
-				getline(datastream, token, ',');
-				float eyeX = stof(token);
-				getline(datastream, token, ',');
-				float eyeY = stof(token);
-				getline(datastream, token, ',');
-				float eyeZ = stof(token);
+			// Focus point.
+			getline(datastream, token, ',');
+			float focusX = stof(token);
+			getline(datastream, token, ',');
+			float focusY = stof(token);
+			getline(datastream, token, ',');
+			float focusZ = stof(token);
 
-				// Focus point.
-				getline(datastream, token, ',');
-				float focusX = stof(token);
-				getline(datastream, token, ',');
-				float focusY = stof(token);
-				getline(datastream, token, ',');
-				float focusZ = stof(token);
+			// Up vector.
+			getline(datastream, token, ',');
+			float upX = stof(token);
+			getline(datastream, token, ',');
+			float upY = stof(token);
+			getline(datastream, token, ',');
+			float upZ = stof(token);
 
-				// Up vector.
-				getline(datastream, token, ',');
-				float upX = stof(token);
-				getline(datastream, token, ',');
-				float upY = stof(token);
-				getline(datastream, token, ',');
-				float upZ = stof(token);
-
-				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-
-				// Initializes the eye position vector.
-				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-				g_cubeRenderer->UpdateView(eye, lookAt, up);
-			}
+			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
+			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+			g_cubeRenderer->UpdateView(eye, lookAt, up);
 		}
-		else if (strcmp(data, "camera-transform-stereo") == 0)
+		else if (strcmp(type, "camera-transform-stereo") == 0)
 		{
-			if (msg.isMember("body"))
+			// Parses the left view projection matrix.
+			DirectX::XMFLOAT4X4 viewProjectionLeft;
+			for (int i = 0; i < 4; i++)
 			{
-				strcpy(data, msg.get("body", "").asCString());
-
-				// Parses the camera transformation data.
-				std::istringstream datastream(data);
-				std::string token;
-
-				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
-				for (int i = 0; i < 4; i++)
+				for (int j = 0; j < 4; j++)
 				{
-					for (int j = 0; j < 4; j++)
-					{
-						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
-					}
+					getline(datastream, token, ',');
+					viewProjectionLeft.m[i][j] = stof(token);
 				}
-
-				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
-					}
-				}
-
-				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateView(
-					viewProjectionLeft, viewProjectionRight);
 			}
+
+			// Parses the right view projection matrix.
+			DirectX::XMFLOAT4X4 viewProjectionRight;
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					getline(datastream, token, ',');
+					viewProjectionRight.m[i][j] = stof(token);
+				}
+			}
+
+			// Updates the cube's matrices.
+			g_cubeRenderer->UpdateView(
+				viewProjectionLeft, viewProjectionRight);
 		}
 	}
 }
@@ -168,7 +151,7 @@ int InitWebRTC(char* server, int port)
 	}
 
 	// Initializes the device resources.
-	g_deviceResources = new DeviceResources();
+	g_deviceResources = new DeviceResources(false);
 	g_deviceResources->SetWindow(wnd.handle());
 
 	// Initializes the cube renderer.
@@ -326,7 +309,7 @@ int WINAPI wWinMain(
 	}
 
 	// Initializes the device resources.
-	g_deviceResources = new DeviceResources();
+	g_deviceResources = new DeviceResources(false);
 	g_deviceResources->SetWindow(g_hWnd);
 
 	// Initializes the cube renderer.

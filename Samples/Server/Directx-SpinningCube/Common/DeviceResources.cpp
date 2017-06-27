@@ -5,7 +5,8 @@
 using namespace DX;
 
 // Constructor for DeviceResources.
-DeviceResources::DeviceResources()
+DeviceResources::DeviceResources(bool isStereo) :
+	m_isStereo(isStereo)
 {
 	CreateDeviceResources();
 }
@@ -28,6 +29,11 @@ void DeviceResources::CleanupResources()
 SIZE DeviceResources::GetOutputSize() const
 {
 	return m_outputSize;
+}
+
+bool DeviceResources::IsStereo() const
+{
+	return m_isStereo;
 }
 
 ID3D11Device1* DeviceResources::GetD3DDevice() const
@@ -133,7 +139,7 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
 		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		swapChainDesc.Width = FRAME_BUFFER_WIDTH;
+		swapChainDesc.Width = m_isStereo ? FRAME_BUFFER_WIDTH << 1 : FRAME_BUFFER_WIDTH;
 		swapChainDesc.Height = FRAME_BUFFER_HEIGHT;
 
 		hr = dxgiFactory2->CreateSwapChainForHwnd(
@@ -171,32 +177,35 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	}
 
 	// Initializes the viewport.
-#ifdef STEREO_OUTPUT_MODE
-	m_screenViewport = new D3D11_VIEWPORT[2];
+	if (m_isStereo)
+	{
+		m_screenViewport = new D3D11_VIEWPORT[2];
 
-	// Left eye.
-	m_screenViewport[0] = CD3D11_VIEWPORT(
-		0.0f,
-		0.0f,
-		(FLOAT)FRAME_BUFFER_WIDTH / 2,
-		(FLOAT)FRAME_BUFFER_HEIGHT);
+		// Left eye.
+		m_screenViewport[0] = CD3D11_VIEWPORT(
+			0.0f,
+			0.0f,
+			(FLOAT)FRAME_BUFFER_WIDTH,
+			(FLOAT)FRAME_BUFFER_HEIGHT);
 
-	// Right eye.
-	m_screenViewport[1] = CD3D11_VIEWPORT(
-		(FLOAT)FRAME_BUFFER_WIDTH / 2,
-		0.0f,
-		(FLOAT)FRAME_BUFFER_WIDTH / 2,
-		(FLOAT)FRAME_BUFFER_HEIGHT);
-#else // STEREO_OUTPUT_MODE
-	m_screenViewport = new D3D11_VIEWPORT[1];
-	m_screenViewport[0] = CD3D11_VIEWPORT(
-		0.0f,
-		0.0f,
-		(FLOAT)FRAME_BUFFER_WIDTH,
-		(FLOAT)FRAME_BUFFER_HEIGHT);
+		// Right eye.
+		m_screenViewport[1] = CD3D11_VIEWPORT(
+			(FLOAT)FRAME_BUFFER_WIDTH,
+			0.0f,
+			(FLOAT)FRAME_BUFFER_WIDTH,
+			(FLOAT)FRAME_BUFFER_HEIGHT);
+	}
+	else
+	{
+		m_screenViewport = new D3D11_VIEWPORT[1];
+		m_screenViewport[0] = CD3D11_VIEWPORT(
+			0.0f,
+			0.0f,
+			(FLOAT)FRAME_BUFFER_WIDTH,
+			(FLOAT)FRAME_BUFFER_HEIGHT);
 
-	m_d3dContext->RSSetViewports(1, m_screenViewport);
-#endif // STEREO_OUTPUT_MODE
+		m_d3dContext->RSSetViewports(1, m_screenViewport);
+	}
 
 	m_outputSize.cx = FRAME_BUFFER_WIDTH;
 	m_outputSize.cy = FRAME_BUFFER_HEIGHT;

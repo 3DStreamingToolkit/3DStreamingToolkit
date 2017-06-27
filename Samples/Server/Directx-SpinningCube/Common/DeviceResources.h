@@ -5,7 +5,7 @@ namespace DX
 	class DeviceResources
 	{
 	public:
-													DeviceResources();
+													DeviceResources(bool isStereo);
 													~DeviceResources();
 		void										SetWindow(HWND);
 		void										Present();
@@ -20,6 +20,9 @@ namespace DX
 		ID3D11RenderTargetView*						GetBackBufferRenderTargetView() const;
 		D3D11_VIEWPORT*								GetScreenViewport() const;
 
+		// True for stereo output.
+		bool										IsStereo() const;
+
 	private:
 		// Direct3D objects.
 		ID3D11Device1*								m_d3dDevice;
@@ -32,6 +35,9 @@ namespace DX
 
 		// Cached device properties.
 		SIZE										m_outputSize;
+
+		// Stereo output mode.
+		bool										m_isStereo;
 
 		HRESULT CreateDeviceResources();
 		HRESULT CreateWindowSizeDependentResources(HWND);

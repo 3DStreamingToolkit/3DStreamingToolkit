@@ -156,71 +156,74 @@ void CubeRenderer::InitPipeline()
 		nullptr,
 		&m_projectionConstantBuffer);
 
-#ifdef STEREO_OUTPUT_MODE
-	// Initializes the view matrix as identity since we'll use the projection matrix
-	// to store viewProjection transformation.
-	XMStoreFloat4x4(&m_viewConstantBufferData.view, XMMatrixIdentity());
-
-	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
-		m_viewConstantBuffer,
-		0,
-		NULL,
-		&m_viewConstantBufferData,
-		0,
-		0,
-		0);
-#else // STEREO_OUTPUT_MODE
-	// Initializes the projection matrix.
-	SIZE outputSize = m_deviceResources->GetOutputSize();
-	float aspectRatio = (float)outputSize.cx / outputSize.cy;
-	float fovAngleY = 70.0f * XM_PI / 180.0f;
-
-	// This is a simple example of change that can be made when the app is in
-	// portrait or snapped view.
-	if (aspectRatio < 1.0f)
+	if (m_deviceResources->IsStereo())
 	{
-		fovAngleY *= 2.0f;
+		// Initializes the view matrix as identity since we'll use the projection matrix
+		// to store viewProjection transformation.
+		XMStoreFloat4x4(&m_viewConstantBufferData.view, XMMatrixIdentity());
+
+		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+			m_viewConstantBuffer,
+			0,
+			NULL,
+			&m_viewConstantBufferData,
+			0,
+			0,
+			0);
 	}
+	else
+	{
+		// Initializes the projection matrix.
+		SIZE outputSize = m_deviceResources->GetOutputSize();
+		float aspectRatio = (float)outputSize.cx / outputSize.cy;
+		float fovAngleY = 70.0f * XM_PI / 180.0f;
 
-	// This sample makes use of a right-handed coordinate system using row-major matrices.
-	XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovRH(
-		fovAngleY,
-		aspectRatio,
-		0.01f,
-		100.0f
-	);
+		// This is a simple example of change that can be made when the app is in
+		// portrait or snapped view.
+		if (aspectRatio < 1.0f)
+		{
+			fovAngleY *= 2.0f;
+		}
 
-	// Ignores the orientation.
-	XMMATRIX orientationMatrix = XMMatrixIdentity();
+		// This sample makes use of a right-handed coordinate system using row-major matrices.
+		XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovRH(
+			fovAngleY,
+			aspectRatio,
+			0.01f,
+			100.0f
+		);
 
-	XMStoreFloat4x4(
-		&m_projectionConstantBufferData[0].projection,
-		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
-	);
+		// Ignores the orientation.
+		XMMATRIX orientationMatrix = XMMatrixIdentity();
 
-	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
-		m_projectionConstantBuffer,
-		0,
-		NULL,
-		&m_projectionConstantBufferData[0],
-		0,
-		0,
-		0);
-	
-	// Initializes the view matrix.
-	XMStoreFloat4x4(
-		&m_viewConstantBufferData.view,
-		XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+		XMStoreFloat4x4(
+			&m_projectionConstantBufferData[0].projection,
+			XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
+		);
 
-	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
-		m_viewConstantBuffer,
-		0,
-		NULL,
-		&m_viewConstantBufferData,
-		0,
-		0,
-		0);
-#endif // STEREO_OUTPUT_MODE
+		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+			m_projectionConstantBuffer,
+			0,
+			NULL,
+			&m_projectionConstantBufferData[0],
+			0,
+			0,
+			0);
+
+		// Initializes the view matrix.
+		XMStoreFloat4x4(
+			&m_viewConstantBufferData.view,
+			XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+
+		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+			m_viewConstantBuffer,
+			0,
+			NULL,
+			&m_viewConstantBufferData,
+			0,
+			0,
+			0);
+	}
 }
 
 void CubeRenderer::Update()
@@ -264,29 +267,32 @@ void CubeRenderer::Render()
 	// Sends the projection constant buffer to the graphics device.
 	context->VSSetConstantBuffers(2, 1, &m_projectionConstantBuffer);
 
-#ifdef STEREO_OUTPUT_MODE
-	// Gets the viewport.
-	D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
+	if (m_deviceResources->IsStereo())
+	{
+		// Gets the viewport.
+		D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
 
-	// Updates view projection matrix for the left eye.
-	context->UpdateSubresource1(
-		m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[0], 0, 0, 0);
+		// Updates view projection matrix for the left eye.
+		context->UpdateSubresource1(
+			m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[0], 0, 0, 0);
 
-	// Draws the objects in the left eye.
-	context->RSSetViewports(1, viewports);
-	context->DrawIndexed(m_indexCount, 0, 0);
+		// Draws the objects in the left eye.
+		context->RSSetViewports(1, viewports);
+		context->DrawIndexed(m_indexCount, 0, 0);
 
-	// Updates view projection matrix for the right eye.
-	context->UpdateSubresource1(
-		m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[1], 0, 0, 0);
+		// Updates view projection matrix for the right eye.
+		context->UpdateSubresource1(
+			m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[1], 0, 0, 0);
 
-	// Draws the objects in the right eye.
-	context->RSSetViewports(1, viewports + 1);
-	context->DrawIndexed(m_indexCount, 0, 0);
-#else // STEREO_OUTPUT_MODE
-	// Draws the objects.
-	context->DrawIndexed(m_indexCount, 0, 0);
-#endif // STEREO_OUTPUT_MODE
+		// Draws the objects in the right eye.
+		context->RSSetViewports(1, viewports + 1);
+		context->DrawIndexed(m_indexCount, 0, 0);
+	}
+	else
+	{
+		// Draws the objects.
+		context->DrawIndexed(m_indexCount, 0, 0);
+	}
 }
 
 void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
