@@ -63,45 +63,6 @@ void InputUpdate(const std::string& message)
 	{
 		strcpy(data, msg.get("type", "").asCString());
 
-#ifdef STEREO_OUTPUT_MODE
-		if (strcmp(data, "camera-transform-stereo") == 0)
-		{
-			if (msg.isMember("body"))
-			{
-				strcpy(data, msg.get("body", "").asCString());
-
-				// Parses the camera transformation data.
-				std::istringstream datastream(data);
-				std::string token;
-				
-				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
-					}
-				}
-
-				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
-					}
-				}
-
-				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateViewProjectionMatrices(
-					viewProjectionLeft, viewProjectionRight);
-			}
-		}
-#else // STEREO_OUTPUT_MODE
 		if (strcmp(data, "camera-transform-lookat") == 0)
 		{
 			if (msg.isMember("body"))
@@ -144,7 +105,43 @@ void InputUpdate(const std::string& message)
 				g_cubeRenderer->UpdateView(eye, lookAt, up);
 			}
 		}
-#endif // STEREO_OUTPUT_MODE
+		else if (strcmp(data, "camera-transform-stereo") == 0)
+		{
+			if (msg.isMember("body"))
+			{
+				strcpy(data, msg.get("body", "").asCString());
+
+				// Parses the camera transformation data.
+				std::istringstream datastream(data);
+				std::string token;
+
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Updates the cube's matrices.
+				g_cubeRenderer->UpdateViewProjectionMatrices(
+					viewProjectionLeft, viewProjectionRight);
+			}
+		}
 	}
 }
 
@@ -201,9 +198,7 @@ int InitWebRTC(char* server, int port)
 			::DispatchMessage(&msg);
 		}
 
-#ifdef STEREO_OUTPUT_MODE
 		g_deviceResources->Present();
-#endif // STEREO_OUTPUT_MODE
 	}
 
 	if (conductor->connection_active() || client.is_connected())
@@ -284,11 +279,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	// Creates window.
-#ifdef STEREO_OUTPUT_MODE
-	RECT rc = { 0, 0, 2560, 720 };
-#else
 	RECT rc = { 0, 0, 1280, 720 };
-#endif
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	g_hWnd = CreateWindow(
 		L"SpinningCubeClass",

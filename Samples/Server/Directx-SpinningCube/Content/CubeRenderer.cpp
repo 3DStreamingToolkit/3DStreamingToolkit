@@ -6,17 +6,10 @@ using namespace DirectX;
 using namespace DX;
 using namespace Toolkit3DSample;
 
-#ifdef STEREO_OUTPUT_MODE
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
-static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
-static const XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
-static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-#else // STEREO_OUTPUT_MODE
-// Eye is at (0,0.7,1.5), looking at point (0,-0.1,0) with the up-vector along the y-axis.
-static XMVECTORF32 eye = { 0.0f, 0.7f, 1.5f, 0.0f };
-static XMVECTORF32 at = { 0.0f, -0.1f, 0.0f, 0.0f };
+static XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
+static XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
 static XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-#endif // STEREO_OUTPUT_MODE
 
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	m_degreesPerSecond(45),
@@ -83,11 +76,7 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
-#ifdef STEREO_OUTPUT_MODE
-	errno_t error = fopen_s(&vertexShaderFile, "StereoVertexShader.cso", "rb");
-#else // STEREO_OUTPUT_MODE
 	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
-#endif // STEREO_OUTPUT_MODE
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -245,17 +234,17 @@ void CubeRenderer::Render()
 #endif // STEREO_OUTPUT_MODE
 }
 
-#ifdef STEREO_OUTPUT_MODE
 void CubeRenderer::UpdateViewProjectionMatrices(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
 {
-	m_constantBufferDataLeft.viewProjection = viewProjectionLeft;
-	m_constantBufferDataRight.viewProjection = viewProjectionRight;
+	m_constantBufferDataLeft.projection = viewProjectionLeft;
+	XMStoreFloat4x4(&m_constantBufferDataLeft.view, XMMatrixIdentity());
+	m_constantBufferDataRight.projection = viewProjectionRight;
+	XMStoreFloat4x4(&m_constantBufferDataRight.view, XMMatrixIdentity());
 }
-#else // STEREO_OUTPUT_MODE
-void Toolkit3DSample::CubeRenderer::UpdateView(const DirectX::XMVECTORF32 &newEye, const DirectX::XMVECTORF32 &newLookAt, const DirectX::XMVECTORF32 &newUp)
+
+void CubeRenderer::UpdateView(const XMVECTORF32& newEye, const XMVECTORF32& newLookAt, const XMVECTORF32& newUp)
 {
 	eye = newEye;
 	at = newLookAt;
 	up = newUp;
 }
-#endif // STEREO_OUTPUT_MODE
