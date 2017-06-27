@@ -34,6 +34,7 @@ using namespace Toolkit3DSample;
 HWND				g_hWnd = nullptr;
 DeviceResources*	g_deviceResources = nullptr;
 CubeRenderer*		g_cubeRenderer = nullptr;
+bool				g_isRunning = false;
 #ifdef TEST_RUNNER
 VideoTestRunner*	g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
@@ -138,7 +139,7 @@ void InputUpdate(const std::string& message)
 				}
 
 				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateViewProjectionMatrices(
+				g_cubeRenderer->UpdateView(
 					viewProjectionLeft, viewProjectionRight);
 			}
 		}
@@ -198,19 +199,9 @@ int InitWebRTC(char* server, int port)
 			::DispatchMessage(&msg);
 		}
 
-		g_deviceResources->Present();
-	}
-
-	if (conductor->connection_active() || client.is_connected())
-	{
-		while ((conductor->connection_active() || client.is_connected()) &&
-			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+		if (conductor->connection_active() || client.is_connected())
 		{
-			if (!wnd.PreTranslateMessage(&msg))
-			{
-				::TranslateMessage(&msg);
-				::DispatchMessage(&msg);
-			}
+			g_deviceResources->Present();
 		}
 	}
 

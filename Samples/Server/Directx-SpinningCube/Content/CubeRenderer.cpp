@@ -25,7 +25,7 @@ void CubeRenderer::InitGraphics()
 	// Load mesh vertices. Each vertex has a position and a color.
 	static const VertexPositionColor cubeVertices[] =
 	{
-		{ XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) }, // vertex 0 non-debug
+		{ XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
 		{ XMFLOAT3(-0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
 		{ XMFLOAT3(-0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
 		{ XMFLOAT3(-0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
@@ -129,14 +129,49 @@ void CubeRenderer::InitPipeline()
 	delete []vertexShaderFileData;
 	delete []pixelShaderFileData;
 
-	// Creates the constant buffer.
-	CD3D11_BUFFER_DESC constantBufferDesc(sizeof(ModelViewProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
-	m_deviceResources->GetD3DDevice()->CreateBuffer(&constantBufferDesc, nullptr, &m_constantBuffer);
+	// Creates the model constant buffer.
+	CD3D11_BUFFER_DESC modelConstantBufferDesc(
+		sizeof(ModelConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
 
-#ifndef STEREO_OUTPUT_MODE
+	m_deviceResources->GetD3DDevice()->CreateBuffer(
+		&modelConstantBufferDesc,
+		nullptr,
+		&m_modelConstantBuffer);
+
+	// Creates the view constant buffer.
+	CD3D11_BUFFER_DESC viewConstantBufferDesc(
+		sizeof(ViewConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+
+	m_deviceResources->GetD3DDevice()->CreateBuffer(
+		&viewConstantBufferDesc,
+		nullptr,
+		&m_viewConstantBuffer);
+
+	// Creates the projection constant buffer.
+	CD3D11_BUFFER_DESC projectionConstantBufferDesc(
+		sizeof(ProjectionConstantBuffer), D3D11_BIND_CONSTANT_BUFFER);
+
+	m_deviceResources->GetD3DDevice()->CreateBuffer(
+		&projectionConstantBufferDesc,
+		nullptr,
+		&m_projectionConstantBuffer);
+
+#ifdef STEREO_OUTPUT_MODE
+	// Initializes the view matrix as identity since we'll use the projection matrix
+	// to store viewProjection transformation.
+	XMStoreFloat4x4(&m_viewConstantBufferData.view, XMMatrixIdentity());
+
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_viewConstantBuffer,
+		0,
+		NULL,
+		&m_viewConstantBufferData,
+		0,
+		0,
+		0);
+#else // STEREO_OUTPUT_MODE
 	// Initializes the projection matrix.
 	SIZE outputSize = m_deviceResources->GetOutputSize();
-
 	float aspectRatio = (float)outputSize.cx / outputSize.cy;
 	float fovAngleY = 70.0f * XM_PI / 180.0f;
 
@@ -159,11 +194,32 @@ void CubeRenderer::InitPipeline()
 	XMMATRIX orientationMatrix = XMMatrixIdentity();
 
 	XMStoreFloat4x4(
-		&m_constantBufferData.projection,
+		&m_projectionConstantBufferData[0].projection,
 		XMMatrixTranspose(perspectiveMatrix * orientationMatrix)
 	);
 
-	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_projectionConstantBuffer,
+		0,
+		NULL,
+		&m_projectionConstantBufferData[0],
+		0,
+		0,
+		0);
+	
+	// Initializes the view matrix.
+	XMStoreFloat4x4(
+		&m_viewConstantBufferData.view,
+		XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_viewConstantBuffer,
+		0,
+		NULL,
+		&m_viewConstantBufferData,
+		0,
+		0,
+		0);
 #endif // STEREO_OUTPUT_MODE
 }
 
@@ -173,12 +229,9 @@ void CubeRenderer::Update()
 	float radians = XMConvertToRadians(m_degreesPerSecond++);
 
 	// Prepares to pass the updated model matrix to the shader.
-#ifdef STEREO_OUTPUT_MODE
-	XMStoreFloat4x4(&m_constantBufferDataLeft.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
-	XMStoreFloat4x4(&m_constantBufferDataRight.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
-#else // STEREO_OUTPUT_MODE
-	XMStoreFloat4x4(&m_constantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
-#endif // STEREO_OUTPUT_MODE
+	XMStoreFloat4x4(&m_modelConstantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_modelConstantBuffer, 0, NULL, &m_modelConstantBufferData, 0, 0, 0);
 }
 
 void CubeRenderer::Render()
@@ -202,8 +255,14 @@ void CubeRenderer::Render()
 	// Sets the primitive.
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	// Sends the constant buffer to the graphics device.
-	context->VSSetConstantBuffers1(0, 1, &m_constantBuffer, nullptr, nullptr);
+	// Sends the model constant buffer to the graphics device.
+	context->VSSetConstantBuffers(0, 1, &m_modelConstantBuffer);
+
+	// Sends the view constant buffer to the graphics device.
+	context->VSSetConstantBuffers(1, 1, &m_viewConstantBuffer);
+
+	// Sends the projection constant buffer to the graphics device.
+	context->VSSetConstantBuffers(2, 1, &m_projectionConstantBuffer);
 
 #ifdef STEREO_OUTPUT_MODE
 	// Gets the viewport.
@@ -211,35 +270,29 @@ void CubeRenderer::Render()
 
 	// Updates view projection matrix for the left eye.
 	context->UpdateSubresource1(
-		m_constantBuffer, 0, NULL, &m_constantBufferDataLeft, 0, 0, 0);
+		m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[0], 0, 0, 0);
 
 	// Draws the objects in the left eye.
 	context->RSSetViewports(1, viewports);
 	context->DrawIndexed(m_indexCount, 0, 0);
 
-	// Updates view matrix for the right eye.
+	// Updates view projection matrix for the right eye.
 	context->UpdateSubresource1(
-		m_constantBuffer, 0, NULL, &m_constantBufferDataRight, 0, 0, 0);
+		m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[1], 0, 0, 0);
 
 	// Draws the objects in the right eye.
 	context->RSSetViewports(1, viewports + 1);
 	context->DrawIndexed(m_indexCount, 0, 0);
 #else // STEREO_OUTPUT_MODE
-	// Updates view matrix.
-	XMStoreFloat4x4(&m_constantBufferData.view, XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
-	context->UpdateSubresource1(m_constantBuffer, 0, NULL, &m_constantBufferData, 0, 0, 0);
-
 	// Draws the objects.
 	context->DrawIndexed(m_indexCount, 0, 0);
 #endif // STEREO_OUTPUT_MODE
 }
 
-void CubeRenderer::UpdateViewProjectionMatrices(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
+void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
 {
-	m_constantBufferDataLeft.projection = viewProjectionLeft;
-	XMStoreFloat4x4(&m_constantBufferDataLeft.view, XMMatrixIdentity());
-	m_constantBufferDataRight.projection = viewProjectionRight;
-	XMStoreFloat4x4(&m_constantBufferDataRight.view, XMMatrixIdentity());
+	m_projectionConstantBufferData[0].projection = viewProjectionLeft;
+	m_projectionConstantBufferData[1].projection = viewProjectionRight;
 }
 
 void CubeRenderer::UpdateView(const XMVECTORF32& newEye, const XMVECTORF32& newLookAt, const XMVECTORF32& newUp)
@@ -247,4 +300,18 @@ void CubeRenderer::UpdateView(const XMVECTORF32& newEye, const XMVECTORF32& newL
 	eye = newEye;
 	at = newLookAt;
 	up = newUp;
+
+	// Updates the view matrix.
+	XMStoreFloat4x4(
+		&m_viewConstantBufferData.view,
+		XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_viewConstantBuffer,
+		0,
+		NULL,
+		&m_viewConstantBufferData,
+		0,
+		0,
+		0);
 }
