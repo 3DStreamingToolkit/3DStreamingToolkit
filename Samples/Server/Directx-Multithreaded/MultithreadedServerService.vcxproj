@@ -385,11 +385,7 @@
     <CLInclude Include="resource.h" />
     <ResourceCompile Include="Multithreaded.rc" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\Plugins\NativeServerPlugin\StreamingNativeServerPlugin.vcxproj">
-      <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
-    </ProjectReference>
-  </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
