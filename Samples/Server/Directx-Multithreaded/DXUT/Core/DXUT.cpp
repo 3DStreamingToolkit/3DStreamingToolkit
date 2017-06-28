@@ -2513,11 +2513,11 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
         GetDXUTState().SetDXGIOutputArray( ppOutputArray );
         GetDXUTState().SetDXGIOutputArraySize( OutputCount );
 
-#ifdef REMOTE_RENDERING
+#ifndef TEST_RUNNER
 		// Overrides the default buffer size with the supported video frame sizes.
 		pNewDeviceSettings->d3d11.sd.BufferDesc.Width = FRAME_BUFFER_WIDTH;
 		pNewDeviceSettings->d3d11.sd.BufferDesc.Height = FRAME_BUFFER_HEIGHT;
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
         // Create the swapchain
         hr = pDXGIFactory->CreateSwapChain( pd3d11Device, &pNewDeviceSettings->d3d11.sd, &pSwapChain );
@@ -2801,7 +2801,7 @@ void WINAPI DXUTRender3DEnvironment()
         }
 
 #if defined(DEBUG) || defined(_DEBUG)
-#ifndef REMOTE_RENDERING
+#ifdef TEST_RUNNER
         // The back buffer should always match the client rect 
         // if the Direct3D backbuffer covers the entire window
         RECT rcClient;
@@ -2812,7 +2812,7 @@ void WINAPI DXUTRender3DEnvironment()
 			assert(DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right);
 			assert(DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom);
         }
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 #endif // DEBUG
     }
 
@@ -2832,12 +2832,12 @@ void WINAPI DXUTRender3DEnvironment()
     else
         dwFlags = GetDXUTState().GetCurrentDeviceSettings()->d3d11.PresentFlags;
 
-#ifdef REMOTE_RENDERING
+#ifndef TEST_RUNNER
 	hr = S_OK;
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 	// Show the frame on the primary surface.
 	hr = pSwapChain->Present(GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval, dwFlags);
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
     if( DXGI_STATUS_OCCLUDED == hr )
     {

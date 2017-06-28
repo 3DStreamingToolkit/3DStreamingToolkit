@@ -49,7 +49,7 @@ void FrameUpdate()
 	g_cubeRenderer->Render();
 }
 
-#ifdef REMOTE_RENDERING
+#ifndef TEST_RUNNER
 
 // Handles input from client.
 void InputUpdate(const std::string& message)
@@ -204,7 +204,7 @@ int InitWebRTC(char* server, int port)
 	return 0;
 }
 
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
 // Called every time the application receives a message
@@ -293,7 +293,7 @@ void Render()
 	g_deviceResources->Present();
 }
 
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -308,7 +308,7 @@ int WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-#ifndef REMOTE_RENDERING
+#ifdef TEST_RUNNER
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
 		return 0;
@@ -326,21 +326,12 @@ int WINAPI wWinMain(
 	UINT width = rc.right - rc.left;
 	UINT height = rc.bottom - rc.top;
 
-#ifdef TEST_RUNNER
 	// Creates and initializes the video test runner library.
 	g_videoTestRunner = new VideoTestRunner(
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext()); 
 
 	g_videoTestRunner->StartTestRunner(g_deviceResources->GetSwapChain());
-#else // TEST_RUNNER
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext());
-
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
-#endif // TEST_RUNNER
 	
 	// Main message loop.
 	MSG msg = { 0 };
@@ -354,7 +345,7 @@ int WINAPI wWinMain(
 		else
 		{
 			Render();
-#ifdef TEST_RUNNER
+
 			if (g_videoTestRunner->TestsComplete())
 			{
 				break;
@@ -366,7 +357,6 @@ int WINAPI wWinMain(
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);
 			}
-#endif // TEST_RUNNER
 		}
 	}
 
@@ -374,7 +364,7 @@ int WINAPI wWinMain(
 	delete g_deviceResources;
 
 	return (int)msg.wParam;
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
@@ -409,5 +399,5 @@ int WINAPI wWinMain(
 	}
 
 	return InitWebRTC(server, port);
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 }

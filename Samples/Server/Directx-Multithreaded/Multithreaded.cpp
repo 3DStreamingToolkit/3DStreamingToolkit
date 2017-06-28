@@ -439,7 +439,7 @@ void FrameUpdate()
 	DXUTRender3DEnvironment();
 }
 
-#ifdef REMOTE_RENDERING
+#ifndef TEST_RUNNER
 
 // Handles input from client.
 void InputUpdate(const std::string& message)
@@ -607,7 +607,7 @@ int InitWebRTC(char* server, int port)
 	return 0;
 }
 
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -639,20 +639,18 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     
-#ifndef REMOTE_RENDERING
+#ifdef TEST_RUNNER
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
 
-#ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
-#endif// TEST_RUNNER
 
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
