@@ -156,10 +156,15 @@ void CubeRenderer::InitPipeline()
 		nullptr,
 		&m_projectionConstantBuffer);
 
-	if (m_deviceResources->IsStereo())
+	InitConstantBuffers(m_deviceResources->IsStereo());
+}
+
+void CubeRenderer::InitConstantBuffers(bool isStereo)
+{
+	if (isStereo)
 	{
-		// Initializes the view matrix as identity since we'll use the projection matrix
-		// to store viewProjection transformation.
+		// Initializes the view matrix as identity since we'll use the 
+		// projection matrix to store viewProjection transformation.
 		XMStoreFloat4x4(&m_viewConstantBufferData.view, XMMatrixIdentity());
 
 		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
@@ -267,30 +272,31 @@ void CubeRenderer::Render()
 	// Sends the projection constant buffer to the graphics device.
 	context->VSSetConstantBuffers(2, 1, &m_projectionConstantBuffer);
 
+	// Gets the viewport.
+	D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
+
 	if (m_deviceResources->IsStereo())
 	{
-		// Gets the viewport.
-		D3D11_VIEWPORT* viewports = m_deviceResources->GetScreenViewport();
-
-		// Updates view projection matrix for the left eye.
+		// Updates view projection matrix for left eye.
 		context->UpdateSubresource1(
 			m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[0], 0, 0, 0);
 
-		// Draws the objects in the left eye.
+		// Renders the cube.
 		context->RSSetViewports(1, viewports);
 		context->DrawIndexed(m_indexCount, 0, 0);
 
-		// Updates view projection matrix for the right eye.
+		// Updates view projection matrix for right eye.
 		context->UpdateSubresource1(
 			m_projectionConstantBuffer, 0, NULL, &m_projectionConstantBufferData[1], 0, 0, 0);
 
-		// Draws the objects in the right eye.
+		// Renders the cube.
 		context->RSSetViewports(1, viewports + 1);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
 	else
 	{
-		// Draws the objects.
+		// Renders the cube.
+		context->RSSetViewports(1, viewports);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
 }

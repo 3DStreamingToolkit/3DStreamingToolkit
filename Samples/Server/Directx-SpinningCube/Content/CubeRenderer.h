@@ -33,14 +33,17 @@ namespace Toolkit3DSample
 	{
 	public:
 												CubeRenderer(DX::DeviceResources* deviceResources);
-		void									InitGraphics();
-		void									InitPipeline();
+
+		void									InitConstantBuffers(bool isStereo);
 		void									Update();
 		void									Render();
 		void									UpdateView(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
 		void									UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
 
 	private:
+		void									InitGraphics();
+		void									InitPipeline();
+
 		// Cached pointer to device resources.
 		DX::DeviceResources*					m_deviceResources;
 

@@ -29,6 +29,10 @@ namespace DirectXClientComponent
 
 		Windows::Foundation::Numerics::float3 GetPosition() { return m_position; }
 
+		int GetWidth() { return m_width; }
+
+		int GetHeight() { return m_height; }
+
 	private:
 		std::shared_ptr<DX::DeviceResources>		m_deviceResources;
 		int											m_width;

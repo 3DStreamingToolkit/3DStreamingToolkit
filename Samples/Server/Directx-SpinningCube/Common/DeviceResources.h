@@ -1,14 +1,20 @@
 #pragma once
 
+#define DEFAULT_FRAME_BUFFER_WIDTH		1280
+#define DEFAULT_FRAME_BUFFER_HEIGHT		720
+
 namespace DX
 {
 	class DeviceResources
 	{
 	public:
-													DeviceResources(bool isStereo);
+													DeviceResources(int width = DEFAULT_FRAME_BUFFER_WIDTH, int height = DEFAULT_FRAME_BUFFER_HEIGHT);
 													~DeviceResources();
+
 		void										SetWindow(HWND);
 		void										Present();
+		void										Resize(int width, int height);
+		void										SetStereo(bool enabled);
 
 		// The size of the render target, in pixels.
 		SIZE										GetOutputSize() const;
@@ -39,8 +45,8 @@ namespace DX
 		// Stereo output mode.
 		bool										m_isStereo;
 
-		HRESULT CreateDeviceResources();
-		HRESULT CreateWindowSizeDependentResources(HWND);
-		void CleanupResources();
+		HRESULT										CreateDeviceResources();
+		HRESULT										CreateWindowSizeDependentResources(HWND);
+		void										CleanupResources();
 	};
 }

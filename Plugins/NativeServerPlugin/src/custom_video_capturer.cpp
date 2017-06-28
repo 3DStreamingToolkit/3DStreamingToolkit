@@ -194,7 +194,8 @@ namespace Toolkit3DLibrary
 
 			if (!use_software_encoder_)
 			{
-				auto texture = video_helper_->Capture2DTexture(&width, &height);
+				ID3D11Texture2D* texture = nullptr;
+				video_helper_->Capture(&texture, &width, &height);
 				frame.SetID3D11Texture2D(texture);
 			}
 

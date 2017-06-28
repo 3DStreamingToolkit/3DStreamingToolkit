@@ -5,8 +5,9 @@
 using namespace DX;
 
 // Constructor for DeviceResources.
-DeviceResources::DeviceResources(bool isStereo) :
-	m_isStereo(isStereo)
+DeviceResources::DeviceResources(int width, int height) :
+	m_outputSize({ width, height }),
+	m_isStereo(false)
 {
 	CreateDeviceResources();
 }
@@ -139,8 +140,8 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
 		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		swapChainDesc.Width = m_isStereo ? FRAME_BUFFER_WIDTH << 1 : FRAME_BUFFER_WIDTH;
-		swapChainDesc.Height = FRAME_BUFFER_HEIGHT;
+		swapChainDesc.Width = m_outputSize.cx;
+		swapChainDesc.Height = m_outputSize.cy;
 
 		hr = dxgiFactory2->CreateSwapChainForHwnd(
 			m_d3dDevice, 
@@ -177,38 +178,21 @@ HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 	}
 
 	// Initializes the viewport.
-	if (m_isStereo)
-	{
-		m_screenViewport = new D3D11_VIEWPORT[2];
+	m_screenViewport = new D3D11_VIEWPORT[2];
 
-		// Left eye.
-		m_screenViewport[0] = CD3D11_VIEWPORT(
-			0.0f,
-			0.0f,
-			(FLOAT)FRAME_BUFFER_WIDTH,
-			(FLOAT)FRAME_BUFFER_HEIGHT);
+	// For mono output / stereo output (left eye)
+	m_screenViewport[0] = CD3D11_VIEWPORT(
+		0.0f,
+		0.0f,
+		(FLOAT)m_outputSize.cx,
+		(FLOAT)m_outputSize.cy);
 
-		// Right eye.
-		m_screenViewport[1] = CD3D11_VIEWPORT(
-			(FLOAT)FRAME_BUFFER_WIDTH,
-			0.0f,
-			(FLOAT)FRAME_BUFFER_WIDTH,
-			(FLOAT)FRAME_BUFFER_HEIGHT);
-	}
-	else
-	{
-		m_screenViewport = new D3D11_VIEWPORT[1];
-		m_screenViewport[0] = CD3D11_VIEWPORT(
-			0.0f,
-			0.0f,
-			(FLOAT)FRAME_BUFFER_WIDTH,
-			(FLOAT)FRAME_BUFFER_HEIGHT);
-
-		m_d3dContext->RSSetViewports(1, m_screenViewport);
-	}
-
-	m_outputSize.cx = FRAME_BUFFER_WIDTH;
-	m_outputSize.cy = FRAME_BUFFER_HEIGHT;
+	// For stereo output (right eye)
+	m_screenViewport[1] = CD3D11_VIEWPORT(
+		(FLOAT)m_outputSize.cx,
+		0.0f,
+		(FLOAT)m_outputSize.cx,
+		(FLOAT)m_outputSize.cy);
 
 	return hr;
 }
@@ -222,4 +206,45 @@ void DeviceResources::SetWindow(HWND hWnd)
 void DeviceResources::Present()
 {
 	m_swapChain->Present(1, 0);
+}
+
+// Resizes the swapchain.
+void DeviceResources::Resize(int width, int height)
+{
+	// Releases the render target view.
+	SAFE_RELEASE(m_d3dRenderTargetView);
+
+	// Resizes the swapchain buffers.
+	HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_UNKNOWN, 0);
+	if (SUCCEEDED(hr))
+	{
+		// Re-creates the render target view.
+		ID3D11Texture2D* frameBuffer = nullptr;
+		hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
+		if (SUCCEEDED(hr))
+		{
+			hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
+			SAFE_RELEASE(frameBuffer);
+
+			if (SUCCEEDED(hr))
+			{
+				// Updates the new output size.
+				m_outputSize.cx = width;
+				m_outputSize.cy = height;
+			}
+		}
+	}
+}
+
+// Enables/Disables the stereo output mode.
+void DeviceResources::SetStereo(bool enabled)
+{
+	if (m_isStereo == enabled)
+	{
+		return;
+	}
+
+	m_outputSize.cx = enabled ? m_outputSize.cx << 1 : m_outputSize.cx >> 1;
+	Resize(m_outputSize.cx, m_outputSize.cy);
+	m_isStereo = enabled;
 }

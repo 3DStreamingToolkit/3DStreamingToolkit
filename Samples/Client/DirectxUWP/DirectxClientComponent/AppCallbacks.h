@@ -43,6 +43,7 @@ namespace DirectXClientComponent
 			const Array<uint8_t>^ decodedData);
 
 	private:
+		void InitVideoRender(std::shared_ptr<DX::DeviceResources> deviceResources, int width, int height);
 		void SendInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
 
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;

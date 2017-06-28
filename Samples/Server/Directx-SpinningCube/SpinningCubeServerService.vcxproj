@@ -221,7 +221,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="defs.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="server_renderer.h" />
     <ClInclude Include="test_runner.h" />

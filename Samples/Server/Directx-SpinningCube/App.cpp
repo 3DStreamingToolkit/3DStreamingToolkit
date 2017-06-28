@@ -67,7 +67,13 @@ void InputUpdate(const std::string& message)
 		std::istringstream datastream(body);
 		std::string token;
 
-		if (strcmp(type, "camera-transform-lookat") == 0)
+		if (strcmp(type, "stereo_rendering") == 0)
+		{
+			getline(datastream, token, ',');
+			int stereo = stoi(token);
+			g_deviceResources->SetStereo(stereo == 1);
+		}
+		else if (strcmp(type, "camera-transform-lookat") == 0)
 		{			
 			// Eye point.
 			getline(datastream, token, ',');
@@ -151,7 +157,7 @@ int InitWebRTC(char* server, int port)
 	}
 
 	// Initializes the device resources.
-	g_deviceResources = new DeviceResources(false);
+	g_deviceResources = new DeviceResources();
 	g_deviceResources->SetWindow(wnd.handle());
 
 	// Initializes the cube renderer.
@@ -309,7 +315,7 @@ int WINAPI wWinMain(
 	}
 
 	// Initializes the device resources.
-	g_deviceResources = new DeviceResources(false);
+	g_deviceResources = new DeviceResources();
 	g_deviceResources->SetWindow(g_hWnd);
 
 	// Initializes the cube renderer.

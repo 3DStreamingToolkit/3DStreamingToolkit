@@ -110,27 +110,24 @@ void AppCallbacks::OnFrame(
 void AppCallbacks::OnDecodedFrame(
 	uint32_t width,
 	uint32_t height,
-	const Array<uint8_t>^ encodedData)
+	const Array<uint8_t>^ decodedData)
 {
-	// Uses lazy initialization.
 	if (!m_videoRenderer)
 	{
-		// Initializes the video renderer.
-		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
-		m_main->SetVideoRender(m_videoRenderer);
+		// Enables the stereo output mode.
+		String^ msg =
+			"{" +
+			"  \"type\":\"stereo_rendering\"," +
+			"  \"body\":\"1\"" +
+			"}";
 
-		// Initalizes the temp buffers.
-		int bufferSize = width * height * 4;
-		int half_width = (width + 1) / 2;
-		size_t size_y = static_cast<size_t>(width) * height;
-		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
-
-		s_videoRGBFrame = new uint8_t[bufferSize];
-		memset(s_videoRGBFrame, 0, bufferSize);
+		m_sendInputDataHandler(msg);
 	}
 
+	InitVideoRender(m_deviceResources, width, height);
+
 	if (!libyuv::YUY2ToARGB(
-		encodedData->Data,
+		decodedData->Data,
 		width * 2,
 		s_videoRGBFrame,
 		width * 4,
@@ -139,6 +136,39 @@ void AppCallbacks::OnDecodedFrame(
 	{
 		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
 	}
+}
+
+void AppCallbacks::InitVideoRender(
+	std::shared_ptr<DX::DeviceResources> deviceResources,
+	int width,
+	int height)
+{
+	if (m_videoRenderer)
+	{
+		// Do nothing if width and height don't change.
+		if (m_videoRenderer->GetWidth() == width &&
+			m_videoRenderer->GetHeight() == height)
+		{
+			return;
+		}
+
+		// Releases old resources.
+		delete m_videoRenderer;
+		delete []s_videoRGBFrame;
+	}
+
+	// Initializes the video renderer.
+	m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
+	m_main->SetVideoRender(m_videoRenderer);
+
+	// Initalizes the temp buffers.
+	int bufferSize = width * height * 4;
+	int half_width = (width + 1) / 2;
+	size_t size_y = static_cast<size_t>(width) * height;
+	size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
+
+	s_videoRGBFrame = new uint8_t[bufferSize];
+	memset(s_videoRGBFrame, 0, bufferSize);
 }
 
 void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
