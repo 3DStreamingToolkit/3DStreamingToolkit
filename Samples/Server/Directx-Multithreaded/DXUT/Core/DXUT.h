@@ -18,9 +18,6 @@
 #error "DXUT requires a Unicode build."
 #endif
 
-//Static define here, also defined as a build configuration
-//#define TEST_RUNNER
-
 #ifndef STRICT
 #define STRICT
 #endif
