@@ -577,6 +577,7 @@ float WINAPI DXUTGetElapsedTime()                          { return GetDXUTState
 float WINAPI DXUTGetFPS()                                  { return GetDXUTState().GetFPS(); }
 LPCWSTR WINAPI DXUTGetWindowTitle()                        { return GetDXUTState().GetWindowTitle(); }
 LPCWSTR WINAPI DXUTGetDeviceStats()                        { return GetDXUTState().GetDeviceStats(); }
+bool WINAPI DXUTIsStereo()								   { return GetDXUTState().GetCurrentDeviceSettings()->d3d11.isStereo; }
 bool WINAPI DXUTIsRenderingPaused()                        { return GetDXUTState().GetPauseRenderingCount() > 0; }
 bool WINAPI DXUTIsTimePaused()                             { return GetDXUTState().GetPauseTimeCount() > 0; }
 bool WINAPI DXUTIsActive()                                 { return GetDXUTState().GetActive(); }
@@ -2219,34 +2220,22 @@ HRESULT WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext 
 {
     HRESULT hr = S_OK;
 
-#ifdef STEREO_OUTPUT_MODE
 	// Setup the viewport to match the backbuffer
 	D3D11_VIEWPORT* vp;
 	vp = new D3D11_VIEWPORT[2];
 	vp[0] = CD3D11_VIEWPORT(
 		0.0f,
 		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+		DEFAULT_FRAME_BUFFER_WIDTH,
+		DEFAULT_FRAME_BUFFER_HEIGHT);
 
 	vp[1] = CD3D11_VIEWPORT(
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
+		DEFAULT_FRAME_BUFFER_WIDTH,
 		0.0f,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width / 2,
-		(FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height);
+		DEFAULT_FRAME_BUFFER_WIDTH,
+		DEFAULT_FRAME_BUFFER_HEIGHT);
 
 	GetDXUTState().SetD3D11ScreenViewport(vp);
-#else // STEREO_OUTPUT_MODE
-	// Setup the viewport to match the backbuffer
-	D3D11_VIEWPORT vp;
-	vp.Width = (FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
-	vp.Height = (FLOAT)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
-	vp.MinDepth = 0;
-	vp.MaxDepth = 1;
-	vp.TopLeftX = 0;
-	vp.TopLeftY = 0;
-	pd3dDeviceContext->RSSetViewports(1, &vp);
-#endif // STEREO_OUTPUT_MODE
 
 	// Set the render targets
 	ID3D11RenderTargetView* pRTV = GetDXUTState().GetD3D11RenderTargetView();
@@ -2515,8 +2504,10 @@ HRESULT DXUTCreate3DEnvironment11( _In_ ID3D11Device* pd3d11DeviceFromApp )
 
 #ifndef TEST_RUNNER
 		// Overrides the default buffer size with the supported video frame sizes.
-		pNewDeviceSettings->d3d11.sd.BufferDesc.Width = FRAME_BUFFER_WIDTH;
-		pNewDeviceSettings->d3d11.sd.BufferDesc.Height = FRAME_BUFFER_HEIGHT;
+		pNewDeviceSettings->d3d11.sd.BufferDesc.Width = DXUTIsStereo() ? 
+			DEFAULT_FRAME_BUFFER_WIDTH << 1 : DEFAULT_FRAME_BUFFER_WIDTH;
+
+		pNewDeviceSettings->d3d11.sd.BufferDesc.Height = DEFAULT_FRAME_BUFFER_HEIGHT;
 #endif // TEST_RUNNER
 
         // Create the swapchain
@@ -3604,15 +3595,15 @@ void DXUTResizeDXGIBuffers( UINT Width, UINT Height, BOOL bFullScreen )
 
     // ResizeBuffers
     V( pSwapChain->ResizeBuffers( pDevSettings->d3d11.sd.BufferCount,
-								  (UINT)rcCurrentClient.right,
-								  (UINT)rcCurrentClient.bottom,
+								  Width ? Width : (UINT)rcCurrentClient.right,
+								  Height ? Height : (UINT)rcCurrentClient.bottom,
                                   pDevSettings->d3d11.sd.BufferDesc.Format,
                                   Flags ) );
 
     if( !GetDXUTState().GetDoNotStoreBufferSize() )
     {
-        pDevSettings->d3d11.sd.BufferDesc.Width = ( UINT )rcCurrentClient.right;
-        pDevSettings->d3d11.sd.BufferDesc.Height = ( UINT )rcCurrentClient.bottom;
+        pDevSettings->d3d11.sd.BufferDesc.Width = Width ? Width : (UINT)rcCurrentClient.right;
+        pDevSettings->d3d11.sd.BufferDesc.Height = Height ? Height : (UINT)rcCurrentClient.bottom;
     }
 
     // Save off backbuffer desc
@@ -4225,6 +4216,25 @@ void WINAPI DXUTSetIsInGammaCorrectMode( _In_ bool bGammaCorrect )
     GetDXUTState().SetIsInGammaCorrectMode( bGammaCorrect );
 }
 
+//--------------------------------------------------------------------------------------
+// Enables/Disables the stereo output mode
+//--------------------------------------------------------------------------------------
+void WINAPI DXUTSetStereo( _In_ bool bEnabled )
+{
+	DXUTDeviceSettings* pCurrentDeviceSettings = GetDXUTState().GetCurrentDeviceSettings();
+	bool isStereo = pCurrentDeviceSettings->d3d11.isStereo;
+	if (isStereo == bEnabled)
+	{
+		return;
+	}
+
+	int width = pCurrentDeviceSettings->d3d11.sd.BufferDesc.Width;
+	int height = pCurrentDeviceSettings->d3d11.sd.BufferDesc.Height;
+	int newWidth = bEnabled ? width << 1 : width >> 1;
+	pCurrentDeviceSettings->d3d11.isStereo = bEnabled;
+	SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+	DXUTResizeDXGIBuffers(newWidth, height, false);
+}
 
 //--------------------------------------------------------------------------------------
 void DXUTApplyDefaultDeviceSettings(DXUTDeviceSettings *modifySettings)
