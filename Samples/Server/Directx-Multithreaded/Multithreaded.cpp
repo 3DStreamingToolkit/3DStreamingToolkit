@@ -252,9 +252,10 @@ CModelViewerCamera          g_Camera;               // A model viewing camera
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
 #else // TEST_RUNNER
-static const XMVECTORF32    s_vDefaultEye = { 0.0f, 0.0f, 0.0f, 0.f };
-static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 0.0f, 1.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 0.0f, -1.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, -1.0f, 1.0f, 0.f };
 #endif // TEST_RUNNER
+static const XMVECTORF32    s_vDefaultScale = { 0.01f, 0.01f, 0.01f, 1.f };
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
 static const FLOAT          s_fFOV = XM_PI / 4.0f;
@@ -761,10 +762,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 #if defined(MOVING_CAMERA) || defined(TEST_RUNNER)
 	// Rotate camera
-	DirectX::XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
-	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(fElapsedTime * CAMERA_SPEED / 180 * XM_PI);
-	DirectX::XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
-	DirectX::XMMATRIX transformMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
+	XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
+	XMMATRIX rotationMatrix = XMMatrixRotationY(fElapsedTime * CAMERA_SPEED / 180 * XM_PI);
+	XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
+	XMMATRIX transformMatrix = XMMatrixMultiply(XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
 	g_Camera.SetViewParams(
 		DirectX::XMVector3Transform(g_Camera.GetEyePt(), transformMatrix),
 		g_Camera.GetLookAtPt());
@@ -1953,17 +1954,26 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
         // Set the PS per-light constant data
         V( pd3dContext->Map( g_pcbPSPerLight, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource ) );
         auto pPSPerLight = reinterpret_cast<CB_PS_PER_LIGHT*>( MappedResource.pData );
-        for ( int iLight = 0; iLight < g_iNumLights; ++iLight )
+		XMMATRIX scaleMatrix = XMMatrixScalingFromVector(s_vDefaultScale);
+		XMMATRIX transMatrix = XMMatrixTranslationFromVector(s_vDefaultEye);
+		for ( int iLight = 0; iLight < g_iNumLights; ++iLight )
         {
             XMVECTOR vLightPos = XMVectorSetW( g_vLightPos[iLight], 1.0f ); 
             XMVECTOR vLightDir = XMVectorSetW( g_vLightDir[iLight], 0.0f ); 
+            XMMATRIX mLightViewProj;
+			if (DXUTIsStereo())
+			{
+				mLightViewProj = scaleMatrix * transMatrix * CalcLightViewProj(iLight);
+			}
+			else
+			{
+				mLightViewProj = CalcLightViewProj(iLight);
+			}
 
-            XMMATRIX mLightViewProj = CalcLightViewProj( iLight );
-            
             pPSPerLight->m_LightData[iLight].m_vLightColor = g_vLightColor[iLight];
             XMStoreFloat4( &pPSPerLight->m_LightData[iLight].m_vLightPos, vLightPos );
             XMStoreFloat4( &pPSPerLight->m_LightData[iLight].m_vLightDir, vLightDir );
-            XMStoreFloat4x4( &pPSPerLight->m_LightData[iLight].m_mLightViewProj, XMMatrixTranspose( mLightViewProj ) );
+            XMStoreFloat4x4( &pPSPerLight->m_LightData[iLight].m_mLightViewProj, XMMatrixTranspose(mLightViewProj ) );
             pPSPerLight->m_LightData[iLight].m_vFalloffs = XMFLOAT4(
                 g_fLightFalloffDistEnd[iLight], 
                 g_fLightFalloffDistRange[iLight], 
@@ -2312,14 +2322,15 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 {
     HRESULT hr;
     XMMATRIX mvp;
-
 	if (DXUTIsStereo())
 	{
-		// Render scene in the left eye.
-		mvp = g_Camera.GetViewMatrix() * XMLoadFloat4x4(g_Camera.GetProjMatrixStereo());
+		XMMATRIX scaleMatrix = XMMatrixScalingFromVector(s_vDefaultScale);
+		XMMATRIX transMatrix = XMMatrixTranslationFromVector(s_vDefaultEye);
 
+		// Render scene in the left eye.
 		SceneParamsDynamic DynamicParamsLeft;
-		XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, XMMatrixTranspose(mvp));
+		mvp = scaleMatrix * transMatrix * g_Camera.GetViewMatrix() * XMMatrixTranspose(XMLoadFloat4x4(g_Camera.GetProjMatrixStereo()));
+		XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
 
 		V(RenderScene(
 			pd3dContext,
@@ -2328,10 +2339,9 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 			STEREO_OUTPUT_TYPE::LEFT_EYE));
 
 		// Render scene in the right eye.
-		mvp = g_Camera.GetViewMatrix() * XMLoadFloat4x4(g_Camera.GetProjMatrixStereo() + 1);
-
 		SceneParamsDynamic DynamicParamsRight;
-		XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, XMMatrixTranspose(mvp));
+		mvp = scaleMatrix * transMatrix * g_Camera.GetViewMatrix() * XMMatrixTranspose(XMLoadFloat4x4(g_Camera.GetProjMatrixStereo() + 1));
+		XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
 
 		V(RenderScene(
 			pd3dContext,
