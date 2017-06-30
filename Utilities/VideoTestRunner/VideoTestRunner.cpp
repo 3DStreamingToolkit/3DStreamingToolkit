@@ -463,7 +463,8 @@ void VideoTestRunner::IncrementTest()
 	}
 
 	//Test to see if we are incrementing from lossless to the runner iterations
-	if (strcmp(m_fileName,"lossless.h264") == 0) {
+	if (strcmp(m_fileName,"lossless.h264") == 0) 
+	{
 		//Need to reset to runner config
 		m_encodeConfig = m_minEncodeConfig;
 	}
