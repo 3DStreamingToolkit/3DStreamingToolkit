@@ -135,6 +135,7 @@ protected:
 	bool server_address_ssl_;
 	rtc::SocketAddress server_address_;
 	rtc::AsyncResolver* resolver_;
+	rtc::Thread* signaling_thread_;
 	std::unique_ptr<SslCapableSocket> control_socket_;
 	std::unique_ptr<SslCapableSocket> hanging_get_;
 	std::string onconnect_data_;

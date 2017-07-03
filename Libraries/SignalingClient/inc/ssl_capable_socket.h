@@ -10,7 +10,7 @@ using namespace rtc;
 class SslCapableSocket : public AsyncSocket, public sigslot::has_slots<>
 {
 public:
-	SslCapableSocket(const int& family, const bool& useSsl = false);
+	SslCapableSocket(const int& family, const bool& useSsl = false, Thread* signalingThread = nullptr);
 	~SslCapableSocket();
 
 	void SetUseSsl(const bool& useSsl);
@@ -37,6 +37,7 @@ public:
 	int GetOption(AsyncSocket::Option opt, int* value);
 	int SetOption(AsyncSocket::Option opt, int value);
 private:
+	rtc::Thread* signaling_thread_;
 	AsyncSocket* socket_;
 	std::unique_ptr<SSLAdapter> ssl_adapter_;
 

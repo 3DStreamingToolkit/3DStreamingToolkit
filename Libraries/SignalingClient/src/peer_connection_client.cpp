@@ -36,6 +36,11 @@ PeerConnectionClient::PeerConnectionClient() :
     my_id_(-1),
 	server_address_ssl_(false)
 {
+	// use the current thread or wrap a thread for signaling_thread_
+	auto thread = rtc::Thread::Current();
+
+	signaling_thread_ = thread == nullptr ?
+		rtc::ThreadManager::Instance()->WrapCurrentThread() : thread;
 }
 
 PeerConnectionClient::~PeerConnectionClient()
@@ -149,8 +154,8 @@ void PeerConnectionClient::OnResolveResult(rtc::AsyncResolverInterface* resolver
 
 void PeerConnectionClient::DoConnect()
 {
-	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_));
-	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_));
+	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
+	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	InitSocketSignals();
 	char buffer[1024];
 	std::string clientName = client_name_;
@@ -332,12 +337,12 @@ void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& mes
 	}
 	else
 	{
-		if (server_address_ssl_ && message.find("sdpMid") != std::string::npos)
-		{
-			// HACKHACK(bengreenier): this seems to allow https signaling servers to work
-			// surely this isn't reliable though...needs to be revisited
-			rtc::Thread::SleepMs(1500);
-		}
+		//if (server_address_ssl_ && message.find("sdpMid") != std::string::npos)
+		//{
+		//	// HACKHACK(bengreenier): this seems to allow https signaling servers to work
+		//	// surely this isn't reliable though...needs to be revisited
+		//	rtc::Thread::SleepMs(1500);
+		//}
 		callback_->OnMessageFromPeer(peer_id, message);
 	}
 }

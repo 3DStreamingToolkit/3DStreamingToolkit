@@ -24,9 +24,10 @@ namespace
 	}
 }
 
-SslCapableSocket::SslCapableSocket(const int& family, const bool& useSsl) :
+SslCapableSocket::SslCapableSocket(const int& family, const bool& useSsl, Thread* signalingThread) :
 	socket_(CreateClientSocket(family)),
-	ssl_adapter_(nullptr)
+	ssl_adapter_(nullptr),
+	signaling_thread_(signalingThread)
 {
 	MapUnderlyingEvents(socket_);
 	SetUseSsl(useSsl);
@@ -192,28 +193,40 @@ void SslCapableSocket::MapUnderlyingEvents(AsyncSocket* provider, AsyncSocket* o
 
 void SslCapableSocket::RefireReadEvent(AsyncSocket* socket)
 {
-	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	{
+		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-	this->SignalReadEvent.emit(socket);
+		this->SignalReadEvent.emit(socket);
+	});
 }
 
 void SslCapableSocket::RefireWriteEvent(AsyncSocket* socket)
 {
-	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	{
+		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-	this->SignalWriteEvent.emit(socket);
+		this->SignalWriteEvent.emit(socket);
+	});
 }
 
 void SslCapableSocket::RefireConnectEvent(AsyncSocket* socket)
 {
-	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	{
+		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-	this->SignalConnectEvent.emit(socket);
+		this->SignalConnectEvent.emit(socket);
+	});
 }
 
 void SslCapableSocket::RefireCloseEvent(AsyncSocket* socket, int err)
 {
-	LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	{
+		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-	this->SignalCloseEvent.emit(socket, err);
+		this->SignalCloseEvent.emit(socket, err);
+	});
 }
