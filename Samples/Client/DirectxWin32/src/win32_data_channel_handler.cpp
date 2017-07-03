@@ -26,157 +26,155 @@ Win32DataChannelHandler::~Win32DataChannelHandler()
 {
 }
 
-bool Win32DataChannelHandler::ProcessMessage(MSG* msg)
+bool Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
 	bool ret = false;
-	WPARAM wParam = msg->wParam;
-	LPARAM lParam = msg->lParam;
 	Vector3 move = Vector3::Zero;
 	float scale = distance_;
 	bool sendMessage = false;
 	bool sendMouseEvent = false;
 
-	switch (msg->message)
+	switch (message)
 	{
-		case WM_SIZE:
-			ball_camera_.SetWindow(LOWORD(lParam), HIWORD(lParam));
-			break;
+	case WM_SIZE:
+		ball_camera_.SetWindow(LOWORD(lParam), HIWORD(lParam));
+		break;
 
-		case WM_CHAR:
-		case WM_KEYDOWN:
-			{
-				Json::StyledWriter writer;
-				Json::Value jmessage;
-				jmessage["message"] = msg->message;
-				jmessage["wParam"] = msg->wParam;
-				SendKeyboardInput(writer.write(jmessage));
-			}
+	case WM_CHAR:
+	case WM_KEYDOWN:
+	{
+		Json::StyledWriter writer;
+		Json::Value jmessage;
+		jmessage["message"] = message;
+		jmessage["wParam"] = wParam;
+		SendKeyboardInput(writer.write(jmessage));
+	}
 
-			switch (wParam)
-			{
-			case VK_SHIFT:
-				scale *= CAMERA_MOVEMENT_SCALE;
-				break;
+	switch (wParam)
+	{
+	case VK_SHIFT:
+		scale *= CAMERA_MOVEMENT_SCALE;
+		break;
 
-			case VK_UP:
-				move.y += scale;
-				break;
+	case VK_UP:
+		move.y += scale;
+		break;
 
-			case VK_DOWN:
-				move.y -= scale;
-				break;
+	case VK_DOWN:
+		move.y -= scale;
+		break;
 
-			case VK_RIGHT:
-			case 'D':
-				move.x += scale;
-				break;
+	case VK_RIGHT:
+	case 'D':
+		move.x += scale;
+		break;
 
-			case VK_LEFT:
-			case 'A':
-				move.x -= scale;
-				break;
+	case VK_LEFT:
+	case 'A':
+		move.x -= scale;
+		break;
 
-			case 'W':
-				move.z += scale;
-				break;
+	case 'W':
+		move.z += scale;
+		break;
 
-			case 'S':
-				move.z -= scale;
-				break;
+	case 'S':
+		move.z -= scale;
+		break;
 
-			case VK_HOME:
-				sendMessage = true;
-				ResetCamera();
-				break;
-			}
+	case VK_HOME:
+		sendMessage = true;
+		ResetCamera();
+		break;
+	}
 
-			if (move != Vector3::Zero)
-			{
-				Matrix im;
-				view_.Invert(im);
-				move = Vector3::TransformNormal(move, im);
-				camera_focus_ += move;
-				if (++keyboardTick == KEYBOARD_DELAY)
-				{
-					sendMessage = true;
-					keyboardTick = 0;
-				}
-			}
+	if (move != Vector3::Zero)
+	{
+		Matrix im;
+		view_.Invert(im);
+		move = Vector3::TransformNormal(move, im);
+		camera_focus_ += move;
+		if (++keyboardTick == KEYBOARD_DELAY)
+		{
+			sendMessage = true;
+			keyboardTick = 0;
+		}
+	}
 
-			break;
+	break;
 
-		case WM_MOUSEHOVER:
-		case WM_MOUSELEAVE:
-		case WM_MOUSEHWHEEL:
-		case WM_LBUTTONDBLCLK:
-		case WM_LBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_MBUTTONDBLCLK:
-		case WM_MBUTTONDOWN:
-		case WM_MBUTTONUP:
-		case WM_RBUTTONDBLCLK:
-		case WM_RBUTTONDOWN:
-		case WM_RBUTTONUP:
+	case WM_MOUSEHOVER:
+	case WM_MOUSELEAVE:
+	case WM_MOUSEHWHEEL:
+	case WM_LBUTTONDBLCLK:
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_MBUTTONDBLCLK:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_RBUTTONDBLCLK:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+		sendMouseEvent = true;
+		// fall through
+	case WM_MOUSEMOVE:
+		// thottle mouse move events
+		if (wParam = WM_MOUSEMOVE && ++mouseMoveTick == MOUSE_DELAY)
+		{
 			sendMouseEvent = true;
-			// fall through
-		case WM_MOUSEMOVE:
-			// thottle mouse move events
-			if (wParam = WM_MOUSEMOVE && ++mouseMoveTick == MOUSE_DELAY)
-			{
-				sendMouseEvent = true;
-				mouseMoveTick = 0;
-			}
-			
-			if (sendMouseEvent)
-			{
-				Json::StyledWriter writer;
-				Json::Value jmessage;
-				jmessage["message"] = msg->message;
-				jmessage["wParam"] = msg->wParam;
-				jmessage["lParam"] = msg->lParam;			
-				SendMouseInput(writer.write(jmessage));
-			}
+			mouseMoveTick = 0;
+		}
 
-			// Mouse
-			mouse_->ProcessMessage(msg->message, wParam, lParam);
+		if (sendMouseEvent)
+		{
+			Json::StyledWriter writer;
+			Json::Value jmessage;
+			jmessage["message"] = message;
+			jmessage["wParam"] = wParam;
+			jmessage["lParam"] = lParam;
+			SendMouseInput(writer.write(jmessage));
+		}
 
-			auto mouse = mouse_->GetState();
-			mouse_button_tracker_.Update(mouse);
-			if (ball_camera_.IsDragging())
+		// Mouse
+		mouse_->ProcessMessage(message, wParam, lParam);
+
+		auto mouse = mouse_->GetState();
+		mouse_button_tracker_.Update(mouse);
+		if (ball_camera_.IsDragging())
+		{
+			// Rotate camera
+			ball_camera_.OnMove(mouse.x, mouse.y);
+			Quaternion q = ball_camera_.GetQuat();
+			q.Inverse(camera_rot_);
+			if (++mouseTick == MOUSE_DELAY)
 			{
-				// Rotate camera
-				ball_camera_.OnMove(mouse.x, mouse.y);
-				Quaternion q = ball_camera_.GetQuat();
-				q.Inverse(camera_rot_);
-				if (++mouseTick == MOUSE_DELAY)
-				{
-					sendMessage = true;
-					mouseTick = 0;
-				}
-
-				if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::RELEASED)
-				{
-					ball_camera_.OnEnd();
-				}
-			}
-			else
-			{
-				// Zoom with scroll wheel
-				float newZoom = 1.f + float(mouse.scrollWheelValue) / float(120 * 10);
-				newZoom = std::max(newZoom, 0.01f);
-				sendMessage |= newZoom != zoom_;
-				zoom_ = newZoom;
-
-				if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::PRESSED)
-				{
-					ball_camera_.OnBegin(mouse.x, mouse.y);
-				}
+				sendMessage = true;
+				mouseTick = 0;
 			}
 
-			break;
+			if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::RELEASED)
+			{
+				ball_camera_.OnEnd();
+			}
+		}
+		else
+		{
+			// Zoom with scroll wheel
+			float newZoom = 1.f + float(mouse.scrollWheelValue) / float(120 * 10);
+			newZoom = std::max(newZoom, 0.01f);
+			sendMessage |= newZoom != zoom_;
+			zoom_ = newZoom;
 
-		default:
-			return false;
+			if (mouse_button_tracker_.leftButton == Mouse::ButtonStateTracker::PRESSED)
+			{
+				ball_camera_.OnBegin(mouse.x, mouse.y);
+			}
+		}
+
+		break;
+
+	default:
+		return false;
 	}
 
 	// Update camera
@@ -185,11 +183,16 @@ bool Win32DataChannelHandler::ProcessMessage(MSG* msg)
 	last_camera_pos_ = camera_focus_ + (distance_ * zoom_) * lookAt;
 	view_ = XMMatrixLookAtLH(last_camera_pos_, camera_focus_, up);
 	if (sendMessage)
-	{	
+	{
 		SendCameraInput(last_camera_pos_, camera_focus_, up);
 	}
-	
+
 	return ret;
+}
+
+bool Win32DataChannelHandler::ProcessMessage(MSG* msg)
+{
+	return ProcessMessage(msg->message, msg->wParam, msg->lParam);
 }
 
 void Win32DataChannelHandler::ResetCamera()

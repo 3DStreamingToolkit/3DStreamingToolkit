@@ -21,6 +21,7 @@ public:
 	~Win32DataChannelHandler();
 
 	bool ProcessMessage(MSG* msg);
+	bool ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	void ResetCamera();
