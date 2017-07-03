@@ -26,6 +26,7 @@ public:
 private:
 	void ResetCamera();
 
+	int stereo_mode_;
 	int width_;
 	int height_;
 	int keyboardTick;

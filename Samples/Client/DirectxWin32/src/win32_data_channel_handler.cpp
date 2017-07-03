@@ -12,6 +12,7 @@ using namespace DirectX::SimpleMath;
 
 Win32DataChannelHandler::Win32DataChannelHandler(DataChannelCallback* data_channel_callback) :
 	DataChannelHandler(data_channel_callback),
+	stereo_mode_(-1),
 	width_(0),
 	height_(0),
 	keyboardTick(0),
@@ -33,6 +34,12 @@ bool Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM
 	float scale = distance_;
 	bool sendMessage = false;
 	bool sendMouseEvent = false;
+
+	// Requests mono stream.
+	if (stereo_mode_ == -1 && RequestStereoStream(false))
+	{
+		stereo_mode_ = 0;
+	}
 
 	switch (message)
 	{

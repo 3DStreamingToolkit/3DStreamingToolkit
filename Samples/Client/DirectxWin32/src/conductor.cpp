@@ -586,13 +586,16 @@ void Conductor::DisconnectFromCurrentPeer()
 	}
 }
 
-void Conductor::SendInputData(const std::string& message)
+bool Conductor::SendInputData(const std::string& message)
 {
 	if (data_channel_ && data_channel_->state() == webrtc::DataChannelInterface::kOpen)
 	{
 		webrtc::DataBuffer buffer(message);
 		data_channel_->Send(buffer);
+		return true;
 	}
+	
+	return false;
 }
 
 void Conductor::UIThreadCallback(int msg_id, void* data)

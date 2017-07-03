@@ -38,7 +38,7 @@ public:
 
 	virtual void Close() = 0;
 
-	virtual void SendInputData(const std::string& message) = 0;
+	virtual bool SendInputData(const std::string& message) = 0;
 
 protected:
 	virtual ~MainWindowCallback() {}

@@ -6,12 +6,14 @@
 
 using namespace DirectXClientComponent;
 using namespace DirectX;
+using namespace Microsoft::WRL::Wrappers;
 using namespace Platform;
 using namespace Windows::System::Profile;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 
 static uint8_t* s_videoRGBFrame = nullptr;
+static CriticalSection s_lock;
 
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
@@ -58,6 +60,8 @@ void AppCallbacks::Run()
 
 		if (m_videoRenderer)
 		{
+			auto lock = s_lock.Lock();
+
 			// Updates.
 			HolographicFrame^ holographicFrame = m_main->Update();
 
@@ -112,12 +116,14 @@ void AppCallbacks::OnDecodedFrame(
 	uint32_t height,
 	const Array<uint8_t>^ decodedData)
 {
+	auto lock = s_lock.Lock();
+
 	if (!m_videoRenderer)
 	{
 		// Enables the stereo output mode.
 		String^ msg =
 			"{" +
-			"  \"type\":\"stereo_rendering\"," +
+			"  \"type\":\"stereo-rendering\"," +
 			"  \"body\":\"1\"" +
 			"}";
 

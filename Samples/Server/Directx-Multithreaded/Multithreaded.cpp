@@ -458,7 +458,7 @@ void InputUpdate(const std::string& message)
 		std::istringstream datastream(body);
 		std::string token;
 
-		if (strcmp(type, "stereo_rendering") == 0)
+		if (strcmp(type, "stereo-rendering") == 0)
 		{
 			getline(datastream, token, ',');
 			int stereo = stoi(token);
