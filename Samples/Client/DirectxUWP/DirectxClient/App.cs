@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.Core;
+using Windows.Data.Json;
+using Windows.Storage;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
 
@@ -21,6 +23,8 @@ namespace StreamingDirectXHololensClient
         public DecodedVideoSource _decodedVideo;
         private MediaVideoTrack _peerVideoTrack;
         private Peer _selectedPeer;
+        private string _server;
+        private string _port;
 
         public App()
         {
@@ -133,7 +137,7 @@ namespace StreamingDirectXHololensClient
         {
             Task.Run(() =>
             {
-                Conductor.Instance.StartLogin("127.0.0.1", "8888");
+                Conductor.Instance.StartLogin(_server, _port);
             });
 
             _appCallbacks.Run();
@@ -155,24 +159,56 @@ namespace StreamingDirectXHololensClient
             return this;
         }
 
-        void LoadSettings()
+        async void LoadSettings()
         {
-            var configIceServers = new ObservableCollection<IceServer>();
+            StorageFile configFile = await StorageFile.GetFileFromApplicationUriAsync(
+                new Uri("ms-appx:///webrtcConfig.json"));
 
+            string content = await FileIO.ReadTextAsync(configFile);
+            JsonValue json = JsonValue.Parse(content);
+            _server = json.GetObject().GetNamedString("server");
+            _port = json.GetObject().GetNamedNumber("port").ToString();
+            var configIceServers = new ObservableCollection<IceServer>();
             bool useDefaultIceServers = true;
             if (useDefaultIceServers)
             {
-                // Default values:
+                // Clears all values.
                 configIceServers.Clear();
-                IceServer turnServer = new IceServer("turnserver3dstreaming.centralus.cloudapp.azure.com:3478", IceServer.ServerType.TURN);
-                turnServer.Credential = "3Dstreaming0317";
-                turnServer.Username = "user";
-                configIceServers.Add(turnServer);
-                configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+
+                // Parses turn server.
+                if (json.GetObject().ContainsKey("turnServer"))
+                {
+                    JsonValue turnServer = json.GetObject().GetNamedValue("turnServer");
+                    string uri = turnServer.GetObject().GetNamedString("uri");
+                    IceServer iceServer = new IceServer(
+                        uri.Substring(uri.IndexOf("turn:") + 5),
+                        IceServer.ServerType.TURN);
+
+                    iceServer.Credential = turnServer.GetObject().GetNamedString("username");
+                    iceServer.Username = turnServer.GetObject().GetNamedString("password");
+                    configIceServers.Add(iceServer);
+                }
+
+                // Parses stun server.
+                if (json.GetObject().ContainsKey("stunServer"))
+                {
+                    JsonValue stunServer = json.GetObject().GetNamedValue("stunServer");
+                    string uri = stunServer.GetObject().GetNamedString("uri");
+                    IceServer iceServer = new IceServer(
+                        uri.Substring(uri.IndexOf("stun:") + 5),
+                        IceServer.ServerType.STUN);
+
+                    iceServer.Credential = stunServer.GetObject().GetNamedString("username");
+                    iceServer.Username = stunServer.GetObject().GetNamedString("password");
+                    configIceServers.Add(iceServer);
+
+                    // Default ones.
+                    configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+                    configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+                    configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+                    configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+                    configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+                }
             }
 
             Conductor.Instance.ConfigureIceServers(configIceServers);

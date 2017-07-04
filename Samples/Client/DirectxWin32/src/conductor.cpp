@@ -189,8 +189,6 @@ bool Conductor::CreatePeerConnection(bool dtls)
 				{
 					webrtc::PeerConnectionInterface::IceServer stunServer;
 					stunServer.uri = "";
-
-
 					if (root.isMember("stunServer"))
 					{
 						Json::Value jsonTurnServer = root.get("stunServer", NULL);
