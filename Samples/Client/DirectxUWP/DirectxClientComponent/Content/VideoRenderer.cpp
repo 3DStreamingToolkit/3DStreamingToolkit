@@ -12,7 +12,8 @@ VideoRenderer::VideoRenderer(
 	int height) :
 		m_deviceResources(deviceResources),
 		m_width(width),
-		m_height(height)
+		m_height(height),
+		m_usingVprtShaders(false)
 {
 	m_position = { 0.f, 0.f, -2.f };
 
@@ -127,7 +128,9 @@ void VideoRenderer::CreateDeviceDependentResources()
 		m_sampler.GetAddressOf()
 	);
 
-	auto loadVertexShaderTask = DX::ReadDataAsync(L"VprtVertexShader.cso");
+	auto loadVertexShaderTask = DX::ReadDataAsync(
+		m_usingVprtShaders ? L"VprtVertexShader.cso" : L"VertexShader.cso");
+
 	loadVertexShaderTask.then([this](std::vector<byte> file)
 	{
 		m_deviceResources->GetD3DDevice()->CreateVertexShader(
@@ -160,14 +163,43 @@ void VideoRenderer::CreateDeviceDependentResources()
 		m_deviceResources->GetD3DDeviceContext()->PSSetShader(
 			m_pixelShader.Get(), nullptr, 0);
 	});
+
+	if (!m_usingVprtShaders)
+	{
+		// After the pass-through geometry shader file is loaded, create the shader.
+		auto loadGeometryShaderTask = DX::ReadDataAsync(L"GeometryShader.cso").then(
+			[this](const std::vector<byte>& fileData)
+		{
+			DX::ThrowIfFailed(
+				m_deviceResources->GetD3DDevice()->CreateGeometryShader(
+					fileData.data(),
+					fileData.size(),
+					nullptr,
+					&m_geometryShader
+				)
+			);
+
+			// On devices that do not support the D3D11_FEATURE_D3D11_OPTIONS3::
+			// VPAndRTArrayIndexFromAnyShaderFeedingRasterizer optional feature,
+			// a pass-through geometry shader is used to set the render target 
+			// array index.
+			m_deviceResources->GetD3DDeviceContext()->GSSetShader(
+				m_geometryShader.Get(),
+				nullptr,
+				0
+			);
+		});
+	}
 }
 
 void VideoRenderer::ReleaseDeviceDependentResources()
 {
+	m_usingVprtShaders = false;
 	m_vertexShader.Reset();
 	m_inputLayout.Reset();
 	m_pixelShader.Reset();
 	m_vertexBuffer.Reset();
+	m_geometryShader.Reset();
 }
 
 void VideoRenderer::Update(DX::StepTimer timer)

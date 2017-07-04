@@ -26,6 +26,7 @@ namespace DX
 		// D3D Accessors.
 		ID3D11Device4*				GetD3DDevice() const					{ return m_d3dDevice.Get(); }
 		ID3D11DeviceContext3*		GetD3DDeviceContext() const				{ return m_d3dContext.Get(); }
+		bool						GetDeviceSupportsVprt() const           { return m_supportsVprt; }
 		
 		// DXGI acessors.
 		IDXGIAdapter3*				GetDXGIAdapter() const					{ return m_dxgiAdapter.Get(); }
@@ -48,6 +49,9 @@ namespace DX
 		// The holographic space provides a preferred DXGI adapter ID.
 		Windows::Graphics::Holographic::HolographicSpace^			m_holographicSpace;
 
+        // Whether or not the current Direct3D device supports the optional feature 
+        // for setting the render target array index from the vertex shader stage.
+        bool														m_supportsVprt;
 		// Back buffer resources, etc. for attached holographic cameras.
 		std::map<UINT32, std::unique_ptr<CameraResources>>			m_cameraResources;
 		std::mutex													m_cameraResourcesLock;

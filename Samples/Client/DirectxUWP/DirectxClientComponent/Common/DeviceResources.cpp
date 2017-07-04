@@ -15,7 +15,9 @@ using namespace Windows::Graphics::Holographic;
 using namespace Windows::UI::Core;
 
 // Constructor for DeviceResources.
-DX::DeviceResources::DeviceResources()
+DX::DeviceResources::DeviceResources() :
+	m_holographicSpace(nullptr),
+	m_supportsVprt(false)
 {
 }
 
@@ -128,6 +130,19 @@ void DX::DeviceResources::InitializeUsingHolographicSpace()
 	CreateDeviceResources();
 
 	m_holographicSpace->SetDirect3D11Device(m_d3dInteropDevice);
+
+    // Check for device support for the optional feature that allows setting
+	// the render target array index from the vertex shader stage.
+    D3D11_FEATURE_DATA_D3D11_OPTIONS3 options;
+    m_d3dDevice->CheckFeatureSupport(
+		D3D11_FEATURE_D3D11_OPTIONS3,
+		&options,
+		sizeof(options));
+
+    if (options.VPAndRTArrayIndexFromAnyShaderFeedingRasterizer)
+    {
+        m_supportsVprt = true;
+    }
 }
 
 // Validates the back buffer for each HolographicCamera and recreates

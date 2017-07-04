@@ -65,8 +65,10 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <Content Include="GeometryShader.cso" />
     <None Include="project.json" />
     <Content Include="VPRTVertexShader.cso" />
+    <Content Include="VertexShader.cso" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />

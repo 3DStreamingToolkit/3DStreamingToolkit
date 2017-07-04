@@ -44,6 +44,7 @@ namespace DirectXClientComponent
 		// Direct3D resources for geometry.
 		ComPtr<ID3D11Buffer>						m_vertexBuffer;
 		ComPtr<ID3D11VertexShader>					m_vertexShader;
+		ComPtr<ID3D11GeometryShader>				m_geometryShader;
 		ComPtr<ID3D11PixelShader>					m_pixelShader;
 		ComPtr<ID3D11InputLayout>					m_inputLayout;
 		ComPtr<ID3D11ShaderResourceView>			m_textureView;
@@ -51,5 +52,9 @@ namespace DirectXClientComponent
 
 		// Variables used with the rendering loop.
 		Windows::Foundation::Numerics::float3       m_position;
+
+		// If the current D3D Device supports VPRT, we can avoid using a geometry
+		// shader just to set the render target array index.
+		bool                                        m_usingVprtShaders;
 	};
 }
