@@ -8,11 +8,11 @@ function Get-ScriptDirectory
 }
 
 function DecompressZip {
-    param( [string] $filename, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
+    param( [string] $filename, [string] $path, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
 
-    if((Test-Path ($PSScriptRoot + "\libyuv\libs")) -eq $false) {
+    if((Test-Path ($PSScriptRoot + $path)) -eq $false) {
         Write-Host "Extracting libyuv..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($PSScriptRoot + "\libyuv\libs.zip", $PSScriptRoot + "\libyuv\")
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($PSScriptRoot + "\libyuv\libs.zip", $PSScriptRoot + $path)
         Write-Host "Finished"
     }
     
@@ -23,7 +23,7 @@ function DecompressZip {
     $etag = $response.Headers["ETag"] 
     $request.Abort()
     $localFileName = ($filename + ".zip")
-    $localFullPath = ($PSScriptRoot + "\Org.WebRtc\" + $localFileName)
+    $localFullPath = ($PSScriptRoot +  $path + $localFileName)
     
     Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
         if($_.Name -notmatch (".*" + $etag + ".*")) {
@@ -32,14 +32,14 @@ function DecompressZip {
         }
     }
 
-    if((Test-Path ($PSScriptRoot + "\Org.WebRTC\x64")) -eq $false) {
+    if(((Test-Path ($PSScriptRoot + $path + "libs")) -eq $false) -and ((Test-Path ($PSScriptRoot + $path + "x64")) -eq $false))  {
         Write-Host ("Downloading " + $filename + " lib archive")
-        if((Test-Path ($PSScriptRoot + "\Org.WebRTC\Org.WebRtc.zip")) -eq $false) {
+        if((Test-Path ($localFullPath)) -eq $false) {
                Copy-File -SourcePath $uri -DestinationPath $localFullPath    
                Write-Host ("Downloaded " + $filename + " lib archive")
         }
         Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory(($PSScriptRoot + "\Org.WebRTC\Org.WebRTC.zip"), $PSScriptRoot + "\Org.WebRTC\")
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot + $path)
         Write-Host "Finished"
     }
 }
@@ -124,4 +124,5 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "Org.WebRtc"
+DecompressZip -filename "Org.WebRtc" -path "\Org.WebRTC\"
+DecompressZip -filename "libyuv" -path "\libyuv\"
