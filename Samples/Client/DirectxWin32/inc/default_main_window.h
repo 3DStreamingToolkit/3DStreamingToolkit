@@ -184,6 +184,7 @@ protected:
 	void HandleTabbing();
 
 private:
+	
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;
 	UI ui_;
@@ -195,8 +196,6 @@ private:
 	HWND label2_;
 	HWND button_;
 	HWND listbox_;
-	ID2D1Factory* direct2d_factory_;
-	ID2D1HwndRenderTarget* render_target_;
 	bool destroyed_;
 	void* nested_msg_;
 	MainWindowCallback* callback_;
