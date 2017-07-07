@@ -130,6 +130,5 @@ namespace Toolkit3DLibrary
 		void									GetDefaultEncodeConfig();
 		NVENCSTATUS								SetEncodeProfile(int profileIndex);
 		void									Capture();
-
 	};
 }

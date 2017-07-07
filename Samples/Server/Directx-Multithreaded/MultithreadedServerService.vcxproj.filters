@@ -26,7 +26,6 @@
     <None Include="DXUT\Optional\DXUTOpt_2012.vcxproj">
       <Filter>DXUT</Filter>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DXUT\Core\DDSTextureLoader.cpp">

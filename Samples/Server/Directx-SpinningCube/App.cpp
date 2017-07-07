@@ -49,61 +49,88 @@ void FrameUpdate()
 	g_cubeRenderer->Render();
 }
 
-#ifdef REMOTE_RENDERING
+#ifndef TEST_RUNNER
 
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	char data[1024];
+	char type[256];
+	char body[1024];
 	Json::Reader reader;
 	Json::Value msg = NULL;
 	reader.parse(message, msg, false);
 
-	if (msg.isMember("type"))
+	if (msg.isMember("type") && msg.isMember("body"))
 	{
-		strcpy(data, msg.get("type", "").asCString());
+		strcpy(type, msg.get("type", "").asCString());
+		strcpy(body, msg.get("body", "").asCString());
+		std::istringstream datastream(body);
+		std::string token;
 
-		if (strcmp(data, "camera-transform-lookat") == 0)
+		if (strcmp(type, "stereo-rendering") == 0)
 		{
-			if (msg.isMember("body"))
+			getline(datastream, token, ',');
+			int stereo = stoi(token);
+			g_deviceResources->SetStereo(stereo == 1);
+		}
+		else if (strcmp(type, "camera-transform-lookat") == 0)
+		{			
+			// Eye point.
+			getline(datastream, token, ',');
+			float eyeX = stof(token);
+			getline(datastream, token, ',');
+			float eyeY = stof(token);
+			getline(datastream, token, ',');
+			float eyeZ = stof(token);
+
+			// Focus point.
+			getline(datastream, token, ',');
+			float focusX = stof(token);
+			getline(datastream, token, ',');
+			float focusY = stof(token);
+			getline(datastream, token, ',');
+			float focusZ = stof(token);
+
+			// Up vector.
+			getline(datastream, token, ',');
+			float upX = stof(token);
+			getline(datastream, token, ',');
+			float upY = stof(token);
+			getline(datastream, token, ',');
+			float upZ = stof(token);
+
+			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
+			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+			g_cubeRenderer->UpdateView(eye, lookAt, up);
+		}
+		else if (strcmp(type, "camera-transform-stereo") == 0)
+		{
+			// Parses the left view projection matrix.
+			DirectX::XMFLOAT4X4 viewProjectionLeft;
+			for (int i = 0; i < 4; i++)
 			{
-				strcpy(data, msg.get("body", "").asCString());
-
-				// Parses the camera transformation data.
-				std::istringstream datastream(data);
-				std::string token;
-
-				// Eye point.
-				getline(datastream, token, ',');
-				float eyeX = stof(token);
-				getline(datastream, token, ',');
-				float eyeY = stof(token);
-				getline(datastream, token, ',');
-				float eyeZ = stof(token);
-
-				// Focus point.
-				getline(datastream, token, ',');
-				float focusX = stof(token);
-				getline(datastream, token, ',');
-				float focusY = stof(token);
-				getline(datastream, token, ',');
-				float focusZ = stof(token);
-
-				// Up vector.
-				getline(datastream, token, ',');
-				float upX = stof(token);
-				getline(datastream, token, ',');
-				float upY = stof(token);
-				getline(datastream, token, ',');
-				float upZ = stof(token);
-
-				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-
-				// Initializes the eye position vector.
-				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-				g_cubeRenderer->UpdateView(eye, lookAt, up);
+				for (int j = 0; j < 4; j++)
+				{
+					getline(datastream, token, ',');
+					viewProjectionLeft.m[i][j] = stof(token);
+				}
 			}
+
+			// Parses the right view projection matrix.
+			DirectX::XMFLOAT4X4 viewProjectionRight;
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					getline(datastream, token, ',');
+					viewProjectionRight.m[i][j] = stof(token);
+				}
+			}
+
+			// Updates the cube's matrices.
+			g_cubeRenderer->UpdateView(
+				viewProjectionLeft, viewProjectionRight);
 		}
 	}
 }
@@ -160,18 +187,10 @@ int InitWebRTC(char* server, int port)
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 		}
-	}
 
-	if (conductor->connection_active() || client.is_connected())
-	{
-		while ((conductor->connection_active() || client.is_connected()) &&
-			(gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+		if (conductor->connection_active() || client.is_connected())
 		{
-			if (!wnd.PreTranslateMessage(&msg))
-			{
-				::TranslateMessage(&msg);
-				::DispatchMessage(&msg);
-			}
+			g_deviceResources->Present();
 		}
 	}
 
@@ -185,7 +204,7 @@ int InitWebRTC(char* server, int port)
 	return 0;
 }
 
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
 // Called every time the application receives a message
@@ -240,11 +259,7 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 	}
 
 	// Creates window.
-#ifdef STEREO_OUTPUT_MODE
-	RECT rc = { 0, 0, 2560, 720 };
-#else
 	RECT rc = { 0, 0, 1280, 720 };
-#endif
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	g_hWnd = CreateWindow(
 		L"SpinningCubeClass",
@@ -278,7 +293,7 @@ void Render()
 	g_deviceResources->Present();
 }
 
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -293,7 +308,7 @@ int WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-#ifndef REMOTE_RENDERING
+#ifdef TEST_RUNNER
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
 		return 0;
@@ -311,21 +326,12 @@ int WINAPI wWinMain(
 	UINT width = rc.right - rc.left;
 	UINT height = rc.bottom - rc.top;
 
-#ifdef TEST_RUNNER
 	// Creates and initializes the video test runner library.
 	g_videoTestRunner = new VideoTestRunner(
 		g_deviceResources->GetD3DDevice(),
 		g_deviceResources->GetD3DDeviceContext()); 
 
 	g_videoTestRunner->StartTestRunner(g_deviceResources->GetSwapChain());
-#else // TEST_RUNNER
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext());
-
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
-#endif // TEST_RUNNER
 	
 	// Main message loop.
 	MSG msg = { 0 };
@@ -339,7 +345,7 @@ int WINAPI wWinMain(
 		else
 		{
 			Render();
-#ifdef TEST_RUNNER
+
 			if (g_videoTestRunner->TestsComplete())
 			{
 				break;
@@ -351,7 +357,6 @@ int WINAPI wWinMain(
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);
 			}
-#endif // TEST_RUNNER
 		}
 	}
 
@@ -359,7 +364,7 @@ int WINAPI wWinMain(
 	delete g_deviceResources;
 
 	return (int)msg.wParam;
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
@@ -394,5 +399,5 @@ int WINAPI wWinMain(
 	}
 
 	return InitWebRTC(server, port);
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 }

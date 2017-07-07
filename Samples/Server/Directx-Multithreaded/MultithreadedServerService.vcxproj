@@ -131,7 +131,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>REMOTE_RENDERING;NO_UI;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_UI;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -180,7 +180,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>REMOTE_RENDERING;NO_UI;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_UI;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
@@ -209,7 +209,7 @@
     <PostBuildEvent>
       <Command>
       IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul > $(OutDir)xcopy.lock
+      type nul &gt; $(OutDir)xcopy.lock
         xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" 
@@ -235,7 +235,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>REMOTE_RENDERING;NO_UI;_CRT_SECURE_NO_WARNINGS;_WINDOWS;WEBRTC_WIN;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_UI;_CRT_SECURE_NO_WARNINGS;_WINDOWS;WEBRTC_WIN;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -264,7 +264,7 @@
     <PostBuildEvent>
       <Command>
       IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul > $(OutDir)xcopy.lock
+      type nul &gt; $(OutDir)xcopy.lock
         xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
       )
@@ -287,7 +287,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>REMOTE_RENDERING;NO_UI;_CRT_SECURE_NO_WARNINGS;_WINDOWS;WEBRTC_WIN;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NO_UI;_CRT_SECURE_NO_WARNINGS;_WINDOWS;WEBRTC_WIN;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -316,7 +316,7 @@
     <PostBuildEvent>
       <Command>
       IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul > $(OutDir)xcopy.lock
+      type nul &gt; $(OutDir)xcopy.lock
         xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
       )

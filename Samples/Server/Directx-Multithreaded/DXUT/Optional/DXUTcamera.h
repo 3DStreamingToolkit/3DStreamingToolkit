@@ -153,6 +153,10 @@ public:
     virtual void Reset();
     virtual void SetViewParams( _In_ DirectX::FXMVECTOR vEyePt, _In_ DirectX::FXMVECTOR vLookatPt, _In_ DirectX::FXMVECTOR pvUpPt = DirectX::g_XMIdentityR1 );
     virtual void SetProjParams( _In_ float fFOV, _In_ float fAspect, _In_ float fNearPlane, _In_ float fFarPlane );
+	
+	// Set view projection matrices in stereo output mode.
+	void SetViewMatrixStereo(const DirectX::XMFLOAT4X4& view) { m_mView = view; }
+	void SetProjMatrixStereo(const DirectX::XMFLOAT4X4& projLeft, const DirectX::XMFLOAT4X4& projRight) { m_mProjStereo[0] = projLeft; m_mProjStereo[1] = projRight; }
 
     // Functions to change behavior
     virtual void SetDragRect( _In_ const RECT& rc ) { m_rcDrag = rc; }
@@ -181,7 +185,8 @@ public:
     // Functions to get state
     DirectX::XMMATRIX GetViewMatrix() const { return DirectX::XMLoadFloat4x4( &m_mView ); }
     DirectX::XMMATRIX GetProjMatrix() const { return DirectX::XMLoadFloat4x4( &m_mProj ); }
-    DirectX::XMVECTOR GetEyePt() const { return DirectX::XMLoadFloat3( &m_vEye ); }
+	DirectX::XMFLOAT4X4* GetProjMatrixStereo() { return m_mProjStereo; }
+	DirectX::XMVECTOR GetEyePt() const { return DirectX::XMLoadFloat3(&m_vEye); }
     DirectX::XMVECTOR GetLookAtPt() const { return DirectX::XMLoadFloat3( &m_vLookAt ); }
     float GetNearClip() const { return m_fNearPlane; }
     float GetFarClip() const { return m_fFarPlane; }
@@ -215,6 +220,7 @@ protected:
 
     DirectX::XMFLOAT4X4 m_mView;                    // View matrix 
     DirectX::XMFLOAT4X4 m_mProj;                    // Projection matrix
+	DirectX::XMFLOAT4X4 m_mProjStereo[2];           // View Projection matrix for stereo output
 
     DXUT_GAMEPAD m_GamePad[DXUT_MAX_CONTROLLERS];  // XInput controller state
     DirectX::XMFLOAT3 m_vGamePadLeftThumb;

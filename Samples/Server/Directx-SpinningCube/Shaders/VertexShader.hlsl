@@ -1,8 +1,18 @@
-// A constant buffer that stores the three basic column-major matrices for composing geometry.
-cbuffer ModelViewProjectionConstantBuffer : register(b0)
+// A constant buffer that stores the model matrix.
+cbuffer ModelConstantBuffer : register(b0)
 {
 	matrix model;
+};
+
+// A constant buffer that stores the view matrix.
+cbuffer ViewConstantBuffer : register(b1)
+{
 	matrix view;
+};
+
+// A constant buffer that stores the projection matrix.
+cbuffer ProjectionConstantBuffer : register(b2)
+{
 	matrix projection;
 };
 

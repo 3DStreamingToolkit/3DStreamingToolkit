@@ -14,10 +14,14 @@ using namespace Toolkit3DLibrary;
 // Constructor for VideoHelper.
 VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* context) :
 	m_d3dDevice(device),
-	m_d3dContext(context)
+	m_d3dContext(context),
+	m_initialized(false),
+	m_encoderCreated(false)
 {
-	if (m_initialized == false) {
+	if (!m_initialized) 
+	{
 		m_initialized = true;
+
 #ifdef MULTITHREAD_PROTECTION
 		// Enables multithread protection.
 		ID3D11Multithread* multithread;
@@ -26,13 +30,12 @@ VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* cont
 		multithread->Release();
 #endif // MULTITHREAD_PROTECTION
 
-
 		m_pNvHWEncoder = new CNvHWEncoder();
-
 		m_encoderCreated = false;
 		m_lastTest = false;
 	}
-	else {
+	else 
+	{
 		return;
 	}
 }
@@ -59,10 +62,14 @@ NVENCSTATUS VideoTestRunner::Deinitialize()
 	return nvStatus;
 }
 
-void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
+void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) 
+{
 	//Simple check to allow TestRunner to act as singleton for multithreaded renderers
-	if (m_initialized)
-		return;
+	//if (m_initialized)
+	//{
+	//	return;
+	//}
+
 	m_initialized = true;
 	m_testSuiteComplete = false;
 	m_testRunComplete = false;
@@ -85,8 +92,11 @@ void VideoTestRunner::StartTestRunner(IDXGISwapChain* swapChain) {
 void VideoTestRunner::InitializeTest()
 {
 	m_encodeConfig.outputFileName = m_fileName;
-	if(m_encoderCreated == false)
+	if (!m_encoderCreated)
+	{
 		InitializeEncoder();
+	}
+
 	m_encoderCreated = true;
 }
 
@@ -106,7 +116,6 @@ NVENCSTATUS VideoTestRunner::InitializeEncoder()
 
 	m_pNvHWEncoder->Initialize((void*)m_d3dDevice, NV_ENC_DEVICE_TYPE_DIRECTX);
 
-	
 	m_encodeConfig.presetGUID = m_pNvHWEncoder->GetPresetGUID(m_encodeConfig.encoderPreset, m_encodeConfig.codec);
 
 	//H264 level sets maximum bitrate limits.  4.1 supported by almost all mobile devices.
@@ -180,13 +189,12 @@ void VideoTestRunner::GetDefaultEncodeConfig()
 
 	// Enable temporal Adaptive Quantization
 	// Shifts quantization matrix based on complexity of frame over time
-	m_encodeConfig.enableTemporalAQ = true;
+	m_encodeConfig.enableTemporalAQ = false;
 
 	//Need this to be able to recover from stream drops
 	//Client needs to send back a last good timestamp, and we call
 	//NvEncInvalidateRefFrames(encoder,timestamp) to reissue I frame
 	m_encodeConfig.invalidateRefFramesEnableFlag = true;
-
 }
 
 // Captures frame buffer from the swap chain.
@@ -327,24 +335,24 @@ NVENCSTATUS VideoTestRunner::SetEncodeProfile(int profileIndex)
 	switch (profileIndex)
 	{
 		//Main should be used for most cases
-	case 1:
-		choice = NV_ENC_H264_PROFILE_MAIN_GUID;
-		break;
+		case 1:
+			choice = NV_ENC_H264_PROFILE_MAIN_GUID;
+			break;
 
-		//High 444 is only for lossless encode profile
-	case 2:
-		choice = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
-		break;
+			//High 444 is only for lossless encode profile
+		case 2:
+			choice = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
+			break;
 
-		//Enables stereo frame packing
-	case 3:
-		choice = NV_ENC_H264_PROFILE_STEREO_GUID;
-		break;
+			//Enables stereo frame packing
+		case 3:
+			choice = NV_ENC_H264_PROFILE_STEREO_GUID;
+			break;
 
-		//Fallback to auto, avoid this.
-	case 0:
-	default: choice = NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID;
-		break;
+			//Fallback to auto, avoid this.
+		case 0:
+		default: choice = NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID;
+			break;
 	}
 
 	m_pNvHWEncoder->m_stEncodeConfig.profileGUID = choice;
@@ -407,56 +415,74 @@ NVENCSTATUS VideoTestRunner::FlushEncoder()
 	return nvStatus;
 }
 
-void VideoTestRunner::TestCapture() {
-	if (m_encoderCreated) {
+void VideoTestRunner::TestCapture() 
+{
+	if (m_encoderCreated) 
+	{
 		if (m_currentFrame >= m_encodeConfig.startFrameIdx)
 		{
-			if (m_currentFrame < m_encodeConfig.endFrameIdx) {
+			if (m_currentFrame < m_encodeConfig.endFrameIdx) 
+			{
 				Capture();
 			}
-			else {
+			else 
+			{
 				m_currentFrame = 0;
-				if (m_lastTest) {
+				if (m_lastTest) 
+				{
 					IncrementTestSuite();
 					return;
 				}
+
 				IncrementTest();
 				return;
 			}
 		}
+
 		m_currentFrame++;
 	}
 }
 
-void VideoTestRunner::IncrementTest() {
-	if (!access(m_fileName, 0) == 0) {
-		if (m_encoderCreated) {
+void VideoTestRunner::IncrementTest() 
+{
+	if (!access(m_fileName, 0) == 0) 
+	{
+		if (m_encoderCreated) 
+		{
 			Deinitialize();
 			m_encoderCreated = false;
 		}
+
 		InitializeTest();
 		return;
 	}
-	if (m_lastTest) {
+
+	if (m_lastTest) 
+	{
 		return;
 	}
+
 	//Test to see if we are incrementing from lossless to the runner iterations
-	if (strcmp(m_fileName,"lossless.h264") == 0) {
+	if (strcmp(m_fileName,"lossless.h264") == 0) 
+	{
 		//Need to reset to runner config
 		m_encodeConfig = m_minEncodeConfig;
 	}
 
 	m_fileName = new char[255];
-	if (m_encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP) {
+	if (m_encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP) 
+	{
 		strcpy(m_fileName, m_encodeConfig.encoderPreset);
 	}
-	else {
+	else 
+	{
 		strcpy(m_fileName, std::to_string(m_encodeConfig.bitrate / 1000).c_str());
 		strcat(m_fileName, "kbps-");
 		strcat(m_fileName, m_encodeConfig.encoderPreset);
 	}
 	
-	switch (m_encodeConfig.rcMode) {
+	switch (m_encodeConfig.rcMode) 
+	{
 		case NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ:  strcat(m_fileName, "-CBRLLHQ.h264"); break;
 		case NV_ENC_PARAMS_RC_CBR:				strcat(m_fileName, "-CBR.h264"); break;
 		case NV_ENC_PARAMS_RC_CONSTQP:			
@@ -477,81 +503,93 @@ void VideoTestRunner::IncrementTest() {
 			break;
 	}
 
-	if (m_encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP) {
-		if (m_encodeConfig.qp + 1 <= 36) {
+	if (m_encodeConfig.rcMode == NV_ENC_PARAMS_RC_CONSTQP) 
+	{
+		if (m_encodeConfig.qp + 1 <= 36) 
+		{
 			m_encodeConfig.qp++;
 			IncrementTest();
 			return;
 		}
-		else {
+		else 
+		{
 			m_encodeConfig.qp = 36;
 			m_lastTest = true;
 			IncrementTest();
 		}
 	}
-	else {
-		if (m_encodeConfig.bitrate + m_stepEncodeConfig.bitrate <= m_maxEncodeConfig.bitrate) {
+	else 
+	{
+		if (m_encodeConfig.bitrate + m_stepEncodeConfig.bitrate <= m_maxEncodeConfig.bitrate) 
+		{
 			m_encodeConfig.bitrate += m_stepEncodeConfig.bitrate;
 			IncrementTest();
 			return;
 		}
-		else {
+		else 
+		{
 			m_encodeConfig.bitrate = m_maxEncodeConfig.bitrate;
 			m_lastTest = true;
 			IncrementTest();
 		}
 	}
-	
-	
 }
 
-void VideoTestRunner::IncrementTestSuite() {
+void VideoTestRunner::IncrementTestSuite() 
+{
 	if (m_testRunComplete)
+	{
 		return;
+	}
+
 	m_currentFrame = 0;
 	m_lastTest = false;
 	m_minEncodeConfig.bitrate = 2500000;
 	m_stepEncodeConfig.bitrate = 250000;
 	m_maxEncodeConfig.bitrate = 10000000;
 
-	switch (m_currentSuite) {
-	case 0:
-		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
-		m_minEncodeConfig.encoderPreset = "losslessHP";
-	case 1: //Lowlatency CBR
-		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
-		m_minEncodeConfig.encoderPreset = "lowLatencyHQ";
-		break;
-	case 2: //VBR HQ
-		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
-		m_minEncodeConfig.encoderPreset = "hq";
-		break;
-	case 3: //VBR
-		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR;
-		m_minEncodeConfig.encoderPreset = "hq";
-		break;
-	case 4: //VBR BluRay
-		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
-		m_minEncodeConfig.encoderPreset = "bluray";
-		break;
-	case 5: //Constant quality QP
-		m_minEncodeConfig.qp = 21;
-		m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
-		m_minEncodeConfig.encoderPreset = "lossless";
-		break;
-	default:
-		m_testRunComplete = true;
-		break;
+	switch (m_currentSuite) 
+	{
+		case 0:
+			m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
+			m_minEncodeConfig.encoderPreset = "losslessHP";
+		case 1: //Lowlatency CBR
+			m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+			m_minEncodeConfig.encoderPreset = "lowLatencyHQ";
+			break;
+		case 2: //VBR HQ
+			m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
+			m_minEncodeConfig.encoderPreset = "hq";
+			break;
+		case 3: //VBR
+			m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR;
+			m_minEncodeConfig.encoderPreset = "hq";
+			break;
+		case 4: //VBR BluRay
+			m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_VBR_HQ;
+			m_minEncodeConfig.encoderPreset = "bluray";
+			break;
+		case 5: //Constant quality QP
+			m_minEncodeConfig.qp = 21;
+			m_minEncodeConfig.rcMode = NV_ENC_PARAMS_RC_CONSTQP;
+			m_minEncodeConfig.encoderPreset = "lossless";
+			break;
+		default:
+			m_testRunComplete = true;
+			break;
 	}
+
 	m_currentSuite++;
 	m_encodeConfig = m_minEncodeConfig;
 	IncrementTest();
 }
 
-bool VideoTestRunner::IsNewTest() {
+bool VideoTestRunner::IsNewTest() 
+{
 	return m_currentFrame == 0 ? true : false;
 }
 
-bool VideoTestRunner::TestsComplete() {
+bool VideoTestRunner::TestsComplete() 
+{
 	return m_testRunComplete;
 }

@@ -128,7 +128,7 @@ protected:
 
 	void UIThreadCallback(int msg_id, void* data) override;
 
-	void SendInputData(const std::string& message) override;
+	bool SendInputData(const std::string& message) override;
 
 	// CreateSessionDescriptionObserver implementation.
 	void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;

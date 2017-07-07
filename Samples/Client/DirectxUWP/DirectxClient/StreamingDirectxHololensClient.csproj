@@ -65,7 +65,11 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <Content Include="GeometryShader.cso" />
     <None Include="project.json" />
+    <Content Include="VPRTVertexShader.cso" />
+    <Content Include="VertexShader.cso" />
+    <Content Include="webrtcConfig.json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
@@ -75,11 +79,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <Content Include="GeometryShaderHoloLens.cso" />
     <Content Include="PixelShader.cso" />
-    <Content Include="PixelShaderHoloLens.cso" />
-    <Content Include="VertexShader.cso" />
-    <Content Include="VertexShaderHoloLens.cso" />
     <None Include="StreamingDirectxHololensClient_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

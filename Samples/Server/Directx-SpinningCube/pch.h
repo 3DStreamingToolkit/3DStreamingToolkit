@@ -16,5 +16,3 @@
 #include <d3dcompiler.h>
 #include <directxmath.h>
 #include <directxcolors.h>
-
-#include "defs.h"

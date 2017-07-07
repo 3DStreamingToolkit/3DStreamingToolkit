@@ -1,59 +1,41 @@
 ﻿#include "pch.h"
+
 #include "AppCallbacks.h"
+#include "DirectXHelper.h"
 #include "libyuv/convert.h"
 
-
 using namespace DirectXClientComponent;
+using namespace DirectX;
+using namespace Microsoft::WRL::Wrappers;
 using namespace Platform;
 using namespace Windows::System::Profile;
-#ifdef HOLOLENS
 using namespace Windows::Graphics::Holographic;
-#endif // HOLOLENS
+using namespace Windows::Perception::Spatial;
 
-static uint8_t* s_videoYUVFrame = nullptr;
 static uint8_t* s_videoRGBFrame = nullptr;
-static uint8_t* s_videoDataY = nullptr;
-static uint8_t* s_videoDataU = nullptr;
-static uint8_t* s_videoDataV = nullptr;
+static CriticalSection s_lock;
 
-AppCallbacks::AppCallbacks() :
+AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
-#ifndef HOLOLENS
-	m_videoDecoder(nullptr)
-#else // HOLOLENS
-	m_holographicSpace(nullptr)
-#endif // HOLOLENS
+	m_holographicSpace(nullptr),
+	m_sendInputDataHandler(sendInputDataHandler)
 {
-	AnalyticsVersionInfo^ deviceInfo = AnalyticsInfo::VersionInfo;
-	if (deviceInfo->DeviceFamily == "Windows.Holographic")
-	{
-		
-	}
-		
 }
 
 AppCallbacks::~AppCallbacks()
 {
 	delete m_videoRenderer;
-	delete []s_videoYUVFrame;
 	delete []s_videoRGBFrame;
-	delete []s_videoDataY;
-	delete []s_videoDataU;
-	delete []s_videoDataV;
 }
 
 void AppCallbacks::Initialize(CoreApplicationView^ appView)
 {
 	m_deviceResources = std::make_shared<DX::DeviceResources>();
-
-#ifdef HOLOLENS
 	m_main = std::make_unique<HolographicAppMain>(m_deviceResources);
-#endif // HOLOLENS
 }
 
 void AppCallbacks::SetWindow(CoreWindow^ window)
 {
-#ifdef HOLOLENS
 	// Create a holographic space for the core window for the current view.
 	// Presenting holographic frames that are created by this holographic
 	// space will put the app into exclusive mode.
@@ -67,9 +49,6 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 
 	// The main class uses the holographic space for updates and rendering.
 	m_main->SetHolographicSpace(m_holographicSpace);
-#else // HOLOLENS
-	m_deviceResources->SetWindow(window);
-#endif // HOLOLENS
 }
 
 void AppCallbacks::Run()
@@ -78,6 +57,25 @@ void AppCallbacks::Run()
 	{
 		CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(
 			CoreProcessEventsOption::ProcessAllIfPresent);
+
+		if (m_videoRenderer)
+		{
+			auto lock = s_lock.Lock();
+
+			// Updates.
+			HolographicFrame^ holographicFrame = m_main->Update();
+
+			// Renders.
+			if (m_main->Render(holographicFrame))
+			{
+				// The holographic frame has an API that presents the swap chain for each
+				// holographic camera.
+				m_deviceResources->Present(holographicFrame);
+
+				// Sends view matrix.
+				SendInputData(holographicFrame);
+			}
+		}
 	}
 }
 
@@ -95,9 +93,7 @@ void AppCallbacks::OnFrame(
 	{
 		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
 		s_videoRGBFrame = new uint8_t[width * height * 4];
-#ifdef HOLOLENS
 		m_main->SetVideoRender(m_videoRenderer);
-#endif // HOLOLENS
 	}
 
 	libyuv::I420ToARGB(
@@ -113,59 +109,31 @@ void AppCallbacks::OnFrame(
 		height);
 
 	m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-
-#ifdef HOLOLENS
-	HolographicFrame^ holographicFrame = m_main->Update();
-	if (m_main->Render(holographicFrame))
-	{
-		// The holographic frame has an API that presents the swap chain for each
-		// holographic camera.
-		m_deviceResources->Present(holographicFrame);
-	}
-#else // HOLOLENS
-	m_videoRenderer->Render();
-	m_deviceResources->Present();
-#endif // HOLOLENS
 }
 
 void AppCallbacks::OnDecodedFrame(
 	uint32_t width,
 	uint32_t height,
-	const Array<uint8_t>^ encodedData)
+	const Array<uint8_t>^ decodedData)
 {
-	// Uses lazy initialization.
+	auto lock = s_lock.Lock();
+
 	if (!m_videoRenderer)
 	{
-		// Initializes the video renderer.
-		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
-#ifdef HOLOLENS
-		m_main->SetVideoRender(m_videoRenderer);
-#endif // HOLOLENS
+		// Enables the stereo output mode.
+		String^ msg =
+			"{" +
+			"  \"type\":\"stereo-rendering\"," +
+			"  \"body\":\"1\"" +
+			"}";
 
-		// Initalizes the temp buffers.
-		int bufferSize = width * height * 4;
-		int half_width = (width + 1) / 2;
-		size_t size_y = static_cast<size_t>(width) * height;
-		size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
-
-		s_videoRGBFrame = new uint8_t[bufferSize];
-		memset(s_videoRGBFrame, 0, bufferSize);
-
-		s_videoYUVFrame = new uint8_t[bufferSize];
-		memset(s_videoYUVFrame, 0, bufferSize);
-
-		s_videoDataY = new uint8_t[size_y];
-		memset(s_videoDataY, 0, size_y);
-
-		s_videoDataU = new uint8_t[size_uv];
-		memset(s_videoDataY, 0, size_uv);
-
-		s_videoDataV = new uint8_t[size_uv];
-		memset(s_videoDataY, 0, size_uv);
+		m_sendInputDataHandler(msg);
 	}
 
+	InitVideoRender(m_deviceResources, width, height);
+
 	if (!libyuv::YUY2ToARGB(
-		encodedData->Data,
+		decodedData->Data,
 		width * 2,
 		s_videoRGBFrame,
 		width * 4,
@@ -173,40 +141,97 @@ void AppCallbacks::OnDecodedFrame(
 		height))
 	{
 		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-
-#ifdef HOLOLENS
-		HolographicFrame^ holographicFrame = m_main->Update();
-		if (m_main->Render(holographicFrame))
-		{
-			// The holographic frame has an API that presents the swap chain for each
-			// holographic camera.
-			m_deviceResources->Present(holographicFrame);
-		}
-#else // HOLOLENS
-		m_videoRenderer->Render();
-		m_deviceResources->Present();
-#endif // HOLOLENS
 	}
 }
 
-void AppCallbacks::ReadI420Buffer(
+void AppCallbacks::InitVideoRender(
+	std::shared_ptr<DX::DeviceResources> deviceResources,
 	int width,
-	int height,
-	uint8* buffer,
-	uint8** dataY,
-	int* strideY,
-	uint8** dataU,
-	int* strideU,
-	uint8** dataV,
-	int* strideV)
+	int height)
 {
+	if (m_videoRenderer)
+	{
+		// Do nothing if width and height don't change.
+		if (m_videoRenderer->GetWidth() == width &&
+			m_videoRenderer->GetHeight() == height)
+		{
+			return;
+		}
+
+		// Releases old resources.
+		delete m_videoRenderer;
+		delete []s_videoRGBFrame;
+	}
+
+	// Initializes the video renderer.
+	m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
+	m_main->SetVideoRender(m_videoRenderer);
+
+	// Initalizes the temp buffers.
+	int bufferSize = width * height * 4;
 	int half_width = (width + 1) / 2;
 	size_t size_y = static_cast<size_t>(width) * height;
 	size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
-	*strideY = width;
-	*strideU = half_width;
-	*strideV = half_width;
-	memcpy(*dataY, buffer, size_y);
-	memcpy(*dataU, buffer + *strideY * height, size_uv);
-	memcpy(*dataV, buffer + *strideY * height + *strideU * ((height + 1) / 2), size_uv);
+
+	s_videoRGBFrame = new uint8_t[bufferSize];
+	memset(s_videoRGBFrame, 0, bufferSize);
+}
+
+void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
+{
+	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
+	SpatialCoordinateSystem^ currentCoordinateSystem =
+		m_main->GetReferenceFrame()->CoordinateSystem;
+
+	for (auto cameraPose : prediction->CameraPoses)
+	{
+		HolographicStereoTransform cameraProjectionTransform =
+			cameraPose->ProjectionTransform;
+
+		Platform::IBox<HolographicStereoTransform>^ viewTransformContainer =
+			cameraPose->TryGetViewTransform(currentCoordinateSystem);
+
+		if (viewTransformContainer != nullptr)
+		{
+			HolographicStereoTransform viewCoordinateSystemTransform =
+				viewTransformContainer->Value;
+
+			XMFLOAT4X4 leftViewProjectionMatrix;
+			XMStoreFloat4x4(
+				&leftViewProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
+			);
+
+			XMFLOAT4X4 rightViewProjectionMatrix;
+			XMStoreFloat4x4(
+				&rightViewProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
+			);
+
+			// Builds the camera transform message.
+			String^ leftCameraTransform = "";
+			String^ rightCameraTransform = "";
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					leftCameraTransform += leftViewProjectionMatrix.m[i][j] + ",";
+					rightCameraTransform += rightViewProjectionMatrix.m[i][j];
+					if (i != 3 || j != 3)
+					{
+						rightCameraTransform += ",";
+					}
+				}
+			}
+
+			String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
+			String^ msg =
+				"{" +
+				"  \"type\":\"camera-transform-stereo\"," +
+				"  \"body\":\"" + cameraTransformBody + "\"" +
+				"}";
+
+			m_sendInputDataHandler(msg);
+		}
+	}
 }

@@ -252,9 +252,10 @@ CModelViewerCamera          g_Camera;               // A model viewing camera
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
 static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
 #else // TEST_RUNNER
-static const XMVECTORF32    s_vDefaultEye = { 0.0f, 0.0f, 0.0f, 0.f };
-static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 0.0f, 1.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 0.0f, -1.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, -1.0f, 1.0f, 0.f };
 #endif // TEST_RUNNER
+static const XMVECTORF32    s_vDefaultScale = { 0.01f, 0.01f, 0.01f, 1.f };
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
 static const FLOAT          s_fFOV = XM_PI / 4.0f;
@@ -439,63 +440,92 @@ void FrameUpdate()
 	DXUTRender3DEnvironment();
 }
 
-#ifdef REMOTE_RENDERING
+#ifndef TEST_RUNNER
 
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
-	char data[1024];
+	char type[256];
+	char body[1024];
 	Json::Reader reader;
-	Json::Value msg = NULL;	
+	Json::Value msg = NULL;
 	reader.parse(message, msg, false);
-		
-	if (msg.isMember("type"))
+
+	if (msg.isMember("type") && msg.isMember("body"))
 	{
-		strcpy(data, msg.get("type", "").asCString());
+		strcpy(type, msg.get("type", "").asCString());
+		strcpy(body, msg.get("body", "").asCString());
+		std::istringstream datastream(body);
+		std::string token;
 
-		if (strcmp(data, "camera-transform-lookat") == 0)
+		if (strcmp(type, "stereo-rendering") == 0)
 		{
-			if (msg.isMember("body"))
+			getline(datastream, token, ',');
+			int stereo = stoi(token);
+			DXUTSetStereo(stereo == 1);
+		}
+		else if (strcmp(type, "camera-transform-lookat") == 0)
+		{
+			// Eye point.
+			getline(datastream, token, ',');
+			float eyeX = stof(token);
+			getline(datastream, token, ',');
+			float eyeY = stof(token);
+			getline(datastream, token, ',');
+			float eyeZ = stof(token);
+
+			// Focus point.
+			getline(datastream, token, ',');
+			float focusX = stof(token);
+			getline(datastream, token, ',');
+			float focusY = stof(token);
+			getline(datastream, token, ',');
+			float focusZ = stof(token);
+
+			// Up vector.
+			getline(datastream, token, ',');
+			float upX = stof(token);
+			getline(datastream, token, ',');
+			float upY = stof(token);
+			getline(datastream, token, ',');
+			float upZ = stof(token);
+
+			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
+			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+			g_Camera.SetViewParams(eye, lookAt, up);
+			g_Camera.FrameMove(0);
+		}
+		else if (strcmp(type, "camera-transform-stereo") == 0)
+		{
+			// Parses the left view projection matrix.
+			DirectX::XMFLOAT4X4 viewProjectionLeft;
+			for (int i = 0; i < 4; i++)
 			{
-				strcpy(data, msg.get("body", "").asCString());
-
-				// Parses the camera transformation data.
-				std::istringstream datastream(data);
-				std::string token;
-
-				// Eye point.
-				getline(datastream, token, ',');
-				float eyeX = stof(token);
-				getline(datastream, token, ',');
-				float eyeY = stof(token);
-				getline(datastream, token, ',');
-				float eyeZ = stof(token);
-
-				// Focus point.
-				getline(datastream, token, ',');
-				float focusX = stof(token);
-				getline(datastream, token, ',');
-				float focusY = stof(token);
-				getline(datastream, token, ',');
-				float focusZ = stof(token);
-
-				// Up vector.
-				getline(datastream, token, ',');
-				float upX = stof(token);
-				getline(datastream, token, ',');
-				float upY = stof(token);
-				getline(datastream, token, ',');
-				float upZ = stof(token);
-
-				// Initializes the eye position vector.
-				const XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-				const XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-				const XMVECTORF32 up = { upX, upY, upZ, 0.f };
-
-				// Updates the camera view.
-				g_Camera.SetViewParams(eye, lookAt, up);
-				g_Camera.FrameMove(0);
+				for (int j = 0; j < 4; j++)
+				{
+					getline(datastream, token, ',');
+					viewProjectionLeft.m[i][j] = stof(token);
+				}
 			}
+
+			// Parses the right view projection matrix.
+			DirectX::XMFLOAT4X4 viewProjectionRight;
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 4; j++)
+				{
+					getline(datastream, token, ',');
+					viewProjectionRight.m[i][j] = stof(token);
+				}
+			}
+
+			// Updates the camera's matrices.
+			XMFLOAT4X4 id;
+			XMStoreFloat4x4(&id, XMMatrixIdentity());
+			g_Camera.SetViewMatrixStereo(id);
+			g_Camera.SetProjMatrixStereo(viewProjectionLeft, viewProjectionRight);
+			g_Camera.FrameMove(0);
 		}
 	}
 }
@@ -522,7 +552,11 @@ int InitWebRTC(char* server, int port)
 	}
 
 	DXUTSetWindow(wnd.handle(), wnd.handle(), wnd.handle(), false);
-	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	DXUTCreateDevice(
+		D3D_FEATURE_LEVEL_11_0,
+		true,
+		DEFAULT_FRAME_BUFFER_WIDTH,
+		DEFAULT_FRAME_BUFFER_HEIGHT);
 
 #ifdef NO_UI
 	ShowWindow(wnd.handle(), SW_HIDE);
@@ -566,7 +600,7 @@ int InitWebRTC(char* server, int port)
 	return 0;
 }
 
-#endif // REMOTE_RENDERING
+#endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -598,20 +632,18 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     InitApp();
     DXUTInit( true, true, lpCmdLine ); // Parse the command line, show msgboxes on error, no extra command line params
     
-#ifndef REMOTE_RENDERING
+#ifdef TEST_RUNNER
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
-	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, FRAME_BUFFER_WIDTH, FRAME_BUFFER_HEIGHT);
+	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
 
-#ifdef TEST_RUNNER
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
-#endif// TEST_RUNNER
 
 	DXUTMainLoop(); // Enter into the DXUT render loop
 
     return DXUTGetExitCode();
-#else // REMOTE_RENDERING
+#else // TEST_RUNNER
 	int nArgs;
 	char server[1024];
 	strcpy(server, FLAG_server);
@@ -730,10 +762,10 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 #if defined(MOVING_CAMERA) || defined(TEST_RUNNER)
 	// Rotate camera
-	DirectX::XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
-	DirectX::XMMATRIX rotationMatrix = XMMatrixRotationY(fElapsedTime * CAMERA_SPEED / 180 * XM_PI);
-	DirectX::XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
-	DirectX::XMMATRIX transformMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
+	XMMATRIX transMatrixIn = XMMatrixTranslationFromVector(s_vDefaultLookAt);
+	XMMATRIX rotationMatrix = XMMatrixRotationY(fElapsedTime * CAMERA_SPEED / 180 * XM_PI);
+	XMMATRIX transMatrixOut = XMMatrixTranslationFromVector(-s_vDefaultLookAt);
+	XMMATRIX transformMatrix = XMMatrixMultiply(XMMatrixMultiply(transMatrixOut, rotationMatrix), transMatrixIn);
 	g_Camera.SetViewParams(
 		DirectX::XMVector3Transform(g_Camera.GetEyePt(), transformMatrix),
 		g_Camera.GetLookAtPt());
@@ -1707,12 +1739,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(
     V_RETURN( g_D3DSettingsDlg.OnD3D11ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
 
     // Setup the camera's projection parameters
-#ifdef STEREO_OUTPUT_MODE
-	float bufferWidth = pBackBufferSurfaceDesc->Width / 2;
-#else // STEREO_OUTPUT_MODE
-	float bufferWidth = pBackBufferSurfaceDesc->Width;
-#endif // STEREO_OUTPUT_MODE
-
+	float bufferWidth = DXUTIsStereo() ? pBackBufferSurfaceDesc->Width >> 1 : pBackBufferSurfaceDesc->Width;
 	float fAspectRatio = bufferWidth / (FLOAT)pBackBufferSurfaceDesc->Height;
 	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
 	g_Camera.SetWindow(bufferWidth, pBackBufferSurfaceDesc->Height);
@@ -1927,17 +1954,26 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
         // Set the PS per-light constant data
         V( pd3dContext->Map( g_pcbPSPerLight, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource ) );
         auto pPSPerLight = reinterpret_cast<CB_PS_PER_LIGHT*>( MappedResource.pData );
-        for ( int iLight = 0; iLight < g_iNumLights; ++iLight )
+		XMMATRIX scaleMatrix = XMMatrixScalingFromVector(s_vDefaultScale);
+		XMMATRIX transMatrix = XMMatrixTranslationFromVector(s_vDefaultEye);
+		for ( int iLight = 0; iLight < g_iNumLights; ++iLight )
         {
             XMVECTOR vLightPos = XMVectorSetW( g_vLightPos[iLight], 1.0f ); 
             XMVECTOR vLightDir = XMVectorSetW( g_vLightDir[iLight], 0.0f ); 
+            XMMATRIX mLightViewProj;
+			if (DXUTIsStereo())
+			{
+				mLightViewProj = scaleMatrix * transMatrix * CalcLightViewProj(iLight);
+			}
+			else
+			{
+				mLightViewProj = CalcLightViewProj(iLight);
+			}
 
-            XMMATRIX mLightViewProj = CalcLightViewProj( iLight );
-            
             pPSPerLight->m_LightData[iLight].m_vLightColor = g_vLightColor[iLight];
             XMStoreFloat4( &pPSPerLight->m_LightData[iLight].m_vLightPos, vLightPos );
             XMStoreFloat4( &pPSPerLight->m_LightData[iLight].m_vLightDir, vLightDir );
-            XMStoreFloat4x4( &pPSPerLight->m_LightData[iLight].m_mLightViewProj, XMMatrixTranspose( mLightViewProj ) );
+            XMStoreFloat4x4( &pPSPerLight->m_LightData[iLight].m_mLightViewProj, XMMatrixTranspose(mLightViewProj ) );
             pPSPerLight->m_LightData[iLight].m_vFalloffs = XMFLOAT4(
                 g_fLightFalloffDistEnd[iLight], 
                 g_fLightFalloffDistRange[iLight], 
@@ -2017,11 +2053,11 @@ HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *
         V( RenderSceneSetup( pd3dContext, pStaticParams, pDynamicParams ) );
     }
 
-#ifdef STEREO_OUTPUT_MODE
 	// Gets the viewport.
 	D3D11_VIEWPORT* viewports = DXUTGetD3D11ScreenViewport();
 
-	if (outputType == STEREO_OUTPUT_TYPE::LEFT_EYE)
+	if (outputType == STEREO_OUTPUT_TYPE::DEFAULT ||
+		outputType == STEREO_OUTPUT_TYPE::LEFT_EYE)
 	{
 		// Render scene in the left eye.
 		pd3dContext->RSSetViewports(1, viewports);
@@ -2033,10 +2069,6 @@ HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *
 		pd3dContext->RSSetViewports(1, viewports + 1);
 		g_Mesh11.Render(pd3dContext, 0, 1);
 	}
-#else // STEREO_OUTPUT_MODE
-	//Render
-	g_Mesh11.Render(pd3dContext, 0, 1);
-#endif // STEREO_OUTPUT_MODE
 
     // If we are doing ST_DEFERRED_PER_CHUNK or MT_DEFERRED_PER_CHUNK, generate and execute command lists now.
     if ( IsRenderDeferredPerChunk() )
@@ -2290,50 +2322,51 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 {
     HRESULT hr;
     XMMATRIX mvp;
+	if (DXUTIsStereo())
+	{
+		XMMATRIX scaleMatrix = XMMatrixScalingFromVector(s_vDefaultScale);
+		XMMATRIX transMatrix = XMMatrixTranslationFromVector(s_vDefaultEye);
 
-#ifdef STEREO_OUTPUT_MODE
-	// Render scene in the left eye.
-	XMMATRIX transLeft = XMMatrixTranslationFromVector(XMVectorSet(-IPD, 0, 0, 0));
-	mvp = transLeft * g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+		// Render scene in the left eye.
+		SceneParamsDynamic DynamicParamsLeft;
+		mvp = scaleMatrix * transMatrix * g_Camera.GetViewMatrix() * XMMatrixTranspose(XMLoadFloat4x4(g_Camera.GetProjMatrixStereo()));
+		XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
 
-	SceneParamsDynamic DynamicParamsLeft;
-	XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
+		V(RenderScene(
+			pd3dContext,
+			&g_StaticParamsDirect,
+			&DynamicParamsLeft,
+			STEREO_OUTPUT_TYPE::LEFT_EYE));
 
-	V(RenderScene(
-		pd3dContext,
-		&g_StaticParamsDirect,
-		&DynamicParamsLeft,
-		STEREO_OUTPUT_TYPE::LEFT_EYE));
+		// Render scene in the right eye.
+		SceneParamsDynamic DynamicParamsRight;
+		mvp = scaleMatrix * transMatrix * g_Camera.GetViewMatrix() * XMMatrixTranspose(XMLoadFloat4x4(g_Camera.GetProjMatrixStereo() + 1));
+		XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
 
-	// Render scene in the right eye.
-	XMMATRIX transRight = XMMatrixTranslationFromVector(XMVectorSet(IPD, 0, 0, 0));
-	mvp = transRight * g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
-
-	SceneParamsDynamic DynamicParamsRight;
-	XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
-
-	V(RenderScene(
-		pd3dContext,
-		&g_StaticParamsDirect,
-		&DynamicParamsRight,
-		STEREO_OUTPUT_TYPE::RIGHT_EYE));
-#else // STEREO_OUTPUT_MODE
+		V(RenderScene(
+			pd3dContext,
+			&g_StaticParamsDirect,
+			&DynamicParamsRight,
+			STEREO_OUTPUT_TYPE::RIGHT_EYE));
+	}
+	else
+	{
 #ifdef RENDER_SCENE_LIGHT_POV
-    if ( g_bRenderSceneLightPOV )
-    {
-        mvp = CalcLightViewProj( 0 );
-    }
-    else
+		if (g_bRenderSceneLightPOV)
+		{
+			mvp = CalcLightViewProj(0);
+		}
+		else
 #endif
-    {
-        mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
-    }
+		{
+			mvp = g_Camera.GetViewMatrix() * g_Camera.GetProjMatrix();
+		}
 
-    SceneParamsDynamic DynamicParams;
-    XMStoreFloat4x4( &DynamicParams.m_mViewProj, mvp );
+		SceneParamsDynamic DynamicParams;
+		XMStoreFloat4x4(&DynamicParams.m_mViewProj, mvp);
 
-    V( RenderScene( pd3dContext, &g_StaticParamsDirect, &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT ) );
-#endif // STEREO_OUTPUT_MODE
+		V(RenderScene(pd3dContext, &g_StaticParamsDirect, &DynamicParams, STEREO_OUTPUT_TYPE::DEFAULT));
+	}
 }
 
 
@@ -2571,13 +2604,16 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 	V(DXUTSetupD3D11Views(pd3dImmediateContext));
 
 	// Render the HUD
-#if !defined(TEST_RUNNER) && !defined(STEREO_OUTPUT_MODE)
-	DXUT_BeginPerfEvent(DXUT_PERFEVENTCOLOR, L"HUD / Stats");
-	g_HUD.OnRender(fElapsedTime);
-	g_SampleUI.OnRender(fElapsedTime);
-	RenderText();
-	DXUT_EndPerfEvent();
-#endif // !TEST_RUNNER && !STEREO_OUTPUT_MODE
+#if !defined(TEST_RUNNER)
+	if (!DXUTIsStereo())
+	{
+		DXUT_BeginPerfEvent(DXUT_PERFEVENTCOLOR, L"HUD / Stats");
+		g_HUD.OnRender(fElapsedTime);
+		g_SampleUI.OnRender(fElapsedTime);
+		RenderText();
+		DXUT_EndPerfEvent();
+	}
+#endif // TEST_RUNNER
 }
 
 //--------------------------------------------------------------------------------------

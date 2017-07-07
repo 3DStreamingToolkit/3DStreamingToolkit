@@ -4,6 +4,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamingDirectxHololensClient", "DirectxClient\StreamingDirectxHololensClient.csproj", "{6963DC83-256B-4AA3-B37B-530111B90537}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B} = {FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}
+		{80204D5C-6E4D-46A6-8506-C1280966FD16} = {80204D5C-6E4D-46A6-8506-C1280966FD16}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectxClientComponent", "DirectxClientComponent\DirectxClientComponent.vcxproj", "{80204D5C-6E4D-46A6-8506-C1280966FD16}"
 EndProject
