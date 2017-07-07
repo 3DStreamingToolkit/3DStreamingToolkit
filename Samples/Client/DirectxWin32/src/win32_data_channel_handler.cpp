@@ -36,8 +36,9 @@ bool Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM
 	bool sendMouseEvent = false;
 
 	// Requests mono stream.
-	if (stereo_mode_ == -1 && RequestStereoStream(false))
+	if (stereo_mode_ == -1)
 	{
+		RequestStereoStream(false);
 		stereo_mode_ = 0;
 	}
 
