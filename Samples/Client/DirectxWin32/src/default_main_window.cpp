@@ -12,6 +12,7 @@
 
 #include <math.h>
 
+#include "macros.h"
 #include "default_main_window.h"
 #include "win32_data_channel_handler.h"
 #include "defaults.h"
@@ -92,6 +93,8 @@ DefaultMainWindow::DefaultMainWindow(
 		label2_(NULL),
 		button_(NULL),
 		listbox_(NULL),
+		direct2d_factory_(NULL),
+		render_target_(NULL),
 		destroyed_(false),
 		callback_(NULL),
 		data_channel_handler_(NULL),
@@ -110,11 +113,14 @@ DefaultMainWindow::DefaultMainWindow(
 DefaultMainWindow::~DefaultMainWindow()
 {
 	RTC_DCHECK(!IsWindow());
+	SAFE_RELEASE(direct2d_factory_);
+	SAFE_RELEASE(render_target_);
 }
 
 bool DefaultMainWindow::Create()
 {
 	RTC_DCHECK(wnd_ == NULL);
+
 	if (!RegisterWindowClass())
 	{
 		return false;
@@ -126,6 +132,30 @@ bool DefaultMainWindow::Create()
 		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_VISIBLE,
 		CW_USEDEFAULT, CW_USEDEFAULT, width_, height_,
 		NULL, NULL, GetModuleHandle(NULL), this);
+
+	// Creates a Direct2D factory.
+	HRESULT hr = S_OK;
+	hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &direct2d_factory_);
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	RECT rc;
+	GetClientRect(wnd_, &rc);
+	D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
+
+	// Create a Direct2D render target.
+	hr = direct2d_factory_->CreateHwndRenderTarget(
+		D2D1::RenderTargetProperties(),
+		D2D1::HwndRenderTargetProperties(wnd_, size),
+		&render_target_
+	);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
 
 	::SendMessage(wnd_, WM_SETFONT, reinterpret_cast<WPARAM>(GetDefaultFont()), TRUE);
 	
@@ -312,10 +342,23 @@ void DefaultMainWindow::QueueUIThreadCallback(int msg_id, void* data)
 void DefaultMainWindow::OnPaint()
 {
 	PAINTSTRUCT ps;
-	::BeginPaint(handle(), &ps);
-
 	RECT rc;
+	FLOAT dpiX, dpiY;
+	FLOAT scaleX, scaleY;
+
+	::BeginPaint(handle(), &ps);
 	::GetClientRect(handle(), &rc);
+	direct2d_factory_->GetDesktopDpi(&dpiX, &dpiY);
+	scaleX = 96.0f / dpiX;
+	scaleY = 96.0f / dpiY;
+
+	D2D1_RECT_F desRect =
+	{
+		rc.left * scaleX,
+		rc.top * scaleY,
+		rc.right * scaleX,
+		rc.bottom * scaleY
+	};
 
 	VideoRenderer* remote_renderer = remote_renderer_.get();
 	if (ui_ == STREAMING && remote_renderer)
@@ -327,55 +370,25 @@ void DefaultMainWindow::OnPaint()
 		const uint8_t* image = remote_renderer->image();
 		if (image != NULL)
 		{
-			HDC dc_mem = ::CreateCompatibleDC(ps.hdc);
-			::SetStretchBltMode(dc_mem, HALFTONE);
+			// Initializes the bitmap properties.
+			D2D1_BITMAP_PROPERTIES bitmapProps;
+			bitmapProps.dpiX = 0;
+			bitmapProps.dpiY = 0;
+			bitmapProps.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			bitmapProps.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
 
-			// Set the map mode so that the ratio will be maintained for us.
-			HDC all_dc[] = 
-			{
-				ps.hdc,
-				dc_mem
-			};
+			// Creates the bitmap.
+			ID2D1Bitmap* bitmap = NULL;
+			D2D1_SIZE_U size = { width, height };
+			render_target_->CreateBitmap(size, image, width * 4, bitmapProps, &bitmap);
+			
+			// Renders the bitmap.
+			render_target_->BeginDraw();
+			render_target_->DrawBitmap(bitmap, desRect);
+			render_target_->EndDraw();
 
-			for (int i = 0; i < arraysize(all_dc); ++i)
-			{
-				SetMapMode(all_dc[i], MM_ISOTROPIC);
-				SetWindowExtEx(all_dc[i], width, height, NULL);
-				SetViewportExtEx(all_dc[i], rc.right, rc.bottom, NULL);
-			}
-
-			HBITMAP bmp_mem = ::CreateCompatibleBitmap(ps.hdc, rc.right, rc.bottom);
-			HGDIOBJ bmp_old = ::SelectObject(dc_mem, bmp_mem);
-
-			POINT logical_area =
-			{
-				rc.right,
-				rc.bottom
-			};
-
-			DPtoLP(ps.hdc, &logical_area, 1);
-
-			HBRUSH brush = ::CreateSolidBrush(RGB(0, 0, 0));
-			RECT logical_rect = 
-			{
-				0, 0, logical_area.x, logical_area.y
-			};
-
-			::FillRect(dc_mem, &logical_rect, brush);
-			::DeleteObject(brush);
-
-			int x = (logical_area.x / 2) - (width / 2);
-			int y = (logical_area.y / 2) - (height / 2);
-
-			StretchDIBits(dc_mem, x, y, width, height, 0, 0, width, height, image,
-				&bmi, DIB_RGB_COLORS, SRCCOPY);
-
-			BitBlt(ps.hdc, 0, 0, logical_area.x, logical_area.y, dc_mem, 0, 0, SRCCOPY);
-
-			// Cleanup.
-			::SelectObject(dc_mem, bmp_old);
-			::DeleteObject(bmp_mem);
-			::DeleteDC(dc_mem);
+			// Releases the bitmap.
+			SAFE_RELEASE(bitmap);
 		}
 		else
 		{
@@ -476,6 +489,17 @@ bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* resul
 			else if (ui_ == LIST_PEERS)
 			{
 				LayoutPeerListUI(true);
+			}
+			else
+			{
+				if (render_target_)
+				{
+					RECT rc;
+					GetClientRect(wnd_, &rc);
+					D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
+					render_target_->Resize(size);
+					data_channel_handler_->ProcessMessage(msg, wp, lp);
+				}
 			}
 			
 			break;
