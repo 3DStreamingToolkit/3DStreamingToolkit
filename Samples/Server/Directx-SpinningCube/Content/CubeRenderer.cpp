@@ -7,9 +7,9 @@ using namespace DX;
 using namespace Toolkit3DSample;
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
-static XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
-static XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
-static XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
+static const XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
+static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	m_degreesPerSecond(45),
@@ -190,8 +190,9 @@ void CubeRenderer::InitConstantBuffers(bool isStereo)
 			fovAngleY *= 2.0f;
 		}
 
-		// This sample makes use of a right-handed coordinate system using row-major matrices.
-		XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovRH(
+		// This sample makes use of a left-handed coordinate system using 
+		// row-major matrices.
+		XMMATRIX perspectiveMatrix = XMMatrixPerspectiveFovLH(
 			fovAngleY,
 			aspectRatio,
 			0.01f,
@@ -218,7 +219,7 @@ void CubeRenderer::InitConstantBuffers(bool isStereo)
 		// Initializes the view matrix.
 		XMStoreFloat4x4(
 			&m_viewConstantBufferData.view,
-			XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+			XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 
 		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
 			m_viewConstantBuffer,
@@ -307,16 +308,12 @@ void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOA
 	m_projectionConstantBufferData[1].projection = viewProjectionRight;
 }
 
-void CubeRenderer::UpdateView(const XMVECTORF32& newEye, const XMVECTORF32& newLookAt, const XMVECTORF32& newUp)
+void CubeRenderer::UpdateView(const XMVECTORF32& eye, const XMVECTORF32& at, const XMVECTORF32& up)
 {
-	eye = newEye;
-	at = newLookAt;
-	up = newUp;
-
 	// Updates the view matrix.
 	XMStoreFloat4x4(
 		&m_viewConstantBufferData.view,
-		XMMatrixTranspose(XMMatrixLookAtRH(eye, at, up)));
+		XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
 
 	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
 		m_viewConstantBuffer,
