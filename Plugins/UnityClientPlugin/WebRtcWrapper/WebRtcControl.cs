@@ -27,7 +27,6 @@ namespace WebRtcWrapper
         public event Action<int, IDataChannelMessage> OnPeerDataChannelReceived;
 
         public RawVideoSource rawVideo;
-        public DecodedVideoSource encodedVideoSource;
 
         // Message Data Type
         private static readonly string kMessageDataType = "message";
@@ -269,15 +268,15 @@ namespace WebRtcWrapper
         void LoadSettings()
         {
             // Default values:
-            var configTraceServerIp = "127.0.0.1";
-            var configTraceServerPort = "55000";
+            var configTraceServerIp = new ValidableNonEmptyString("127.0.0.1");
+            var configTraceServerPort = 8888;
 
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
-            var peerCcServerIp = new ValidableNonEmptyString("signalingserver.centralus.cloudapp.azure.com");
-            IceServer turnServer = new IceServer("turnserver3dstreaming.centralus.cloudapp.azure.com:3478", IceServer.ServerType.TURN);
-                      turnServer.Username = "user";
-                      turnServer.Credential = "3Dstreaming0317";
-            var peerCcPortInt = 3000;
+            //var peerCcServerIp = new ValidableNonEmptyString("signalingserver.centralus.cloudapp.azure.com");
+            //IceServer turnServer = new IceServer("turnserver3dstreaming.centralus.cloudapp.azure.com:3478", IceServer.ServerType.TURN);
+            //          turnServer.Username = "user";
+            //          turnServer.Credential = "3Dstreaming0317";
+            //var peerCcPortInt = 3000;
 
             var configIceServers = new ObservableCollection<IceServer>();
 
@@ -286,20 +285,20 @@ namespace WebRtcWrapper
             {
                 // Default values:
                 configIceServers.Clear();
-                configIceServers.Add(turnServer);
-                //configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-                //configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-                //configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-                //configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-                //configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+                // configIceServers.Add(turnServer);
+                configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
             }
 
             RunOnUiThread(() =>
             {
                 IceServers = configIceServers;
-                Ip = peerCcServerIp;
+                Ip = configTraceServerIp;
                 NtpServer = ntpServerAddress;
-                Port = new ValidableIntegerString(peerCcPortInt, 0, 65535);
+                Port = new ValidableIntegerString(configTraceServerPort, 0, 65535);
                 ReevaluateHasServer();
             });
 
