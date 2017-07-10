@@ -40,7 +40,10 @@ public class ControlScript : MonoBehaviour
     private float fpsCount = 0f;
     private float startTime = 0;
     private float endTime = 0;
-    
+
+    private string toyStoryH264 = @"http://www.html5videoplayer.net/videos/toystory.mp4";
+
+
 #if !UNITY_EDITOR
     private WebRtcControl _webRtcControl;
     private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
@@ -59,10 +62,10 @@ public class ControlScript : MonoBehaviour
     void Awake()
     {
         // Azure Host Details
-         ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        // ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
         
         // Local Dev Setup - Define Host Workstation IP Address
-        //ServerInputTextField.text = "127.0.0.1:8888";
+        ServerInputTextField.text = "10.0.0.88:8888";
     }
 
 #if UNITY_EDITOR
@@ -100,9 +103,9 @@ public class ControlScript : MonoBehaviour
                 evt.Stream.GetVideoTracks().Count);
             
             var mediaStream = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "media");
-            var mediaPlaybackSource = (IMediaPlaybackSource)mediaStream;
 
-            Plugin.LoadMediaSource(mediaPlaybackSource);
+            Plugin.LoadMediaSource(mediaStream);
+            // Plugin.LoadContent(toyStoryH264);
             Plugin.Play();
         }
         else
@@ -325,40 +328,40 @@ public class ControlScript : MonoBehaviour
 
     private static class Plugin
     {
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "CreateMediaPlayback")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "CreateMediaPlayback")]
         internal static extern void CreateMediaPlayback();
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "ReleaseMediaPlayback")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "ReleaseMediaPlayback")]
         internal static extern void ReleaseMediaPlayback();
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetPrimaryTexture")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetPrimaryTexture")]
         internal static extern void GetPrimaryTexture(UInt32 width, UInt32 height, out System.IntPtr playbackTexture);
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadContent")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadContent")]
         internal static extern void LoadContent([MarshalAs(UnmanagedType.BStr)] string sourceURL);
 #if !UNITY_EDITOR
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaSource")]
-        internal static extern void LoadMediaSource(IMediaPlaybackSource IMediaSourceHandler);
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaSource")]
+        internal static extern void LoadMediaSource(IMediaSource IMediaSourceHandler);
 #endif
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadAdaptiveContent")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadAdaptiveContent")]
         internal static extern void LoadAdaptiveContent([MarshalAs(UnmanagedType.BStr)] string manifestURL);
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "Play")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Play")]
         internal static extern void Play();
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "Pause")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Pause")]
         internal static extern void Pause();
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "Stop")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Stop")]
         internal static extern void Stop();
 
         // Unity plugin
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "SetTimeFromUnity")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "SetTimeFromUnity")]
         internal static extern void SetTimeFromUnity(float t);
 
-        [DllImport("MediaPlayback", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetRenderEventFunc")]
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetRenderEventFunc")]
         internal static extern IntPtr GetRenderEventFunc();
     }
 }

@@ -5,11 +5,17 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcWrapper", "WebRtcWrapper\WebRtcWrapper.csproj", "{1857162F-96CC-451F-A4E2-3616207943AB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TexturesUWP", "TexturesUWP\TexturesUWP.vcxproj", "{CD55C6F2-DE59-415F-A843-8F413D9A60B0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamlTestApp", "XamlTestApp\XamlTestApp.csproj", "{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MediaEngineUWP", "MediaEngineUWP\UWP\MediaEngineUWP.vcxproj", "{4A859119-6730-4612-987F-DABF98F213ED}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared", "MediaEngineUWP\Shared\Shared.vcxitems", "{FE4A5965-EC67-4F68-B11D-6608906EF016}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		MediaEngineUWP\Shared\Shared.vcxitems*{4a859119-6730-4612-987f-dabf98f213ed}*SharedItemsImports = 4
+		MediaEngineUWP\Shared\Shared.vcxitems*{fe4a5965-ec67-4f68-b11d-6608906ef016}*SharedItemsImports = 9
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
@@ -37,20 +43,6 @@ Global
 		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x64.Build.0 = Release|x64
 		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x86.ActiveCfg = Release|x86
 		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x86.Build.0 = Release|x86
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|ARM.ActiveCfg = Debug|ARM
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|ARM.Build.0 = Debug|ARM
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|x64.ActiveCfg = Debug|x64
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|x64.Build.0 = Debug|x64
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|x86.ActiveCfg = Debug|Win32
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Debug|x86.Build.0 = Debug|Win32
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|Any CPU.ActiveCfg = Release|Win32
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|ARM.ActiveCfg = Release|ARM
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|ARM.Build.0 = Release|ARM
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|x64.ActiveCfg = Release|x64
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|x64.Build.0 = Release|x64
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|x86.ActiveCfg = Release|Win32
-		{CD55C6F2-DE59-415F-A843-8F413D9A60B0}.Release|x86.Build.0 = Release|Win32
 		{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}.Debug|ARM.ActiveCfg = Debug|ARM
 		{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}.Debug|ARM.Build.0 = Debug|ARM
@@ -71,6 +63,18 @@ Global
 		{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}.Release|x86.ActiveCfg = Release|x86
 		{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}.Release|x86.Build.0 = Release|x86
 		{D01FEAF5-8747-49D7-A7D1-19DBED5840BE}.Release|x86.Deploy.0 = Release|x86
+		{4A859119-6730-4612-987F-DABF98F213ED}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Debug|ARM.ActiveCfg = Debug|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Debug|x64.ActiveCfg = Debug|x64
+		{4A859119-6730-4612-987F-DABF98F213ED}.Debug|x64.Build.0 = Debug|x64
+		{4A859119-6730-4612-987F-DABF98F213ED}.Debug|x86.ActiveCfg = Debug|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Debug|x86.Build.0 = Debug|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Release|Any CPU.ActiveCfg = Release|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Release|ARM.ActiveCfg = Release|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Release|x64.ActiveCfg = Release|x64
+		{4A859119-6730-4612-987F-DABF98F213ED}.Release|x64.Build.0 = Release|x64
+		{4A859119-6730-4612-987F-DABF98F213ED}.Release|x86.ActiveCfg = Release|Win32
+		{4A859119-6730-4612-987F-DABF98F213ED}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
