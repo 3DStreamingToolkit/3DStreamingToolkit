@@ -20,8 +20,8 @@ public:
 	Win32DataChannelHandler(DataChannelCallback* data_channel_callback);
 	~Win32DataChannelHandler();
 
-	bool ProcessMessage(MSG* msg);
-	bool ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam);
+	void ProcessMessage(MSG* msg);
+	void ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	void ResetCamera();

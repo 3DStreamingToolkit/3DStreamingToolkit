@@ -10,6 +10,8 @@
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
+static UINT s_wm_wakeup_id;
+
 Win32DataChannelHandler::Win32DataChannelHandler(DataChannelCallback* data_channel_callback) :
 	DataChannelHandler(data_channel_callback),
 	stereo_mode_(-1),
@@ -20,6 +22,7 @@ Win32DataChannelHandler::Win32DataChannelHandler(DataChannelCallback* data_chann
 	zoom_(DEFAULT_ZOOM),
 	distance_(DEFAULT_DISTANCE)
 {
+	s_wm_wakeup_id = RegisterWindowMessage(L"WM_WAKEUP");
 	mouse_ = std::make_unique<Mouse>();
 }
 
@@ -27,18 +30,22 @@ Win32DataChannelHandler::~Win32DataChannelHandler()
 {
 }
 
-bool Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
+void Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
-	bool ret = false;
+	// Avoids blocking win32socketserver
+	if (message == s_wm_wakeup_id)
+	{
+		return;
+	}
+
 	Vector3 move = Vector3::Zero;
 	float scale = distance_;
 	bool sendMessage = false;
 	bool sendMouseEvent = false;
 
 	// Requests mono stream.
-	if (stereo_mode_ == -1)
+	if (stereo_mode_ == -1 && RequestStereoStream(false))
 	{
-		RequestStereoStream(false);
 		stereo_mode_ = 0;
 	}
 
@@ -182,7 +189,7 @@ bool Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM
 		break;
 
 	default:
-		return false;
+		return;
 	}
 
 	// Update camera
@@ -194,13 +201,11 @@ bool Win32DataChannelHandler::ProcessMessage(UINT message, WPARAM wParam, LPARAM
 	{
 		SendCameraInput(last_camera_pos_, camera_focus_, up);
 	}
-
-	return ret;
 }
 
-bool Win32DataChannelHandler::ProcessMessage(MSG* msg)
+void Win32DataChannelHandler::ProcessMessage(MSG* msg)
 {
-	return ProcessMessage(msg->message, msg->wParam, msg->lParam);
+	ProcessMessage(msg->message, msg->wParam, msg->lParam);
 }
 
 void Win32DataChannelHandler::ResetCamera()
