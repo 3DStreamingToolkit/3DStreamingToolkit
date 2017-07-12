@@ -337,12 +337,12 @@ void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& mes
 	}
 	else
 	{
-		//if (server_address_ssl_ && message.find("sdpMid") != std::string::npos)
-		//{
-		//	// HACKHACK(bengreenier): this seems to allow https signaling servers to work
-		//	// surely this isn't reliable though...needs to be revisited
-		//	rtc::Thread::SleepMs(1500);
-		//}
+		if (server_address_ssl_ && message.find("sdpMid") != std::string::npos)
+		{
+			// HACKHACK(bengreenier): this seems to allow https signaling servers to work
+			// surely this isn't reliable though...needs to be revisited
+			rtc::Thread::SleepMs(1500);
+		}
 		callback_->OnMessageFromPeer(peer_id, message);
 	}
 }
