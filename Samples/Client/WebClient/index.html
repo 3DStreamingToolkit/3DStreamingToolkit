@@ -3,6 +3,7 @@
 <head>
     <title>PeerConnection server test page</title>
     <script src="https://secure.aadcdn.microsoftonline-p.com/lib/0.1.1/js/msal.min.js"></script>
+    <script src="./config.js"></script>
 </head>
 <script>
     var request = null;
@@ -13,15 +14,7 @@
     var otherPeers = {};
     var messageCounter = 0;
     var pc;
-    var pcConfig = {
-        "iceServers": [{
-            "url": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
-            "username": "user",
-            "credential": "3Dstreaming0317",
-            "credentialType": "password"
-        }],
-        "iceTransportPolicy": "relay"
-    };
+
     var pcOptions = {
         optional: [
             { DtlsSrtpKeyAgreement: true }
@@ -43,18 +36,20 @@
     URL = window.webkitURL || window.URL;
 
 
-    var applicationConfig = {
-        clientID: 'aacf1b7a-104c-4efe-9ca7-9f4916d6b66a',
-        authority: "https://login.microsoftonline.com/tfp/3dtoolkit.onmicrosoft.com/b2c_1_signup",
-        b2cScopes: ["openid"],
+    document.onreadystatechange = () => {
+        if (document.readyState === 'complete') {
+            document.getElementById('server').value = defaultSignalingServerUrl;
+        }
     };
 
-    var clientApplication = new Msal.UserAgentApplication(applicationConfig.clientID, applicationConfig.authority, function (errorDesc, token, error, tokenType) {
+
+
+    var clientApplication = new Msal.UserAgentApplication(aadConfig.clientID, aadConfig.authority, function (errorDesc, token, error, tokenType) {
     });
 
     function login() {
-        clientApplication.loginPopup(applicationConfig.b2cScopes).then(function (idToken) {
-            clientApplication.acquireTokenSilent(applicationConfig.b2cScopes).then(function (token) {
+        clientApplication.loginPopup(aadConfig.b2cScopes).then(function (idToken) {
+            clientApplication.acquireTokenSilent(aadConfig.b2cScopes).then(function (token) {
                 accessToken = token;
                 var userName = clientApplication.getUser().name;
                 console.log(clientApplication.getUser());
@@ -70,7 +65,7 @@
 
                             pcConfig = {
                                 "iceServers": [{
-                                    "url": "turn:52.173.196.112:3478",
+                                    "url": tempPasswordsTurnUrl,
                                     "username": data.username,
                                     "credential": data.password
                                 }],
@@ -78,12 +73,12 @@
                             };
                         }
                     };
-                    loginRequest.open("GET", "https://3dtoolkit-identity-management.azurewebsites.net/turnCreds", true);
+                    loginRequest.open("GET", identityManagementConfig.turnCredsUrl, true);
                     loginRequest.setRequestHeader("Authorization", 'Bearer ' + accessToken);
                     loginRequest.send();
                 }
             }, function (error) {
-                clientApplication.acquireTokenPopup(applicationConfig.b2cScopes).then(function (accessToken) {
+                clientApplication.acquireTokenPopup(aadConfig.b2cScopes).then(function (accessToken) {
                     updateUI();
                 }, function (error) {
                     console.log("Error acquiring the popup:\n" + error);
@@ -401,7 +396,7 @@
     <button id="auth" onclick="login()">Login</button>
     <br>
     <div id="authlabel"></div>
-    <br> Server: <input type="text" id="server" value="http://3dtoolkit-signaling-server-auth.azurewebsites.net:80" />
+    <br> Server: <input type="text" id="server" value="" />
     <br> <label for="turnTempPasswordEnabled">Use temp passwords for TURN server</label>
     <input type="checkbox" id="turnTempPasswordEnabled" value="turnTempPasswordEnabled" />
     <br> Your name:
