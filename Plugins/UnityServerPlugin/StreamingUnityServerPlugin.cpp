@@ -136,8 +136,6 @@ void InitWebRTC()
 			}
 		}
 	}
-
-	int aaa = 3;
 }
 
 
