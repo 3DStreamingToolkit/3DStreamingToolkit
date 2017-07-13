@@ -122,6 +122,7 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
 	server_address_.SetIP(parsedServer);
 	server_address_.SetPort(port);
 	client_name_ = client_name;
+	std::replace(client_name_.begin(), client_name_.end(), ' ', '-');
 
 	if (server_address_.IsUnresolvedIP())
 	{
