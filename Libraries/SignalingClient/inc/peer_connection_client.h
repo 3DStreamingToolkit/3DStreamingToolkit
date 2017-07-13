@@ -86,6 +86,10 @@ public:
 	// implements the MessageHandler interface
 	void OnMessage(rtc::Message* msg);
 
+	const std::string& authorization_header() const;
+
+	void SetAuthorizationHeader(const std::string& value);
+
 protected:
 	void DoConnect();
 
@@ -131,6 +135,8 @@ protected:
 
 	void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
+	std::string PrepareRequest(const std::string& method, const std::string& fragment, std::map<std::string, std::string> headers);
+
 	PeerConnectionClientObserver* callback_;
 	bool server_address_ssl_;
 	rtc::SocketAddress server_address_;
@@ -142,6 +148,7 @@ protected:
 	std::string control_data_;
 	std::string notification_data_;
 	std::string client_name_;
+	std::string authorization_header_;
 	Peers peers_;
 	State state_;
 	int my_id_;

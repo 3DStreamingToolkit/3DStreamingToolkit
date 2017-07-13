@@ -152,20 +152,41 @@ void PeerConnectionClient::OnResolveResult(rtc::AsyncResolverInterface* resolver
 	}
 }
 
+std::string PeerConnectionClient::PrepareRequest(const std::string& method, const std::string& fragment, std::map<std::string, std::string> headers)
+{
+	std::string result;
+
+	for (auto i = 0; i < method.length(); ++i)
+	{
+		result += (char)toupper(method[i]);
+	}
+
+	result += " " + fragment + " HTTP/1.0\r\n";
+
+	for (auto it = headers.begin(); it != headers.end(); ++it)
+	{
+		result += it->first + ": " + it->second + "\r\n";
+	}
+
+	if (!authorization_header_.empty())
+	{
+		result += "Authorization: " + authorization_header_ + "\r\n";
+	}
+
+	result += "\r\n";
+
+	return result;
+}
+
 void PeerConnectionClient::DoConnect()
 {
 	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	InitSocketSignals();
-	char buffer[1024];
 	std::string clientName = client_name_;
 	std::string hostName = server_address_.hostname();
-	sprintfn(
-		buffer,
-		sizeof(buffer),
-		"GET /sign_in?%s HTTP/1.0\r\nHost: %s\r\n\r\n", clientName.c_str(), hostName.c_str());
-
-	onconnect_data_ = buffer;
+	
+	onconnect_data_ = PrepareRequest("GET", "/sign_in?" + clientName, { {"Host", hostName} });
 
 	bool ret = ConnectControlSocket();
 	if (ret)
@@ -193,21 +214,14 @@ bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
 		return false;
 	}
 
-	char headers[1024];
-	sprintfn(
-		headers,
-		sizeof(headers),
-		"POST /message?peer_id=%i&to=%i HTTP/1.0\r\n"
-		"Host: %s\r\n"
-		"Content-Length: %i\r\n"
-		"Content-Type: text/plain\r\n"
-		"\r\n",
-		my_id_,
-		peer_id,
-		server_address_.hostname().c_str(),
-		message.length());
+	onconnect_data_ = PrepareRequest("POST",
+		"/message?peer_id=" + std::to_string(my_id_) + "&to=" + std::to_string(peer_id),
+		{
+			{"Host", server_address_.hostname()},
+			{"Content-Length", std::to_string(message.length())},
+			{"Content-Type", "text/plain"}
+		});
 
-	onconnect_data_ = headers;
 	onconnect_data_ += message;
 	return ConnectControlSocket();
 }
@@ -240,15 +254,7 @@ bool PeerConnectionClient::SignOut()
 
 		if (my_id_ != -1)
 		{
-			char buffer[1024];
-			sprintfn(
-				buffer,
-				sizeof(buffer),
-				"GET /sign_out?peer_id=%i HTTP/1.0\r\nHost: %s\r\n\r\n",
-				my_id_,
-				server_address_.hostname().c_str());
-
-			onconnect_data_ = buffer;
+			onconnect_data_ = PrepareRequest("GET", "/sign_out?peer_id=" + std::to_string(my_id_), { {"Host", server_address_.hostname()} });
 			return ConnectControlSocket();
 		}
 		else
@@ -315,17 +321,10 @@ void PeerConnectionClient::OnConnect(rtc::AsyncSocket* socket)
 
 void PeerConnectionClient::OnHangingGetConnect(rtc::AsyncSocket* socket)
 {
-	char buffer[1024];
-	sprintfn(
-		buffer,
-		sizeof(buffer),
-		"GET /wait?peer_id=%i HTTP/1.0\r\nHost: %s\r\n\r\n",
-		my_id_,
-		server_address_.hostname().c_str());
+	auto req = PrepareRequest("GET", "/wait?peer_id=" + std::to_string(my_id_), { {"Host", server_address_.hostname()} });
 
-	int len = static_cast<int>(strlen(buffer));
-	int sent = socket->Send(buffer, len);
-	RTC_DCHECK(sent == len);
+	int sent = socket->Send(req.c_str(), req.length());
+	RTC_DCHECK(sent == req.length());
 }
 
 void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& message)
@@ -667,4 +666,14 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 {
 	// ignore msg; there is currently only one supported message ("retry")
 	DoConnect();
+}
+
+const std::string& PeerConnectionClient::authorization_header() const
+{
+	return authorization_header_;
+}
+
+void PeerConnectionClient::SetAuthorizationHeader(const std::string& value)
+{
+	authorization_header_ = value;
 }
