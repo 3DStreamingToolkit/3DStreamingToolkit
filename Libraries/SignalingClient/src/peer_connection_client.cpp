@@ -284,10 +284,21 @@ bool PeerConnectionClient::SignOut()
 
 bool PeerConnectionClient::Shutdown()
 {
-	heartbeat_get_->Close();
-	hanging_get_->Close();
-	control_socket_->Close();
-	
+	if (heartbeat_get_.get() != nullptr)
+	{
+		heartbeat_get_->Close();
+	}
+
+	if (hanging_get_.get() != nullptr)
+	{
+		hanging_get_->Close();
+	}
+
+	if (control_socket_.get() != nullptr)
+	{
+		control_socket_->Close();
+	}
+
 	state_ = NOT_CONNECTED;
 	
 	return true;
