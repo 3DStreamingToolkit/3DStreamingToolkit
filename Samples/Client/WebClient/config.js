@@ -1,4 +1,4 @@
-var pcConfig = {
+var pcConfigStatic = {
     "iceServers": [{
         "url": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:3478",
         "username": "user",
@@ -7,7 +7,15 @@ var pcConfig = {
     }],
     "iceTransportPolicy": "relay"
 };
-var tempPasswordsTurnUrl = "turn:52.173.196.112:3478"
+
+var pcConfigDynamic = {
+    "iceServers": [{
+        "url": "turn:52.173.196.112:3478",
+        "credentialType": "password"
+    }],
+    "iceTransportPolicy": "relay"
+};
+
 
 var defaultSignalingServerUrl = "http://3dtoolkit-signaling-server-auth.azurewebsites.net:80"
 
@@ -18,5 +26,5 @@ var aadConfig = {
 };
 
 var identityManagementConfig = {
-    turnCredsUr: "https://3dtoolkit-identity-management.azurewebsites.net/turnCreds"
+    turnCredsUrl: "https://3dtoolkit-identity-management.azurewebsites.net/turnCreds"
 }

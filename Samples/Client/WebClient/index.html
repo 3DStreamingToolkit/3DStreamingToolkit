@@ -29,6 +29,8 @@
     var remoteStream;
     var accessToken;
 
+    var pcConfig = pcConfigStatic;
+
     RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
     RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
     RTCIceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
@@ -63,14 +65,9 @@
                             var data = JSON.parse(event.target.response);
                             console.log("Identity management returned", data);
 
-                            pcConfig = {
-                                "iceServers": [{
-                                    "url": tempPasswordsTurnUrl,
-                                    "username": data.username,
-                                    "credential": data.password
-                                }],
-                                "iceTransportPolicy": "relay"
-                            };
+                            pcConfig = pcConfigDynamic;
+                            pcConfig.iceServers.username = data.username;
+                            pcConfig.iceServers.credential = data.password;
                         }
                     };
                     loginRequest.open("GET", identityManagementConfig.turnCredsUrl, true);
