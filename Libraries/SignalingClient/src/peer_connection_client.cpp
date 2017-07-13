@@ -197,7 +197,7 @@ void PeerConnectionClient::DoConnect()
 	std::string clientName = client_name_;
 	std::string hostName = server_address_.hostname();
 	
-	onconnect_data_ = PrepareRequest("GET", "/sign_in?" + clientName, { {"Host", hostName} });
+	onconnect_data_ = PrepareRequest("GET", "/sign_in?peer_name=" + clientName, { {"Host", hostName} });
 
 	bool ret = ConnectControlSocket();
 	if (ret)
@@ -284,6 +284,7 @@ bool PeerConnectionClient::SignOut()
 
 bool PeerConnectionClient::Shutdown()
 {
+	heartbeat_get_->Close();
 	hanging_get_->Close();
 	control_socket_->Close();
 	
