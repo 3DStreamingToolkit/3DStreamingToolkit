@@ -20,6 +20,8 @@
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
 
+#include "ssl_capable_socket.h"
+
 typedef std::map<int, std::string> Peers;
 
 struct PeerConnectionClientObserver
@@ -79,6 +81,8 @@ public:
 
 	bool SignOut();
 
+	bool Shutdown();
+
 	// implements the MessageHandler interface
 	void OnMessage(rtc::Message* msg);
 
@@ -128,10 +132,12 @@ protected:
 	void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
 	PeerConnectionClientObserver* callback_;
+	bool server_address_ssl_;
 	rtc::SocketAddress server_address_;
 	rtc::AsyncResolver* resolver_;
-	std::unique_ptr<rtc::AsyncSocket> control_socket_;
-	std::unique_ptr<rtc::AsyncSocket> hanging_get_;
+	rtc::Thread* signaling_thread_;
+	std::unique_ptr<SslCapableSocket> control_socket_;
+	std::unique_ptr<SslCapableSocket> hanging_get_;
 	std::string onconnect_data_;
 	std::string control_data_;
 	std::string notification_data_;

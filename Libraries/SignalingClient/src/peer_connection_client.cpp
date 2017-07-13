@@ -8,10 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pch.h"
-
 #include "peer_connection_client.h"
-#include "defaults.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/nethelpers.h"
@@ -30,29 +27,20 @@ namespace
 
 	// Delay between server connection retries, in milliseconds
 	const int kReconnectDelay = 2000;
-
-	rtc::AsyncSocket* CreateClientSocket(int family)
-	{
-#ifdef WIN32
-		rtc::Win32Socket* sock = new rtc::Win32Socket();
-		sock->CreateT(family, SOCK_STREAM);
-		return sock;
-#elif defined(WEBRTC_POSIX) // WIN32
-		rtc::Thread* thread = rtc::Thread::Current();
-		RTC_DCHECK(thread != NULL);
-		return thread->socketserver()->CreateAsyncSocket(family, SOCK_STREAM);
-#else // WIN32
-		#error Platform not supported.
-#endif // WIN32
-	}
 }
 
 PeerConnectionClient::PeerConnectionClient() :
 	callback_(NULL),
     resolver_(NULL),
     state_(NOT_CONNECTED),
-    my_id_(-1)
+    my_id_(-1),
+	server_address_ssl_(false)
 {
+	// use the current thread or wrap a thread for signaling_thread_
+	auto thread = rtc::Thread::Current();
+
+	signaling_thread_ = thread == nullptr ?
+		rtc::ThreadManager::Instance()->WrapCurrentThread() : thread;
 }
 
 PeerConnectionClient::~PeerConnectionClient()
@@ -115,10 +103,23 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
 
 	if (port <= 0)
 	{
-		port = kDefaultServerPort;
+		callback_->OnServerConnectionFailure();
+		return;
 	}
 
-	server_address_.SetIP(server);
+	std::string parsedServer = server;
+
+	if (parsedServer.substr(0, 8).compare("https://") == 0)
+	{
+		server_address_ssl_ = true;
+		parsedServer = parsedServer.substr(8);
+	}
+	else if (parsedServer.substr(0, 7).compare("http://") == 0)
+	{
+		parsedServer = parsedServer.substr(7);
+	}
+
+	server_address_.SetIP(parsedServer);
 	server_address_.SetPort(port);
 	client_name_ = client_name;
 
@@ -153,11 +154,11 @@ void PeerConnectionClient::OnResolveResult(rtc::AsyncResolverInterface* resolver
 
 void PeerConnectionClient::DoConnect()
 {
-	control_socket_.reset(CreateClientSocket(server_address_.ipaddr().family()));
-	hanging_get_.reset(CreateClientSocket(server_address_.ipaddr().family()));
+	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
+	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	InitSocketSignals();
 	char buffer[1024];
-	std::string clientName = "renderingserver_" + client_name_;
+	std::string clientName = client_name_;
 	std::string hostName = server_address_.hostname();
 	sprintfn(
 		buffer,
@@ -336,6 +337,12 @@ void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& mes
 	}
 	else
 	{
+		if (server_address_ssl_ && message.find("sdpMid") != std::string::npos)
+		{
+			// HACKHACK(bengreenier): this seems to allow https signaling servers to work
+			// surely this isn't reliable though...needs to be revisited
+			rtc::Thread::SleepMs(1500);
+		}
 		callback_->OnMessageFromPeer(peer_id, message);
 	}
 }
