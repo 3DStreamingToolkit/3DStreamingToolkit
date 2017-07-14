@@ -32,6 +32,11 @@ HRESULT CreateMediaSource1(
 	_In_ ABI::Windows::Media::Core::IMediaSource* mediaSource,
 	_COM_Outptr_ ABI::Windows::Media::Core::IMediaSource2** ppMediaSource);
 
+
+HRESULT CreateMediaStreamSource1(
+	_In_ ABI::Windows::Media::Core::IMediaStreamSource* mediaSource,
+	_COM_Outptr_ ABI::Windows::Media::Core::IMediaSource2** ppMediaSource);
+
 HRESULT CreateAdaptiveMediaSource(
     _In_ LPCWSTR pszManifestLocation,
     _In_ IAdaptiveMediaSourceCompletedCallback* pCallback);

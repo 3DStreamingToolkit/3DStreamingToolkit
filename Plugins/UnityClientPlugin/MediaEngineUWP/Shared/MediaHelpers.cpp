@@ -108,6 +108,28 @@ HRESULT CreateMediaSource1(ABI::Windows::Media::Core::IMediaSource * mediaSource
 }
 
 _Use_decl_annotations_
+HRESULT CreateMediaStreamSource1(ABI::Windows::Media::Core::IMediaStreamSource * mediaSource, ABI::Windows::Media::Core::IMediaSource2 ** ppMediaSource)
+{
+	NULL_CHK(mediaSource);
+	NULL_CHK(ppMediaSource);
+
+	*ppMediaSource = nullptr;
+
+	// create a media source
+	Microsoft::WRL::ComPtr<ABI::Windows::Media::Core::IMediaSourceStatics> spMediaSourceStatics;
+	IFR(ABI::Windows::Foundation::GetActivationFactory(
+		Microsoft::WRL::Wrappers::HStringReference(RuntimeClass_Windows_Media_Core_MediaSource).Get(),
+		&spMediaSourceStatics));
+
+	Microsoft::WRL::ComPtr<ABI::Windows::Media::Core::IMediaSource2> spMediaSource2;
+	IFR(spMediaSourceStatics->CreateFromMediaStreamSource(
+		mediaSource,
+		&spMediaSource2));
+
+	*ppMediaSource = spMediaSource2.Detach();
+
+	return S_OK;
+}
 HRESULT CreateAdaptiveMediaSource(
     LPCWSTR pszManifestLocation,
     IAdaptiveMediaSourceCompletedCallback* pCallback)

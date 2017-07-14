@@ -105,6 +105,7 @@ internal:
 
 	HRESULT SetMediaSourceFromPath(LPCWSTR pszContentLocation);
 	HRESULT SetMediaSource(ABI::Windows::Media::Core::IMediaSource* mediaSource);
+	HRESULT SetMediaStreamSource(ABI::Windows::Media::Core::IMediaStreamSource* mediaSource);
 
     // Media Engine related
     virtual void OnMediaEngineEvent(DWORD meEvent) override;

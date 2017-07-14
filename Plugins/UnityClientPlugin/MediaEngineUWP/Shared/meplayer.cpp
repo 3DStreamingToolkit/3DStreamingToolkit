@@ -509,6 +509,31 @@ HRESULT MEPlayer::SetMediaSource(ABI::Windows::Media::Core::IMediaSource * media
 	return S_OK;
 }
 
+HRESULT MEPlayer::SetMediaStreamSource(ABI::Windows::Media::Core::IMediaStreamSource * mediaSource)
+{
+	// create the media source for content (from MediaSource)
+	ComPtr<IMediaSource2> spMediaSource2;
+	IFR(CreateMediaStreamSource1(mediaSource, &spMediaSource2));
+
+	// create playbackitem from source
+	ComPtr<IMediaPlaybackItemFactory> spItemFactory;
+	IFR(ABI::Windows::Foundation::GetActivationFactory(
+		Wrappers::HStringReference(RuntimeClass_Windows_Media_Playback_MediaPlaybackItem).Get(),
+		&spItemFactory));
+
+	ComPtr<IMediaPlaybackItem> spItem;
+	IFR(spItemFactory->Create(spMediaSource2.Detach(), &spItem));
+
+	ComPtr<IMediaPlaybackSource> spMediaPlaybackSource;
+	IFR(spItem.As(&spMediaPlaybackSource));
+
+	ComPtr<IMediaEnginePlaybackSource> spEngineSource;
+	IFR(m_spEngineEx.As(&spEngineSource));
+	IFR(spEngineSource->SetPlaybackSource(spMediaPlaybackSource.Get()));
+
+	return S_OK;
+}
+
 void MEPlayer::OnMediaEngineEvent(DWORD meEvent)
 {
 	switch (meEvent)
@@ -865,7 +890,7 @@ void MEPlayer::OnTimer()
 			//    m_spDX11SwapChain->GetBuffer(0, IID_PPV_ARGS(&spTextureDst))
 			//    );
 
-			UpdateFrameRate();
+			// UpdateFrameRate();
 
 			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), nullptr, &m_rcTarget, &m_bkgColor)

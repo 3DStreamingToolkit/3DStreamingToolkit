@@ -370,7 +370,7 @@ namespace PeerConnectionClient.Signalling
 
         public void SendPeerDataChannelMessage(string msg)
         {
-            _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
+            _peerSendDataChannel?.Send(new StringDataChannelMessage(msg));
         }
 
         private void PeerSendDataChannelOnClose()

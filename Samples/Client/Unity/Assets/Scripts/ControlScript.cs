@@ -102,9 +102,12 @@ public class ControlScript : MonoBehaviour
                 "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
                 evt.Stream.GetVideoTracks().Count);
             
-            var mediaStream = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "media");
+            // var mediaStream = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "media");
 
-            Plugin.LoadMediaSource(mediaStream);
+            var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
+
+            // Plugin.LoadMediaSource(mediaStream);
+            Plugin.LoadMediaStreamSource((MediaStreamSource)media);
             // Plugin.LoadContent(toyStoryH264);
             Plugin.Play();
         }
@@ -244,7 +247,7 @@ public class ControlScript : MonoBehaviour
 
     void Update()
     {
-#region Virtual Camera Control
+        #region Virtual Camera Control
 
         if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
             Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
@@ -271,7 +274,7 @@ public class ControlScript : MonoBehaviour
             _webRtcControl.SendPeerDataChannelMessage(camMsg);
 #endif
         }
-#endregion
+        #endregion
 
         if (Time.time > endTime)
         {
@@ -343,6 +346,9 @@ public class ControlScript : MonoBehaviour
 
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaSource")]
         internal static extern void LoadMediaSource(IMediaSource IMediaSourceHandler);
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaStreamSource")]
+        internal static extern void LoadMediaStreamSource(MediaStreamSource IMediaSourceHandler);
 #endif
 
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadAdaptiveContent")]

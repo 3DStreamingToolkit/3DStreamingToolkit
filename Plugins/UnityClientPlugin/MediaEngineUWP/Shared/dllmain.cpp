@@ -101,6 +101,16 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API LoadMediaSource(Windo
 	}
 }
 
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API LoadMediaStreamSource(Windows::Media::Core::IMediaStreamSource^ mediaSourceHandle)
+{
+	ABI::Windows::Media::Core::IMediaStreamSource * source = reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
+
+	if (source != nullptr && m_player != nullptr)
+	{
+		m_player->SetMediaStreamSource(source);
+	}
+}
+
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API LoadContent(_In_ LPCWSTR pszContentLocation)
 {
     //if (s_spMediaPlayback != nullptr)
