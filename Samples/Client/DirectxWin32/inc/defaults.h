@@ -18,6 +18,7 @@ extern const char kAudioLabel[];
 extern const char kVideoLabel[];
 extern const char kStreamLabel[];
 extern const uint16_t kDefaultServerPort;
+extern const int kDefaultHeartbeat;
 
 std::string GetEnvVarOrDefault(const char* env_var_name, const char* default_value);
 std::string GetPeerConnectionString();
