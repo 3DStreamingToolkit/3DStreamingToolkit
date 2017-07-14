@@ -58,7 +58,6 @@ namespace StreamingDirectXHololensClient
             // Initializes webrtc.
             WebRTC.Initialize(CoreApplication.MainView.CoreWindow.Dispatcher);
             Conductor.Instance.ETWStatsEnabled = false;
-
             Conductor.Instance.Signaller.OnPeerConnected += (peerId, peerName) =>
             {
                 Conductor.Instance.Peers.Add(
@@ -77,8 +76,6 @@ namespace StreamingDirectXHololensClient
             Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
-            LoadSettings();
-
             if (Conductor.Instance.Peers == null)
             {
                 Conductor.Instance.Peers = new ObservableCollection<Peer>();
@@ -135,8 +132,9 @@ namespace StreamingDirectXHololensClient
 
         public void Run()
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
+                await LoadSettings().ConfigureAwait(false);
                 Conductor.Instance.StartLogin(_server, _port);
             });
 
@@ -159,7 +157,7 @@ namespace StreamingDirectXHololensClient
             return this;
         }
 
-        async void LoadSettings()
+        async Task LoadSettings()
         {
             StorageFile configFile = await StorageFile.GetFileFromApplicationUriAsync(
                 new Uri("ms-appx:///webrtcConfig.json"));
@@ -201,14 +199,14 @@ namespace StreamingDirectXHololensClient
                     iceServer.Credential = stunServer.GetObject().GetNamedString("username");
                     iceServer.Username = stunServer.GetObject().GetNamedString("password");
                     configIceServers.Add(iceServer);
-
-                    // Default ones.
-                    configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
                 }
+
+                // Default ones.
+                configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
             }
 
             Conductor.Instance.ConfigureIceServers(configIceServers);
