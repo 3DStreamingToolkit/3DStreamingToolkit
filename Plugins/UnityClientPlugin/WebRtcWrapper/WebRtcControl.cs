@@ -344,23 +344,24 @@ namespace WebRtcWrapper
             }).Start();
         }
 
-        public void ConnectToServer(string peerName)
+        public void ConnectToServer(string peerName, int heartbeatMs)
         {
             new Task(() =>
             {
                 IsConnecting = true;                
                 Conductor.Instance.StartLogin(Ip.Value, Port.Value, peerName);
+				Conductor.Instance.Signaller.SetHeartbeatMs(heartbeatMs);
             }).Start();
         }
 
-        public void ConnectToServer(string host, string port, string peerName)
+        public void ConnectToServer(string host, string port, string peerName, int heartbeatMs)
         {
             new Task(() =>
             {
                 IsConnecting = true;
                 Ip = new ValidableNonEmptyString(host);
                 Port = new ValidableIntegerString(port);
-                ConnectToServer(peerName);                
+                ConnectToServer(peerName, heartbeatMs);                
             }).Start();
         }
 

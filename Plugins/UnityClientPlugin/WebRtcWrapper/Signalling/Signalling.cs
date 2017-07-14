@@ -51,6 +51,7 @@ namespace PeerConnectionClient.Signalling
         {
             _state = State.NOT_CONNECTED;
             _myId = -1;
+			_heartbeatTickMs = -1;
 
             // Annoying but register empty handlers
             // so we don't have to check for null everywhere
@@ -80,6 +81,8 @@ namespace PeerConnectionClient.Signalling
         private string _port;
         private string _clientName;
         private int _myId;
+		private int _heartbeatTimeSinceTick;
+		private int _heartbeatTickMs;
         private Dictionary<int, string> _peers = new Dictionary<int, string>();
 
         /// <summary>
@@ -90,6 +93,27 @@ namespace PeerConnectionClient.Signalling
         {
             return _myId != -1;
         }
+
+		/// <summary>
+		/// The interval at which heartbeats will be sent
+		/// </summary>
+		/// <returns>time in ms</returns>
+		public int HeartbeatMs()
+		{
+			return _heartbeatTickMs;
+		}
+
+		/// <summary>
+		/// Set the interval at which heartbeats will be sent
+		/// </summary>
+		/// <param name="tickMs">time in ms</param>
+		/// <remarks>
+		/// -1 will disable the heartbeats entirely
+		/// </remarks>
+		public void SetHeartbeatMs(int tickMs)
+		{
+			_heartbeatTickMs = tickMs;
+		}
 
         /// <summary>
         /// Connects to the server.
@@ -451,78 +475,105 @@ namespace PeerConnectionClient.Signalling
         {
             while (_state != State.NOT_CONNECTED)
             {
-                using (_hangingGetSocket = new StreamSocket())
-                {
-                    try
-                    {
-                        // Connect to the server
-                        await _hangingGetSocket.ConnectAsync(_server, _port);
-                        if (_hangingGetSocket == null)
-                        {
-                            return;
-                        }
+				if (_heartbeatTimeSinceTick >= _heartbeatTickMs)
+				{
+					_heartbeatTimeSinceTick = 0;
+					using (var heartbeatSocket = new StreamSocket())
+					{
+						try
+						{
+							await heartbeatSocket.ConnectAsync(_server, _port);
+							heartbeatSocket.WriteStringAsync(String.Format("GET /heartbeat?peer_id={0} HTTP/1.0\r\n\r\n", _myId));
+							var readResult = await ReadIntoBufferAsync(heartbeatSocket);
+							if (readResult != null)
+							{
+								int index = readResult.Item1.IndexOf(' ') + 1;
+								int status = int.Parse(readResult.Item1.Substring(index, 3));
+								if (status != 200)
+								{
+									Debug.WriteLine("[Info] Signaling: heartbeat failed: {0}", status);
+								}
+							}
+						}
+						catch (Exception e)
+						{
+							Debug.WriteLine("[Warning] Signaling: heartbeat exception: {0}", e.Message);
+						}
+					}
+				}
 
-                        // Send the request
-                        _hangingGetSocket.WriteStringAsync(String.Format("GET /wait?peer_id={0} HTTP/1.0\r\n\r\n", _myId));
+				using (_hangingGetSocket = new StreamSocket())
+				{
+					try
+					{
+						// Connect to the server
+						await _hangingGetSocket.ConnectAsync(_server, _port);
+						if (_hangingGetSocket == null)
+						{
+							return;
+						}
 
-                        // Read the response.
-                        var readResult = await ReadIntoBufferAsync(_hangingGetSocket);
-                        if (readResult == null)
-                        {
-                            continue;
-                        }
+						// Send the request
+						_hangingGetSocket.WriteStringAsync(String.Format("GET /wait?peer_id={0} HTTP/1.0\r\n\r\n", _myId));
 
-                        string buffer = readResult.Item1;
-                        int content_length = readResult.Item2;
+						// Read the response.
+						var readResult = await ReadIntoBufferAsync(_hangingGetSocket);
+						if (readResult == null)
+						{
+							continue;
+						}
 
-                        int peer_id, eoh;
-                        if (!ParseServerResponse(buffer, out peer_id, out eoh))
-                        {
-                            continue;
-                        }
+						string buffer = readResult.Item1;
+						int content_length = readResult.Item2;
 
-                        // Store the position where the body begins
-                        int pos = eoh + 4;
+						int peer_id, eoh;
+						if (!ParseServerResponse(buffer, out peer_id, out eoh))
+						{
+							continue;
+						}
 
-                        if (_myId == peer_id)
-                        {
-                            // A notification about a new member or a member that just
-                            // disconnected
-                            int id = 0;
-                            string name = "";
-                            bool connected = false;
-                            if (ParseEntry(buffer.Substring(pos), ref name, ref id, ref connected))
-                            {
-                                if (connected)
-                                {
-                                    _peers[id] = name;
-                                    OnPeerConnected(id, name);
-                                }
-                                else
-                                {
-                                    _peers.Remove(id);
-                                    OnPeerDisconnected(id);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            string message = buffer.Substring(pos);
-                            if (message == "BYE")
-                            {
-                                OnPeerHangup(peer_id);
-                            }
-                            else
-                            {
-                                OnMessageFromPeer(peer_id, message);
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine("[Error] Signaling: Long-polling exception: {0}", e.Message);
-                    }
-                }
+						// Store the position where the body begins
+						int pos = eoh + 4;
+
+						if (_myId == peer_id)
+						{
+							// A notification about a new member or a member that just
+							// disconnected
+							int id = 0;
+							string name = "";
+							bool connected = false;
+							if (ParseEntry(buffer.Substring(pos), ref name, ref id, ref connected))
+							{
+								if (connected)
+								{
+									_peers[id] = name;
+									OnPeerConnected(id, name);
+								}
+								else
+								{
+									_peers.Remove(id);
+									OnPeerDisconnected(id);
+								}
+							}
+						}
+						else
+						{
+							string message = buffer.Substring(pos);
+							if (message == "BYE")
+							{
+								OnPeerHangup(peer_id);
+							}
+							else
+							{
+								OnMessageFromPeer(peer_id, message);
+							}
+						}
+					}
+					catch (Exception e)
+					{
+						Debug.WriteLine("[Error] Signaling: Long-polling exception: {0}", e.Message);
+					}
+				}
             }
         }
 

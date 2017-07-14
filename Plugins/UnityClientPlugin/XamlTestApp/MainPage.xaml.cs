@@ -150,7 +150,9 @@ namespace XamlTestApp
                         host = signalhost[0];
                         port = "8888";
                     }
-                    _webRtcControl.ConnectToServer(host, port, "WebRTCWrapper");
+					
+					// TODO: make the heartbeat interval configurable
+                    _webRtcControl.ConnectToServer(host, port, "WebRTCWrapper", 5000);
                 }
             );
         }
