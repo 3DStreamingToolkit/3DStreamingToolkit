@@ -18,9 +18,6 @@
 #error "DXUT requires a Unicode build."
 #endif
 
-//Static define here, also defined as a build configuration
-//#define TEST_RUNNER
-
 #ifndef STRICT
 #define STRICT
 #endif
@@ -178,6 +175,7 @@ struct DXUTD3D11DeviceSettings
     bool AutoCreateDepthStencil; // DXUT will create the depth stencil resource and view if true
     DXGI_FORMAT AutoDepthStencilFormat;
     D3D_FEATURE_LEVEL DeviceFeatureLevel;
+	bool isStereo;
 };
 
 struct DXUTDeviceSettings
@@ -293,7 +291,7 @@ void    WINAPI DXUTResetFrameworkState();
 void    WINAPI DXUTShutdown( _In_ int nExitCode = 0 );
 void    WINAPI DXUTSetIsInGammaCorrectMode( _In_ bool bGammaCorrect );
 bool    WINAPI DXUTGetMSAASwapChainCreated();
-
+void    WINAPI DXUTSetStereo( _In_ bool bEnabled ); // Enables/Disables the stereo output mode.
 
 //--------------------------------------------------------------------------------------
 // State Retrieval  
@@ -333,6 +331,7 @@ float     WINAPI DXUTGetFPS();
 LPCWSTR   WINAPI DXUTGetWindowTitle();
 LPCWSTR   WINAPI DXUTGetFrameStats( _In_ bool bIncludeFPS = false );
 LPCWSTR   WINAPI DXUTGetDeviceStats();
+bool      WINAPI DXUTIsStereo(); // True for stereo output. 
 
 bool      WINAPI DXUTIsVsyncEnabled();
 bool      WINAPI DXUTIsRenderingPaused();

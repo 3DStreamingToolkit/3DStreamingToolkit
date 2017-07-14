@@ -189,8 +189,6 @@ bool Conductor::CreatePeerConnection(bool dtls)
 				{
 					webrtc::PeerConnectionInterface::IceServer stunServer;
 					stunServer.uri = "";
-
-
 					if (root.isMember("stunServer"))
 					{
 						Json::Value jsonTurnServer = root.get("stunServer", NULL);
@@ -497,7 +495,7 @@ void Conductor::StartLogin(const std::string& server, int port)
 	}
 
 	server_ = server;
-	client_->Connect(server, port, GetPeerName());
+	client_->Connect(server, port, "renderingclient_" + GetPeerName());
 }
 
 void Conductor::DisconnectFromServer()
@@ -586,13 +584,16 @@ void Conductor::DisconnectFromCurrentPeer()
 	}
 }
 
-void Conductor::SendInputData(const std::string& message)
+bool Conductor::SendInputData(const std::string& message)
 {
 	if (data_channel_ && data_channel_->state() == webrtc::DataChannelInterface::kOpen)
 	{
 		webrtc::DataBuffer buffer(message);
 		data_channel_->Send(buffer);
+		return true;
 	}
+	
+	return false;
 }
 
 void Conductor::UIThreadCallback(int msg_id, void* data)

@@ -9,23 +9,44 @@
 //
 //*********************************************************
 
-struct VertextShaderInput
+// A constant buffer that stores projection matrices in column-major format.
+cbuffer ProjectionConstantBuffer : register(b1)
 {
-	float4 position : POSITION;
-	float2 textureUV : TEXCOORD0;
+	float4x4 projection[2];
 };
 
-struct PixelShaderInput
+struct VertexShaderInput
 {
-	float4 position : SV_POSITION;
-	float2 textureUV : TEXCOORD0;
+	float4	position	: POSITION;
+	float4	textureUV	: TEXCOORD0;
 };
 
-PixelShaderInput main(VertextShaderInput input)
+// Per-vertex data passed to the geometry shader.
+// Note that the render target array index will be set by the geometry shader
+// using the value of viewId.
+struct VertexShaderOutput
 {
-	PixelShaderInput output = (PixelShaderInput)0;
+	float4	position	: SV_POSITION;
+	float2	textureUV	: TEXCOORD0;
+	uint	viewId		: TEXCOORD1;
+};
 
-	output.position = input.position;
-	output.textureUV = input.textureUV;
+VertexShaderOutput main(VertexShaderInput input)
+{
+	VertexShaderOutput output;
+	float4 pos = input.position;
+
+	// Note which view this vertex has been sent to. Used for matrix lookup.
+	int idx = input.textureUV.z;
+
+	// Correct for perspective and project the vertex position onto the screen.
+	pos = mul(pos, projection[idx]);
+	output.position = (min16float4)pos;
+	output.textureUV = input.textureUV.xy;
+
+	// Set the view ID. The pass-through geometry shader will set the
+	// render target array index to whatever value is set here.
+	output.viewId = idx;
+
 	return output;
 }

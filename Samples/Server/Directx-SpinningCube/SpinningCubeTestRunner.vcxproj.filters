@@ -33,9 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="defs.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="test_runner.h">
       <Filter>Headers</Filter>
     </ClInclude>

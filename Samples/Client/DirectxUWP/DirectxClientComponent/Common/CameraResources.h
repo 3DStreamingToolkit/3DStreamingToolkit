@@ -4,19 +4,19 @@ namespace DX
 {
     class DeviceResources;
 
-    // Constant buffer used to send the view-projection matrices to the shader pipeline.
-    struct ViewProjectionConstantBuffer
+    // Constant buffer used to send the projection matrices to the shader pipeline.
+    struct ProjectionConstantBuffer
     {
-        DirectX::XMFLOAT4X4 viewProjection[2];
+        DirectX::XMFLOAT4X4 projection[2];
     };
 
     // Assert that the constant buffer remains 16-byte aligned (best practice).
     static_assert(
-		(sizeof(ViewProjectionConstantBuffer) % (sizeof(float) * 4)) == 0,
-		"ViewProjection constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
+		(sizeof(ProjectionConstantBuffer) % (sizeof(float) * 4)) == 0,
+		"Projection constant buffer size must be 16-byte aligned (16 bytes is the length of four floats).");
 
     // Manages DirectX device resources that are specific to a holographic camera, such as the
-    // back buffer, ViewProjection constant buffer, and viewport.
+    // back buffer, Projection constant buffer, and viewport.
     class CameraResources
     {
     public:
@@ -29,12 +29,12 @@ namespace DX
 
         void ReleaseResourcesForBackBuffer(DX::DeviceResources* pDeviceResources);
 
-        void UpdateViewProjectionBuffer(
+        void UpdateProjectionBuffer(
             std::shared_ptr<DX::DeviceResources> deviceResources,
             Windows::Graphics::Holographic::HolographicCameraPose^ cameraPose,
             Windows::Perception::Spatial::SpatialCoordinateSystem^ coordinateSystem);
 
-        bool AttachViewProjectionBuffer(
+        bool AttachProjectionBuffer(
             std::shared_ptr<DX::DeviceResources> deviceResources);
 
         // Direct3D device resources.
@@ -58,7 +58,7 @@ namespace DX
         Microsoft::WRL::ComPtr<ID3D11Texture2D>             m_d3dBackBuffer;
 
         // Device resource to store view and projection matrices.
-        Microsoft::WRL::ComPtr<ID3D11Buffer>                m_viewProjectionConstantBuffer;
+        Microsoft::WRL::ComPtr<ID3D11Buffer>                m_projectionConstantBuffer;
 
         // Direct3D rendering properties.
         DXGI_FORMAT                                         m_dxgiFormat;

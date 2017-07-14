@@ -17,8 +17,8 @@
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PackageCertificateKeyFile>StreamingDirectxHololensClient_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <OutputPath>$(SolutionDir)Build\$(PlatformName)\$(Configuration)\DirectxClient</OutputPath>
-    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(PlatformName)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
+    <OutputPath>$(SolutionDir)Build\$(Platform)\$(Configuration)\DirectxClient</OutputPath>
+    <IntermediateOutputPath>$(ProjectDir)Intermediate\$(Platform)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
     <PackageCertificateThumbprint>A3C0FEEFC5C5EFF2AEE1191F50451266B313CAEE</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -65,7 +65,11 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
+    <Content Include="GeometryShader.cso" />
     <None Include="project.json" />
+    <Content Include="VPRTVertexShader.cso" />
+    <Content Include="VertexShader.cso" />
+    <Content Include="webrtcConfig.json" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
@@ -75,11 +79,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <Content Include="GeometryShaderHoloLens.cso" />
     <Content Include="PixelShader.cso" />
-    <Content Include="PixelShaderHoloLens.cso" />
-    <Content Include="VertexShader.cso" />
-    <Content Include="VertexShaderHoloLens.cso" />
     <None Include="StreamingDirectxHololensClient_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

@@ -19,9 +19,6 @@
     <ClCompile Include="src\defaults.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="src\peer_connection_client.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="src\custom_video_capturer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -43,9 +40,6 @@
     <ClInclude Include="inc\defaults.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\defs.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\flagdefs.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -58,9 +52,6 @@
     <ClInclude Include="inc\pch.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\peer_connection_client.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\custom_video_capturer.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -70,9 +61,13 @@
     <ClInclude Include="inc\default_data_channel_observer.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="inc\plugindefs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="nvEncConfig.json" />
     <None Include="webrtcConfig.json" />
+    <None Include="exports.props" />
   </ItemGroup>
 </Project>

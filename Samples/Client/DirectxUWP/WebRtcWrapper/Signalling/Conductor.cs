@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using PeerConnectionClient.Model;
 using System.Collections.ObjectModel;
 using System.Threading;
-using System.Text.RegularExpressions;
 using static System.String;
 #if ORTCLIB
 using Org.Ortc;
@@ -65,6 +64,7 @@ namespace PeerConnectionClient.Signalling
                         }
                     }
                 }
+
                 return _instance;
             }
         }
@@ -106,6 +106,9 @@ namespace PeerConnectionClient.Signalling
         private static readonly string kSessionDescriptionJsonName = "session";
 #endif
         RTCPeerConnection _peerConnection;
+        private RTCDataChannel _peerSendDataChannel;
+        private RTCDataChannel _peerReceiveDataChannel;
+
         readonly Media _media;
 
         /// <summary>
@@ -119,8 +122,8 @@ namespace PeerConnectionClient.Signalling
         readonly List<RTCIceServer> _iceServers;
 
         private int _peerId = -1;
-        protected bool VideoEnabled = true;
-        protected bool AudioEnabled = true;
+        protected bool VideoEnabled;
+        protected bool AudioEnabled;
         protected string SessionId;
 
         bool _etwStatsEnabled;
@@ -135,6 +138,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return _etwStatsEnabled;
             }
+
             set
             {
                 _etwStatsEnabled = value;
@@ -159,6 +163,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return _peerConnectionStatsEnabled;
             }
+
             set
             {
                 _peerConnectionStatsEnabled = value;
@@ -186,6 +191,7 @@ namespace PeerConnectionClient.Signalling
 
         // Specialized Message Handling Messages
         public event Action<int, string> OnPeerMessageDataReceived;
+        public event Action<int, string> OnPeerDataChannelReceived;
 
         /// <summary>
         /// Updates the preferred video frame rate and resolution.
@@ -241,7 +247,7 @@ namespace PeerConnectionClient.Signalling
             _peerConnection.EtwStatsEnabled = _etwStatsEnabled;
             _peerConnection.ConnectionHealthStatsEnabled = _peerConnectionStatsEnabled;
 #endif
-                if (cancelationToken.IsCancellationRequested)
+            if (cancelationToken.IsCancellationRequested)
             {
                 return false;
             }
@@ -260,6 +266,18 @@ namespace PeerConnectionClient.Signalling
             _peerConnection.OnRemoveStream += PeerConnection_OnRemoveStream;
             _peerConnection.OnConnectionHealthStats += PeerConnection_OnConnectionHealthStats;
 #endif
+
+            // Setup Data Channel            
+            _peerSendDataChannel = _peerConnection.CreateDataChannel(
+                "SendDataChannel", 
+                new RTCDataChannelInit(){
+                    Ordered = true
+                });
+            _peerSendDataChannel.OnOpen += PeerSendDataChannelOnOpen;
+            _peerSendDataChannel.OnClose += PeerSendDataChannelOnClose;
+            _peerSendDataChannel.OnError += _peerSendDataChannel_OnError;
+            _peerConnection.OnDataChannel += _peerConnection_OnDataChannel;     // DataChannel Setup Completed            
+
             Debug.WriteLine("Conductor: Getting user media.");
             RTCMediaStreamConstraints mediaStreamConstraints = new RTCMediaStreamConstraints
             {
@@ -317,13 +335,49 @@ namespace PeerConnectionClient.Signalling
             Debug.WriteLine("Conductor: Adding local media stream.");
             _peerConnection.AddStream(_mediaStream);
 #endif
-            OnAddLocalStream?.Invoke(new MediaStreamEvent() { Stream = _mediaStream });
 
+            OnAddLocalStream?.Invoke(new MediaStreamEvent() { Stream = _mediaStream });
             if (cancelationToken.IsCancellationRequested)
             {
                 return false;
             }
             return true;
+        }
+
+        private void _peerSendDataChannel_OnError()
+        {
+            // TODO: _peerSendDataChannel_OnError()
+            Debug.WriteLine("Peer Data Channel Error");
+        }
+
+        private void _peerConnection_OnDataChannel(RTCDataChannelEvent rtcDataChannel)
+        {
+            _peerReceiveDataChannel = rtcDataChannel.Channel;
+            _peerReceiveDataChannel.OnMessage += _peerReceiveDataChannel_OnMessage;
+        }
+
+        private void _peerReceiveDataChannel_OnMessage(RTCDataChannelMessageEvent rtcMessage)
+        {
+            var msg = ((StringDataChannelMessage) rtcMessage.Data).StringData;
+            OnPeerDataChannelReceived?.Invoke(_peerId, msg);
+            Debug.WriteLine("DataChannel: {0}-{1}", _peerId, msg);
+        }
+
+        public void SendPeerDataChannelMessage(string msg)
+        {
+            _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
+        }
+
+        private void PeerSendDataChannelOnClose()
+        {
+            // TODO: PeerSendDataChannelOnClose()            
+            Debug.WriteLine("Peer Data Channel OnClose()");
+        }
+
+        private void PeerSendDataChannelOnOpen()
+        {
+            // TODO: PeerSendDataChannelOnOpen()
+            Debug.WriteLine("Peer Data Channel Close");
         }
 
         /// <summary>
@@ -340,11 +394,34 @@ namespace PeerConnectionClient.Signalling
                     {
                         foreach (var track in _mediaStream.GetTracks())
                         {
-                            track.Stop();
-                            _mediaStream.RemoveTrack(track);
+                            // Check Track Status before action to avoid reference errors
+                            // CRASH condition previously on non-XAML usage
+                            if (track != null)
+                            {
+                                if (track.Enabled)
+                                {
+                                    track.Stop();
+                                }               
+                                                         
+                                _mediaStream.RemoveTrack(track);
+                            }
                         }
                     }
+
                     _mediaStream = null;
+                    
+                    // TODO: Cleanup DataChannel
+                    if(_peerSendDataChannel != null)
+                    {                        
+                        _peerSendDataChannel.Close();
+                        _peerSendDataChannel = null;
+                    }
+
+                    if(_peerReceiveDataChannel != null)
+                    {
+                        _peerReceiveDataChannel.Close();
+                        _peerReceiveDataChannel = null;
+                    }
 
                     OnPeerConnectionClosed?.Invoke();
 
@@ -357,8 +434,6 @@ namespace PeerConnectionClient.Signalling
                     _peerConnection = null;
 
                     OnReadyToConnect?.Invoke();
-
-                    GC.Collect(); // Ensure all references are truly dropped.
                 }
             }
         }
@@ -375,7 +450,7 @@ namespace PeerConnectionClient.Signalling
                 return;
             }
 
-            double index = null != evt.Candidate.SdpMLineIndex ? (double)evt.Candidate.SdpMLineIndex : -1;
+            double index = evt.Candidate.SdpMLineIndex;
 
             JsonObject json;
 #if ORTCLIB
@@ -393,6 +468,7 @@ namespace PeerConnectionClient.Signalling
                     {kCandidateSdpName, JsonValue.CreateStringValue(evt.Candidate.Candidate)}
                 };
             }
+
             Debug.WriteLine("Conductor: Sending ice candidate.\n" + json.Stringify());
             SendMessage(json);
         }
@@ -451,8 +527,6 @@ namespace PeerConnectionClient.Signalling
         {
 #if ORTCLIB
             _signalingMode = RTCPeerConnectionSignalingMode.Json;
-//#else
-            //_signalingMode = RTCPeerConnectionSignalingMode.Sdp;
 #endif
             _signaller = new Signaller();
             _media = Media.CreateMedia();
@@ -695,6 +769,7 @@ namespace PeerConnectionClient.Signalling
                     {
                         candidate = RTCIceCandidate.FromJsonString(message);
                     }
+
                     _peerConnection?.AddIceCandidate(candidate);
 #else
                     await _peerConnection.AddIceCandidate(candidate);
@@ -895,6 +970,7 @@ namespace PeerConnectionClient.Signalling
                         videoTrack.Enabled = true;
                     }
                 }
+
                 VideoEnabled = true;
             }
         }
@@ -913,6 +989,7 @@ namespace PeerConnectionClient.Signalling
                         videoTrack.Enabled = false;
                     }
                 }
+
                 VideoEnabled = false;
             }
         }
@@ -931,6 +1008,7 @@ namespace PeerConnectionClient.Signalling
                         audioTrack.Enabled = false;
                     }
                 }
+
                 AudioEnabled = false;
             }
         }
@@ -949,6 +1027,7 @@ namespace PeerConnectionClient.Signalling
                         audioTrack.Enabled = true;
                     }
                 }
+
                 AudioEnabled = true;
             }
         }
@@ -968,6 +1047,7 @@ namespace PeerConnectionClient.Signalling
                 {
                     url = "turn:";
                 }
+
                 RTCIceServer server = null;
                 url += iceServer.Host.Value;
 #if ORTCLIB
@@ -985,10 +1065,12 @@ namespace PeerConnectionClient.Signalling
                 {
                     server.Credential = iceServer.Credential;
                 }
+
                 if (iceServer.Username != null)
                 {
                     server.Username = iceServer.Username;
                 }
+
                 _iceServers.Add(server);
             }
         }

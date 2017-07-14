@@ -3,6 +3,7 @@
 #include "webrtc/base/json.h"
 
 // Data channel message types.
+const char kStereoRenderingType[]				= "stereo-rendering";
 const char kCameraTransformLookAtMsgType[]		= "camera-transform-lookat";
 const char kCameraTransformMsgType[]			= "camera-transform";
 const char kKeyboardEventMsgType[]				= "keyboard-event";
@@ -17,7 +18,7 @@ DataChannelHandler::~DataChannelHandler()
 {
 }
 
-void DataChannelHandler::SendCameraInput(
+bool DataChannelHandler::SendCameraInput(
 	Vector3 camera_position,
 	Vector3 camera_target,
 	Vector3 camera_up_vector)
@@ -33,10 +34,10 @@ void DataChannelHandler::SendCameraInput(
 	jmessage["type"] = kCameraTransformLookAtMsgType;
 	jmessage["body"] = buffer;
 
-	data_channel_callback_->SendInputData(writer.write(jmessage));
+	return data_channel_callback_->SendInputData(writer.write(jmessage));
 }
 
-void DataChannelHandler::SendCameraInput(
+bool DataChannelHandler::SendCameraInput(
 	float x, float y, float z, float yaw, float pitch, float roll)
 {
 	char buffer[1024];
@@ -48,23 +49,35 @@ void DataChannelHandler::SendCameraInput(
 	jmessage["type"] = kCameraTransformMsgType;
 	jmessage["body"] = buffer;
 
-	data_channel_callback_->SendInputData(writer.write(jmessage));
+	return data_channel_callback_->SendInputData(writer.write(jmessage));
 }
 
-void DataChannelHandler::SendKeyboardInput(const std::string& msg)
+bool DataChannelHandler::SendKeyboardInput(const std::string& msg)
 {
 	Json::StyledWriter writer;
 	Json::Value jmessage;
 	jmessage["type"] = kKeyboardEventMsgType;
 	jmessage["body"] = msg;
-	data_channel_callback_->SendInputData(writer.write(jmessage));
+
+	return data_channel_callback_->SendInputData(writer.write(jmessage));
 }
 
-void DataChannelHandler::SendMouseInput(const std::string& msg)
+bool DataChannelHandler::SendMouseInput(const std::string& msg)
 {
 	Json::StyledWriter writer;
 	Json::Value jmessage;
 	jmessage["type"] = kMouseEventMsgType;
 	jmessage["body"] = msg;
-	data_channel_callback_->SendInputData(writer.write(jmessage));
+
+	return data_channel_callback_->SendInputData(writer.write(jmessage));
+}
+
+bool DataChannelHandler::RequestStereoStream(bool stereo)
+{
+	Json::StyledWriter writer;
+	Json::Value jmessage;
+	jmessage["type"] = kStereoRenderingType;
+	jmessage["body"] = stereo ? "1" : "0";
+
+	return data_channel_callback_->SendInputData(writer.write(jmessage));
 }

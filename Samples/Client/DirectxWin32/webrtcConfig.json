@@ -5,6 +5,7 @@
     "username": "user",
     "password": "3Dstreaming0317"
   },
-  "server": "signalingserver.centralus.cloudapp.azure.com",
-  "port": 3000
+  "server": "https://3dtoolkit-signaling-server.azurewebsites.net",
+  "port": 443,
+  "heartbeat":  5000
 }

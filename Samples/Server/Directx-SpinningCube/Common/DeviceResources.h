@@ -1,14 +1,20 @@
 #pragma once
 
+#define DEFAULT_FRAME_BUFFER_WIDTH		1280
+#define DEFAULT_FRAME_BUFFER_HEIGHT		720
+
 namespace DX
 {
 	class DeviceResources
 	{
 	public:
-													DeviceResources();
+													DeviceResources(int width = DEFAULT_FRAME_BUFFER_WIDTH, int height = DEFAULT_FRAME_BUFFER_HEIGHT);
 													~DeviceResources();
+
 		void										SetWindow(HWND);
 		void										Present();
+		void										Resize(int width, int height);
+		void										SetStereo(bool enabled);
 
 		// The size of the render target, in pixels.
 		SIZE										GetOutputSize() const;
@@ -19,6 +25,9 @@ namespace DX
 		IDXGISwapChain1*							GetSwapChain() const;
 		ID3D11RenderTargetView*						GetBackBufferRenderTargetView() const;
 		D3D11_VIEWPORT*								GetScreenViewport() const;
+
+		// True for stereo output.
+		bool										IsStereo() const;
 
 	private:
 		// Direct3D objects.
@@ -33,8 +42,11 @@ namespace DX
 		// Cached device properties.
 		SIZE										m_outputSize;
 
-		HRESULT CreateDeviceResources();
-		HRESULT CreateWindowSizeDependentResources(HWND);
-		void CleanupResources();
+		// Stereo output mode.
+		bool										m_isStereo;
+
+		HRESULT										CreateDeviceResources();
+		HRESULT										CreateWindowSizeDependentResources(HWND);
+		void										CleanupResources();
 	};
 }

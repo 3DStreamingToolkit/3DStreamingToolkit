@@ -20,11 +20,13 @@ public:
 	Win32DataChannelHandler(DataChannelCallback* data_channel_callback);
 	~Win32DataChannelHandler();
 
-	bool ProcessMessage(MSG* msg);
+	void ProcessMessage(MSG* msg);
+	void ProcessMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
 	void ResetCamera();
 
+	int stereo_mode_;
 	int width_;
 	int height_;
 	int keyboardTick;

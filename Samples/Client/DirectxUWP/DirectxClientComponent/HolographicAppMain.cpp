@@ -1,7 +1,5 @@
 #include "pch.h"
 
-#ifdef HOLOLENS
-
 #include "HolographicAppMain.h"
 #include "DirectXHelper.h"
 
@@ -56,31 +54,35 @@ void HolographicAppMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
                 std::bind(&HolographicAppMain::OnCameraAdded, this, _1, _2)
                 );
 
-    // Respond to camera removed events by releasing resources that were created for that
-    // camera.
-    // When the app receives a CameraRemoved event, it releases all references to the back
-    // buffer right away. This includes render target views, Direct2D target bitmaps, and so on.
-    // The app must also ensure that the back buffer is not attached as a render target, as
-    // shown in DeviceResources::ReleaseResourcesForBackBuffer.
+    // Respond to camera removed events by releasing resources that were created
+	// for that camera.
+    // When the app receives a CameraRemoved event, it releases all references to
+	// the back buffer right away. This includes render target views, Direct2D 
+	// target bitmaps, and so on.
+    // The app must also ensure that the back buffer is not attached as a render
+	// target, as shown in DeviceResources::ReleaseResourcesForBackBuffer.
     m_cameraRemovedToken =
         m_holographicSpace->CameraRemoved +=
             ref new Windows::Foundation::TypedEventHandler<HolographicSpace^, HolographicSpaceCameraRemovedEventArgs^>(
                 std::bind(&HolographicAppMain::OnCameraRemoved, this, _1, _2)
                 );
 
-    // The simplest way to render world-locked holograms is to create a stationary reference frame
-    // when the app is launched. This is roughly analogous to creating a "world" coordinate system
-    // with the origin placed at the device's position as the app is launched.
+    // The simplest way to render world-locked holograms is to create a stationary
+	// reference frame when the app is launched. This is roughly analogous to
+	// creating a "world" coordinate system with the origin placed at the device's
+	// position as the app is launched.
     m_referenceFrame = m_locator->CreateStationaryFrameOfReferenceAtCurrentLocation();
 
     // Notes on spatial tracking APIs:
-    // * Stationary reference frames are designed to provide a best-fit position relative to the
-    //   overall space. Individual positions within that reference frame are allowed to drift slightly
-    //   as the device learns more about the environment.
-    // * When precise placement of individual holograms is required, a SpatialAnchor should be used to
-    //   anchor the individual hologram to a position in the real world - for example, a point the user
-    //   indicates to be of special interest. Anchor positions do not drift, but can be corrected; the
-    //   anchor will use the corrected position starting in the next frame after the correction has
+    // * Stationary reference frames are designed to provide a best-fit position
+	//   relative to the overall space. Individual positions within that reference
+	//   frame are allowed to drift slightly as the device learns more about the
+	//   environment.
+    // * When precise placement of individual holograms is required, a SpatialAnchor 
+	//   should be used to anchor the individual hologram to a position in the real
+	//   world - for example, a point the user indicates to be of special interest.
+	//   Anchor positions do not drift, but can be corrected; the anchor will use the
+	//   corrected position starting in the next frame after the correction has
     //   occurred.
 }
 
@@ -142,7 +144,8 @@ HolographicFrame^ HolographicAppMain::Update()
     // Next, we get a coordinate system from the attached frame of reference that is
     // associated with the current frame. Later, this coordinate system is used for
     // for creating the stereo view matrices when rendering the sample content.
-    SpatialCoordinateSystem^ currentCoordinateSystem = m_referenceFrame->CoordinateSystem;
+    SpatialCoordinateSystem^ currentCoordinateSystem = 
+		m_referenceFrame->CoordinateSystem;
 
     m_timer.Tick([&] ()
     {
@@ -180,15 +183,16 @@ HolographicFrame^ HolographicAppMain::Update()
             m_videoRenderer->GetPosition());
     }
 
-    // The holographic frame will be used to get up-to-date view and projection matrices and
-    // to present the swap chain.
+    // The holographic frame will be used to get up-to-date view and
+	// projection matrices and to present the swap chain.
     return holographicFrame;
 }
 
 // Renders the current frame to each holographic camera, according to the
 // current application and spatial positioning state. Returns true if the
 // frame was rendered to at least one camera.
-bool HolographicAppMain::Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
+bool HolographicAppMain::Render(
+	Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
 {
     // Don't try to render anything before the first Update.
     if (m_timer.GetFrameCount() == 0)
@@ -209,8 +213,8 @@ bool HolographicAppMain::Render(Windows::Graphics::Holographic::HolographicFrame
     return m_deviceResources->UseHolographicCameraResources<bool>(
         [this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
-        // Up-to-date frame predictions enhance the effectiveness of image stablization and
-        // allow more accurate positioning of holograms.
+        // Up-to-date frame predictions enhance the effectiveness of 
+		// image stablization and allow more accurate positioning of holograms.
         holographicFrame->UpdateCurrentPrediction();
         HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
@@ -218,14 +222,19 @@ bool HolographicAppMain::Render(Windows::Graphics::Holographic::HolographicFrame
         for (auto cameraPose : prediction->CameraPoses)
         {
             // This represents the device-based resources for a HolographicCamera.
-            DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
+            DX::CameraResources* pCameraResources = 
+				cameraResourceMap[cameraPose->HolographicCamera->Id].get();
 
             // Get the device context.
             const auto context = m_deviceResources->GetD3DDeviceContext();
             const auto depthStencilView = pCameraResources->GetDepthStencilView();
 
             // Set render targets to the current holographic camera.
-            ID3D11RenderTargetView *const targets[1] = { pCameraResources->GetBackBufferRenderTargetView() };
+            ID3D11RenderTargetView *const targets[1] = 
+			{ 
+				pCameraResources->GetBackBufferRenderTargetView() 
+			};
+
             context->OMSetRenderTargets(1, targets, depthStencilView);
 
             // Clear the back buffer and depth stencil view.
@@ -236,33 +245,39 @@ bool HolographicAppMain::Render(Windows::Graphics::Holographic::HolographicFrame
             // TODO: Replace the sample content with your own content.
             //
             // Notes regarding holographic content:
-            //    * For drawing, remember that you have the potential to fill twice as many pixels
-            //      in a stereoscopic render target as compared to a non-stereoscopic render target
-            //      of the same resolution. Avoid unnecessary or repeated writes to the same pixel,
-            //      and only draw holograms that the user can see.
-            //    * To help occlude hologram geometry, you can create a depth map using geometry
-            //      data obtained via the surface mapping APIs. You can use this depth map to avoid
-            //      rendering holograms that are intended to be hidden behind tables, walls,
-            //      monitors, and so on.
-            //    * Black pixels will appear transparent to the user wearing the device, but you
-            //      should still use alpha blending to draw semitransparent holograms. You should
-            //      also clear the screen to Transparent as shown above.
+            //    * For drawing, remember that you have the potential to fill twice
+			//      as many pixels in a stereoscopic render target as compared to a
+			//      non-stereoscopic render target of the same resolution. Avoid
+			//      unnecessary or repeated writes to the same pixel, and only draw
+			//      holograms that the user can see.
+            //    * To help occlude hologram geometry, you can create a depth map
+			//      using geometry data obtained via the surface mapping APIs.
+			//      You can use this depth map to avoid rendering holograms that are
+			//      intended to be hidden behind tables, walls, monitors, and so on.
+            //    * Black pixels will appear transparent to the user wearing the
+			//      device, but you should still use alpha blending to draw
+			//      semitransparent holograms. You should also clear the screen to
+			//      Transparent as shown above.
             //
 
+            // The projection matrice for each holographic camera will
+			// change every frame. This function refreshes the data in the constant
+			// buffer for the holographic camera indicated by cameraPose.
+            pCameraResources->UpdateProjectionBuffer(
+				m_deviceResources,
+				cameraPose,
+				m_referenceFrame->CoordinateSystem);
 
-            // The view and projection matrices for each holographic camera will change
-            // every frame. This function refreshes the data in the constant buffer for
-            // the holographic camera indicated by cameraPose.
-            pCameraResources->UpdateViewProjectionBuffer(m_deviceResources, cameraPose, m_referenceFrame->CoordinateSystem);
-
-            // Attach the view/projection constant buffer for this camera to the graphics pipeline.
-            bool cameraActive = pCameraResources->AttachViewProjectionBuffer(m_deviceResources);
+            // Attach the projection constant buffer for this camera to the
+			// graphics pipeline.
+            bool cameraActive = pCameraResources->AttachProjectionBuffer(
+				m_deviceResources);
 
             // Only render world-locked content when positional tracking is active.
             if (cameraActive)
             {
                 // Draw the sample hologram.
-                m_videoRenderer->Render();
+				m_videoRenderer->Render();
             }
 
             atLeastOneCameraRendered = true;
@@ -270,6 +285,11 @@ bool HolographicAppMain::Render(Windows::Graphics::Holographic::HolographicFrame
 
         return atLeastOneCameraRendered;
     });
+}
+
+SpatialStationaryFrameOfReference^ HolographicAppMain::GetReferenceFrame()
+{
+	return m_referenceFrame;
 }
 
 void HolographicAppMain::OnLocatabilityChanged(SpatialLocator^ sender, Object^ args)
@@ -357,5 +377,3 @@ void HolographicAppMain::OnCameraRemoved(
     // not take long.
     m_deviceResources->RemoveHolographicCamera(args->Camera);
 }
-
-#endif // HOLOLENS
