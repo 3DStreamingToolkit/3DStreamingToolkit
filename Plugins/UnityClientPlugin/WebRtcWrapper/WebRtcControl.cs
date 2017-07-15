@@ -349,8 +349,8 @@ namespace WebRtcWrapper
             new Task(() =>
             {
                 IsConnecting = true;                
-                Conductor.Instance.StartLogin(Ip.Value, Port.Value, peerName);
 				Conductor.Instance.Signaller.SetHeartbeatMs(heartbeatMs);
+                Conductor.Instance.StartLogin(Ip.Value, Port.Value, peerName);
             }).Start();
         }
 

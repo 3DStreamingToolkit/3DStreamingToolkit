@@ -81,7 +81,6 @@ namespace PeerConnectionClient.Signalling
         private string _port;
         private string _clientName;
         private int _myId;
-		private int _heartbeatTimeSinceTick;
 		private int _heartbeatTickMs;
         private Dictionary<int, string> _peers = new Dictionary<int, string>();
 
@@ -136,11 +135,13 @@ namespace PeerConnectionClient.Signalling
                 _clientName = client_name;
 
                 _state = State.SIGNING_IN;
-                await ControlSocketRequestAsync(string.Format("GET /sign_in?{0} HTTP/1.0\r\n\r\n", client_name));
+                await ControlSocketRequestAsync(string.Format("GET /sign_in?peer_name={0} HTTP/1.0\r\n\r\n", client_name));
                 if (_state == State.CONNECTED)
                 {
+                    // TODO(bengreenier): clean this up
                     // Start the long polling loop without await
                     var task = HangingGetReadLoopAsync();
+                    var otherTask = HeartbeatLoopAsync();
                 }
                 else
                 {
@@ -469,15 +470,16 @@ namespace PeerConnectionClient.Signalling
         }
 
         /// <summary>
-        /// Long lasting loop to get notified about connected/disconnected peers.
-        /// </summary>
-        private async Task HangingGetReadLoopAsync()
+        /// Long lasting loop that triggers heartbeats
+        private async Task HeartbeatLoopAsync()
         {
-            while (_state != State.NOT_CONNECTED)
+            var iterationTimestamp = DateTime.UtcNow;
+            double incrementalTick = _heartbeatTickMs;
+            while (_state == State.CONNECTED)
             {
-				if (_heartbeatTimeSinceTick >= _heartbeatTickMs)
+				if (incrementalTick >= _heartbeatTickMs)
 				{
-					_heartbeatTimeSinceTick = 0;
+					incrementalTick = 0;
 					using (var heartbeatSocket = new StreamSocket())
 					{
 						try
@@ -501,7 +503,22 @@ namespace PeerConnectionClient.Signalling
 						}
 					}
 				}
+                else
+                {
+                    incrementalTick += (DateTime.UtcNow - iterationTimestamp).TotalMilliseconds;
+                }
+                
+                iterationTimestamp = DateTime.UtcNow;                
+            }
+        }
 
+        /// <summary>
+        /// Long lasting loop to get notified about connected/disconnected peers.
+        /// </summary>
+        private async Task HangingGetReadLoopAsync()
+        {
+            while (_state != State.NOT_CONNECTED)
+            {
 				using (_hangingGetSocket = new StreamSocket())
 				{
 					try

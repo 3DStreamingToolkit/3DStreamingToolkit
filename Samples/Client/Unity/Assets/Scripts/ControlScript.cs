@@ -15,7 +15,7 @@ using PeerConnectionClient.Signalling;
 
 public class ControlScript : MonoBehaviour
 {
-    private const int textureWidth = 1280;
+    private const int textureWidth = 640;
     private const int textureHeight = 480;
     public Text StatusText;
     public Text MessageText;
@@ -27,8 +27,8 @@ public class ControlScript : MonoBehaviour
 
     public RawImage LeftCanvas;
     public RawImage RightCanvas;
-    public float TextureScale = 1f;
-    public int PluginMode = 0;
+    public float TextureScale;
+    public int PluginMode;
 
     private Transform camTransform;
     private Vector3 prevPos;
@@ -75,10 +75,10 @@ public class ControlScript : MonoBehaviour
     void Awake()
     {
         // Azure Host Details
-        ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        ServerInputTextField.text = "127.0.0.1:3000";
         
         // Heartbeat interval (-1 will disable) 
-        HeartbeatInputTextField.text = "-1";
+        HeartbeatInputTextField.text = "5000";
 
         // Local Dev Setup - Define Host Workstation IP Address
         //ServerInputTextField.text = "127.0.0.1:8888";
