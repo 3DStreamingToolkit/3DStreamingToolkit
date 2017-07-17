@@ -36,7 +36,7 @@ std::string GetAbsolutePath(std::string fileName)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port)
+int InitWebRTC(char* server, int port, int heartbeat)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -52,6 +52,8 @@ int InitWebRTC(char* server, int port)
 
 	rtc::InitializeSSL();
 	PeerConnectionClient client;
+
+	client.SetHeartbeatMs(heartbeat);
 
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(&client, &wnd));
@@ -90,6 +92,7 @@ int WINAPI wWinMain(
 	char server[1024];
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
+	int heartbeat = FLAG_heartbeat;
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
@@ -116,8 +119,13 @@ int WINAPI wWinMain(
 			{
 				port = root.get("port", FLAG_port).asInt();
 			}
+
+			if (root.isMember("heartbeat"))
+			{
+				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
+			}
 		}
 	}
 
-	return InitWebRTC(server, port);
+	return InitWebRTC(server, port, heartbeat);
 }

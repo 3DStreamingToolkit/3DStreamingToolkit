@@ -273,10 +273,10 @@ namespace WebRtcWrapper
             var configTraceServerPort = "55000";
 
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
-            var peerCcServerIp = new ValidableNonEmptyString("signalingserver.centralus.cloudapp.azure.com");
-            IceServer turnServer = new IceServer("turnserver3dstreaming.centralus.cloudapp.azure.com:3478", IceServer.ServerType.TURN);
-                      turnServer.Username = "user";
-                      turnServer.Credential = "3Dstreaming0317";
+            var peerCcServerIp = new ValidableNonEmptyString("signalingserveruri");
+            IceServer turnServer = new IceServer("turnserveruri:3478", IceServer.ServerType.TURN);
+                      turnServer.Username = "username";
+                      turnServer.Credential = "password";
             var peerCcPortInt = 3000;
 
             var configIceServers = new ObservableCollection<IceServer>();

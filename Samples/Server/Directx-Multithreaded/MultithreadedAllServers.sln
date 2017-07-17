@@ -11,6 +11,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MultithreadedServer", "Mult
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MultithreadedServerService", "MultithreadedServerService.vcxproj", "{90CDEB62-030A-4CA2-9D33-E6E4E08CC9E4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{1E3FFE4A-3F19-4695-BCC5-5345563D5AC8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SignalingClient", "..\..\..\Libraries\SignalingClient\SignalingClient.vcxproj", "{88348D78-A949-4FF8-8A0A-2934744D89D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -43,6 +47,14 @@ Global
 		{90CDEB62-030A-4CA2-9D33-E6E4E08CC9E4}.Release|x64.Build.0 = Release|x64
 		{90CDEB62-030A-4CA2-9D33-E6E4E08CC9E4}.Release|x86.ActiveCfg = Release|Win32
 		{90CDEB62-030A-4CA2-9D33-E6E4E08CC9E4}.Release|x86.Build.0 = Release|Win32
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Debug|x64.ActiveCfg = Debug|x64
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Debug|x64.Build.0 = Debug|x64
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Debug|x86.ActiveCfg = Debug|Win32
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Debug|x86.Build.0 = Debug|Win32
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x64.ActiveCfg = Release|x64
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x64.Build.0 = Release|x64
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x86.ActiveCfg = Release|Win32
+		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +62,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{D93F84C9-9074-43BA-94C4-1FD25C5DD8F7} = {0A5F9ED9-7108-463A-A563-BBBD528BC1A4}
 		{90CDEB62-030A-4CA2-9D33-E6E4E08CC9E4} = {0A5F9ED9-7108-463A-A563-BBBD528BC1A4}
+		{88348D78-A949-4FF8-8A0A-2934744D89D2} = {1E3FFE4A-3F19-4695-BCC5-5345563D5AC8}
 	EndGlobalSection
 EndGlobal

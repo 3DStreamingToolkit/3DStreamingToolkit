@@ -27,6 +27,12 @@ namespace
 
 	// Delay between server connection retries, in milliseconds
 	const int kReconnectDelay = 2000;
+
+	// The message id we use when scheduling a heartbeat operation
+	const int kHeartbeatScheduleId = 1523U;
+
+	// The default value for the tick heartbeat, used to disable the heartbeat
+	const int kHeartbeatDefault = -1;
 }
 
 PeerConnectionClient::PeerConnectionClient() :
@@ -34,6 +40,7 @@ PeerConnectionClient::PeerConnectionClient() :
     resolver_(NULL),
     state_(NOT_CONNECTED),
     my_id_(-1),
+	heartbeat_tick_ms_(kHeartbeatDefault),
 	server_address_ssl_(false)
 {
 	// use the current thread or wrap a thread for signaling_thread_
@@ -53,12 +60,14 @@ void PeerConnectionClient::InitSocketSignals()
 	RTC_DCHECK(hanging_get_.get() != NULL);
 	control_socket_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
 	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnSignalingServerClose);
-	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
-	hanging_get_->SignalConnectEvent.connect(this,
-		&PeerConnectionClient::OnHangingGetConnect);
 
+	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
+	hanging_get_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnHangingGetConnect);
+	heartbeat_get_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetConnect);
+	
 	control_socket_->SignalReadEvent.connect(this, &PeerConnectionClient::OnRead);
 	hanging_get_->SignalReadEvent.connect(this, &PeerConnectionClient::OnHangingGetRead);
+	heartbeat_get_->SignalReadEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetRead);
 }
 
 int PeerConnectionClient::id() const
@@ -122,6 +131,7 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
 	server_address_.SetIP(parsedServer);
 	server_address_.SetPort(port);
 	client_name_ = client_name;
+	std::replace(client_name_.begin(), client_name_.end(), ' ', '-');
 
 	if (server_address_.IsUnresolvedIP())
 	{
@@ -182,11 +192,13 @@ void PeerConnectionClient::DoConnect()
 {
 	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
+	heartbeat_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
+
 	InitSocketSignals();
 	std::string clientName = client_name_;
 	std::string hostName = server_address_.hostname();
 	
-	onconnect_data_ = PrepareRequest("GET", "/sign_in?" + clientName, { {"Host", hostName} });
+	onconnect_data_ = PrepareRequest("GET", "/sign_in?peer_name=" + clientName, { {"Host", hostName} });
 
 	bool ret = ConnectControlSocket();
 	if (ret)
@@ -273,9 +285,21 @@ bool PeerConnectionClient::SignOut()
 
 bool PeerConnectionClient::Shutdown()
 {
-	hanging_get_->Close();
-	control_socket_->Close();
-	
+	if (heartbeat_get_.get() != nullptr)
+	{
+		heartbeat_get_->Close();
+	}
+
+	if (hanging_get_.get() != nullptr)
+	{
+		hanging_get_->Close();
+	}
+
+	if (control_socket_.get() != nullptr)
+	{
+		control_socket_->Close();
+	}
+
 	state_ = NOT_CONNECTED;
 	
 	return true;
@@ -336,12 +360,6 @@ void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& mes
 	}
 	else
 	{
-		if (server_address_ssl_ && message.find("sdpMid") != std::string::npos)
-		{
-			// HACKHACK(bengreenier): this seems to allow https signaling servers to work
-			// surely this isn't reliable though...needs to be revisited
-			rtc::Thread::SleepMs(1500);
-		}
 		callback_->OnMessageFromPeer(peer_id, message);
 	}
 }
@@ -497,6 +515,11 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			RTC_DCHECK(hanging_get_->GetState() == rtc::Socket::CS_CLOSED);
 			state_ = CONNECTED;
 			hanging_get_->Connect(server_address_);
+
+			if (heartbeat_tick_ms_ != kHeartbeatDefault)
+			{
+				heartbeat_get_->Connect(server_address_);
+			}
 		}
 	}
 }
@@ -664,8 +687,27 @@ void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err)
 
 void PeerConnectionClient::OnMessage(rtc::Message* msg) 
 {
-	// ignore msg; there is currently only one supported message ("retry")
-	DoConnect();
+	// indicates this message is to trigger a heartbeat request
+	if (msg->message_id == kHeartbeatScheduleId)
+	{
+		// if we aren't connected any longer, don't beat
+		if (state_ != State::CONNECTED)
+		{
+			return;
+		}
+
+		// if the socket is still open, close it and then reconnect to trigger the beat
+		if (heartbeat_get_->GetState() != rtc::Socket::ConnState::CS_CLOSED)
+		{
+			heartbeat_get_->Close();
+		}
+		heartbeat_get_->Connect(server_address_);
+	}
+	else
+	{
+		// default case - other than the heartbeat message, there is only one other message ("retry")
+		DoConnect();
+	}
 }
 
 const std::string& PeerConnectionClient::authorization_header() const
@@ -676,4 +718,45 @@ const std::string& PeerConnectionClient::authorization_header() const
 void PeerConnectionClient::SetAuthorizationHeader(const std::string& value)
 {
 	authorization_header_ = value;
+}
+
+void PeerConnectionClient::OnHeartbeatGetConnect(rtc::AsyncSocket* socket)
+{
+	auto req = PrepareRequest("GET", "/heartbeat?peer_id=" + std::to_string(my_id_), { {"Host", server_address_.hostname()} });
+
+	int sent = socket->Send(req.c_str(), req.length());
+	RTC_DCHECK(sent == req.length());
+}
+
+void PeerConnectionClient::OnHeartbeatGetRead(rtc::AsyncSocket* socket)
+{
+	std::string data;
+	size_t content_length = 0;
+	if (ReadIntoBuffer(socket, &data, &content_length))
+	{
+		size_t peer_id = 0, eoh = 0;
+		int status = GetResponseStatus(data);
+
+		if (status != 200)
+		{
+			LOG(INFO) << "heartbeat failed (" << status << ")" << (heartbeat_tick_ms_ != kHeartbeatDefault ? ", will retry" : "");
+		}
+	}
+
+	if (heartbeat_tick_ms_ != kHeartbeatDefault)
+	{
+		rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, heartbeat_tick_ms_, this, kHeartbeatScheduleId);
+
+		LOG(INFO) << "heartbeat scheduled for " << heartbeat_tick_ms_ << "ms";
+	}
+}
+
+int PeerConnectionClient::heartbeat_ms() const
+{
+	return heartbeat_tick_ms_;
+}
+
+void PeerConnectionClient::SetHeartbeatMs(const int tickMs)
+{
+	heartbeat_tick_ms_ = tickMs;
 }

@@ -26,6 +26,7 @@ const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
 const char kStreamLabel[] = "stream_label";
 const uint16_t kDefaultServerPort = 3000;
+const int kDefaultHeartbeat = -1; // this means, by default, don't use heartbeats
 
 std::string GetEnvVarOrDefault(const char* env_var_name, const char* default_value)
 {
@@ -51,13 +52,13 @@ std::string GetPeerConnectionString()
 
 std::string GetDefaultServerName()
 {
-	return GetEnvVarOrDefault("WEBRTC_SERVER", "signalingserver.centralus.cloudapp.azure.com");
+	return GetEnvVarOrDefault("WEBRTC_SERVER", "signalingserveruri");
 }
 
 std::string GetPeerName()
 {
 	char computer_name[256];
-	std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
+	std::string ret(GetEnvVarOrDefault("USERNAME", "username"));
 	ret += '@';
 	if (gethostname(computer_name, arraysize(computer_name)) == 0)
 	{

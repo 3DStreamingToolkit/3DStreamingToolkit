@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <functional>
 
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -90,6 +91,10 @@ public:
 
 	void SetAuthorizationHeader(const std::string& value);
 
+	int heartbeat_ms() const;
+
+	void SetHeartbeatMs(const int tickMs);
+
 protected:
 	void DoConnect();
 
@@ -102,6 +107,8 @@ protected:
 	void OnConnect(rtc::AsyncSocket* socket);
 
 	void OnHangingGetConnect(rtc::AsyncSocket* socket);
+
+	void OnHeartbeatGetConnect(rtc::AsyncSocket* socket);
 
 	void OnMessageFromPeer(int peer_id, const std::string& message);
 
@@ -119,6 +126,8 @@ protected:
 	void OnRead(rtc::AsyncSocket* socket);
 
 	void OnHangingGetRead(rtc::AsyncSocket* socket);
+
+	void OnHeartbeatGetRead(rtc::AsyncSocket* socket);
 
 	// Parses a single line entry in the form "<name>,<id>,<connected>"
 	bool ParseEntry(const std::string& entry, std::string* name, int* id,
@@ -144,6 +153,7 @@ protected:
 	rtc::Thread* signaling_thread_;
 	std::unique_ptr<SslCapableSocket> control_socket_;
 	std::unique_ptr<SslCapableSocket> hanging_get_;
+	std::unique_ptr<SslCapableSocket> heartbeat_get_;
 	std::string onconnect_data_;
 	std::string control_data_;
 	std::string notification_data_;
@@ -152,6 +162,7 @@ protected:
 	Peers peers_;
 	State state_;
 	int my_id_;
+	int heartbeat_tick_ms_;
 };
 
 #endif  // WEBRTC_PEER_CONNECTION_CLIENT_H_
