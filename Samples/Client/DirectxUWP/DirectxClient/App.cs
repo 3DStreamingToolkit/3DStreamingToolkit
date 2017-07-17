@@ -11,6 +11,7 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.Core;
 using Windows.Data.Json;
+using Windows.Media.Core;
 using Windows.Storage;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
@@ -20,7 +21,6 @@ namespace StreamingDirectXHololensClient
     class App : IFrameworkView, IFrameworkViewSource
     {
         private AppCallbacks _appCallbacks;
-        public DecodedVideoSource _decodedVideo;
         private MediaVideoTrack _peerVideoTrack;
         private Peer _selectedPeer;
         private string _server;
@@ -219,8 +219,12 @@ namespace StreamingDirectXHololensClient
             _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_peerVideoTrack != null)
             {
-                _decodedVideo = Media.CreateMedia().CreateDecodedVideoSource(_peerVideoTrack);
-                _decodedVideo.OnDecodedVideoFrame += Source_OnDecodedVideoFrame;
+                //_decodedVideo = Media.CreateMedia().CreateDecodedVideoSource(_peerVideoTrack);
+                //_decodedVideo.OnDecodedVideoFrame += Source_OnDecodedVideoFrame;
+
+                var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
+                _appCallbacks.SetMediaStreamSource((MediaStreamSource)media);
+                _appCallbacks.Play();
             }
         }
 

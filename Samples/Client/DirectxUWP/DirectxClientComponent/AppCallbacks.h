@@ -4,6 +4,7 @@
 #include "DeviceResources.h"
 #include "VideoRenderer.h"
 #include "HolographicAppMain.h"
+#include "meplayer.h"
 
 using namespace Platform;
 using namespace Windows::ApplicationModel::Core;
@@ -27,6 +28,10 @@ namespace DirectXClientComponent
 
 		void Run();
 
+		void Play();
+
+		void SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource^ mediaSourceHandle);
+
 		void OnFrame(
 			uint32_t width,
 			uint32_t height,
@@ -45,12 +50,15 @@ namespace DirectXClientComponent
 	private:
 		void InitVideoRender(std::shared_ptr<DX::DeviceResources> deviceResources, int width, int height);
 		void SendInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
+		void OnFrameTransferred(MEPlayer^ mc, int width, int height);
 
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
 		VideoRenderer*											m_videoRenderer;
 		SendInputDataHandler^									m_sendInputDataHandler;
+		MEPlayer^ m_player;
 
 		bool													m_isHolographic;
+		bool													m_receivedFirstFrame;
 		std::unique_ptr<HolographicAppMain>						m_main;
 		
 		// The holographic space the app will use for rendering.

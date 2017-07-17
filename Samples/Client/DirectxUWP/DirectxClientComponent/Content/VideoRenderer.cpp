@@ -213,26 +213,8 @@ void VideoRenderer::UpdateFrame(const uint8_t* data)
 
 void VideoRenderer::Render()
 {
-	// Do not render when the frame data isn't ready.
-	if (!m_frameData)
-	{
-		return;
-	}
-
 	// Gets the device context.
 	ID3D11DeviceContext* context = m_deviceResources->GetD3DDeviceContext();
-
-	// Updates the texture data.
-	D3D11_MAPPED_SUBRESOURCE mapped;
-	HRESULT result = m_deviceResources->GetD3DDeviceContext()->Map(
-		m_videoTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-
-	if (result == S_OK)
-	{
-		memcpy(mapped.pData, m_frameData, mapped.RowPitch * m_height);
-	}
-
-	m_deviceResources->GetD3DDeviceContext()->Unmap(m_videoTexture, 0);
 
 	// Rendering.
 	UINT stride = sizeof(VertexPositionTexture);

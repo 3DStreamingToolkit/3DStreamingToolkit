@@ -44,7 +44,6 @@ namespace MEDIA
 //
 // Defines the callback method to process media engine events.
 //-----------------------------------------------------------------------------
-
 ref struct MediaEngineNotifyCallback abstract
 {
 internal:
@@ -87,6 +86,8 @@ ref class MEPlayer: public MediaEngineNotifyCallback
 
 internal:
 
+	delegate void VideoFrameTransferred(MEPlayer^ sender, int width, int height);
+
     MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice);
 
     // DX11 related
@@ -103,12 +104,19 @@ internal:
 		UINT32 height,
 		_COM_Outptr_ void** primarySRV);
 
+	HRESULT GetPrimary2DTexture(
+		UINT32 width,
+		UINT32 height,
+		_COM_Outptr_ ID3D11Texture2D** primaryTexture);
+
 	HRESULT SetMediaSourceFromPath(LPCWSTR pszContentLocation);
 	HRESULT SetMediaSource(ABI::Windows::Media::Core::IMediaSource* mediaSource);
 	HRESULT SetMediaStreamSource(ABI::Windows::Media::Core::IMediaStreamSource* mediaSource);
 
     // Media Engine related
     virtual void OnMediaEngineEvent(DWORD meEvent) override;
+
+	event VideoFrameTransferred^ FrameTransferred;
 
     // Media Engine related Options
     void AutoPlay(BOOL autoPlay)

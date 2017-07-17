@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "pch.h"
+#include "MediaEngine.h"
 #include "MediaHelpers.h"
 
 #include <windows.graphics.holographic.h>

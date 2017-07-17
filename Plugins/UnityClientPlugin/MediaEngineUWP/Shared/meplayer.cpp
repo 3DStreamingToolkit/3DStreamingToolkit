@@ -7,7 +7,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //
 
-#include "pch.h"
+#include "MediaEngine.h"
 #include "MEPlayer.h"
 
 
@@ -30,6 +30,8 @@ using namespace ABI::Windows::Media;
 using namespace ABI::Windows::Media::Core;
 using namespace ABI::Windows::Media::Playback;
 using namespace Windows::Foundation;
+
+static uint8_t* s_videoRGBFrame = nullptr;
 
 // MediaEngineNotify: Implements the callback for Media Engine event notification.
 class MediaEngineNotify : public IMFMediaEngineNotify
@@ -238,7 +240,7 @@ void MEPlayer::CreateBackBuffers()
 		);
 
 		// create the video texture description based on texture format
-		auto m_textureDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_B8G8R8A8_UNORM, 1920, 1080);
+		auto m_textureDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_B8G8R8A8_UNORM, 1280, 480);
 		m_textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		m_textureDesc.MipLevels = 1;
 		m_textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED | D3D11_RESOURCE_MISC_SHARED_NTHANDLE;
@@ -480,6 +482,21 @@ HRESULT MEPlayer::GetPrimaryTexture(UINT32 width, UINT32 height, void ** primary
 	IFR(m_primaryTextureSRV.CopyTo(&spSRV));
 
 	*primarySRV = spSRV.Detach();
+
+	return S_OK;
+}
+
+HRESULT MEPlayer::GetPrimary2DTexture(UINT32 width, UINT32 height, ID3D11Texture2D ** primaryTexture)
+{
+	if (width < 1 || height < 1 || nullptr == primaryTexture)
+		IFR(E_INVALIDARG);
+
+	Initialize(width, height);
+
+	ComPtr<ID3D11Texture2D> spTexture;
+	IFR(m_primaryMediaTexture.CopyTo(&spTexture));
+
+	*primaryTexture = spTexture.Detach();
 
 	return S_OK;
 }
@@ -884,22 +901,35 @@ void MEPlayer::OnTimer()
 		LONGLONG pts;
 		if (m_spMediaEngine->OnVideoStreamTick(&pts) == S_OK)
 		{
-			// new frame available at the media engine so get it 
-			//ComPtr<ID3D11Texture2D> spTextureDst;
-			//MEDIA::ThrowIfFailed(
-			//    m_spDX11SwapChain->GetBuffer(0, IID_PPV_ARGS(&spTextureDst))
-			//    );
-
-			// UpdateFrameRate();
-
 			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), nullptr, &m_rcTarget, &m_bkgColor)
 			);
 
-			// and the present it to the screen
-/*            MEDIA::ThrowIfFailed(
-				m_spDX11SwapChain->Present(1, 0)
-				); */
+			//if (s_videoRGBFrame == nullptr)
+			//{
+			//	// Initalizes the temp buffers.
+			//	int bufferSize = m_rcTarget.right * m_rcTarget.bottom * 4;
+			//	int half_width = (m_rcTarget.right + 1) / 2;
+			//	size_t size_y = static_cast<size_t>(m_rcTarget.right) * m_rcTarget.bottom;
+			//	size_t size_uv = static_cast<size_t>(half_width) * ((m_rcTarget.bottom + 1) / 2);
+
+			//	s_videoRGBFrame = new uint8_t[bufferSize];
+			//	memset(s_videoRGBFrame, 0, bufferSize);
+			//}
+
+			//// Updates the texture data.
+			//D3D11_MAPPED_SUBRESOURCE mapped;
+			//HRESULT result = m_spDX11DeviceContext->Map(
+			//	m_primaryMediaTexture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+
+			//if (result == S_OK)
+			//{
+			//	memcpy(mapped.pData, mapped.pData, mapped.RowPitch * m_rcTarget.bottom);
+			//}
+
+			//m_spDX11DeviceContext->Unmap(m_primaryMediaTexture.Get(), 0);
+
+			// FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom);
 		}
 	}
 

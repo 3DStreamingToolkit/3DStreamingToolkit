@@ -40,6 +40,7 @@ public class ControlScript : MonoBehaviour
     private float fpsCount = 0f;
     private float startTime = 0;
     private float endTime = 0;
+    private bool enabledStereo = false;
 
     private string toyStoryH264 = @"http://www.html5videoplayer.net/videos/toystory.mp4";
 
@@ -104,12 +105,14 @@ public class ControlScript : MonoBehaviour
             
             // var mediaStream = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "media");
 
-            var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
+            var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 60, "media");
 
             // Plugin.LoadMediaSource(mediaStream);
-            Plugin.LoadMediaStreamSource((MediaStreamSource)media);
-            // Plugin.LoadContent(toyStoryH264);
+           Plugin.LoadMediaStreamSource((MediaStreamSource)media);
+           //  Plugin.LoadContent(toyStoryH264);
             Plugin.Play();
+
+            EnqueueAction(() => { endTime = (startTime = Time.time) + 0.3f; });
         }
         else
         {
@@ -196,7 +199,6 @@ public class ControlScript : MonoBehaviour
         {
             _webRtcControl.SelectedPeer = _webRtcControl.Peers[0];
             _webRtcControl.ConnectToPeer();
-            endTime = (startTime = Time.time) + 10f;
         }
 #endif
     }
@@ -271,19 +273,26 @@ public class ControlScript : MonoBehaviour
                 upVector.y,
                 upVector.z);
 #if !UNITY_EDITOR
+
             _webRtcControl.SendPeerDataChannelMessage(camMsg);
+
+            if (endTime != 0 && Time.time > endTime && !enabledStereo)
+            {
+                enabledStereo = true;
+                // Enables the stereo output mode.
+                var msg = "{" +
+                "  \"type\":\"stereo-rendering\"," +
+                "  \"body\":\"1\"" +
+                "}";
+                _webRtcControl.SendPeerDataChannelMessage(msg);
+            }
 #endif
         }
         #endregion
 
-        if (Time.time > endTime)
-        {
-            fpsCount = (float)fpsCounter / (Time.time - startTime);
-            fpsCounter = 0;
-            endTime = (startTime = Time.time) + 3;
-        }
 
-        MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
+
+        //MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
 
 #if !UNITY_EDITOR
         lock (_executionQueue)

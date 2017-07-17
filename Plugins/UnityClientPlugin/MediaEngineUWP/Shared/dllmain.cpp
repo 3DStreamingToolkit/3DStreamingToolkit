@@ -9,7 +9,7 @@
 //
 //*********************************************************
 
-#include "pch.h"
+#include "MediaEngine.h"
 #include "Unity/PlatformBase.h"
 #include "MediaPlayerPlayback.h"
 #include "meplayer.h"
@@ -73,20 +73,16 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API CreateMediaPlayback()
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API ReleaseMediaPlayback()
 {
-    if (s_spMediaPlayback != nullptr)
+    if (m_player != nullptr)
     {
-        s_spMediaPlayback->Stop();
-
-        s_spMediaPlayback.Reset();
-        s_spMediaPlayback = nullptr;
+		m_player->Pause();
+		m_player->Shutdown();
+		m_player = nullptr;
     }
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetPrimaryTexture(_In_ UINT32 width, _In_ UINT32 height, _COM_Outptr_ void** playbackSRV)
 {
-    //if (s_spMediaPlayback != nullptr)
-    //    LOG_RESULT(s_spMediaPlayback->GetPrimaryTexture(width, height, playbackSRV));
-
 	if (m_player != nullptr)
 	    m_player->GetPrimaryTexture(width, height, playbackSRV);
 }
@@ -113,40 +109,21 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API LoadMediaStreamSource
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API LoadContent(_In_ LPCWSTR pszContentLocation)
 {
-    //if (s_spMediaPlayback != nullptr)
-    //    LOG_RESULT(s_spMediaPlayback->LoadContent(pszContentLocation));
-
 	if (m_player != nullptr)
 		m_player->SetMediaSourceFromPath(pszContentLocation);
 }
 
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API LoadAdaptiveContent(_In_ LPCWSTR pszManifestLocation)
-{
-    if (s_spMediaPlayback != nullptr)
-        LOG_RESULT(s_spMediaPlayback->LoadAdaptiveContent(pszManifestLocation));
-}
-
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API Play()
 {
-    //if (s_spMediaPlayback != nullptr)
-    //    LOG_RESULT(s_spMediaPlayback->Play());
-
 	if (m_player != nullptr)
 		m_player->Play();
 }
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API Pause()
 {
-    if (s_spMediaPlayback != nullptr)
-        LOG_RESULT(s_spMediaPlayback->Pause());
+    if (m_player != nullptr)
+        m_player->Pause();
 }
-
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API Stop()
-{
-    if (s_spMediaPlayback != nullptr)
-        LOG_RESULT(s_spMediaPlayback->Stop());
-}
-
 
 // --------------------------------------------------------------------------
 // UnitySetInterfaces

@@ -18,6 +18,7 @@ static CriticalSection s_lock;
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
+	m_receivedFirstFrame(false),
 	m_sendInputDataHandler(sendInputDataHandler)
 {
 }
@@ -49,6 +50,12 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 
 	// The main class uses the holographic space for updates and rendering.
 	m_main->SetHolographicSpace(m_holographicSpace);
+
+	m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
+
+	// Create a dummy renderer and texture until the first frame is received from WebRTC
+	InitVideoRender(m_deviceResources, 1280, 480);
+	m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(this, &DirectXClientComponent::AppCallbacks::OnFrameTransferred);
 }
 
 void AppCallbacks::Run()
@@ -76,6 +83,22 @@ void AppCallbacks::Run()
 				SendInputData(holographicFrame);
 			}
 		}
+	}
+}
+
+void AppCallbacks::Play()
+{
+	if (m_player != nullptr)
+		m_player->Play();
+}
+
+void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle)
+{
+	ABI::Windows::Media::Core::IMediaStreamSource * source = reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
+
+	if (source != nullptr && m_player != nullptr)
+	{
+		m_player->SetMediaStreamSource(source);
 	}
 }
 
@@ -165,6 +188,9 @@ void AppCallbacks::InitVideoRender(
 
 	// Initializes the video renderer.
 	m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
+
+	// Initializes the new video texture
+	m_player->GetPrimaryTexture(width, height, (void**)m_videoRenderer->GetVideoTexture());
 	m_main->SetVideoRender(m_videoRenderer);
 
 	// Initalizes the temp buffers.
@@ -179,6 +205,9 @@ void AppCallbacks::InitVideoRender(
 
 void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 {
+	if (!m_receivedFirstFrame)
+		return;
+
 	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 	SpatialCoordinateSystem^ currentCoordinateSystem =
 		m_main->GetReferenceFrame()->CoordinateSystem;
@@ -231,7 +260,30 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 				"  \"body\":\"" + cameraTransformBody + "\"" +
 				"}";
 
-			m_sendInputDataHandler(msg);
+			// m_sendInputDataHandler(msg);
 		}
+	}
+}
+
+void DirectXClientComponent::AppCallbacks::OnFrameTransferred(MEPlayer ^ mc, int width, int height)
+{
+	if (!m_receivedFirstFrame)
+	{
+		// Enables the stereo output mode.
+		String^ msg =
+			"{" +
+			"  \"type\":\"stereo-rendering\"," +
+			"  \"body\":\"1\"" +
+			"}";
+
+		m_sendInputDataHandler(msg);
+		m_receivedFirstFrame = true;
+	}
+
+	InitVideoRender(m_deviceResources, width, height);
+
+	if (s_videoRGBFrame != nullptr)
+	{
+		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
 	}
 }

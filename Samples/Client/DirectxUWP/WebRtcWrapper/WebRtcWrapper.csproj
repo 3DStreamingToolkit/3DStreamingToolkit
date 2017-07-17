@@ -87,6 +87,7 @@
   <ItemGroup>
     <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
       <HintPath>$(ProjectDir)..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x64\Release\Org.WebRtc.winmd</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Org.WebRtc" Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
       <HintPath>$(ProjectDir)..\..\..\..\LIbraries\WebRTCUWP\Org.WebRtc\x64\Debug\Org.WebRtc.winmd</HintPath>

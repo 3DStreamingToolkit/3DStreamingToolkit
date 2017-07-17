@@ -6,7 +6,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)pch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)targetver.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphics.h">
       <Filter>Unity</Filter>
@@ -33,13 +32,14 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaHelpers.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)d3dmanagerlock.hxx" />
     <ClInclude Include="$(MSBuildThisFileDirectory)meplayer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaEngine.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)pch.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)dllmain.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaPlayerPlayback.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)MediaHelpers.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)meplayer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaEngine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)MediaPlayback.def" />

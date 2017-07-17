@@ -9,7 +9,7 @@
 //
 //*********************************************************
 
-#include "pch.h"
+#include "MediaEngine.h"
 
 SafeString::SafeString()
     : m_hstring(nullptr)

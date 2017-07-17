@@ -33,6 +33,8 @@ namespace DirectXClientComponent
 
 		int GetHeight() { return m_height; }
 
+		ID3D11Texture2D** GetVideoTexture() { return &m_videoTexture; }
+
 	private:
 		std::shared_ptr<DX::DeviceResources>		m_deviceResources;
 		int											m_width;
