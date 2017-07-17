@@ -92,11 +92,11 @@ https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_x64.zip
 
 + Signaling Server (Node.JS) - https://github.com/anastasiia-zolochevska/signaling-server
 + TURN Server (optional, needed for VPN/Proxy networks) -
-   + Basic auth turn server - Docker - https://hub.docker.com/r/zolochevska/turn-server/ / 
+   + Docker image for basic auth turn server - https://hub.docker.com/r/zolochevska/turn-server/ / 
 https://github.com/anastasiia-zolochevska/turn-server-docker-image
-   + Certificate based using postgresql for user storage - https://github.com/anastasiia-zolochevska/3dsrelay
+   + Docker image for certificate based turn server that uses postgresql for user storage - https://hub.docker.com/r/zolochevska/3dsrelayadmin/ / https://github.com/anastasiia-zolochevska/3dsrelay
    + Load balanced TURN Server Set - https://github.com/anastasiia-zolochevska/azturnlb
-   + TurnAdmin Instance - https://github.com/anastasiia-zolochevska/3dsrelayadmin
+   + TurnAdmin Instance (container for executing turnadmin commands) - https://hub.docker.com/r/zolochevska/3dsrelayadmin/ / https://github.com/anastasiia-zolochevska/3dsrelayadmin
 
 ## Building WebRTC Libraries from Source (You don't need to do this unless you are changing the encoder)
 
