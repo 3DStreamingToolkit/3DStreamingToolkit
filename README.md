@@ -90,11 +90,13 @@ https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_x64.zip
 
 ## Standing up production TURN/STUN/Signaling Servers
 
-See https://github.com/anastasiia-zolochevska/3dstreaming-arm-templates
- 
-And source repos:
-https://github.com/anastasiia-zolochevska/signaling-server-for-webrtc-native-client
++ Signaling Server (Node.JS) - https://github.com/anastasiia-zolochevska/signaling-server
++ TURN Server (optional, needed for VPN/Proxy networks) -
+   + Basic auth turn server - Docker - https://hub.docker.com/r/zolochevska/turn-server/ / 
 https://github.com/anastasiia-zolochevska/turn-server-docker-image
+   + Certificate based using postgresql for user storage - https://github.com/anastasiia-zolochevska/3dsrelay
+   + Load balanced TURN Server Set - https://github.com/anastasiia-zolochevska/azturnlb
+   + TurnAdmin Instance - https://github.com/anastasiia-zolochevska/3dsrelayadmin
 
 ## Building WebRTC Libraries from Source (You don't need to do this unless you are changing the encoder)
 
