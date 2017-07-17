@@ -25,6 +25,7 @@ namespace StreamingDirectXHololensClient
         private Peer _selectedPeer;
         private string _server;
         private string _port;
+        private string _heartbeat;
 
         public App()
         {
@@ -135,6 +136,7 @@ namespace StreamingDirectXHololensClient
             Task.Run(async () =>
             {
                 await LoadSettings().ConfigureAwait(false);
+                Conductor.Instance.Signaller.SetHeartbeatMs(Convert.ToInt32(_heartbeat));
                 Conductor.Instance.StartLogin(_server, _port);
             });
 
@@ -164,8 +166,24 @@ namespace StreamingDirectXHololensClient
 
             string content = await FileIO.ReadTextAsync(configFile);
             JsonValue json = JsonValue.Parse(content);
+
+            // Parses server info.
             _server = json.GetObject().GetNamedString("server");
+            int startId = 0;
+            if (_server.StartsWith("http://"))
+            {
+                startId = 7;
+            }
+            else if (_server.StartsWith("https://"))
+            {
+                startId = 8;
+
+                // TODO: Supports SSL
+            }
+
+            _server = _server.Substring(startId);
             _port = json.GetObject().GetNamedNumber("port").ToString();
+            _heartbeat = json.GetObject().GetNamedNumber("heartbeat").ToString();
             var configIceServers = new ObservableCollection<IceServer>();
             bool useDefaultIceServers = true;
             if (useDefaultIceServers)
