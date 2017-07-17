@@ -2,8 +2,7 @@
   "iceConfiguration": "stun",
   "stunServer": {
     "uri": "stun.l.google.com:19302"
-  }
-},
+  },
   "server": "https://signalingserveruri",
   "port": 443,
   "heartbeat":  5000
