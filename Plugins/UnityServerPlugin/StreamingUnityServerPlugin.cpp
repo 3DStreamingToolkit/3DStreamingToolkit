@@ -74,7 +74,7 @@ static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
 DefaultMainWindow *wnd;
 std::thread *messageThread;
 
-std::string s_server = "signalingserver.centralus.cloudapp.azure.com";
+std::string s_server = "signalingserveruri";
 uint32_t s_port = 3000;
 
 bool s_closing = false;
