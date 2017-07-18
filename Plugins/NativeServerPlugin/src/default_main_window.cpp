@@ -193,6 +193,97 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 	return ret;
 }
 
+bool DefaultMainWindow::InstallService() {
+
+//	InstallService(
+//		SERVICE_NAME,               // Name of service
+//		SERVICE_DISPLAY_NAME,       // Name to display
+//		SERVICE_START_TYPE,         // Service start type
+//		SERVICE_DEPENDENCIES,       // Dependencies
+//		SERVICE_ACCOUNT,            // Service running account
+//		SERVICE_PASSWORD            // Password of the account
+//	);
+//
+//	// Internal name of the service
+//#define SERVICE_NAME             L"CppWindowsService"
+//
+//	// Displayed name of the service
+//#define SERVICE_DISPLAY_NAME     L"CppWindowsService Sample Service"
+//
+//	// Service start options.
+//#define SERVICE_START_TYPE       SERVICE_DEMAND_START
+//
+//	// List of service dependencies - "dep1\0dep2\0\0"
+//#define SERVICE_DEPENDENCIES     L""
+//
+//	// The name of the account under which the service should run
+//#define SERVICE_ACCOUNT          L"NT AUTHORITY\\LocalService"
+//
+//	// The password to the service account name
+//#define SERVICE_PASSWORD         NULL
+
+	wchar_t szPath[MAX_PATH];
+	SC_HANDLE schSCManager = NULL;
+	SC_HANDLE schService = NULL;
+
+	if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)) == 0)
+	{
+		wprintf(L"GetModuleFileName failed w/err 0x%08lx\n", GetLastError());
+		goto Cleanup;
+	}
+
+	// Open the local default service control manager database
+	schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT |
+		SC_MANAGER_CREATE_SERVICE);
+	if (schSCManager == NULL)
+	{
+		wprintf(L"OpenSCManager failed w/err 0x%08lx\n", GetLastError());
+		goto Cleanup;
+	}
+
+	// Install the service into SCM by calling CreateService
+	schService = CreateService(
+		schSCManager,                   // SCManager database
+		pszServiceName,                 // Name of service
+		pszDisplayName,                 // Name to display
+		SERVICE_QUERY_STATUS,           // Desired access
+		SERVICE_WIN32_OWN_PROCESS,      // Service type
+		dwStartType,                    // Service start type
+		SERVICE_ERROR_NORMAL,           // Error control type
+		szPath,                         // Service's binary
+		NULL,                           // No load ordering group
+		NULL,                           // No tag identifier
+		pszDependencies,                // Dependencies
+		pszAccount,                     // Service running account
+		pszPassword                     // Password of the account
+	);
+	if (schService == NULL)
+	{
+		wprintf(L"CreateService failed w/err 0x%08lx\n", GetLastError());
+		goto Cleanup;
+	}
+
+	wprintf(L"%s is installed.\n", pszServiceName);
+
+Cleanup:
+	// Centralized cleanup for all allocated resources.
+	if (schSCManager)
+	{
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+	if (schService)
+	{
+		CloseServiceHandle(schService);
+		schService = NULL;
+	}
+	return false;
+}
+
+bool DefaultMainWindow::RemoveService() {
+	return false;
+}
+
 void DefaultMainWindow::SwitchToConnectUI()
 {
 	RTC_DCHECK(IsWindow());

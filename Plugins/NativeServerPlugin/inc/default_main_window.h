@@ -51,6 +51,10 @@ public:
 
 	bool PreTranslateMessage(MSG* msg);
 
+	bool InstallService();
+
+	bool RemoveService();
+
 	virtual void RegisterObserver(MainWindowCallback* callback);
 
 	virtual bool IsWindow();
