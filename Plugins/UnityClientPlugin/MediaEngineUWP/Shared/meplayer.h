@@ -72,6 +72,7 @@ ref class MEPlayer: public MediaEngineNotifyCallback
     BOOL                                    m_fEOS;
     BOOL                                    m_fStopTimer;
     RECT                                    m_rcTarget;
+	MFVideoNormalizedRect					m_nRect;
     DXGI_FORMAT                             m_d3dFormat;
     MFARGB                                  m_bkgColor;
 

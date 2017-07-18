@@ -17,8 +17,8 @@ using Windows.Media.Core;
 
 public class ControlScript : MonoBehaviour
 {
-    private const int textureWidth = 1280;
-    private const int textureHeight = 480;
+    private const int textureWidth = 2560;
+    private const int textureHeight = 720;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
@@ -28,6 +28,9 @@ public class ControlScript : MonoBehaviour
 
     public RawImage LeftCanvas;
     public RawImage RightCanvas;
+
+    public Camera LeftCamera;
+    public Camera RightCamera;
     public float TextureScale = 1f;
     public int PluginMode = 0;
 
@@ -105,14 +108,14 @@ public class ControlScript : MonoBehaviour
             
             // var mediaStream = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "media");
 
-            var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 60, "media");
+            var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
 
             // Plugin.LoadMediaSource(mediaStream);
            Plugin.LoadMediaStreamSource((MediaStreamSource)media);
            //  Plugin.LoadContent(toyStoryH264);
             Plugin.Play();
 
-            EnqueueAction(() => { endTime = (startTime = Time.time) + 0.3f; });
+            EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
         }
         else
         {
@@ -249,52 +252,51 @@ public class ControlScript : MonoBehaviour
 
     void Update()
     {
-        #region Virtual Camera Control
 
-        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
-            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
+
+
+#if !UNITY_EDITOR
         {
-            prevPos = VirtualCamera.position;
-            prevRot = VirtualCamera.rotation;
-            var eulerRot = prevRot.eulerAngles;
-            var lookAt = VirtualCamera.forward;
-            var upVector = -VirtualCamera.up;
-            var format = @"{{""type"":""camera-transform-lookat"",""body"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}";
-
-            var camMsg = string.Format(
-                format,
-                prevPos.x,
-                prevPos.y,
-                prevPos.z,
-                lookAt.x,
-                lookAt.y,
-                lookAt.z,
-                upVector.x,
-                upVector.y,
-                upVector.z);
-#if !UNITY_EDITOR
-
-            _webRtcControl.SendPeerDataChannelMessage(camMsg);
-
-            if (endTime != 0 && Time.time > endTime && !enabledStereo)
+            var leftViewProjection = LeftCamera.projectionMatrix;
+            var rightViewProjection = RightCamera.projectionMatrix;
+            
+            // Builds the camera transform message.
+            var leftCameraTransform = "";
+            var rightCameraTransform = "";
+            for (int i = 0; i < 4; i++)
             {
-                enabledStereo = true;
-                // Enables the stereo output mode.
-                var msg = "{" +
-                "  \"type\":\"stereo-rendering\"," +
-                "  \"body\":\"1\"" +
-                "}";
-                _webRtcControl.SendPeerDataChannelMessage(msg);
+                for (int j = 0; j < 4; j++)
+                {
+                    leftCameraTransform += leftViewProjection[i, j] + ",";
+                    rightCameraTransform += rightViewProjection[i, j];
+                    if (i != 3 || j != 3)
+                    {
+                        rightCameraTransform += ",";
+                    }
+                }
             }
-#endif
+
+            var cameraTransformBody = leftCameraTransform + rightCameraTransform;
+            var msg =
+                "{" +
+                "  \"type\":\"camera-transform-stereo\"," +
+                "  \"body\":\"" + cameraTransformBody + "\"" +
+                "}";
+
+           _webRtcControl.SendPeerDataChannelMessage(msg);
+         }
+
+        if (endTime != 0 && Time.time > endTime && !enabledStereo)
+        {
+            enabledStereo = true;
+            // Enables the stereo output mode.
+            var msg = "{" +
+            "  \"type\":\"stereo-rendering\"," +
+            "  \"body\":\"1\"" +
+            "}";
+            _webRtcControl.SendPeerDataChannelMessage(msg);
         }
-        #endregion
-
-
-
-        //MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
-
-#if !UNITY_EDITOR
+        
         lock (_executionQueue)
         {
             while (!_executionQueue.IsEmpty)

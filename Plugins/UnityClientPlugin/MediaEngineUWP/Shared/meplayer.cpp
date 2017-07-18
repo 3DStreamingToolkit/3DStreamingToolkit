@@ -236,11 +236,11 @@ void MEPlayer::CreateBackBuffers()
 		// latency and ensures that the application will only render after each VSync, minimizing 
 		// power consumption.
 		MEDIA::ThrowIfFailed(
-			spDXGIDevice->SetMaximumFrameLatency(0)
+			spDXGIDevice->SetMaximumFrameLatency(1)
 		);
 
 		// create the video texture description based on texture format
-		auto m_textureDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_B8G8R8A8_UNORM, 1280, 480);
+		auto m_textureDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_B8G8R8A8_UNORM, m_rcTarget.right, m_rcTarget.bottom);
 		m_textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		m_textureDesc.MipLevels = 1;
 		m_textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED | D3D11_RESOURCE_MISC_SHARED_NTHANDLE;
@@ -774,10 +774,16 @@ void MEPlayer::EnableVideoEffect(BOOL enable)
 void MEPlayer::UpdateForWindowSizeChange(float width, float height)
 {
 	// Get the bounding rectangle of the window.    
-	m_rcTarget.left = 0;
-	m_rcTarget.top = 0;
-	m_rcTarget.right = width;
+
+	m_nRect.top = 0.0f;
+	m_nRect.left = 0.0f;
+	m_nRect.right = 1.0f;
+	m_nRect.bottom = 1.0f;
+
+	m_rcTarget.top = 0.0f;
+	m_rcTarget.left = 0.0f;
 	m_rcTarget.bottom = height;
+	m_rcTarget.right = width;
 
 	if (m_spEngineEx)
 	{
@@ -902,7 +908,7 @@ void MEPlayer::OnTimer()
 		if (m_spMediaEngine->OnVideoStreamTick(&pts) == S_OK)
 		{
 			MEDIA::ThrowIfFailed(
-				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), nullptr, &m_rcTarget, &m_bkgColor)
+				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), &m_nRect, &m_rcTarget, &m_bkgColor)
 			);
 
 			//if (s_videoRGBFrame == nullptr)
