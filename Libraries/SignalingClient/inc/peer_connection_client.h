@@ -90,7 +90,7 @@ public:
 	void OnMessage(rtc::Message* msg);
 
 	// implements the AuthenticationProviderObserver interface
-	void OnAuthenticationComplete(const AuthenticationProvider::Result& result) override;
+	void OnAuthenticationComplete(const AuthenticationProviderResult& result) override;
 
 	const std::string& authorization_header() const;
 

@@ -10,7 +10,8 @@
 #include "authentication_provider.h"
 #include "ssl_capable_socket.h"
 
-class ServerAuthenticationProvider : public AuthenticationProvider
+class ServerAuthenticationProvider : public sigslot::has_slots<>,
+	public AuthenticationProvider
 {
 public:
 	struct ServerAuthInfo

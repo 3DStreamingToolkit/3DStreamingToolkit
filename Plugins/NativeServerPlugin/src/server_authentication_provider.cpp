@@ -89,7 +89,7 @@ void ServerAuthenticationProvider::SocketRead(rtc::AsyncSocket* socket)
 {
 	if (state_ == State::ACTIVE)
 	{
-		Result completionData;
+		AuthenticationProviderResult completionData;
 		completionData.successFlag = false;
 
 		// parse response 

@@ -727,7 +727,7 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 	}
 }
 
-void PeerConnectionClient::OnAuthenticationComplete(const AuthenticationProvider::Result& result)
+void PeerConnectionClient::OnAuthenticationComplete(const AuthenticationProviderResult& result)
 {
 	if (!result.successFlag || result.accessToken.empty())
 	{

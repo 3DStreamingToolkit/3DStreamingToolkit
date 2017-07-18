@@ -3,9 +3,18 @@
 #include <string>
 #include <functional>
 
+
+struct AuthenticationProviderResult
+{
+public:
+	bool successFlag;
+	std::string accessToken;
+
+};
+
 struct AuthenticationProviderObserver
 {
-	virtual void OnAuthenticationComplete(const AuthenticationProvider::Result& result) = 0;
+	virtual void OnAuthenticationComplete(const AuthenticationProviderResult& result) = 0;
 
 protected:
 	virtual ~AuthenticationProviderObserver() {}
@@ -17,13 +26,6 @@ protected:
 class AuthenticationProvider
 {
 public:
-	struct Result
-	{
-	public:
-		bool successFlag;
-		std::string accessToken;
-	};
-
 	AuthenticationProvider() {}
 
 	void RegisterObserver(AuthenticationProviderObserver* callback) { callback_ = callback; }
