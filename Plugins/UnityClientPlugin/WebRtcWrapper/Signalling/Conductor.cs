@@ -20,7 +20,6 @@ using System.Threading.Tasks;
 using PeerConnectionClient.Model;
 using System.Collections.ObjectModel;
 using System.Threading;
-using System.Text.RegularExpressions;
 using static System.String;
 #if ORTCLIB
 using Org.Ortc;
@@ -65,6 +64,7 @@ namespace PeerConnectionClient.Signalling
                         }
                     }
                 }
+
                 return _instance;
             }
         }
@@ -138,6 +138,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return _etwStatsEnabled;
             }
+
             set
             {
                 _etwStatsEnabled = value;
@@ -162,6 +163,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return _peerConnectionStatsEnabled;
             }
+
             set
             {
                 _peerConnectionStatsEnabled = value;
@@ -190,8 +192,6 @@ namespace PeerConnectionClient.Signalling
         // Specialized Message Handling Messages
         public event Action<int, string> OnPeerMessageDataReceived;
         public event Action<int, string> OnPeerDataChannelReceived;
-
-
 
         /// <summary>
         /// Updates the preferred video frame rate and resolution.
@@ -284,7 +284,6 @@ namespace PeerConnectionClient.Signalling
                 // Always include audio/video enabled in the media stream,
                 // so it will be possible to enable/disable audio/video if 
                 // the call was initiated without microphone/camera
-
                 audioEnabled = true,
                 videoEnabled = true
             };
@@ -323,9 +322,10 @@ namespace PeerConnectionClient.Signalling
                         _peerConnection.AddTrack(mediaStreamTrack, mediaStreamList, configuration);
                 }
             }
-#else            
+#else
             _mediaStream = await _media.GetUserMedia(mediaStreamConstraints);
 #endif
+
             if (cancelationToken.IsCancellationRequested)
             {
                 return false;
@@ -333,12 +333,7 @@ namespace PeerConnectionClient.Signalling
 
 #if !ORTCLIB
             Debug.WriteLine("Conductor: Adding local media stream.");
-            // HACK
-            if (_mediaStream == null)
-            {
-                Debug.WriteLine("CONDUCTOR: LOCAL MEDIA STREAM NULL");
-            }
-            _peerConnection.AddStream(_mediaStream);                       
+            _peerConnection.AddStream(_mediaStream);
 #endif
 
             OnAddLocalStream?.Invoke(new MediaStreamEvent() { Stream = _mediaStream });
@@ -388,11 +383,10 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Closes a peer connection.
         /// </summary>
-        //private async Task ClosePeerConnection()
         private void ClosePeerConnection()
-        {                
+        {
             lock (MediaLock)
-            {                
+            {
                 if (_peerConnection != null)
                 {
                     _peerId = -1;
@@ -407,11 +401,13 @@ namespace PeerConnectionClient.Signalling
                                 if (track.Enabled)
                                 {
                                     track.Stop();
-                                }                                        
+                                }               
+                                                         
                                 _mediaStream.RemoveTrack(track);
                             }
                         }
                     }
+
                     _mediaStream = null;
                     
                     // TODO: Cleanup DataChannel
@@ -432,17 +428,14 @@ namespace PeerConnectionClient.Signalling
                     _peerConnection.Close(); // Slow, so do this after UI updated and camera turned off
 
                     SessionId = null;
-    #if ORTCLIB
-            OrtcStatsManager.Instance.CallEnded();
-    #endif
+#if ORTCLIB
+                    OrtcStatsManager.Instance.CallEnded();
+#endif
                     _peerConnection = null;
 
                     OnReadyToConnect?.Invoke();
-
-                    // TODO: handle GC
-                    //GC.Collect(); // Ensure all references are truly dropped.
                 }
-            }                
+            }
         }
 
         /// <summary>
@@ -457,7 +450,7 @@ namespace PeerConnectionClient.Signalling
                 return;
             }
 
-            double index = null != evt.Candidate.SdpMLineIndex ? (double)evt.Candidate.SdpMLineIndex : -1;
+            double index = evt.Candidate.SdpMLineIndex;
 
             JsonObject json;
 #if ORTCLIB
@@ -475,6 +468,7 @@ namespace PeerConnectionClient.Signalling
                     {kCandidateSdpName, JsonValue.CreateStringValue(evt.Candidate.Candidate)}
                 };
             }
+
             Debug.WriteLine("Conductor: Sending ice candidate.\n" + json.Stringify());
             SendMessage(json);
         }
@@ -533,8 +527,6 @@ namespace PeerConnectionClient.Signalling
         {
 #if ORTCLIB
             _signalingMode = RTCPeerConnectionSignalingMode.Json;
-//#else
-            //_signalingMode = RTCPeerConnectionSignalingMode.Sdp;
 #endif
             _signaller = new Signaller();
             _media = Media.CreateMedia();
@@ -777,6 +769,7 @@ namespace PeerConnectionClient.Signalling
                     {
                         candidate = RTCIceCandidate.FromJsonString(message);
                     }
+
                     _peerConnection?.AddIceCandidate(candidate);
 #else
                     await _peerConnection.AddIceCandidate(candidate);
@@ -807,8 +800,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return;
             }
-            
-            //_signaller.Connect(server, port, GetLocalPeerName());
+
             _signaller.Connect(server, port, peerName == String.Empty ? GetLocalPeerName() : peerName);
         }
        
@@ -828,7 +820,7 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         /// <param name="peer">Peer to connect to.</param>
         public async void ConnectToPeer(Peer peer)
-        {            
+        {
             Debug.Assert(peer != null);
             Debug.Assert(_peerId == -1);
 
@@ -868,7 +860,7 @@ namespace PeerConnectionClient.Signalling
         /// <summary>
         /// Calls to disconnect from peer.
         /// </summary>
-        public async Task DisconnectFromPeer()        
+        public async Task DisconnectFromPeer()
         {
             await SendHangupMessage();
             ClosePeerConnection();
@@ -973,10 +965,11 @@ namespace PeerConnectionClient.Signalling
                 if (_mediaStream != null)
                 {
                     foreach (MediaVideoTrack videoTrack in _mediaStream.GetVideoTracks())
-                    {                        
+                    {
                         videoTrack.Enabled = true;
                     }
                 }
+
                 VideoEnabled = true;
             }
         }
@@ -995,6 +988,7 @@ namespace PeerConnectionClient.Signalling
                         videoTrack.Enabled = false;
                     }
                 }
+
                 VideoEnabled = false;
             }
         }
@@ -1013,6 +1007,7 @@ namespace PeerConnectionClient.Signalling
                         audioTrack.Enabled = false;
                     }
                 }
+
                 AudioEnabled = false;
             }
         }
@@ -1031,6 +1026,7 @@ namespace PeerConnectionClient.Signalling
                         audioTrack.Enabled = true;
                     }
                 }
+
                 AudioEnabled = true;
             }
         }
@@ -1050,6 +1046,7 @@ namespace PeerConnectionClient.Signalling
                 {
                     url = "turn:";
                 }
+
                 RTCIceServer server = null;
                 url += iceServer.Host.Value;
 #if ORTCLIB
@@ -1067,10 +1064,12 @@ namespace PeerConnectionClient.Signalling
                 {
                     server.Credential = iceServer.Credential;
                 }
+
                 if (iceServer.Username != null)
                 {
                     server.Username = iceServer.Username;
                 }
+
                 _iceServers.Add(server);
             }
         }
