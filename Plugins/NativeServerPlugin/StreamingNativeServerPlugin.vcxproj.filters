@@ -69,6 +69,6 @@
     <None Include="nvEncConfig.json" />
     <None Include="webrtcConfig.json" />
     <None Include="exports.props" />
-    <None Include="webrtcConfigStun.json" />
+    <None Include="webrtcConfigStunTemplate.json" />
   </ItemGroup>
 </Project>
