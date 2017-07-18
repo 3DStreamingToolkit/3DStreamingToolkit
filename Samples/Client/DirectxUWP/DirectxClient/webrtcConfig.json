@@ -1,10 +1,11 @@
 {
   "iceConfiguration": "relay",
   "turnServer": {
-    "uri": "turn:turnserveruri:3478",
+    "uri": "turn:turnserveruri:5349",
     "username": "username",
     "password": "password"
   },
-  "server": "signalingserveruri",
-  "port": 3000
+  "server": "http://signalingserveruri",
+  "port": 80,
+  "heartbeat": 5000
 }

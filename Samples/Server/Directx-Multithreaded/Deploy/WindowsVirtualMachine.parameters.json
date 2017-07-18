@@ -3,13 +3,13 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "adminUsername": {
-      "value": null
-    },
-    "adminPassword": {
-      "value": null
+      "value": "operator"
     },
     "dnsNameForPublicIP": {
-      "value": null
+      "value": "public3dtest"
+    },
+    "prefix": {
+      "value": "3dtest-"
     }
   }
 }

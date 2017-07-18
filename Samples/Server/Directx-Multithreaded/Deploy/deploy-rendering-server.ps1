@@ -1,39 +1,53 @@
-Param(
-  [string]$ServerType
-)
+$gpuDriverVersion = "377.35" 
+$gpuDriverSuffix = "-tesla-desktop-winserver2016-international-whql.exe"
+$gpuDriverBaseUri = "http://us.download.nvidia.com/Windows/Quadro_Certified/"
 
-if($ServerType -eq "multithread") {
-    $RelativePathToServerExe = "MultiThreadedRendering"
-    $ExeName = "MultithreadedServerService.exe"
-} else {
-    $RelativePathToServerExe = "SpinningCube"
-    $ExeName = "SpinningCubeService.exe"
-}
+# Expect that the contents of the zip will have an x86 and x64 folder at root, with exes contained within
+$RelativePathToServerExe = "\x64"
+$BinariesFolder = $DestinationFolder + "\binaries\MultithreadedServer"
+$BinariesZipPath = "https://3dtoolkitstorage.blob.core.windows.net/releases/"
+$BinariesZip = "3DStreamingToolkit-latest-MultithreadedServer-Release.zip"
+$ExeName = "MultithreadedServerService.exe"
+
 $DestinationFolder = "C:\3Dtoolkit"
-mkdir $DestinationFolder
+if((Test-Path ($DestinationFolder)) -eq $false) {
+    New-Item -Path $DestinationFolder -ItemType Directory -Force 
+}
 
 cd $DestinationFolder
 
-$BinariesFolder = $DestinationFolder+'\binaries'+ (Get-Date -UFormat "%M%S")
-$BinariesZipPath = "https://3dtoolkitstorage.blob.core.windows.net/releases/"
-$BinariesZip = "3DStreamingToolkit-x64-Release-latest.zip"
 $PathToExecutable = $BinariesFolder+$RelativePathToServerExe
 
-$client = new-object System.Net.WebClient
-$client.DownloadFile($BinariesZipPath,$BinariesZip)
+if((Test-Path ($PSScriptRoot+"\"+$BinariesZip)) -eq $false) {
+    $client = new-object System.Net.WebClient
+    $client.DownloadFile($BinariesZipPath+$BinariesZip,$BinariesZip)
+}
 
 Add-Type -A System.IO.Compression.FileSystem
 
-[IO.Compression.ZipFile]::ExtractToDirectory($BinariesZip, $BinariesFolder)
+if((Test-Path ($PathToExecutable + "\" + $ExeName)) -eq $false) {
+    [IO.Compression.ZipFile]::ExtractToDirectory($BinariesZip, $BinariesFolder)
+}
 
-$client = new-object System.Net.WebClient
-$client.DownloadFile("http://us.download.nvidia.com/Windows/Quadro_Certified/377.35/","377.35-tesla-desktop-winserver2016-international-whql.exe")
+if((Test-Path ($PSScriptRoot+"\"+$gpuDriverVersion+$gpuDriverSuffix)) -eq $false) {
+    $client = new-object System.Net.WebClient
+    $client.DownloadFile(($gpuDriverBaseUri+$gpuDriverVersion+"/"+$gpuDriverVersion+$gpuDriverSuffix),($gpuDriverVersion+$gpuDriverSuffix))
 
-& 377.35-tesla-desktop-winserver2016-international-whql.exe /s /noreboot /clean /noeula /nofinish /passive
+    & ($gpuDriverVersion+$gpuDriverSuffix) /s /noreboot /clean /noeula /nofinish /passive | Out-Null
+}
 
 cd (Split-Path -Path $PathToExecutable)
 
-New-Service -Name "RenderService" -BinaryPathName ($PathToExecutable + "\" + $ExeName) -StartupType Automatic
-Start-Service -Name "RenderService"
+# $service = Get-Service -Name "RenderService" -ErrorAction SilentlyContinue
 
-Restart-Computer
+# if($service.Length -eq 0) {
+
+    # Disabling service setup because app currently isn't registerested to system service callbacks
+    # New-Service -Name "RenderService" -BinaryPathName ($PathToExecutable + "\" + $ExeName) -StartupType Automatic
+    # Start-Service -Name "RenderService"
+
+    # Temporarily just booting the app
+    & ($PathToExecutable + "\" + $ExeName)
+# }
+
+# Restart-Computer

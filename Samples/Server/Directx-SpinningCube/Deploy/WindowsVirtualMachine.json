@@ -53,17 +53,6 @@
       ],
       "metadata": {
         "description": "Size of the virtual machine."
-      },
-      "serverType": {
-        "type": "string",
-        "defaultValue": "spinningcube",
-        "allowedValues": [
-          "spinningcube",
-          "multithreaded"
-        ],
-        "metadata": {
-          "description": "Choose which server sample to deploy."
-        }
       }
     }
   },
