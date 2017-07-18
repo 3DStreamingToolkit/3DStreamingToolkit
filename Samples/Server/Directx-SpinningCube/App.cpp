@@ -172,10 +172,16 @@ int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthentication
 	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
 
 	rtc::InitializeSSL();
-	ServerAuthenticationProvider authProvider(authInfo);
+
+	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	PeerConnectionClient client;
 
-	client.SetAuthenticationProvider(&authProvider);
+	if (!authInfo.authority.empty())
+	{
+		authProvider.reset(new ServerAuthenticationProvider(authInfo));
+		client.SetAuthenticationProvider(authProvider.get());
+	}
+
 	client.SetHeartbeatMs(heartbeat);
 
 	rtc::scoped_refptr<Conductor> conductor(
