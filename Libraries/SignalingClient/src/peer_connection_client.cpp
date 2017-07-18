@@ -184,7 +184,7 @@ std::string PeerConnectionClient::PrepareRequest(const std::string& method, cons
 {
 	std::string result;
 
-	for (auto i = 0; i < method.length(); ++i)
+	for (size_t i = 0; i < method.length(); ++i)
 	{
 		result += (char)toupper(method[i]);
 	}

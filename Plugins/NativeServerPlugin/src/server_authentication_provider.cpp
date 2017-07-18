@@ -4,6 +4,12 @@
 
 ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo& authInfo) : AuthenticationProvider(), auth_info_(authInfo)
 {
+	if (authInfo.authority.empty() || authInfo.clientId.empty() || authInfo.clientSecret.empty())
+	{
+		LOG(LS_ERROR) << __FUNCTION__ << ": invalid authInfo, empty";
+		throw std::exception("invalid authInfo, empty");
+	}
+
 	auto authority = authInfo.authority;
 
 	// take the hostname, <protocol>://<hostname>[:port]/ 
@@ -69,14 +75,17 @@ void ServerAuthenticationProvider::SocketOpen(rtc::AsyncSocket* socket)
 	}
 
 	// format the request 
-	std::string data = "POST " + auth_info_.authority + " HTTP/1.1\r\n"
-		"Host: " + authority_host_.hostname() + "\r\n"
-		"Content-Type: application/x-www-form-urlencoded\r\n"
-		"\r\n"
-		"grant_type=client_credentials&"
+	std::string dataBody = "grant_type=client_credentials&"
 		"client_id=" + auth_info_.clientId + "&"
 		"client_secret=" + auth_info_.clientSecret + "&"
-		"resource=" + auth_info_.resource + "\r\n";
+		"resource=" + auth_info_.resource;
+
+	std::string data = "POST " + auth_info_.authority + " HTTP/1.1\r\n"
+		"Host: " + authority_host_.hostname() + "\r\n"
+		"Content-Type: application/x-www-form-urlencoded\r\n" +
+		"Content-Length: " + std::to_string(dataBody.length()) + "\r\n\n"
+		+ dataBody +
+		"\r\n";
 
 	// send it 
 	auto sent = socket_->Send(data.c_str(), data.length());
@@ -97,7 +106,7 @@ void ServerAuthenticationProvider::SocketRead(rtc::AsyncSocket* socket)
 		char buffer[0xffff];
 		do
 		{
-			int bytes = socket->Recv(buffer, sizeof(buffer), nullptr);
+			int bytes = socket_->Recv(buffer, sizeof(buffer), nullptr);
 			if (bytes <= 0)
 			{
 				break;
@@ -106,11 +115,20 @@ void ServerAuthenticationProvider::SocketRead(rtc::AsyncSocket* socket)
 			data.append(buffer, bytes);
 		} while (true);
 
+		// sometimes we get this event but the
+		// data is empty. we want to ignore that
+		if (data.empty())
+		{
+			return;
+		}
+
+		size_t bodyStart = data.find("\r\n\r\n");
+
 		Json::Reader reader;
 		Json::Value root = NULL;
 
 		// read the response 
-		if (reader.parse(data, root, true))
+		if (reader.parse(data.substr(bodyStart), root, true))
 		{
 			auto tokenWrapper = root.get("access_token", NULL);
 			if (tokenWrapper != NULL)
@@ -135,7 +153,7 @@ void ServerAuthenticationProvider::SocketRead(rtc::AsyncSocket* socket)
 		// after emission, we can close our socket 
 		// note: we don't really mind if this fails, it doesn't matter until 
 		// we try another request, at which point we'll handle the error on that call 
-		socket->Close();
+		socket_->Close();
 
 		// after emission, we're totally done, and move to a NOT_ACTIVE state to allow 
 		// more authentication requests to be triggered 
@@ -150,12 +168,18 @@ void ServerAuthenticationProvider::SocketClose(rtc::AsyncSocket* socket, int err
 
 void ServerAuthenticationProvider::AddressResolve(rtc::AsyncResolverInterface* resolver)
 {
+	auto tempHost = resolver->address();
+	auto released = resolver_.release();
+	released->Destroy(true);
+	resolver_.reset(nullptr);
+
 	if (state_ != State::RESOLVING)
 	{
 		return;
 	}
 
-	authority_host_ = resolver->address();
+	state_ = State::NOT_ACTIVE;
+	authority_host_ = tempHost;
 
 	// connect the socket 
 	int err = socket_->Connect(authority_host_);

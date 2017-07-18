@@ -6,6 +6,7 @@
 
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
+#include "server_authentication_provider.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -138,7 +139,7 @@ void InputUpdate(const std::string& message)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port, int heartbeat)
+int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthenticationProvider::ServerAuthInfo& authInfo)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -171,8 +172,10 @@ int InitWebRTC(char* server, int port, int heartbeat)
 	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
 
 	rtc::InitializeSSL();
+	ServerAuthenticationProvider authProvider(authInfo);
 	PeerConnectionClient client;
 
+	client.SetAuthenticationProvider(&authProvider);
 	client.SetHeartbeatMs(heartbeat);
 
 	rtc::scoped_refptr<Conductor> conductor(
@@ -372,6 +375,7 @@ int WINAPI wWinMain(
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
 	int heartbeat = FLAG_heartbeat;
+	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
@@ -403,9 +407,34 @@ int WINAPI wWinMain(
 			{
 				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
 			}
+
+			if (root.isMember("authentication"))
+			{
+				auto authenticationNode = root.get("authentication", NULL);
+
+				if (authenticationNode.isMember("authority"))
+				{
+					authInfo.authority = authenticationNode.get("authority", "").asString();
+				}
+
+				if (authenticationNode.isMember("resource"))
+				{
+					authInfo.resource = authenticationNode.get("resource", "").asString();
+				}
+
+				if (authenticationNode.isMember("clientId"))
+				{
+					authInfo.clientId = authenticationNode.get("clientId", "").asString();
+				}
+
+				if (authenticationNode.isMember("clientSecret"))
+				{
+					authInfo.clientSecret = authenticationNode.get("clientSecret", "").asString();
+				}
+			}
 		}
 	}
 
-	return InitWebRTC(server, port, heartbeat);
+	return InitWebRTC(server, port, heartbeat, authInfo);
 #endif // TEST_RUNNER
 }
