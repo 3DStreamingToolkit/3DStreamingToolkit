@@ -3,7 +3,9 @@
 #include <string>
 #include <functional>
 
-
+/// <summary>
+/// Represents a result from an authentication provider authenticate operation
+/// </summary>
 struct AuthenticationProviderResult
 {
 public:
@@ -12,6 +14,9 @@ public:
 
 };
 
+/// <summary>
+/// Represents an observer for an authentication provider result
+/// </summary>
 struct AuthenticationProviderObserver
 {
 	virtual void OnAuthenticationComplete(const AuthenticationProviderResult& result) = 0;
@@ -37,4 +42,3 @@ protected:
 
 	AuthenticationProviderObserver* callback_;
 };
-

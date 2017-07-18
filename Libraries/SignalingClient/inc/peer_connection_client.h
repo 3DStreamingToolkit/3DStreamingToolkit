@@ -48,7 +48,7 @@ protected:
 
 class PeerConnectionClient : public sigslot::has_slots<>,
                              public rtc::MessageHandler,
-							 public AuthenticationProviderObserver
+                             public AuthenticationProviderObserver
 {
 public:
 	enum State
