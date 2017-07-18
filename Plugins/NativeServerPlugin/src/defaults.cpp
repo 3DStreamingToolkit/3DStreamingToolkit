@@ -52,13 +52,13 @@ std::string GetPeerConnectionString()
 
 std::string GetDefaultServerName()
 {
-	return GetEnvVarOrDefault("WEBRTC_SERVER", "signalingserver.centralus.cloudapp.azure.com");
+	return GetEnvVarOrDefault("WEBRTC_SERVER", "signalingserveruri");
 }
 
 std::string GetPeerName()
 {
 	char computer_name[256];
-	std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
+	std::string ret(GetEnvVarOrDefault("USERNAME", "username"));
 	ret += '@';
 	if (gethostname(computer_name, arraysize(computer_name)) == 0)
 	{

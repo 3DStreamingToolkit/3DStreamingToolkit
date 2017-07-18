@@ -222,7 +222,8 @@
     <None Include="webrtcConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="webrtcConfigStunTemplate.json" />
   </ItemGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Libraries\SignalingClient\exports.props"/>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Libraries\SignalingClient\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

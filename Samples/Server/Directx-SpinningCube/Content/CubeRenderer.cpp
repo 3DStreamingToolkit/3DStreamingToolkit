@@ -11,6 +11,61 @@ static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
 static const XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
 static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
+// Mesh vertices. Each vertex has a position and a color.
+static const VertexPositionColor cubeVertices[] =
+{
+	{ XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+	{ XMFLOAT3(-0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+	{ XMFLOAT3(-0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+	{ XMFLOAT3(-0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+	{ XMFLOAT3( 0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
+	{ XMFLOAT3( 0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+	{ XMFLOAT3( 0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
+	{ XMFLOAT3( 0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+};
+
+static const unsigned short cubeIndicesLH[] =
+{
+	2,0,1, // -x
+	2,1,3,
+
+	6,5,4, // +x
+	6,7,5,
+
+	0,5,1, // -y
+	0,4,5,
+
+	2,7,6, // +y
+	2,3,7,
+
+	0,6,4, // -z
+	0,2,6,
+
+	1,7,3, // +z
+	1,5,7
+};
+
+static const unsigned short cubeIndicesRH[] =
+{
+	2,1,0, // -x
+	2,3,1,
+
+	6,4,5, // +x
+	6,5,7,
+
+	0,1,5, // -y
+	0,5,4,
+
+	2,6,7, // +y
+	2,7,3,
+
+	0,4,6, // -z
+	0,6,2,
+
+	1,3,7, // +z
+	1,7,5,
+};
+
 CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 	m_degreesPerSecond(45),
 	m_indexCount(0),
@@ -22,54 +77,20 @@ CubeRenderer::CubeRenderer(DeviceResources* deviceResources) :
 
 void CubeRenderer::InitGraphics()
 {
-	// Load mesh vertices. Each vertex has a position and a color.
-	static const VertexPositionColor cubeVertices[] =
-	{
-		{ XMFLOAT3(-0.1f, -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(-0.1f, -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(-0.1f,  0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(-0.1f,  0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3(0.1f,  -0.1f, -0.1f), XMFLOAT3(1.0f, 0.0f, 0.0f) },
-		{ XMFLOAT3(0.1f,  -0.1f,  0.1f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
-		{ XMFLOAT3(0.1f,   0.1f, -0.1f), XMFLOAT3(1.0f, 1.0f, 0.0f) },
-		{ XMFLOAT3(0.1f,   0.1f,  0.1f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-	};
-
 	CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
 	D3D11_SUBRESOURCE_DATA vertexBufferData = { cubeVertices , 0, 0 };
 	m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer);
-
-	// Load mesh indices. Each trio of indices represents
-	// a triangle to be rendered on the screen.
-	// For example: 0,2,1 means that the vertices with indexes
-	// 0, 2 and 1 from the vertex buffer compose the 
-	// first triangle of this mesh.
-	static const unsigned short cubeIndices[] =
+	m_indexCount = ARRAYSIZE(cubeIndicesLH);
+	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndicesLH), D3D11_BIND_INDEX_BUFFER);
+	D3D11_SUBRESOURCE_DATA indexBufferData =
 	{
-		2,1,0, // -x
-		2,3,1,
-
-		6,4,5, // +x
-		6,5,7,
-
-		0,1,5, // -y
-		0,5,4,
-
-		2,6,7, // +y
-		2,7,3,
-
-		0,4,6, // -z
-		0,6,2,
-
-		1,3,7, // +z
-		1,7,5,
+		m_deviceResources->IsStereo() ? cubeIndicesRH : cubeIndicesLH,
+		0,
+		0
 	};
 
-	m_indexCount = ARRAYSIZE(cubeIndices);
-
-	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndices), D3D11_BIND_INDEX_BUFFER);
-	D3D11_SUBRESOURCE_DATA indexBufferData = { cubeIndices , 0, 0 };
-	m_deviceResources->GetD3DDevice()->CreateBuffer(&indexBufferDesc, &indexBufferData, &m_indexBuffer);
+	m_deviceResources->GetD3DDevice()->CreateBuffer(
+		&indexBufferDesc, &indexBufferData, &m_indexBuffer);
 }
 
 void CubeRenderer::InitPipeline()
@@ -236,6 +257,16 @@ void CubeRenderer::Update()
 {
 	// Converts to radians.
 	float radians = XMConvertToRadians(m_degreesPerSecond++);
+
+	// Updates the cube vertice indices.
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_indexBuffer,
+		0,
+		NULL,
+		m_deviceResources->IsStereo() ? cubeIndicesRH : cubeIndicesLH,
+		0,
+		0,
+		0);
 
 	// Prepares to pass the updated model matrix to the shader.
 	XMStoreFloat4x4(&m_modelConstantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));

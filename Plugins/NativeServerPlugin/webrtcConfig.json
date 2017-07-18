@@ -1,11 +1,11 @@
 {
   "iceConfiguration": "relay",
   "turnServer": {
-    "uri": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:5349",
-    "username": "user",
-    "password": "3Dstreaming0317"
+    "uri": "turn:turnserveruri:5349",
+    "username": "username",
+    "password": "password"
   },
-  "server": "https://3dtoolkit-signaling-server.azurewebsites.net",
+  "server": "https://signalingserveruri",
   "port": 443,
-  "heartbeat":  5000
+  "heartbeat": 5000
 }
