@@ -28,6 +28,9 @@
     <ClCompile Include="src\default_data_channel_observer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\server_authentication_provider.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,11 +67,13 @@
     <ClInclude Include="inc\plugindefs.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="inc\server_authentication_provider.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="nvEncConfig.json" />
     <None Include="webrtcConfig.json" />
     <None Include="exports.props" />
-    <None Include="webrtcConfigStun.json" />
   </ItemGroup>
 </Project>

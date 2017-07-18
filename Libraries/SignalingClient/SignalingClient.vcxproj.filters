@@ -15,6 +15,9 @@
     <ClInclude Include="inc\ssl_capable_socket.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="inc\authentication_provider.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.props" />
