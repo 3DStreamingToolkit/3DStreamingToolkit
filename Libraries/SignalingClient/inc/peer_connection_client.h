@@ -22,6 +22,7 @@
 #include "webrtc/base/sigslot.h"
 
 #include "ssl_capable_socket.h"
+#include "authentication_provider.h"
 
 typedef std::map<int, std::string> Peers;
 
@@ -46,7 +47,8 @@ protected:
 };
 
 class PeerConnectionClient : public sigslot::has_slots<>,
-                             public rtc::MessageHandler
+                             public rtc::MessageHandler,
+							 public AuthenticationProviderObserver
 {
 public:
 	enum State
@@ -87,9 +89,12 @@ public:
 	// implements the MessageHandler interface
 	void OnMessage(rtc::Message* msg);
 
+	// implements the AuthenticationProviderObserver interface
+	void OnAuthenticationComplete(const AuthenticationProvider::Result& result) override;
+
 	const std::string& authorization_header() const;
 
-	void SetAuthorizationHeader(const std::string& value);
+	void SetAuthenticationProvider(AuthenticationProvider* authProvider);
 
 	int heartbeat_ms() const;
 
@@ -159,6 +164,7 @@ protected:
 	std::string notification_data_;
 	std::string client_name_;
 	std::string authorization_header_;
+	AuthenticationProvider* auth_provider_;
 	Peers peers_;
 	State state_;
 	int my_id_;
