@@ -2,7 +2,8 @@
 
 #include "server_authentication_provider.h"
 
-ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo& authInfo) : AuthenticationProvider(), auth_info_(authInfo)
+ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo& authInfo) :
+	AuthenticationProvider(), auth_info_(authInfo), state_(State::NOT_ACTIVE)
 {
 	// don't support empty values for these fields
 	if (authInfo.authority.empty() || authInfo.clientId.empty() || authInfo.clientSecret.empty())
