@@ -4,6 +4,7 @@
 
 ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo& authInfo) : AuthenticationProvider(), auth_info_(authInfo)
 {
+	// don't support empty values for these fields
 	if (authInfo.authority.empty() || authInfo.clientId.empty() || authInfo.clientSecret.empty())
 	{
 		LOG(LS_ERROR) << __FUNCTION__ << ": invalid authInfo, empty";
@@ -20,6 +21,8 @@ ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo&
 	auto authorityPort = std::string("https://").compare(authority.substr(0, 8)) == 0 ? 443 : 80;
 	authority_host_ = rtc::SocketAddress(tempAuthHost, authorityPort);
 
+	// configure the thread which will be used for socket signalling. it's just some representation of
+	// the current thread (wrapped or existing)
 	auto socketThread = rtc::Thread::Current();
 	socketThread = socketThread == nullptr ? rtc::ThreadManager::Instance()->WrapCurrentThread() : socketThread;
 	socket_.reset(new SslCapableSocket(authority_host_.family(), authorityPort == 443, socketThread));
@@ -49,6 +52,7 @@ bool ServerAuthenticationProvider::Authenticate()
 		}
 	}
 
+	// if we need to resolve the ip we do that before connecting
 	if (authority_host_.IsUnresolvedIP())
 	{
 		state_ = RESOLVING;
@@ -74,12 +78,13 @@ void ServerAuthenticationProvider::SocketOpen(rtc::AsyncSocket* socket)
 		return;
 	}
 
-	// format the request 
+	// format the request body (as we need it's length)
 	std::string dataBody = "grant_type=client_credentials&"
 		"client_id=" + auth_info_.clientId + "&"
 		"client_secret=" + auth_info_.clientSecret + "&"
 		"resource=" + auth_info_.resource;
 
+	// format the request
 	std::string data = "POST " + auth_info_.authority + " HTTP/1.1\r\n"
 		"Host: " + authority_host_.hostname() + "\r\n"
 		"Content-Type: application/x-www-form-urlencoded\r\n" +
@@ -168,9 +173,14 @@ void ServerAuthenticationProvider::SocketClose(rtc::AsyncSocket* socket, int err
 
 void ServerAuthenticationProvider::AddressResolve(rtc::AsyncResolverInterface* resolver)
 {
+	// capture the result
 	auto tempHost = resolver->address();
+
+	// release the resolver pointer and destroy the resolver
 	auto released = resolver_.release();
 	released->Destroy(true);
+
+	// reset the resolver pointer to nullptr
 	resolver_.reset(nullptr);
 
 	if (state_ != State::RESOLVING)
