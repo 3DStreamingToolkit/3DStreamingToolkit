@@ -330,7 +330,7 @@ namespace PeerConnectionClient.Signalling
                 var reader = new DataReader(socket.InputStream);
 
                 // Set the DataReader to only wait for available data
-                reader.InputStreamOptions = InputStreamOptions.Partial;
+                reader.InputStreamOptions = InputStreamOptions.ReadAhead;
 
                 loadTask = reader.LoadAsync(0xffff);
                 bool succeeded = loadTask.AsTask().Wait(20000);

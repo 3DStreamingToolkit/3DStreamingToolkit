@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Data.Json;
 using Windows.Networking;
@@ -51,6 +52,7 @@ namespace PeerConnectionClient.Signalling
         {
             _state = State.NOT_CONNECTED;
             _myId = -1;
+            _heartbeatTickMs = -1;
 
             // Annoying but register empty handlers
             // so we don't have to check for null everywhere
@@ -80,6 +82,8 @@ namespace PeerConnectionClient.Signalling
         private string _port;
         private string _clientName;
         private int _myId;
+        private int _heartbeatTickMs;
+        private Timer _heartbeatTimer;
         private Dictionary<int, string> _peers = new Dictionary<int, string>();
 
         /// <summary>
@@ -89,6 +93,33 @@ namespace PeerConnectionClient.Signalling
         public bool IsConnected()
         {
             return _myId != -1;
+        }
+
+        /// <summary>
+        /// The interval at which heartbeats will be sent
+        /// </summary>
+        /// <returns>time in ms</returns>
+        public int HeartbeatMs()
+        {
+            return _heartbeatTickMs;
+        }
+
+        /// <summary>
+        /// Set the interval at which heartbeats will be sent
+        /// </summary>
+        /// <param name="tickMs">time in ms</param>
+        /// <remarks>
+        /// -1 will disable the heartbeats entirely
+        /// </remarks>
+        public void SetHeartbeatMs(int tickMs)
+        {
+            _heartbeatTickMs = tickMs;
+            if (_heartbeatTimer != null)
+            {
+                _heartbeatTimer.Change(
+                   TimeSpan.FromMilliseconds(0),
+                   TimeSpan.FromMilliseconds(_heartbeatTickMs));
+            }
         }
 
         /// <summary>
@@ -112,11 +143,21 @@ namespace PeerConnectionClient.Signalling
                 _clientName = client_name;
 
                 _state = State.SIGNING_IN;
-                await ControlSocketRequestAsync(string.Format("GET /sign_in?{0} HTTP/1.0\r\n\r\n", client_name));
+                await ControlSocketRequestAsync(string.Format(
+                    "GET /sign_in?peer_name={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
+                    client_name,
+                    _server))
+                    .ConfigureAwait(false);
+
                 if (_state == State.CONNECTED)
                 {
                     // Start the long polling loop without await
                     var task = HangingGetReadLoopAsync();
+                    if (_heartbeatTimer == null)
+                    {
+                        _heartbeatTimer = new Timer(
+                            this.HeartbeatLoopAsync, null, 0, _heartbeatTickMs);
+                    }
                 }
                 else
                 {
@@ -287,8 +328,9 @@ namespace PeerConnectionClient.Signalling
             try
             {
                 var reader = new DataReader(socket.InputStream);
+
                 // Set the DataReader to only wait for available data
-                reader.InputStreamOptions = InputStreamOptions.Partial;
+                reader.InputStreamOptions = InputStreamOptions.ReadAhead;
 
                 loadTask = reader.LoadAsync(0xffff);
                 bool succeeded = loadTask.AsTask().Wait(20000);
@@ -354,6 +396,7 @@ namespace PeerConnectionClient.Signalling
             }
             return ret ? Tuple.Create(data, content_length) : null;
         }
+
 #pragma warning restore 1998
 
         /// <summary>
@@ -368,7 +411,9 @@ namespace PeerConnectionClient.Signalling
                 // Connect to the server
                 try
                 {
-                    await socket.ConnectAsync(_server, _port);
+                    await socket.ConnectAsync(_server, _port)
+                        .AsTask()
+                        .ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -376,11 +421,12 @@ namespace PeerConnectionClient.Signalling
                     Debug.WriteLine("[Error] Signaling: Failed to connect to " + _server + ":" + _port + " : " + e.Message);
                     return false;
                 }
+
                 // Send the request
-                socket.WriteStringAsync(sendBuffer);
+                await socket.WriteStringAsync(sendBuffer).ConfigureAwait(false);
 
                 // Read the response
-                var readResult = await ReadIntoBufferAsync(socket);
+                var readResult = await ReadIntoBufferAsync(socket).ConfigureAwait(false);
                 if (readResult == null)
                 {
                     return false;
@@ -432,7 +478,7 @@ namespace PeerConnectionClient.Signalling
                 }
                 else if (_state == State.SIGNING_OUT_WAITING)
                 {
-                    await SignOut();
+                    await SignOut().ConfigureAwait(false);
                 }
 
                 if (_state == State.SIGNING_IN)
@@ -442,6 +488,48 @@ namespace PeerConnectionClient.Signalling
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// triggered at an interval to send heartbeats
+        /// </summary>
+        private async void HeartbeatLoopAsync(object s)
+        {
+            if (_state != State.CONNECTED)
+            {
+                return;
+            }
+
+            using (var heartbeatSocket = new StreamSocket())
+            {
+                try
+                {
+                    await heartbeatSocket.ConnectAsync(_server, _port)
+                        .AsTask()
+                        .ConfigureAwait(false);
+
+                    await heartbeatSocket.WriteStringAsync(string.Format(
+                        "GET /heartbeat?peer_id={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
+                        _myId,
+                        _server))
+                        .ConfigureAwait(false);
+
+                    var readResult = await ReadIntoBufferAsync(heartbeatSocket).ConfigureAwait(false);
+                    if (readResult != null)
+                    {
+                        int index = readResult.Item1.IndexOf(' ') + 1;
+                        int status = int.Parse(readResult.Item1.Substring(index, 3));
+                        if (status != 200)
+                        {
+                            Debug.WriteLine("[Info] Signaling: heartbeat failed: {0}", status);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine("[Warning] Signaling: heartbeat exception: {0}", e.Message);
+                }
+            }
         }
 
         /// <summary>
@@ -456,17 +544,24 @@ namespace PeerConnectionClient.Signalling
                     try
                     {
                         // Connect to the server
-                        await _hangingGetSocket.ConnectAsync(_server, _port);
+                        await _hangingGetSocket.ConnectAsync(_server, _port)
+                            .AsTask()
+                            .ConfigureAwait(false);
+
                         if (_hangingGetSocket == null)
                         {
                             return;
                         }
 
                         // Send the request
-                        _hangingGetSocket.WriteStringAsync(String.Format("GET /wait?peer_id={0} HTTP/1.0\r\n\r\n", _myId));
+                        await _hangingGetSocket.WriteStringAsync(string.Format(
+                            "GET /wait?peer_id={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
+                            _myId,
+                            _server))
+                            .ConfigureAwait(false);
 
                         // Read the response.
-                        var readResult = await ReadIntoBufferAsync(_hangingGetSocket);
+                        var readResult = await ReadIntoBufferAsync(_hangingGetSocket).ConfigureAwait(false);
                         if (readResult == null)
                         {
                             continue;
@@ -545,7 +640,11 @@ namespace PeerConnectionClient.Signalling
 
             if (_myId != -1)
             {
-                await ControlSocketRequestAsync(String.Format("GET /sign_out?peer_id={0} HTTP/1.0\r\n\r\n", _myId));
+                await ControlSocketRequestAsync(string.Format(
+                    "GET /sign_out?peer_id={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
+                    _myId,
+                    _server))
+                    .ConfigureAwait(false);
             }
             else
             {
@@ -567,6 +666,12 @@ namespace PeerConnectionClient.Signalling
             {
                 _hangingGetSocket.Dispose();
                 _hangingGetSocket = null;
+            }
+
+            if (_heartbeatTimer != null)
+            {
+                _heartbeatTimer.Dispose();
+                _heartbeatTimer = null;
             }
 
             _peers.Clear();
@@ -593,14 +698,15 @@ namespace PeerConnectionClient.Signalling
                 return false;
             }
 
-            string buffer = String.Format(
-                "POST /message?peer_id={0}&to={1} HTTP/1.0\r\n" +
-                "Content-Length: {2}\r\n" +
+            string buffer = string.Format(
+                "POST /message?peer_id={0}&to={1} HTTP/1.0\r\nHost: {2}\r\n" +
+                "Content-Length: {3}\r\n" +
                 "Content-Type: text/plain\r\n" +
                 "\r\n" +
-                "{3}",
-                _myId, peerId, message.Length, message);
-            return await ControlSocketRequestAsync(buffer);
+                "{4}",
+                _myId, peerId, _server, message.Length, message);
+
+            return await ControlSocketRequestAsync(buffer).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -612,7 +718,7 @@ namespace PeerConnectionClient.Signalling
         public async Task<bool> SendToPeer(int peerId, IJsonValue json)
         {
             string message = json.Stringify();
-            return await SendToPeer(peerId, message);
+            return await SendToPeer(peerId, message).ConfigureAwait(false);
         }
     }
 
@@ -621,13 +727,13 @@ namespace PeerConnectionClient.Signalling
     /// </summary>
     public static class Extensions
     {
-        public static async void WriteStringAsync(this StreamSocket socket, string str)
+        public static async Task WriteStringAsync(this StreamSocket socket, string str)
         {
             try
             {
                 var writer = new DataWriter(socket.OutputStream);
                 writer.WriteString(str);
-                await writer.StoreAsync();
+                await writer.StoreAsync().AsTask().ConfigureAwait(false);
             }
             catch (Exception ex)
             {
