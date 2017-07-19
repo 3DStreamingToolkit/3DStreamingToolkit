@@ -90,6 +90,7 @@
     function createPeerConnection(peer_id) {
         try {
             pc = new RTCPeerConnection(pcConfig, pcOptions);
+            console.log("pcConfig", pcConfig)
             pc.onicecandidate = function (event) {
                 if (event.candidate) {
                     var candidate = {
@@ -259,7 +260,7 @@
         try {
             request = new XMLHttpRequest();
             request.onreadystatechange = signInCallback;
-            request.open("GET", server + "/sign_in?" + localName, true);
+            request.open("GET", server + "/sign_in?peer_name=" + localName, true);
             request.setRequestHeader("Peer-Type", 'Client');
             if (accessToken) {
                 request.setRequestHeader("Authorization", 'Bearer ' + accessToken);
