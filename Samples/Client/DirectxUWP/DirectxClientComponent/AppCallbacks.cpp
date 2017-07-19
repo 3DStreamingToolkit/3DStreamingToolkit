@@ -54,7 +54,7 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 	m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
 
 	// Create a dummy renderer and texture until the first frame is received from WebRTC
-	InitVideoRender(m_deviceResources, 1280, 480);
+	InitVideoRender(m_deviceResources, 2560, 720);
 	m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(this, &DirectXClientComponent::AppCallbacks::OnFrameTransferred);
 }
 
@@ -190,7 +190,7 @@ void AppCallbacks::InitVideoRender(
 	m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
 
 	// Initializes the new video texture
-	m_player->GetPrimaryTexture(width, height, (void**)m_videoRenderer->GetVideoTexture());
+	m_player->GetPrimary2DTexture(width, height, m_videoRenderer->GetVideoTexture());
 	m_main->SetVideoRender(m_videoRenderer);
 
 	// Initalizes the temp buffers.
@@ -260,7 +260,7 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 				"  \"body\":\"" + cameraTransformBody + "\"" +
 				"}";
 
-			// m_sendInputDataHandler(msg);
+			m_sendInputDataHandler(msg);
 		}
 	}
 }
@@ -281,9 +281,4 @@ void DirectXClientComponent::AppCallbacks::OnFrameTransferred(MEPlayer ^ mc, int
 	}
 
 	InitVideoRender(m_deviceResources, width, height);
-
-	if (s_videoRGBFrame != nullptr)
-	{
-		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-	}
 }

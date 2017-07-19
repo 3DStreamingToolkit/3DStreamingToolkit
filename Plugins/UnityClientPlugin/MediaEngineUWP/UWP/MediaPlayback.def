@@ -11,8 +11,7 @@ EXPORTS
    ReleaseMediaPlayback
    GetPrimaryTexture
    LoadContent
-   LoadAdaptiveContent
+   LoadMediaStreamSource
    Play
    Pause
-   Stop
    SetTimeFromUnity

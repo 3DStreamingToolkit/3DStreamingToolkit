@@ -4,7 +4,7 @@
 #include "DeviceResources.h"
 #include "VideoRenderer.h"
 #include "HolographicAppMain.h"
-#include "meplayer.h"
+#include "MediaEnginePlayer.h"
 
 using namespace Platform;
 using namespace Windows::ApplicationModel::Core;

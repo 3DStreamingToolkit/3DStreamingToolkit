@@ -22,11 +22,7 @@
       <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)MediaPlayerPlayback.cpp">
-      <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)meplayer.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaEnginePlayer.cpp">
       <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
     </ClCompile>
@@ -43,8 +39,7 @@
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)d3dmanagerlock.hxx" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaHelpers.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)MediaPlayerPlayback.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)meplayer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaEnginePlayer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)MediaEngine.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)targetver.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphics.h" />
@@ -56,6 +51,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)Unity\PlatformBase.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)MediaPlayback.def" />
+    <None Include="$(MSBuildThisFileDirectory)..\UWP\MediaPlayback.def" />
   </ItemGroup>
 </Project>

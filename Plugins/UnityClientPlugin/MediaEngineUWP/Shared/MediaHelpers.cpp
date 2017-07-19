@@ -84,7 +84,7 @@ HRESULT CreateMediaSource(
     return S_OK;
 }
 
-HRESULT CreateMediaSource1(ABI::Windows::Media::Core::IMediaSource * mediaSource, ABI::Windows::Media::Core::IMediaSource2 ** ppMediaSource)
+HRESULT CreateMediaSource2FromMediaSource(ABI::Windows::Media::Core::IMediaSource * mediaSource, ABI::Windows::Media::Core::IMediaSource2 ** ppMediaSource)
 {
 	NULL_CHK(mediaSource);
 	NULL_CHK(ppMediaSource);
@@ -108,7 +108,7 @@ HRESULT CreateMediaSource1(ABI::Windows::Media::Core::IMediaSource * mediaSource
 }
 
 _Use_decl_annotations_
-HRESULT CreateMediaStreamSource1(ABI::Windows::Media::Core::IMediaStreamSource * mediaSource, ABI::Windows::Media::Core::IMediaSource2 ** ppMediaSource)
+HRESULT CreateMediaSource2FromMediaStreamSource(ABI::Windows::Media::Core::IMediaStreamSource * mediaSource, ABI::Windows::Media::Core::IMediaSource2 ** ppMediaSource)
 {
 	NULL_CHK(mediaSource);
 	NULL_CHK(ppMediaSource);

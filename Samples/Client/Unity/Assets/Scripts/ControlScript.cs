@@ -105,17 +105,14 @@ public class ControlScript : MonoBehaviour
             System.Diagnostics.Debug.WriteLine(
                 "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
                 evt.Stream.GetVideoTracks().Count);
-            
-            // var mediaStream = Media.CreateMedia().CreateMediaSource(_peerVideoTrack, "media");
 
             var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
-
-            // Plugin.LoadMediaSource(mediaStream);
+            
            Plugin.LoadMediaStreamSource((MediaStreamSource)media);
-           //  Plugin.LoadContent(toyStoryH264);
-            Plugin.Play();
+           Plugin.Play();
 
-            EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
+           // Wait one second after connection to set the stereo mode for the server.
+           EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
         }
         else
         {
@@ -252,14 +249,38 @@ public class ControlScript : MonoBehaviour
 
     void Update()
     {
-
-
-
 #if !UNITY_EDITOR
         {
+            var format = @"{{""type"":""camera-transform-lookat"",""body"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}";
+
+            var camMsg = string.Format(
+                format,
+                Camera.main.transform.position.x,
+                Camera.main.transform.position.y,
+                Camera.main.transform.position.z,
+                Camera.main.transform.forward.x,
+                Camera.main.transform.forward.y,
+                Camera.main.transform.forward.z,
+                -Camera.main.transform.up.x,
+                -Camera.main.transform.up.y,
+                -Camera.main.transform.up.z);
+
+            _webRtcControl.SendPeerDataChannelMessage(camMsg);
+        }
+
+        if (endTime != 0 && Time.time > endTime && !enabledStereo)
+        {
+            enabledStereo = true;
+            // Enables the stereo output mode.
+            var msg = "{" +
+            "  \"type\":\"stereo-rendering\"," +
+            "  \"body\":\"1\"" +
+            "}";
+            _webRtcControl.SendPeerDataChannelMessage(msg);
+
             var leftViewProjection = LeftCamera.projectionMatrix;
             var rightViewProjection = RightCamera.projectionMatrix;
-            
+
             // Builds the camera transform message.
             var leftCameraTransform = "";
             var rightCameraTransform = "";
@@ -277,24 +298,14 @@ public class ControlScript : MonoBehaviour
             }
 
             var cameraTransformBody = leftCameraTransform + rightCameraTransform;
-            var msg =
+            msg =
                 "{" +
                 "  \"type\":\"camera-transform-stereo\"," +
                 "  \"body\":\"" + cameraTransformBody + "\"" +
                 "}";
 
+            // Sets the static left and right view projections
            _webRtcControl.SendPeerDataChannelMessage(msg);
-         }
-
-        if (endTime != 0 && Time.time > endTime && !enabledStereo)
-        {
-            enabledStereo = true;
-            // Enables the stereo output mode.
-            var msg = "{" +
-            "  \"type\":\"stereo-rendering\"," +
-            "  \"body\":\"1\"" +
-            "}";
-            _webRtcControl.SendPeerDataChannelMessage(msg);
         }
         
         lock (_executionQueue)

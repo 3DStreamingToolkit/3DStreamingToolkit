@@ -8,9 +8,7 @@
 //
 
 #include "MediaEngine.h"
-#include "MEPlayer.h"
-
-
+#include "MediaEnginePlayer.h"
 #include "MediaHelpers.h"
 
 using namespace std;
@@ -30,8 +28,6 @@ using namespace ABI::Windows::Media;
 using namespace ABI::Windows::Media::Core;
 using namespace ABI::Windows::Media::Playback;
 using namespace Windows::Foundation;
-
-static uint8_t* s_videoRGBFrame = nullptr;
 
 // MediaEngineNotify: Implements the callback for Media Engine event notification.
 class MediaEngineNotify : public IMFMediaEngineNotify
@@ -505,7 +501,7 @@ HRESULT MEPlayer::SetMediaSource(ABI::Windows::Media::Core::IMediaSource * media
 {
 	 // create the media source for content (from MediaSource)
 	 ComPtr<IMediaSource2> spMediaSource2;
-	IFR(CreateMediaSource1(mediaSource, &spMediaSource2));
+	IFR(CreateMediaSource2FromMediaSource(mediaSource, &spMediaSource2));
 
 	// create playbackitem from source
 	ComPtr<IMediaPlaybackItemFactory> spItemFactory;
@@ -530,7 +526,7 @@ HRESULT MEPlayer::SetMediaStreamSource(ABI::Windows::Media::Core::IMediaStreamSo
 {
 	// create the media source for content (from MediaSource)
 	ComPtr<IMediaSource2> spMediaSource2;
-	IFR(CreateMediaStreamSource1(mediaSource, &spMediaSource2));
+	IFR(CreateMediaSource2FromMediaStreamSource(mediaSource, &spMediaSource2));
 
 	// create playbackitem from source
 	ComPtr<IMediaPlaybackItemFactory> spItemFactory;
@@ -595,12 +591,6 @@ void MEPlayer::Play()
 	if (m_spMediaEngine)
 	{
 		StartTimer();
-
-		//if(m_spMediaEngine->HasVideo() && m_fStopTimer)
-		//{
-		//    // Start the Timer thread
-		//    
-		//}
 
 		if (m_fEOS)
 		{
@@ -911,31 +901,7 @@ void MEPlayer::OnTimer()
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), &m_nRect, &m_rcTarget, &m_bkgColor)
 			);
 
-			//if (s_videoRGBFrame == nullptr)
-			//{
-			//	// Initalizes the temp buffers.
-			//	int bufferSize = m_rcTarget.right * m_rcTarget.bottom * 4;
-			//	int half_width = (m_rcTarget.right + 1) / 2;
-			//	size_t size_y = static_cast<size_t>(m_rcTarget.right) * m_rcTarget.bottom;
-			//	size_t size_uv = static_cast<size_t>(half_width) * ((m_rcTarget.bottom + 1) / 2);
-
-			//	s_videoRGBFrame = new uint8_t[bufferSize];
-			//	memset(s_videoRGBFrame, 0, bufferSize);
-			//}
-
-			//// Updates the texture data.
-			//D3D11_MAPPED_SUBRESOURCE mapped;
-			//HRESULT result = m_spDX11DeviceContext->Map(
-			//	m_primaryMediaTexture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-
-			//if (result == S_OK)
-			//{
-			//	memcpy(mapped.pData, mapped.pData, mapped.RowPitch * m_rcTarget.bottom);
-			//}
-
-			//m_spDX11DeviceContext->Unmap(m_primaryMediaTexture.Get(), 0);
-
-			// FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom);
+			FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom);
 		}
 	}
 

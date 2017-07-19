@@ -11,8 +11,7 @@
 
 #include "MediaEngine.h"
 #include "Unity/PlatformBase.h"
-#include "MediaPlayerPlayback.h"
-#include "meplayer.h"
+#include "MediaEnginePlayer.h"
 
 using namespace Microsoft::WRL;
 
@@ -21,8 +20,6 @@ static IUnityInterfaces* s_UnityInterfaces = nullptr;
 static IUnityGraphics* s_Graphics = nullptr;
 
 static float g_Time;
-
-static ComPtr<IMediaEnginePlayback> s_spMediaPlayback;
 static MEPlayer^ m_player;
 
 STDAPI_(BOOL) DllMain(

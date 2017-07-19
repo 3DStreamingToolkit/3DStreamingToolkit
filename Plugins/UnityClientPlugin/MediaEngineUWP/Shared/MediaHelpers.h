@@ -28,12 +28,12 @@ HRESULT CreateMediaSource(
     _In_ LPCWSTR pszUrl,
     _COM_Outptr_ ABI::Windows::Media::Core::IMediaSource2** ppMediaSource);
 
-HRESULT CreateMediaSource1(
+HRESULT CreateMediaSource2FromMediaSource(
 	_In_ ABI::Windows::Media::Core::IMediaSource* mediaSource,
 	_COM_Outptr_ ABI::Windows::Media::Core::IMediaSource2** ppMediaSource);
 
 
-HRESULT CreateMediaStreamSource1(
+HRESULT CreateMediaSource2FromMediaStreamSource(
 	_In_ ABI::Windows::Media::Core::IMediaStreamSource* mediaSource,
 	_COM_Outptr_ ABI::Windows::Media::Core::IMediaSource2** ppMediaSource);
 
