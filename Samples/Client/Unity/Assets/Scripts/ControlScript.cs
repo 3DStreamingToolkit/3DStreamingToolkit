@@ -250,36 +250,10 @@ public class ControlScript : MonoBehaviour
     void Update()
     {
 #if !UNITY_EDITOR
+        if(enabledStereo)
         {
-            var format = @"{{""type"":""camera-transform-lookat"",""body"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}";
-
-            var camMsg = string.Format(
-                format,
-                Camera.main.transform.position.x,
-                Camera.main.transform.position.y,
-                Camera.main.transform.position.z,
-                Camera.main.transform.forward.x,
-                Camera.main.transform.forward.y,
-                Camera.main.transform.forward.z,
-                -Camera.main.transform.up.x,
-                -Camera.main.transform.up.y,
-                -Camera.main.transform.up.z);
-
-            _webRtcControl.SendPeerDataChannelMessage(camMsg);
-        }
-
-        if (endTime != 0 && Time.time > endTime && !enabledStereo)
-        {
-            enabledStereo = true;
-            // Enables the stereo output mode.
-            var msg = "{" +
-            "  \"type\":\"stereo-rendering\"," +
-            "  \"body\":\"1\"" +
-            "}";
-            _webRtcControl.SendPeerDataChannelMessage(msg);
-
-            var leftViewProjection = LeftCamera.projectionMatrix;
-            var rightViewProjection = RightCamera.projectionMatrix;
+            var leftViewProjection = LeftCamera.cullingMatrix;
+            var rightViewProjection = RightCamera.cullingMatrix;
 
             // Builds the camera transform message.
             var leftCameraTransform = "";
@@ -298,14 +272,25 @@ public class ControlScript : MonoBehaviour
             }
 
             var cameraTransformBody = leftCameraTransform + rightCameraTransform;
-            msg =
+            var msg =
                 "{" +
                 "  \"type\":\"camera-transform-stereo\"," +
                 "  \"body\":\"" + cameraTransformBody + "\"" +
                 "}";
 
-            // Sets the static left and right view projections
-           _webRtcControl.SendPeerDataChannelMessage(msg);
+            // Send the left and right eye transform
+            _webRtcControl.SendPeerDataChannelMessage(msg);
+        }
+
+        if (endTime != 0 && Time.time > endTime && !enabledStereo)
+        {
+            enabledStereo = true;
+            // Enables the stereo output mode.
+            var msg = "{" +
+            "  \"type\":\"stereo-rendering\"," +
+            "  \"body\":\"1\"" +
+            "}";
+            _webRtcControl.SendPeerDataChannelMessage(msg);
         }
         
         lock (_executionQueue)
