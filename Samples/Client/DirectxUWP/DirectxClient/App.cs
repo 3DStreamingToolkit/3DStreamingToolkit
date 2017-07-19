@@ -238,7 +238,7 @@ namespace StreamingDirectXHololensClient
             byte[] dataV,
             uint strideV)
         {
-            _appCallbacks.OnFrame(width, height, dataY, strideY, dataU, strideU, dataV, strideV);
+            //_appCallbacks.OnFrame(width, height, dataY, strideY, dataU, strideU, dataV, strideV);
         }
 
         private void Source_OnDecodedVideoFrame(
@@ -246,7 +246,7 @@ namespace StreamingDirectXHololensClient
             uint height,
             byte[] decodedData)
         {
-            _appCallbacks.OnDecodedFrame(width, height, decodedData);
+            //_appCallbacks.OnDecodedFrame(width, height, decodedData);
         }
 
         private void SendInputData(string msg)

@@ -54,7 +54,9 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 	m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
 
 	// Create a dummy renderer and texture until the first frame is received from WebRTC
-	InitVideoRender(m_deviceResources, 2560, 720);
+	ID3D11ShaderResourceView* textureView;
+	HRESULT result = m_player->GetPrimaryTexture(2560, 720, (void**)&textureView);
+	InitVideoRender(m_deviceResources, textureView);
 	m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(this, &DirectXClientComponent::AppCallbacks::OnFrameTransferred);
 }
 
@@ -102,105 +104,15 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 	}
 }
 
-void AppCallbacks::OnFrame(
-	uint32_t width,
-	uint32_t height,
-	const Array<uint8_t>^ dataY,
-	uint32_t strideY,
-	const Array<uint8_t>^ dataU,
-	uint32_t strideU,
-	const Array<uint8_t>^ dataV,
-	uint32_t strideV)
-{
-	if (!s_videoRGBFrame)
-	{
-		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
-		s_videoRGBFrame = new uint8_t[width * height * 4];
-		m_main->SetVideoRender(m_videoRenderer);
-	}
-
-	libyuv::I420ToARGB(
-		dataY->Data,
-		strideY,
-		dataU->Data,
-		strideU,
-		dataV->Data,
-		strideV,
-		s_videoRGBFrame,
-		width * 4,
-		width,
-		height);
-
-	m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-}
-
-void AppCallbacks::OnDecodedFrame(
-	uint32_t width,
-	uint32_t height,
-	const Array<uint8_t>^ decodedData)
-{
-	auto lock = s_lock.Lock();
-
-	if (!m_videoRenderer)
-	{
-		// Enables the stereo output mode.
-		String^ msg =
-			"{" +
-			"  \"type\":\"stereo-rendering\"," +
-			"  \"body\":\"1\"" +
-			"}";
-
-		m_sendInputDataHandler(msg);
-	}
-
-	InitVideoRender(m_deviceResources, width, height);
-
-	if (!libyuv::YUY2ToARGB(
-		decodedData->Data,
-		width * 2,
-		s_videoRGBFrame,
-		width * 4,
-		width,
-		height))
-	{
-		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-	}
-}
-
 void AppCallbacks::InitVideoRender(
 	std::shared_ptr<DX::DeviceResources> deviceResources,
-	int width,
-	int height)
+	ID3D11ShaderResourceView* textureView)
 {
-	if (m_videoRenderer)
-	{
-		// Do nothing if width and height don't change.
-		if (m_videoRenderer->GetWidth() == width &&
-			m_videoRenderer->GetHeight() == height)
-		{
-			return;
-		}
-
-		// Releases old resources.
-		delete m_videoRenderer;
-		delete []s_videoRGBFrame;
-	}
-
 	// Initializes the video renderer.
-	m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
+	m_videoRenderer = new VideoRenderer(m_deviceResources, textureView);
 
 	// Initializes the new video texture
-	m_player->GetPrimary2DTexture(width, height, m_videoRenderer->GetVideoTexture());
 	m_main->SetVideoRender(m_videoRenderer);
-
-	// Initalizes the temp buffers.
-	int bufferSize = width * height * 4;
-	int half_width = (width + 1) / 2;
-	size_t size_y = static_cast<size_t>(width) * height;
-	size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
-
-	s_videoRGBFrame = new uint8_t[bufferSize];
-	memset(s_videoRGBFrame, 0, bufferSize);
 }
 
 void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
@@ -279,6 +191,4 @@ void DirectXClientComponent::AppCallbacks::OnFrameTransferred(MEPlayer ^ mc, int
 		m_sendInputDataHandler(msg);
 		m_receivedFirstFrame = true;
 	}
-
-	InitVideoRender(m_deviceResources, width, height);
 }

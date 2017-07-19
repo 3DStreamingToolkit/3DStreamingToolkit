@@ -8,11 +8,9 @@ using namespace DirectXClientComponent;
 
 VideoRenderer::VideoRenderer(
 	const std::shared_ptr<DX::DeviceResources>& deviceResources,
-	int width,
-	int height) :
+	ID3D11ShaderResourceView* textureView) :
 		m_deviceResources(deviceResources),
-		m_width(width),
-		m_height(height),
+		m_textureView(textureView),
 		m_usingVprtShaders(false)
 {
 	m_position = { 0.f, 0.f, -2.f };
@@ -50,36 +48,6 @@ void VideoRenderer::CreateDeviceDependentResources()
 	D3D11_SUBRESOURCE_DATA subresourceData = { vertices , 0, 0 };
 	m_deviceResources->GetD3DDevice()->CreateBuffer(
 		&bufferDesc, &subresourceData, &m_vertexBuffer);
-
-	// Initializes the video texture.
-	m_videoTextureDesc = { 0 };
-	m_videoTextureDesc.ArraySize = 1;
-	m_videoTextureDesc.Usage = D3D11_USAGE_DYNAMIC;
-	m_videoTextureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	m_videoTextureDesc.Width = m_width;
-	m_videoTextureDesc.Height = m_height;
-	m_videoTextureDesc.MipLevels = 1;
-	m_videoTextureDesc.SampleDesc.Count = 1;
-	m_videoTextureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	m_videoTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	m_deviceResources->GetD3DDevice()->CreateTexture2D(
-		&m_videoTextureDesc, nullptr, &m_videoTexture);
-
-	// Creates the shader resource view so that shaders may use it.
-	D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
-	ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
-	textureViewDesc.Format = m_videoTextureDesc.Format;
-	textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	textureViewDesc.Texture2D.MipLevels = m_videoTextureDesc.MipLevels;
-	textureViewDesc.Texture2D.MostDetailedMip = 0;
-
-	DX::ThrowIfFailed(
-		m_deviceResources->GetD3DDevice()->CreateShaderResourceView(
-			m_videoTexture,
-			&textureViewDesc,
-			&m_textureView
-		)
-	);
 
 	// Creates the sampler.
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -204,11 +172,6 @@ void VideoRenderer::ReleaseDeviceDependentResources()
 
 void VideoRenderer::Update(DX::StepTimer timer)
 {
-}
-
-void VideoRenderer::UpdateFrame(const uint8_t* data)
-{
-	m_frameData = data;
 }
 
 void VideoRenderer::Render()

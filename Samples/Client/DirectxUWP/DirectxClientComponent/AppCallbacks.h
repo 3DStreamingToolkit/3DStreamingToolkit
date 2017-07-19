@@ -32,23 +32,8 @@ namespace DirectXClientComponent
 
 		void SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource^ mediaSourceHandle);
 
-		void OnFrame(
-			uint32_t width,
-			uint32_t height,
-			const Array<uint8_t>^ dataY,
-			uint32_t strideY,
-			const Array<uint8_t>^ dataU,
-			uint32_t strideU,
-			const Array<uint8_t>^ dataV,
-			uint32_t strideV);
-
-		void OnDecodedFrame(
-			uint32_t width,
-			uint32_t height,
-			const Array<uint8_t>^ decodedData);
-
 	private:
-		void InitVideoRender(std::shared_ptr<DX::DeviceResources> deviceResources, int width, int height);
+		void InitVideoRender(std::shared_ptr<DX::DeviceResources> deviceResources, ID3D11ShaderResourceView* textureView);
 		void SendInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
 		void OnFrameTransferred(MEPlayer^ mc, int width, int height);
 
