@@ -366,6 +366,8 @@ void MEPlayer::Initialize(float width, float height)
 			m_spMediaEngine.Get()->QueryInterface(__uuidof(IMFMediaEngine), (void**)&m_spEngineEx)
 		);
 
+		m_spEngineEx->SetRealTimeMode(TRUE);
+
 		// Create/Update swap chain
 		UpdateForWindowSizeChange(width, height);
 

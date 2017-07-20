@@ -25,37 +25,27 @@ public class ControlScript : MonoBehaviour
     public InputField PeerInputTextField;
     public InputField MessageInputField;
     public Transform VirtualCamera;
+    public uint FrameRate = 30;
 
     public RawImage LeftCanvas;
     public RawImage RightCanvas;
 
     public Camera LeftCamera;
     public Camera RightCamera;
-    public float TextureScale = 1f;
-    public int PluginMode = 0;
+    
+#if !UNITY_EDITOR
+    private Matrix4x4 leftViewProjection;
+    private Matrix4x4 rightViewProjection;
+    private string cameraTransformMsg;
+    private WebRtcControl _webRtcControl;
+    private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
 
-    private Transform camTransform;
-    private Vector3 prevPos;
-    private Quaternion prevRot;
-
-    private int frameCounter = 0;
-    private int fpsCounter = 0;
-    private float fpsCount = 0f;
     private float startTime = 0;
     private float endTime = 0;
     private bool enabledStereo = false;
-
-    private string toyStoryH264 = @"http://www.html5videoplayer.net/videos/toystory.mp4";
-
-
-#if !UNITY_EDITOR
-    private WebRtcControl _webRtcControl;
-    private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
 #else
     private static readonly Queue<Action> _executionQueue = new Queue<Action>();
 #endif
-    private bool frame_ready_receive = true;
-    private string messageText;
 
     #region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
@@ -78,10 +68,6 @@ public class ControlScript : MonoBehaviour
     IEnumerator Start()
 #endif
     {
-        camTransform = Camera.main.transform;
-        prevPos = camTransform.position;
-        prevRot = camTransform.rotation;
-
 #if !UNITY_EDITOR
         _webRtcControl = new WebRtcControl();
         _webRtcControl.OnInitialized += WebRtcControlOnInitialized;
@@ -106,13 +92,9 @@ public class ControlScript : MonoBehaviour
                 "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
                 evt.Stream.GetVideoTracks().Count);
 
-            var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
-            
-           Plugin.LoadMediaStreamSource((MediaStreamSource)media);
-           Plugin.Play();
 
-           // Wait one second after connection to set the stereo mode for the server.
-           EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
+            // Wait one second after connection to set the stereo mode for the server.
+            EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
         }
         else
         {
@@ -132,14 +114,7 @@ public class ControlScript : MonoBehaviour
     private void OnInitialized()
     {
 #if !UNITY_EDITOR
-        // _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
-        // _webRtcUtils.IsMicrophoneEnabled = false;
-        //      //  PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
-#if VP8_ENCODING
-        _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
-#else
         _webRtcControl.SelectedVideoCodec = _webRtcControl.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
-#endif
 #endif
         StatusText.text += "WebRTC Initialized\n";
     }
@@ -166,6 +141,7 @@ public class ControlScript : MonoBehaviour
 
     public void ConnectToServer()
     {
+#if !UNITY_EDITOR
         var signalhost = ServerInputTextField.text.Split(':');
         var host = string.Empty;
         var port = string.Empty;
@@ -179,7 +155,7 @@ public class ControlScript : MonoBehaviour
             host = signalhost[0];
             port = "8888";
         }
-#if !UNITY_EDITOR
+
         _webRtcControl.ConnectToServer(host, port, PeerInputTextField.text);
 #endif
     }
@@ -192,8 +168,7 @@ public class ControlScript : MonoBehaviour
     }
 
     public void ConnectToPeer()
-    {
-        // TODO: Support Peer Selection        
+    {    
 #if !UNITY_EDITOR
         if (_webRtcControl.Peers.Count > 0)
         {
@@ -238,7 +213,6 @@ public class ControlScript : MonoBehaviour
     private void OnEnable()
     {
         Plugin.CreateMediaPlayback();
-
         GetPlaybackTextureFromPlugin();
     }
 
@@ -250,36 +224,37 @@ public class ControlScript : MonoBehaviour
     void Update()
     {
 #if !UNITY_EDITOR
-        if(enabledStereo)
-        {
-            var leftViewProjection = LeftCamera.cullingMatrix;
-            var rightViewProjection = RightCamera.cullingMatrix;
+        leftViewProjection = LeftCamera.cullingMatrix;
+        rightViewProjection = RightCamera.cullingMatrix;
 
-            // Builds the camera transform message.
-            var leftCameraTransform = "";
-            var rightCameraTransform = "";
-            for (int i = 0; i < 4; i++)
+        // Builds the camera transform message.
+        var leftCameraTransform = "";
+        var rightCameraTransform = "";
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
             {
-                for (int j = 0; j < 4; j++)
+                leftCameraTransform += leftViewProjection[i, j] + ",";
+                rightCameraTransform += rightViewProjection[i, j];
+                if (i != 3 || j != 3)
                 {
-                    leftCameraTransform += leftViewProjection[i, j] + ",";
-                    rightCameraTransform += rightViewProjection[i, j];
-                    if (i != 3 || j != 3)
-                    {
-                        rightCameraTransform += ",";
-                    }
+                    rightCameraTransform += ",";
                 }
             }
+        }
 
-            var cameraTransformBody = leftCameraTransform + rightCameraTransform;
-            var msg =
-                "{" +
-                "  \"type\":\"camera-transform-stereo\"," +
-                "  \"body\":\"" + cameraTransformBody + "\"" +
-                "}";
+        var cameraTransformBody = leftCameraTransform + rightCameraTransform;
+        cameraTransformMsg =
+           "{" +
+           "  \"type\":\"camera-transform-stereo\"," +
+           "  \"body\":\"" + cameraTransformBody + "\"" +
+           "}";
 
+
+        if (endTime != 0 && Time.time > endTime && enabledStereo)
+        {
             // Send the left and right eye transform
-            _webRtcControl.SendPeerDataChannelMessage(msg);
+            _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
         }
 
         if (endTime != 0 && Time.time > endTime && !enabledStereo)
@@ -290,9 +265,20 @@ public class ControlScript : MonoBehaviour
             "  \"type\":\"stereo-rendering\"," +
             "  \"body\":\"1\"" +
             "}";
-            _webRtcControl.SendPeerDataChannelMessage(msg);
+           _webRtcControl.SendPeerDataChannelMessage(msg);
+            
+            // Send the left and right eye transform
+            _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
+
+            // Start sending camera updates after 1 second worth of frames.
+            EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
+            
+            // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
+            var source = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, FrameRate, "media");
+            Plugin.LoadMediaStreamSource((MediaStreamSource)source);
+            Plugin.Play();
         }
-        
+
         lock (_executionQueue)
         {
             while (!_executionQueue.IsEmpty)
