@@ -2,7 +2,6 @@
 
 #include "AppCallbacks.h"
 #include "DirectXHelper.h"
-#include "libyuv/convert.h"
 
 using namespace DirectXClientComponent;
 using namespace DirectX;
