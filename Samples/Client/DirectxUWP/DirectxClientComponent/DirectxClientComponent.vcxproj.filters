@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
     <ClCompile Include="AppCallbacks.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp">
       <Filter>Common</Filter>
@@ -13,6 +12,15 @@
       <Filter>Common</Filter>
     </ClCompile>
     <ClCompile Include="HolographicAppMain.cpp" />
+    <ClCompile Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEngine.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEnginePlayer.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaHelpers.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -36,6 +44,18 @@
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="HolographicAppMain.h" />
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\d3dmanagerlock.hxx">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEngine.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEnginePlayer.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaHelpers.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">
@@ -46,6 +66,9 @@
     </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{166f04bb-d849-4120-8f48-f4ecd93cdacd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MediaEngine">
+      <UniqueIdentifier>{d8e1b0d8-e303-473e-aff3-c5814effe8b7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

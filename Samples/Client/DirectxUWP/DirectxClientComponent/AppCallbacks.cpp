@@ -2,23 +2,17 @@
 
 #include "AppCallbacks.h"
 #include "DirectXHelper.h"
-#include "libyuv/convert.h"
 
 using namespace DirectXClientComponent;
 using namespace DirectX;
 using namespace Microsoft::WRL::Wrappers;
 using namespace Platform;
-using namespace Windows::System::Profile;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
-
-static uint8_t* s_videoRGBFrame = nullptr;
-static CriticalSection s_lock;
 
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
-	m_receivedFirstFrame(false),
 	m_sendInputDataHandler(sendInputDataHandler)
 {
 }
@@ -26,7 +20,6 @@ AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 AppCallbacks::~AppCallbacks()
 {
 	delete m_videoRenderer;
-	delete []s_videoRGBFrame;
 }
 
 void AppCallbacks::Initialize(CoreApplicationView^ appView)
@@ -50,14 +43,6 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 
 	// The main class uses the holographic space for updates and rendering.
 	m_main->SetHolographicSpace(m_holographicSpace);
-
-	m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
-
-	// Create a dummy renderer and texture until the first frame is received from WebRTC
-	ID3D11ShaderResourceView* textureView;
-	HRESULT result = m_player->GetPrimaryTexture(2560, 720, (void**)&textureView);
-	InitVideoRender(m_deviceResources, textureView);
-	m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(this, &DirectXClientComponent::AppCallbacks::OnFrameTransferred);
 }
 
 void AppCallbacks::Run()
@@ -69,8 +54,6 @@ void AppCallbacks::Run()
 
 		if (m_videoRenderer)
 		{
-			auto lock = s_lock.Lock();
-
 			// Updates.
 			HolographicFrame^ holographicFrame = m_main->Update();
 
@@ -88,19 +71,35 @@ void AppCallbacks::Run()
 	}
 }
 
-void AppCallbacks::Play()
-{
-	if (m_player != nullptr)
-		m_player->Play();
-}
-
 void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle)
 {
-	ABI::Windows::Media::Core::IMediaStreamSource * source = reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
+	ABI::Windows::Media::Core::IMediaStreamSource * source = 
+		reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
 
-	if (source != nullptr && m_player != nullptr)
+	if (source != nullptr)
 	{
+		// Initializes the media engine player.
+		m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
+
+		// Creates a dummy renderer and texture until the first frame is received from WebRTC
+		ID3D11ShaderResourceView* textureView;
+		HRESULT result = m_player->GetPrimaryTexture(2560, 720, (void**)&textureView);
+
+		// Enables the stereo output mode.
+		String^ msg =
+			"{" +
+			"  \"type\":\"stereo-rendering\"," +
+			"  \"body\":\"1\"" +
+			"}";
+
+		m_sendInputDataHandler(msg);
+
+		// Initializes the video render.
+		InitVideoRender(m_deviceResources, textureView);
+
+		// Starts receiving frames.
 		m_player->SetMediaStreamSource(source);
+		m_player->Play();
 	}
 }
 
@@ -117,9 +116,6 @@ void AppCallbacks::InitVideoRender(
 
 void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 {
-	if (!m_receivedFirstFrame)
-		return;
-
 	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 	SpatialCoordinateSystem^ currentCoordinateSystem =
 		m_main->GetReferenceFrame()->CoordinateSystem;
@@ -177,18 +173,3 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 	}
 }
 
-void DirectXClientComponent::AppCallbacks::OnFrameTransferred(MEPlayer ^ mc, int width, int height)
-{
-	if (!m_receivedFirstFrame)
-	{
-		// Enables the stereo output mode.
-		String^ msg =
-			"{" +
-			"  \"type\":\"stereo-rendering\"," +
-			"  \"body\":\"1\"" +
-			"}";
-
-		m_sendInputDataHandler(msg);
-		m_receivedFirstFrame = true;
-	}
-}
