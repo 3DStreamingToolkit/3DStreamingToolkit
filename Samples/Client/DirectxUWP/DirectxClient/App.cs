@@ -77,7 +77,6 @@ namespace StreamingDirectXHololensClient
             Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
-            LoadSettings();
 
             if (Conductor.Instance.Peers == null)
             {
@@ -135,8 +134,9 @@ namespace StreamingDirectXHololensClient
 
         public void Run()
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
+                await LoadSettings().ConfigureAwait(false);
                 Conductor.Instance.StartLogin(_server, _port);
             });
 
@@ -159,7 +159,7 @@ namespace StreamingDirectXHololensClient
             return this;
         }
 
-        async void LoadSettings()
+        async Task LoadSettings()
         {
             StorageFile configFile = await StorageFile.GetFileFromApplicationUriAsync(
                 new Uri("ms-appx:///webrtcConfig.json"));
@@ -201,14 +201,14 @@ namespace StreamingDirectXHololensClient
                     iceServer.Credential = stunServer.GetObject().GetNamedString("username");
                     iceServer.Username = stunServer.GetObject().GetNamedString("password");
                     configIceServers.Add(iceServer);
-
-                    // Default ones.
-                    configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-                    configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
                 }
+
+                // Default ones.
+                configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+                configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
             }
 
             Conductor.Instance.ConfigureIceServers(configIceServers);
@@ -219,34 +219,11 @@ namespace StreamingDirectXHololensClient
             _peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             if (_peerVideoTrack != null)
             {
-                //_decodedVideo = Media.CreateMedia().CreateDecodedVideoSource(_peerVideoTrack);
-                //_decodedVideo.OnDecodedVideoFrame += Source_OnDecodedVideoFrame;
+                var media = Media.CreateMedia().CreateMediaStreamSource(
+                    _peerVideoTrack, 30, "media");
 
-                var media = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, 30, "media");
                 _appCallbacks.SetMediaStreamSource((MediaStreamSource)media);
-                _appCallbacks.Play();
             }
-        }
-
-        private void Source_OnRawVideoFrame(
-            uint width,
-            uint height,
-            byte[] dataY,
-            uint strideY,
-            byte[] dataU,
-            uint strideU,
-            byte[] dataV,
-            uint strideV)
-        {
-            //_appCallbacks.OnFrame(width, height, dataY, strideY, dataU, strideU, dataV, strideV);
-        }
-
-        private void Source_OnDecodedVideoFrame(
-            uint width,
-            uint height,
-            byte[] decodedData)
-        {
-            //_appCallbacks.OnDecodedFrame(width, height, decodedData);
         }
 
         private void SendInputData(string msg)

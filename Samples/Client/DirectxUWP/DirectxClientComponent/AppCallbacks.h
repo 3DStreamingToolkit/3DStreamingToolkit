@@ -28,23 +28,17 @@ namespace DirectXClientComponent
 
 		void Run();
 
-		void Play();
-
 		void SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource^ mediaSourceHandle);
 
 	private:
 		void InitVideoRender(std::shared_ptr<DX::DeviceResources> deviceResources, ID3D11ShaderResourceView* textureView);
 		void SendInputData(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
-		void OnFrameTransferred(MEPlayer^ mc, int width, int height);
 
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
 		VideoRenderer*											m_videoRenderer;
-		SendInputDataHandler^									m_sendInputDataHandler;
-		MEPlayer^ m_player;
-
-		bool													m_isHolographic;
-		bool													m_receivedFirstFrame;
+		MEPlayer^												m_player;
 		std::unique_ptr<HolographicAppMain>						m_main;
+		SendInputDataHandler^									m_sendInputDataHandler;
 		
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;

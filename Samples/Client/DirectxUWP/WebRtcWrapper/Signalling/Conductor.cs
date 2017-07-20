@@ -365,7 +365,10 @@ namespace PeerConnectionClient.Signalling
 
         public void SendPeerDataChannelMessage(string msg)
         {
-            _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
+            if (_peerSendDataChannel != null)
+            {
+                _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
+            }
         }
 
         private void PeerSendDataChannelOnClose()
