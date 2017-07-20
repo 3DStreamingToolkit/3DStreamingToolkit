@@ -66,8 +66,8 @@
                             console.log("Identity management returned", data);
 
                             pcConfig = pcConfigDynamic;
-                            pcConfig.iceServers.username = data.username;
-                            pcConfig.iceServers.credential = data.password;
+                            pcConfig.iceServers[0].username = data.username;
+                            pcConfig.iceServers[0].credential = data.password;
                         }
                     };
                     loginRequest.open("GET", identityManagementConfig.turnCredsUrl, true);
