@@ -22,15 +22,15 @@
 #include "service/service_base.h"
 
 
-class CSampleService : public CServiceBase
+class RenderService : public CServiceBase
 {
 public:
 
-    CSampleService(PWSTR pszServiceName, 
+	RenderService(PWSTR pszServiceName,
         BOOL fCanStop = TRUE, 
         BOOL fCanShutdown = TRUE, 
         BOOL fCanPauseContinue = FALSE);
-    virtual ~CSampleService(void);
+    virtual ~RenderService(void);
 
 protected:
 

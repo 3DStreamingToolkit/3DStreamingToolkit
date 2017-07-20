@@ -17,6 +17,7 @@
 \***************************************************************************/
 
 #pragma region Includes
+#include "pch.h"
 #include "service/service_base.h"
 #include <assert.h>
 #include <strsafe.h>

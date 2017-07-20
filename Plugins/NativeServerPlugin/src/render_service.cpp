@@ -18,12 +18,13 @@
 \***************************************************************************/
 
 #pragma region Includes
-#include "service/sample_service.h"
+#include "pch.h"
+#include "service/render_service.h"
 #include "service/ThreadPool.h"
 #pragma endregion
 
 
-CSampleService::CSampleService(PWSTR pszServiceName, 
+RenderService::RenderService(PWSTR pszServiceName, 
                                BOOL fCanStop, 
                                BOOL fCanShutdown, 
                                BOOL fCanPauseContinue)
@@ -41,7 +42,7 @@ CSampleService::CSampleService(PWSTR pszServiceName,
 }
 
 
-CSampleService::~CSampleService(void)
+RenderService::~RenderService(void)
 {
     if (m_hStoppedEvent)
     {
@@ -52,7 +53,7 @@ CSampleService::~CSampleService(void)
 
 
 //
-//   FUNCTION: CSampleService::OnStart(DWORD, LPWSTR *)
+//   FUNCTION: RenderService::OnStart(DWORD, LPWSTR *)
 //
 //   PURPOSE: The function is executed when a Start command is sent to the 
 //   service by the SCM or when the operating system starts (for a service 
@@ -76,24 +77,24 @@ CSampleService::~CSampleService(void)
 //   other solution is to spawn a new thread to perform the main service 
 //   functions, which is demonstrated in this code sample.
 //
-void CSampleService::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
+void RenderService::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
 {
     // Log a service start message to the Application log.
     WriteEventLogEntry(L"CppWindowsService in OnStart", 
         EVENTLOG_INFORMATION_TYPE);
 
     // Queue the main service function for execution in a worker thread.
-    CThreadPool::QueueUserWorkItem(&CSampleService::ServiceWorkerThread, this);
+    CThreadPool::QueueUserWorkItem(&RenderService::ServiceWorkerThread, this);
 }
 
 
 //
-//   FUNCTION: CSampleService::ServiceWorkerThread(void)
+//   FUNCTION: RenderService::ServiceWorkerThread(void)
 //
 //   PURPOSE: The method performs the main function of the service. It runs 
 //   on a thread pool worker thread.
 //
-void CSampleService::ServiceWorkerThread(void)
+void RenderService::ServiceWorkerThread(void)
 {
     // Periodically check if the service is stopping.
     while (!m_fStopping)
@@ -109,7 +110,7 @@ void CSampleService::ServiceWorkerThread(void)
 
 
 //
-//   FUNCTION: CSampleService::OnStop(void)
+//   FUNCTION: RenderService::OnStop(void)
 //
 //   PURPOSE: The function is executed when a Stop command is sent to the 
 //   service by SCM. It specifies actions to take when a service stops 
@@ -120,7 +121,7 @@ void CSampleService::ServiceWorkerThread(void)
 //   Be sure to periodically call ReportServiceStatus() with 
 //   SERVICE_STOP_PENDING if the procedure is going to take long time. 
 //
-void CSampleService::OnStop()
+void RenderService::OnStop()
 {
     // Log a service stop message to the Application log.
     WriteEventLogEntry(L"CppWindowsService in OnStop", 

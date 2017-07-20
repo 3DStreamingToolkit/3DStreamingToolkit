@@ -1,0 +1,13 @@
+{
+  "serverConfig": {
+    "headless": true,
+    "systemService": true,
+    "autoConnect": true
+  },
+  "serviceConfig": {
+    "name": "3DStreamingRenderingService",
+    "displayName": "3D Streaming Rendering Service",
+    "serviceAccount": "NT AUTHORITY\\NetworkService",
+    "servicePassword":  null
+  }
+}

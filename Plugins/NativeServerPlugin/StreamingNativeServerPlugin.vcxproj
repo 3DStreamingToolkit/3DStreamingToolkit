@@ -187,6 +187,8 @@
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\default_data_channel_observer.cpp" />
     <ClCompile Include="src\default_main_window.cpp" />
+    <ClCompile Include="src\render_service.cpp" />
+    <ClCompile Include="src\service_base.cpp" />
     <ClCompile Include="src\video_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -200,6 +202,9 @@
     <ClInclude Include="inc\macros.h" />
     <ClInclude Include="inc\main_window.h" />
     <ClInclude Include="inc\pch.h" />
+    <ClInclude Include="inc\service\render_service.h" />
+    <ClInclude Include="inc\service\service_base.h" />
+    <ClInclude Include="inc\service\ThreadPool.h" />
     <ClInclude Include="inc\video_helper.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
@@ -207,11 +212,19 @@
     <None Include="exports.props" />
     <None Include="nvEncConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="serverConfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <FileType>Document</FileType>
     </None>
     <None Include="webrtcConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <FileType>Document</FileType>
     </None>
-    <None Include="webrtcConfigStunTemplate.json" />
+    <None Include="webrtcConfigStunTemplate.json">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

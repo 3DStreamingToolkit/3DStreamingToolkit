@@ -10,6 +10,8 @@
 
 #include "pch.h"
 
+#include <codecvt>
+#include <fstream>
 #include <math.h>
 
 #include "default_main_window.h"
@@ -18,7 +20,14 @@
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/checks.h"
+#include "webrtc/base/json.h"
 #include "webrtc/base/logging.h"
+
+#include "service/render_service.h"
+#include "service/service_base.h"
+
+// Need this for exepath function
+#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 
 ATOM DefaultMainWindow::wnd_class_ = 0;
 const wchar_t DefaultMainWindow::kClassName[] = L"WebRTC_MainWindow";
@@ -79,24 +88,24 @@ DefaultMainWindow::DefaultMainWindow(
 	bool auto_call,
 	bool has_no_UI,
 	int width,
-	int height) : 
-		ui_(CONNECT_TO_SERVER),
-		wnd_(NULL),
-		edit1_(NULL),
-		edit2_(NULL),
-		label1_(NULL),
-		label2_(NULL),
-		button_(NULL),
-		listbox_(NULL),
-		destroyed_(false),
-		callback_(NULL),
-		nested_msg_(NULL),
-		server_(server),
-		auto_connect_(auto_connect),
-		auto_call_(auto_call),
-		has_no_UI_(has_no_UI),
-		width_(width),
-		height_(height)
+	int height) :
+	ui_(CONNECT_TO_SERVER),
+	wnd_(NULL),
+	edit1_(NULL),
+	edit2_(NULL),
+	label1_(NULL),
+	label2_(NULL),
+	button_(NULL),
+	listbox_(NULL),
+	destroyed_(false),
+	callback_(NULL),
+	nested_msg_(NULL),
+	server_(server),
+	auto_connect_(auto_connect),
+	auto_call_(auto_call),
+	has_no_UI_(has_no_UI),
+	width_(width),
+	height_(height)
 {
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
@@ -118,6 +127,79 @@ bool DefaultMainWindow::Create()
 
 	ui_thread_id_ = ::GetCurrentThreadId();
 	int visibleFlag = (has_no_UI_) ? 0 : WS_VISIBLE;
+	Json::Reader reader;
+	Json::Value root = NULL;
+
+	headless_ = has_no_UI_;
+	systemService_ = false;
+	autoConnect_ = false;
+
+	auto encoderConfigPath = webrtc::ExePath("serverConfig.json");
+	std::ifstream file(encoderConfigPath);
+	if (file.good())
+	{
+		file >> root;
+		reader.parse(file, root, true);
+
+		if (root.isMember("serverConfig"))
+		{
+			Json::Value serverConfig = root.get("serverConfig", NULL);
+			if (!serverConfig.isNull())
+			{
+				headless_ = serverConfig.get("headless", headless_).asBool();
+				systemService_ = serverConfig.get("systemService", systemService_).asBool();
+				autoConnect_ = serverConfig.get("autoConnect", autoConnect_).asBool();
+
+				Json::Value serviceConfig = root.get("serviceConfig", NULL);
+				if (!serviceConfig.isNull())
+				{
+					serviceName_ = get_utf16(serviceConfig.get("name", "3DStreamingRenderingService").asString());
+					serviceDisplayName_ = get_utf16(serviceConfig.get("displayName", "3D Streaming Rendering Service").asString());
+					serviceAccount_ = get_utf16(serviceConfig.get("serviceAccount", "NT AUTHORITY\\NetworkService").asString());
+					servicePassword_ = get_utf16(serviceConfig.get("servicePassword", "").asString());
+				}
+			}
+		}
+	}
+
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		//All the checks for running as a system service
+		if (has_no_UI_ && headless_ && systemService_) {
+
+			SC_HANDLE schService = OpenService(schSCManager, serviceName_.c_str(), SERVICE_QUERY_STATUS);
+			if (schService == NULL)
+			{
+				//If the service isn't already present, install it
+				InstallService();
+			}
+			CloseServiceHandle(schService);
+			schService = NULL;
+
+			//Start the service to run the app persistently
+			RenderService service(&serviceName_[0]);
+			if (!CServiceBase::Run(service))
+			{
+				wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+			}
+		}
+
+		//If the app isn't defined as a system service, remove it if present
+		if (!systemService_)
+		{
+			SC_HANDLE schService = OpenService(schSCManager, serviceName_.c_str(), SERVICE_QUERY_STATUS);
+			if (schService)
+			{
+				RemoveService();
+			}
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+
 	wnd_ = ::CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, kClassName,
 		L"Server",
 		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | visibleFlag,
@@ -195,41 +277,24 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 
 bool DefaultMainWindow::InstallService() {
 
-//	InstallService(
-//		SERVICE_NAME,               // Name of service
-//		SERVICE_DISPLAY_NAME,       // Name to display
-//		SERVICE_START_TYPE,         // Service start type
-//		SERVICE_DEPENDENCIES,       // Dependencies
-//		SERVICE_ACCOUNT,            // Service running account
-//		SERVICE_PASSWORD            // Password of the account
-//	);
-//
-//	// Internal name of the service
-//#define SERVICE_NAME             L"CppWindowsService"
-//
-//	// Displayed name of the service
-//#define SERVICE_DISPLAY_NAME     L"CppWindowsService Sample Service"
-//
-//	// Service start options.
-//#define SERVICE_START_TYPE       SERVICE_DEMAND_START
-//
-//	// List of service dependencies - "dep1\0dep2\0\0"
-//#define SERVICE_DEPENDENCIES     L""
-//
-//	// The name of the account under which the service should run
-//#define SERVICE_ACCOUNT          L"NT AUTHORITY\\LocalService"
-//
-//	// The password to the service account name
-//#define SERVICE_PASSWORD         NULL
-
 	wchar_t szPath[MAX_PATH];
 	SC_HANDLE schSCManager = NULL;
 	SC_HANDLE schService = NULL;
 
 	if (GetModuleFileName(NULL, szPath, ARRAYSIZE(szPath)) == 0)
 	{
-		wprintf(L"GetModuleFileName failed w/err 0x%08lx\n", GetLastError());
-		goto Cleanup;
+		// GetModuleFileName failed with error
+		if (schSCManager)
+		{
+			CloseServiceHandle(schSCManager);
+			schSCManager = NULL;
+		}
+		if (schService)
+		{
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		return false;
 	}
 
 	// Open the local default service control manager database
@@ -237,51 +302,149 @@ bool DefaultMainWindow::InstallService() {
 		SC_MANAGER_CREATE_SERVICE);
 	if (schSCManager == NULL)
 	{
-		wprintf(L"OpenSCManager failed w/err 0x%08lx\n", GetLastError());
-		goto Cleanup;
+		//OpenSCManager failed with error
+		if (schSCManager)
+		{
+			CloseServiceHandle(schSCManager);
+			schSCManager = NULL;
+		}
+		if (schService)
+		{
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		return false;
 	}
+
+	//#define SERVICE_BOOT_START             0x00000000
+	//#define SERVICE_SYSTEM_START           0x00000001
+	//#define SERVICE_AUTO_START             0x00000002
+	//#define SERVICE_DEMAND_START           0x00000003
+	//#define SERVICE_DISABLED               0x00000004
 
 	// Install the service into SCM by calling CreateService
 	schService = CreateService(
 		schSCManager,                   // SCManager database
-		pszServiceName,                 // Name of service
-		pszDisplayName,                 // Name to display
+		serviceName_.c_str(),					// Name of service
+		serviceDisplayName_.c_str(),             // Name to display
 		SERVICE_QUERY_STATUS,           // Desired access
 		SERVICE_WIN32_OWN_PROCESS,      // Service type
-		dwStartType,                    // Service start type
+		SERVICE_AUTO_START,           // Service start type
 		SERVICE_ERROR_NORMAL,           // Error control type
 		szPath,                         // Service's binary
 		NULL,                           // No load ordering group
 		NULL,                           // No tag identifier
-		pszDependencies,                // Dependencies
-		pszAccount,                     // Service running account
-		pszPassword                     // Password of the account
+		L"",							// Dependencies
+		serviceAccount_.c_str(),                 // Service running account
+		servicePassword_.c_str()                 // Password of the account
 	);
 	if (schService == NULL)
 	{
-		wprintf(L"CreateService failed w/err 0x%08lx\n", GetLastError());
-		goto Cleanup;
+		// CreateService failed with error
+		if (schSCManager)
+		{
+			CloseServiceHandle(schSCManager);
+			schSCManager = NULL;
+		}
+		if (schService)
+		{
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		return false;
 	}
 
-	wprintf(L"%s is installed.\n", pszServiceName);
-
-Cleanup:
-	// Centralized cleanup for all allocated resources.
-	if (schSCManager)
-	{
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
-	if (schService)
-	{
-		CloseServiceHandle(schService);
-		schService = NULL;
-	}
-	return false;
+	//Service installed
+	return true;
 }
 
 bool DefaultMainWindow::RemoveService() {
-	return false;
+	SC_HANDLE schSCManager = NULL;
+	SC_HANDLE schService = NULL;
+	SERVICE_STATUS ssSvcStatus = {};
+
+	// Open the local default service control manager database
+	schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager == NULL)
+	{
+		//OpenSCManager failed with error
+		if (schSCManager)
+		{
+			CloseServiceHandle(schSCManager);
+			schSCManager = NULL;
+		}
+		if (schService)
+		{
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		return false;
+	}
+
+	// Open the service with delete, stop, and query status permissions
+	schService = OpenService(schSCManager, serviceName_.c_str(), SERVICE_STOP |
+		SERVICE_QUERY_STATUS | DELETE);
+	if (schService == NULL)
+	{
+		//OpenService failed with error
+		if (schSCManager)
+		{
+			CloseServiceHandle(schSCManager);
+			schSCManager = NULL;
+		}
+		if (schService)
+		{
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		return false;
+	}
+
+	// Try to stop the service
+	if (ControlService(schService, SERVICE_CONTROL_STOP, &ssSvcStatus))
+	{
+		wprintf(L"Stopping %s.", serviceName_);
+		Sleep(1000);
+
+		while (QueryServiceStatus(schService, &ssSvcStatus))
+		{
+			if (ssSvcStatus.dwCurrentState == SERVICE_STOP_PENDING)
+			{
+				wprintf(L".");
+				Sleep(1000);
+			}
+			else break;
+		}
+
+		if (ssSvcStatus.dwCurrentState == SERVICE_STOPPED)
+		{
+			// Service has stopped
+		}
+		else
+		{
+			// Service failed to stop
+		}
+	}
+
+	// Now remove the service by calling DeleteService.
+	if (!DeleteService(schService))
+	{
+		//DeleteService failed with error
+		if (schSCManager)
+		{
+			CloseServiceHandle(schSCManager);
+			schSCManager = NULL;
+		}
+		if (schService)
+		{
+			CloseServiceHandle(schService);
+			schService = NULL;
+		}
+		return false;
+	}
+
+	//Service is removed
+	return true;
 }
 
 void DefaultMainWindow::SwitchToConnectUI()

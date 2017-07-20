@@ -28,6 +28,8 @@
     <ClCompile Include="src\default_data_channel_observer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\render_service.cpp" />
+    <ClCompile Include="src\service_base.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,11 +66,15 @@
     <ClInclude Include="inc\plugindefs.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="inc\service\service_base.h" />
+    <ClInclude Include="inc\service\ThreadPool.h" />
+    <ClInclude Include="inc\service\render_service.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="nvEncConfig.json" />
-    <None Include="webrtcConfig.json" />
     <None Include="exports.props" />
+    <None Include="serverConfig.json" />
+    <None Include="webrtcConfig.json" />
     <None Include="webrtcConfigStunTemplate.json" />
+    <None Include="nvEncConfig.json" />
   </ItemGroup>
 </Project>

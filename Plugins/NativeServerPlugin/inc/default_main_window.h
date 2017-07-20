@@ -14,6 +14,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <locale>
+#include <codecvt>
 
 #include "plugindefs.h"
 #include "main_window.h"
@@ -185,8 +187,14 @@ protected:
 
 	void HandleTabbing();
 
+	std::wstring get_utf16(const std::string& str)
+	{
+		return converter.from_bytes(str);
+	}
+
 private:
 	bool has_no_UI_;
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;
 	UI ui_;
@@ -208,6 +216,14 @@ private:
 	bool auto_call_;
 	int width_;
 	int height_;
+	//Service Config
+	bool headless_;
+	bool systemService_;
+	bool autoConnect_;
+	std::wstring serviceName_;
+	std::wstring serviceDisplayName_;
+	std::wstring serviceAccount_;
+	std::wstring servicePassword_;
 };
 
 #endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_

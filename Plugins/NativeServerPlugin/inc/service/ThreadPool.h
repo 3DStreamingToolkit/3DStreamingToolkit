@@ -8,7 +8,7 @@
 * 
 * Using the thread pool is simple and feels natural in C++. 
 * 
-* class CSampleService
+* class RenderService
 * {
 * public:
 * 
