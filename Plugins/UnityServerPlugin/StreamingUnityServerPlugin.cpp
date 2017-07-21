@@ -7,6 +7,7 @@
 #include <iostream>
 #include <thread>
 #include <string>
+#include <fstream>
 #include <cstdint>
 #include <wrl.h>
 #include <d3d11_2.h>
@@ -19,6 +20,7 @@
 #include "default_main_window.h"
 #include "flagdefs.h"
 #include "peer_connection_client.h"
+#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
@@ -76,7 +78,6 @@ std::thread *messageThread;
 
 std::string s_server = "signalingserveruri";
 uint32_t s_port = 3000;
-int s_heartbeat = 5000;
 
 bool s_closing = false;
 
@@ -106,12 +107,42 @@ void InitWebRTC()
 	
 	PeerConnectionClient client;
 
-	client.SetHeartbeatMs(s_heartbeat);
-
 	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
 		true, 1280, 720);
 	
 	wnd->Create();
+	
+	// Try parsing config file.
+	std::string configFilePath = webrtc::ExePath("webrtcConfig.json");
+	std::ifstream webrtcConfigFile(configFilePath);
+	Json::Reader reader;
+	Json::Value root = NULL;
+	char server[1024];
+	//int port = 443;
+	int heartbeat = 5000;
+
+	if (webrtcConfigFile.good())
+	{
+		reader.parse(webrtcConfigFile, root, true);
+		if (root.isMember("server"))
+		{
+			strcpy(server, root.get("server", FLAG_server).asCString());
+
+			s_server = server;
+		}
+
+		if (root.isMember("port"))
+		{
+			s_port = root.get("port", FLAG_port).asInt();
+		}
+
+		if (root.isMember("heartbeat"))
+		{
+			heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
+		}
+	}
+
+	client.SetHeartbeatMs(heartbeat);
 
 	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
 	
@@ -251,24 +282,6 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 {
     return OnEncode;
 }
-
-extern "C" __declspec(dllexport) void Login(char *server, int32_t port, int heartbeatInMs)
-{
-	s_server = server;
-	s_port = port;
-	s_heartbeat = heartbeatInMs;
-
-	s_onInputUpdate = nullptr;
-
-	if (s_conductor != nullptr)
-	{
-		MainWindowCallback *callback = s_conductor;
-
-		callback->StartLogin(s_server, s_port);
-	}
-}
-
-
 
 extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
 {
