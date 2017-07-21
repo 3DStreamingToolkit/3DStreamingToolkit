@@ -261,7 +261,6 @@ namespace WebRtcWrapper
         {
             // Default values:
             var configTraceServerIp = new ValidableNonEmptyString("127.0.0.1");
-            var configTraceServerPort = 8888;
 
             StorageFile configFile = await StorageFile.GetFileFromApplicationUriAsync(
                 new Uri("ms-appx:///Data/StreamingAssets/webrtcConfig.json"))
@@ -344,10 +343,9 @@ namespace WebRtcWrapper
             {
                 IceServers = configIceServers;
                 NtpServer = ntpServerAddress;
-                Port = new ValidableIntegerString(configTraceServerPort, 0, 65535);
-                Ip = new ValidableNonEmptyString(_server);
                 NtpServer = ntpServerAddress;
                 Port = _port;
+                Ip = new ValidableNonEmptyString(_server);
                 HeartBeat = _heartbeat;
                 ReevaluateHasServer();
             });
@@ -400,9 +398,10 @@ namespace WebRtcWrapper
         {
             Task.Run(async () =>
             {
+
                 IsConnecting = true;
-                await LoadSettings().ConfigureAwait(false);
-				Conductor.Instance.Signaller.SetHeartbeatMs(Convert.ToInt32(HeartBeat.Value));
+                await LoadSettings().ConfigureAwait(false);                
+                Conductor.Instance.Signaller.SetHeartbeatMs(Convert.ToInt32(HeartBeat.Value));
                 Conductor.Instance.StartLogin(Ip.Value, Port.Value, peerName);
             });
         }

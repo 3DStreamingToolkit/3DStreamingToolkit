@@ -91,7 +91,7 @@ public class ControlScript : MonoBehaviour
 
 
             // Wait one second after connection to set the stereo mode for the server.
-            EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
+            EnqueueAction(() => { endTime = (startTime = Time.time) + 3.0f; });
         }
         else
         {
