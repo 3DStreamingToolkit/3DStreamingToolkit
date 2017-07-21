@@ -17,8 +17,9 @@ using Windows.Media.Core;
 
 public class ControlScript : MonoBehaviour
 {
-    private const int textureWidth = 2560;
-    private const int textureHeight = 720;
+    public uint TextureWidth = 2560;
+    public uint TextureHeight = 720;
+
     // Heartbeat interval in ms (-1 will disable)
     public int HeartbeatInputText = 5000;
     public Text StatusText;
@@ -294,8 +295,8 @@ public class ControlScript : MonoBehaviour
     private void GetPlaybackTextureFromPlugin()
     {
         IntPtr nativeTex = IntPtr.Zero;
-        Plugin.GetPrimaryTexture(textureWidth, textureHeight, out nativeTex);
-        var primaryPlaybackTexture = Texture2D.CreateExternalTexture(textureWidth, textureHeight, TextureFormat.BGRA32, false, false, nativeTex);
+        Plugin.GetPrimaryTexture(TextureWidth, TextureHeight, out nativeTex);
+        var primaryPlaybackTexture = Texture2D.CreateExternalTexture((int)TextureWidth, (int)TextureHeight, TextureFormat.BGRA32, false, false, nativeTex);
 
         LeftCanvas.texture = primaryPlaybackTexture;
         RightCanvas.texture = primaryPlaybackTexture;
@@ -340,10 +341,7 @@ public class ControlScript : MonoBehaviour
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaStreamSource")]
         internal static extern void LoadMediaStreamSource(MediaStreamSource IMediaSourceHandler);
 #endif
-
-        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadAdaptiveContent")]
-        internal static extern void LoadAdaptiveContent([MarshalAs(UnmanagedType.BStr)] string manifestURL);
-
+    
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Play")]
         internal static extern void Play();
 
