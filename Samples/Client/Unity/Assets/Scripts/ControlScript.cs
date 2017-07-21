@@ -19,7 +19,7 @@ public class ControlScript : MonoBehaviour
 {
     public uint TextureWidth = 2560;
     public uint TextureHeight = 720;
-    public uint FrameRate = 50;
+    public uint FrameRate = 30;
 
     // Heartbeat interval in ms (-1 will disable)
     public int HeartbeatInputText = 5000;
