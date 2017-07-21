@@ -59,10 +59,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SignalingClient", "Libraries\SignalingClient\SignalingClient.vcxproj", "{88348D78-A949-4FF8-8A0A-2934744D89D2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deploy", "Deploy", "{A2772E45-8415-433B-98BE-0DA89B1A2D23}"
+EndProject
+Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "MultithreadedServerDeploy", "Samples\Server\Directx-Multithreaded\Deploy\MultithreadedServerDeploy.deployproj", "{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}"
+EndProject
+Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "SpinningCubeServerDeploy", "Samples\Server\Directx-SpinningCube\Deploy\SpinningCubeServerDeploy.deployproj", "{CB47ED71-1882-41BD-8E08-6726F2C20596}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Plugins\UnityClientPlugin\MediaEngineUWP\Shared\Shared.vcxitems*{4a859119-6730-4612-987f-dabf98f213ed}*SharedItemsImports = 4
-		Plugins\UnityClientPlugin\MediaEngineUWP\Shared\Shared.vcxitems*{80204d5c-6e4d-46a6-8506-c1280966fd16}*SharedItemsImports = 4
 		Plugins\UnityClientPlugin\MediaEngineUWP\Shared\Shared.vcxitems*{fe4a5965-ec67-4f68-b11d-6608906ef016}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -224,6 +229,20 @@ Global
 		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x64.Build.0 = Release|x64
 		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x86.ActiveCfg = Release|Win32
 		{88348D78-A949-4FF8-8A0A-2934744D89D2}.Release|x86.Build.0 = Release|Win32
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Debug|x64.ActiveCfg = Debug|x64
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Debug|x64.Build.0 = Debug|x64
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Debug|x86.ActiveCfg = Debug|x86
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Release|x64.ActiveCfg = Release|x64
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Release|x64.Build.0 = Release|x64
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Release|x86.ActiveCfg = Release|x86
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB}.Release|x86.Build.0 = Release|x86
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Debug|x64.ActiveCfg = Debug|x64
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Debug|x64.Build.0 = Debug|x64
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Debug|x86.ActiveCfg = Debug|x86
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Release|x64.ActiveCfg = Release|x64
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Release|x64.Build.0 = Release|x64
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Release|x86.ActiveCfg = Release|x86
+		{CB47ED71-1882-41BD-8E08-6726F2C20596}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -252,5 +271,8 @@ Global
 		{4A859119-6730-4612-987F-DABF98F213ED} = {CC793864-6181-40D7-BBF5-292F33824F73}
 		{FE4A5965-EC67-4F68-B11D-6608906EF016} = {CC793864-6181-40D7-BBF5-292F33824F73}
 		{88348D78-A949-4FF8-8A0A-2934744D89D2} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
+		{A2772E45-8415-433B-98BE-0DA89B1A2D23} = {0A5F9ED9-7108-463A-A563-BBBD528BC1A4}
+		{7574B9EE-591A-4EEE-A4E2-551C5F979BCB} = {A2772E45-8415-433B-98BE-0DA89B1A2D23}
+		{CB47ED71-1882-41BD-8E08-6726F2C20596} = {A2772E45-8415-433B-98BE-0DA89B1A2D23}
 	EndGlobalSection
 EndGlobal

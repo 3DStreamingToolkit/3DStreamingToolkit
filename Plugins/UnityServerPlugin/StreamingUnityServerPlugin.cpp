@@ -74,8 +74,9 @@ static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
 DefaultMainWindow *wnd;
 std::thread *messageThread;
 
-std::string s_server = "signalingserver.centralus.cloudapp.azure.com";
+std::string s_server = "signalingserveruri";
 uint32_t s_port = 3000;
+int s_heartbeat = 5000;
 
 bool s_closing = false;
 
@@ -104,6 +105,8 @@ void InitWebRTC()
 	rtc::InitializeSSL();
 	
 	PeerConnectionClient client;
+
+	client.SetHeartbeatMs(s_heartbeat);
 
 	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
 		true, 1280, 720);
@@ -249,10 +252,11 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
     return OnEncode;
 }
 
-extern "C" __declspec(dllexport) void Login(char *server, int32_t port)
+extern "C" __declspec(dllexport) void Login(char *server, int32_t port, int heartbeatInMs)
 {
 	s_server = server;
 	s_port = port;
+	s_heartbeat = heartbeatInMs;
 
 	s_onInputUpdate = nullptr;
 

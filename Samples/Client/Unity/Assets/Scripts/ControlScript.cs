@@ -22,6 +22,7 @@ public class ControlScript : MonoBehaviour
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
+    public InputField HeartbeatInputTextField;
     public InputField PeerInputTextField;
     public InputField MessageInputField;
     public Transform VirtualCamera;
@@ -56,7 +57,10 @@ public class ControlScript : MonoBehaviour
     void Awake()
     {
         // Azure Host Details
-        // ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+        ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
+
+        // Heartbeat interval in ms (-1 will disable) 
+        HeartbeatInputTextField.text = "5000";
         
         // Local Dev Setup - Define Host Workstation IP Address
         ServerInputTextField.text = "10.0.0.88:8888";
@@ -155,8 +159,14 @@ public class ControlScript : MonoBehaviour
             host = signalhost[0];
             port = "8888";
         }
-
-        _webRtcControl.ConnectToServer(host, port, PeerInputTextField.text);
+        
+        int heartbeatMs;
+        if (!int.TryParse(HeartbeatInputTextField.text, out heartbeatMs))
+        {
+            heartbeatMs = -1;
+        }
+        
+        _webRtcControl.ConnectToServer(host, port, PeerInputTextField.text, heartbeatMs);
 #endif
     }
 

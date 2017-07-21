@@ -52,7 +52,7 @@ std::string GetPeerConnectionString()
 
 std::string GetDefaultServerName()
 {
-	return GetEnvVarOrDefault("WEBRTC_SERVER", "signalingserver.centralus.cloudapp.azure.com");
+	return GetEnvVarOrDefault("WEBRTC_SERVER", "signalingserveruri");
 }
 
 std::string GetPeerName()

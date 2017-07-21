@@ -803,8 +803,7 @@ namespace PeerConnectionClient.Signalling
             {
                 return;
             }
-            
-            //_signaller.Connect(server, port, GetLocalPeerName());
+
             _signaller.Connect(server, port, peerName == String.Empty ? GetLocalPeerName() : peerName);
         }
        

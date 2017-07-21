@@ -1,6 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using Org.WebRtc;
+using PeerConnectionClient.Model;
+using PeerConnectionClient.Signalling;
+using PeerConnectionClient.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,12 +14,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Data.Json;
+using Windows.Storage;
 using Windows.UI.Core;
-
-using Org.WebRtc;
-using PeerConnectionClient.Model;
-using PeerConnectionClient.Signalling;
-using PeerConnectionClient.Utilities;
 
 namespace WebRtcWrapper
 {
@@ -52,15 +52,11 @@ namespace WebRtcWrapper
             Microphones = new ObservableCollection<MediaDevice>();
             AudioPlayoutDevices = new ObservableCollection<MediaDevice>();
 
-            // Detect Comm Hardware
-            foreach (MediaDevice videoCaptureDevice in Conductor.Instance.Media.GetVideoCaptureDevices())
-            {
-                // Cameras.Add(videoCaptureDevice);
-            }
             foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
             {
                 Microphones.Add(audioCaptureDevice);
             }
+
             foreach (MediaDevice audioPlayoutDevice in Conductor.Instance.Media.GetAudioPlayoutDevices())
             {
                 AudioPlayoutDevices.Add(audioPlayoutDevice);
@@ -71,6 +67,7 @@ namespace WebRtcWrapper
             {
                 SelectedCamera = Cameras.First();
             }
+
             if (SelectedMicrophone == null && Microphones.Count > 0)
             {
                 SelectedMicrophone = Microphones.First();
@@ -92,7 +89,7 @@ namespace WebRtcWrapper
                         Peers = new ObservableCollection<Peer>();
                         Conductor.Instance.Peers = Peers;
                     }
-                    //Peers.Add(SelectedPeer = new Peer { Id = peerId, Name = peerName });
+
                     Peers.Add(new Peer { Id = peerId, Name = peerName });
                 });
             };
@@ -162,8 +159,7 @@ namespace WebRtcWrapper
             // TODO: Restore Event Handler in Utility Wrapper
             // Implemented in Unity Consumer due to Event Handling Issue
             // Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream does not propagate
-
-            
+          
             Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
             Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
             Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
@@ -184,15 +180,13 @@ namespace WebRtcWrapper
                 RunOnUiThread(() =>
                 {
                     IsConnectedToPeer = false;
-                    //                    PeerVideo.Source = null;
-                    //                    SelfVideo.Source = null;
                     _peerVideoTrack = null;
                     _selfVideoTrack = null;
                     IsMicrophoneEnabled = false;
                     IsCameraEnabled = false;
 
                     // TODO: Clean-up References
-                    //GC.Collect();         // Ensure all references are truly dropped.
+                    //GC.Collect(); // Ensure all references are truly dropped.
 
                     OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
                 });
@@ -209,7 +203,6 @@ namespace WebRtcWrapper
                 
             };
             
-
             Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
 
             IceServers = new ObservableCollection<IceServer>();
@@ -258,34 +251,86 @@ namespace WebRtcWrapper
                 }
             });
 
-            LoadSettings();
-
             RunOnUiThread(() =>
             {
                 OnInitialized?.Invoke();
             });
         }
-        void LoadSettings()
+
+        async Task LoadSettings()
         {
             // Default values:
             var configTraceServerIp = new ValidableNonEmptyString("127.0.0.1");
             var configTraceServerPort = 8888;
 
-            var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
-            //var peerCcServerIp = new ValidableNonEmptyString("signalingserver.centralus.cloudapp.azure.com");
-            //IceServer turnServer = new IceServer("turnserver3dstreaming.centralus.cloudapp.azure.com:3478", IceServer.ServerType.TURN);
-            //          turnServer.Username = "user";
-            //          turnServer.Credential = "3Dstreaming0317";
-            //var peerCcPortInt = 3000;
+            StorageFile configFile = await StorageFile.GetFileFromApplicationUriAsync(
+                new Uri("ms-appx:///Data/StreamingAssets/webrtcConfig.json"))
+                .AsTask()
+                .ConfigureAwait(false);
+
+            string content = await FileIO.ReadTextAsync(configFile)
+                .AsTask()
+                .ConfigureAwait(false);
+
+            JsonValue json = JsonValue.Parse(content);
+
+            // Parses server info.
+            _server = json.GetObject().GetNamedString("server");
+            int startId = 0;
+            if (_server.StartsWith("http://"))
+            {
+                startId = 7;
+            }
+            else if (_server.StartsWith("https://"))
+            {
+                startId = 8;
+
+                // TODO: Supports SSL
+            }
+
+            _server = _server.Substring(startId);
+            _port = new ValidableIntegerString(
+                (int)json.GetObject().GetNamedNumber("port"), 0, 65535);
+
+            _heartbeat = new ValidableIntegerString(
+                (int)json.GetObject().GetNamedNumber("heartbeat"), 0, 65535);
 
             var configIceServers = new ObservableCollection<IceServer>();
-
             bool useDefaultIceServers = true;
             if (useDefaultIceServers)
             {
-                // Default values:
+                // Clears all values.
                 configIceServers.Clear();
-                // configIceServers.Add(turnServer);
+
+                // Parses turn server.
+                if (json.GetObject().ContainsKey("turnServer"))
+                {
+                    JsonValue turnServer = json.GetObject().GetNamedValue("turnServer");
+                    string uri = turnServer.GetObject().GetNamedString("uri");
+                    IceServer iceServer = new IceServer(
+                        uri.Substring(uri.IndexOf("turn:") + 5),
+                        IceServer.ServerType.TURN);
+
+                    iceServer.Credential = turnServer.GetObject().GetNamedString("username");
+                    iceServer.Username = turnServer.GetObject().GetNamedString("password");
+                    configIceServers.Add(iceServer);
+                }
+
+                // Parses stun server.
+                if (json.GetObject().ContainsKey("stunServer"))
+                {
+                    JsonValue stunServer = json.GetObject().GetNamedValue("stunServer");
+                    string uri = stunServer.GetObject().GetNamedString("uri");
+                    IceServer iceServer = new IceServer(
+                        uri.Substring(uri.IndexOf("stun:") + 5),
+                        IceServer.ServerType.STUN);
+
+                    iceServer.Credential = stunServer.GetObject().GetNamedString("username");
+                    iceServer.Username = stunServer.GetObject().GetNamedString("password");
+                    configIceServers.Add(iceServer);
+                }
+
+                // Default ones.
                 configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
                 configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
                 configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
@@ -293,12 +338,18 @@ namespace WebRtcWrapper
                 configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
             }
 
+            Conductor.Instance.ConfigureIceServers(configIceServers);
+            var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
             RunOnUiThread(() =>
             {
                 IceServers = configIceServers;
                 Ip = configTraceServerIp;
                 NtpServer = ntpServerAddress;
                 Port = new ValidableIntegerString(configTraceServerPort, 0, 65535);
+                Ip = new ValidableNonEmptyString(_server);
+                NtpServer = ntpServerAddress;
+                Port = _port;
+                HeartBeat = _heartbeat;
                 ReevaluateHasServer();
             });
 
@@ -315,52 +366,57 @@ namespace WebRtcWrapper
 
         public void SendPeerMessageData(string msg)
         {
-            new Task(async () =>
+            Task.Run(async () =>
             {
                 if (IsConnectedToPeer)
-                {                    
+                {
                     JsonObject jsonMessage;
 
                     if (!JsonObject.TryParse(msg, out jsonMessage))
                     {
                         jsonMessage = new JsonObject()
                         {
-                            {"data", JsonValue.CreateStringValue(msg)}
+                            { "data", JsonValue.CreateStringValue(msg) }
                         };
                     }
 
                     var jsonPackage = new JsonObject
                     {
-                        {"type", JsonValue.CreateStringValue(kMessageDataType)}
+                        { "type", JsonValue.CreateStringValue(kMessageDataType) }
                     };
+
                     foreach (var o in jsonMessage)
                     {
                         jsonPackage.Add(o.Key, o.Value);
                     }
 
-                    await Conductor.Instance.Signaller.SendToPeer(SelectedPeer.Id, jsonPackage);
+                    await Conductor.Instance.Signaller.SendToPeer(
+                        SelectedPeer.Id, jsonPackage)
+                        .ConfigureAwait(false);
                 }
-            }).Start();
+            });
         }
 
-        public void ConnectToServer(string peerName)
+        public void ConnectToServer(string peerName, int heartbeatMs)
         {
-            new Task(() =>
+            Task.Run(async () =>
             {
-                IsConnecting = true;                
+                IsConnecting = true;
+                await LoadSettings().ConfigureAwait(false);
+				Conductor.Instance.Signaller.SetHeartbeatMs(Convert.ToInt32(HeartBeat.Value));
                 Conductor.Instance.StartLogin(Ip.Value, Port.Value, peerName);
-            }).Start();
+            });
         }
 
-        public void ConnectToServer(string host, string port, string peerName)
+        public void ConnectToServer(string host, string port, string peerName, int heartbeatMs)
         {
-            new Task(() =>
+            Task.Run(() =>
             {
                 IsConnecting = true;
                 Ip = new ValidableNonEmptyString(host);
                 Port = new ValidableIntegerString(port);
-                ConnectToServer(peerName);                
-            }).Start();
+                ConnectToServer(peerName, heartbeatMs);                
+            });
         }
 
         public void ConnectToPeer()
@@ -368,7 +424,10 @@ namespace WebRtcWrapper
             Debug.WriteLine("Device Status: SelectedCamera: {0} - SelectedMic: {1}", SelectedCamera == null ? "NULL" : "OK", SelectedMicrophone == null ? "NULL" : "OK");
             if (SelectedPeer != null)
             {
-                new Task(() => { Conductor.Instance.ConnectToPeer(SelectedPeer); }).Start();
+                Task.Run(() => 
+                {
+                    Conductor.Instance.ConnectToPeer(SelectedPeer);
+                });
             }
             else
             {
@@ -376,23 +435,15 @@ namespace WebRtcWrapper
             }
         }
 
-        public void DisconnectFromPeer()
+        public async void DisconnectFromPeer()
         {
-            new Task(() =>
-            {                
-                //await Conductor.Instance.DisconnectFromPeer();
-                var task = Conductor.Instance.DisconnectFromPeer();
-            }).Start();
+            await Conductor.Instance.DisconnectFromPeer().ConfigureAwait(false);
         }
 
-        public void DisconnectFromServer()
+        public async void DisconnectFromServer()
         {
-            new Task(() =>
-            {
-                IsDisconnecting = true;
-                var task = Conductor.Instance.DisconnectFromServer();
-            }).Start();
-
+            IsDisconnecting = true;
+            await Conductor.Instance.DisconnectFromServer().ConfigureAwait(false);
             Peers?.Clear();
         }
         #endregion
@@ -416,7 +467,8 @@ namespace WebRtcWrapper
 
         private void RefreshVideoCaptureDevices(IList<MediaDevice> videoCaptureDevices)
         {
-            RunOnUiThread(() => {
+            RunOnUiThread(() => 
+            {
                 Collection<MediaDevice> videoCaptureDevicesToRemove = new Collection<MediaDevice>();
                 foreach (MediaDevice videoCaptureDevice in Cameras)
                 {
@@ -425,14 +477,17 @@ namespace WebRtcWrapper
                         videoCaptureDevicesToRemove.Add(videoCaptureDevice);
                     }
                 }
+
                 foreach (MediaDevice removedVideoCaptureDevices in videoCaptureDevicesToRemove)
                 {
                     if (SelectedCamera != null && SelectedCamera.Id == removedVideoCaptureDevices.Id)
                     {
                         SelectedCamera = null;
                     }
+
                     Cameras.Remove(removedVideoCaptureDevices);
                 }
+
                 foreach (MediaDevice videoCaptureDevice in videoCaptureDevices)
                 {
                     if (Cameras.FirstOrDefault(x => x.Id == videoCaptureDevice.Id) == null)
@@ -451,7 +506,8 @@ namespace WebRtcWrapper
 
         private void RefreshAudioCaptureDevices(IList<MediaDevice> audioCaptureDevices)
         {
-            RunOnUiThread(() => {
+            RunOnUiThread(() => 
+            {
                 var selectedMicrophoneId = SelectedMicrophone?.Id;
                 SelectedMicrophone = null;
                 Microphones.Clear();
@@ -463,6 +519,7 @@ namespace WebRtcWrapper
                         SelectedMicrophone = Microphones.Last();
                     }
                 }
+
                 if (SelectedMicrophone == null)
                 {
                     SelectedMicrophone = Microphones.FirstOrDefault();
@@ -477,7 +534,8 @@ namespace WebRtcWrapper
 
         private void RefreshAudioPlayoutDevices(IList<MediaDevice> audioPlayoutDevices)
         {
-            RunOnUiThread(() => {
+            RunOnUiThread(() => 
+            {
                 var selectedPlayoutDeviceId = SelectedAudioPlayoutDevice?.Id;
                 SelectedAudioPlayoutDevice = null;
                 AudioPlayoutDevices.Clear();
@@ -489,6 +547,7 @@ namespace WebRtcWrapper
                         SelectedAudioPlayoutDevice = audioPlayoutDevice;
                     }
                 }
+
                 if (SelectedAudioPlayoutDevice == null)
                 {
                     SelectedAudioPlayoutDevice = AudioPlayoutDevices.FirstOrDefault();
@@ -512,6 +571,7 @@ namespace WebRtcWrapper
                 Debug.WriteLine(msg);
                 OnStatusMessageUpdate?.Invoke(msg);
             }
+
             _selfVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
             //if ((_selfVideoTrack != null) && (SelectedCamera != null))
             if (_selfVideoTrack != null)
@@ -537,13 +597,6 @@ namespace WebRtcWrapper
                     {
                         Conductor.Instance.MuteMicrophone();
                     }
-
-// TODO: Handle Video Loopback
-//                    if ((VideoLoopbackEnabled) && (SelfVideo != null))
-//                    {
-//                        var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
-//                        SelfVideo.SetMediaStreamSource(source);
-//                    }
                 });
             }
             else
@@ -561,7 +614,7 @@ namespace WebRtcWrapper
         {
             if (e.PropertyName == "Valid")
             {
-                // TODO: AddIcerServer
+                // TODO: AddIceServer
             }
         }
         #endregion
@@ -692,12 +745,7 @@ namespace WebRtcWrapper
                             var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
                             RunOnUiThread(() =>
                             {
-// TODO: Setup Local Video Display
-//                                if (SelfVideo != null)
-//                                {                                    
-//                                    SelfVideo.SetMediaStreamSource(source);
-//                                    Debug.WriteLine("Video loopback enabled");
-//                                }
+                                // TODO: Setup Local Video Display
                             });
                         }
                     }
@@ -717,6 +765,7 @@ namespace WebRtcWrapper
                         GC.Collect(); // Ensure all references are truly dropped.
                     }
                 }
+
                 UpdateLoopbackVideoVisibilityHelper();
             }
         }
@@ -816,6 +865,7 @@ namespace WebRtcWrapper
                 {
                     return;
                 }
+
                 Conductor.Instance.AudioCodec = value;
                 // TODO: Notify SelectedAudioCodec
             }
@@ -842,8 +892,17 @@ namespace WebRtcWrapper
             get { return _ip; }
             set
             {
-                _ip = value;
-                // TODO: Notify Server Status                
+                _ip = value;            
+            }
+        }
+
+        private string _server;
+        public string Server
+        {
+            get { return _server; }
+            set
+            {
+                _server = value;            
             }
         }
 
@@ -853,8 +912,17 @@ namespace WebRtcWrapper
             get { return _port; }
             set
             {
-                _port = value;
-                // TODO: Notify Server Status                
+                _port = value;            
+            }
+        }
+
+        private ValidableIntegerString _heartbeat;
+        public ValidableIntegerString HeartBeat
+        {
+            get { return _heartbeat; }
+            set
+            {
+                _heartbeat = value;             
             }
         }
 
@@ -925,8 +993,6 @@ namespace WebRtcWrapper
             }
         }
 
-
-
         private ObservableCollection<MediaDevice> _cameras;
         public ObservableCollection<MediaDevice> Cameras
         {
@@ -984,12 +1050,14 @@ namespace WebRtcWrapper
                             OnStatusMessageUpdate?.Invoke(errorMsg);                            
                             return;
                         }
+
                         if (resolutions.Result == null)
                         {
                             String errorMsg = "SetSelectedCamera: Failed to GetVideoCaptureCapabilities (Result is null)";
                             OnStatusMessageUpdate?.Invoke(errorMsg);                            
                             return;
                         }
+
                         var uniqueRes = resolutions.Result.GroupBy(test => test.ResolutionDescription).Select(grp => grp.First()).ToList();
                         CaptureCapability defaultResolution = null;
                         foreach (var resolution in uniqueRes)
@@ -1035,8 +1103,8 @@ namespace WebRtcWrapper
             }
         }
 
-        private String _selectedCapResItem = null;
-        public String SelectedCapResItem
+        private string _selectedCapResItem = null;
+        public string SelectedCapResItem
         {
             get { return _selectedCapResItem; }
             set
@@ -1049,6 +1117,7 @@ namespace WebRtcWrapper
                 {
                     AllCapFps.Clear();
                 }
+
                 if (SelectedCamera != null)
                 {
                     var opCap = SelectedCamera.GetVideoCaptureCapabilities();
@@ -1067,15 +1136,18 @@ namespace WebRtcWrapper
                                     {
                                         defaultFps = fps;
                                     }
+
                                     AllCapFps.Add(fps);
                                     if (defaultFps == null)
                                     {
                                         defaultFps = fps;
                                     }
                                 }
+
                                 SelectedCapFpsItem = defaultFps;
                             });                        
                     });
+
                     _selectedCapResItem = value;
                 }
             }

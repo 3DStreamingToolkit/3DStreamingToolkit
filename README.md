@@ -13,6 +13,13 @@ and stream to devices. :muscle: :eye: :cloud:
 
 [Release/Stable Tagged Builds](https://3dtoolkitstorage.blob.core.windows.net/releases/index.html)
 
+## Prerequisites
+
++ Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016
++ Visual Studio 2015 Update 3
++ Windows 10 SDK - 10.0.14393.795
++ [Windows 10 DDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573(v=vs.85).aspx) - If building WebRTC Library from source
+
 ## Installing Prebuilt Libraries for /3dtoolkit-directx
 
 After cloning this repository, run `.\setup.cmd` before opening the Project/Solution structure.
@@ -22,6 +29,7 @@ This will install and configure the following:
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
 + [This patch](.\WebRTCLibs\nvencoder.patch) will be applied to the above
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit
++ [WebRTC-UWP](https://github.com/webrtc-uwp/webrtc-uwp-sdk) M54 synced release for UWP-based clients (Hololens)
 
 > Note: We can't currently use the [directxtk nuget packages](https://www.nuget.org/packages?q=directxtk) because they don't provide static linking targets for release builds.
 
@@ -59,6 +67,19 @@ You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The Ho
 + Deploy to your machine or HoloLens. Make sure the server is running, the app will automatically connect to the ip address that was set in the step above.
 + Open the desired server and connect to the Unity client. 
 
+## JSON Configuration Options for Native Client and Native Servers:
+
+Use [webrtcConfig.json](https://github.com/CatalystCode/3dtoolkit/blob/master/Plugins/NativeServerPlugin/webrtcConfig.json) for TURN relay communication
+
+Use [webrtcConfigStun.json](https://github.com/CatalystCode/3dtoolkit/blob/master/Plugins/NativeServerPlugin/webrtcConfigStun.json) for STUN P2P communication
+
+At a minimum, you will need to deploy an instance of the signaling server below and use the STUN configuration file to test the native client and server.  You can run client, server and signaling server from the same development machine.
+
+[nvEncConfig.json](https://github.com/CatalystCode/3dtoolkit/blob/v0.1.0/Plugins/NativeServerPlugin/nvEncConfig.json) is the nvencode configuration file.  
++ Set "useSoftwareEncoding" to true to use the CPU for video encoding - this will increase latency and should only be used for development on computers without an nvidia video card.
++ Set "serverFrameCaptureFPS": 60 and "fps" to the same value.  Maximum FPS is dependent on card and scene complexity.
++ Set "bitrate" and "minBitrate" to set the max and min bitrates for video streaming - recommended maximum @ 10mbps and min to 5.5mbps for high quality streaming.  Anything over 10mbps will not visibly increase quality (see test runners for validation).  Setting minBitrate to 0 enables webrtc to drop bitrate to whatever it needs to in order to keep video streaming fluidly.
+
 ## Distributing binaries
 
 > Note: Currently for others you'll need to zip and upload yourself to match the `.\WebRTCLibs\webrtcInstallLibs.ps1` script.
@@ -69,11 +90,13 @@ https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_x64.zip
 
 ## Standing up production TURN/STUN/Signaling Servers
 
-See https://github.com/anastasiia-zolochevska/3dstreaming-arm-templates
- 
-And source repos:
-https://github.com/anastasiia-zolochevska/signaling-server-for-webrtc-native-client
++ Signaling Server (Node.JS) - https://github.com/anastasiia-zolochevska/signaling-server
++ TURN Server (optional, needed for VPN/Proxy networks) -
+   + Docker image for basic auth turn server - https://hub.docker.com/r/zolochevska/turn-server/ / 
 https://github.com/anastasiia-zolochevska/turn-server-docker-image
+   + Docker image for certificate based turn server that uses postgresql for user storage - https://hub.docker.com/r/zolochevska/3dsrelayadmin/ / https://github.com/anastasiia-zolochevska/3dsrelay
+   + Load balanced TURN Server Set - https://github.com/anastasiia-zolochevska/azturnlb
+   + TurnAdmin Instance (container for executing turnadmin commands) - https://hub.docker.com/r/zolochevska/3dsrelayadmin/ / https://github.com/anastasiia-zolochevska/3dsrelayadmin
 
 ## Building WebRTC Libraries from Source (You don't need to do this unless you are changing the encoder)
 
