@@ -130,6 +130,7 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
 
       copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP$(TargetExt)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP.pdb"
 ENDLOCAL
       </Command>
     </PostBuildEvent>
@@ -162,6 +163,7 @@ ENDLOCAL
       mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
 
       copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP$(TargetExt)"
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP.pdb"
 ENDLOCAL
       </Command>
     </PostBuildEvent>
@@ -186,12 +188,12 @@ ENDLOCAL
       </ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)"
-copy "$(TargetDir)$(SolutionName).pdb" "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>del /f /s /q "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)\$(TargetFileName)"
-del /f /s /q "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)\$(SolutionName).pdb"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -210,12 +212,12 @@ del /f /s /q "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformS
       </ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)"
-copy "$(TargetDir)$(SolutionName).pdb" "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>del /f /s /q "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)\$(TargetFileName)"
-del /f /s /q "$(SolutionDir)Unity\$(SolutionName)\Assets\Plugins\WSA\$(PlatformShortName)\$(SolutionName).pdb"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

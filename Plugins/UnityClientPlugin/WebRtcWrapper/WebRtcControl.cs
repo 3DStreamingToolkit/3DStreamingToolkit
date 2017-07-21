@@ -343,7 +343,6 @@ namespace WebRtcWrapper
             RunOnUiThread(() =>
             {
                 IceServers = configIceServers;
-                Ip = configTraceServerIp;
                 NtpServer = ntpServerAddress;
                 Port = new ValidableIntegerString(configTraceServerPort, 0, 65535);
                 Ip = new ValidableNonEmptyString(_server);
