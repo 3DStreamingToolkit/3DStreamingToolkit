@@ -21,6 +21,9 @@ namespace WebRtcWrapper
 {
     public class WebRtcControl
     {
+        // Default path for Unity.
+        private const string DEFAULT_CONFIG_FILE_PATH = "ms-appx:///Data/StreamingAssets/webrtcConfig.json";
+
         public event Action OnInitialized;
         public event Action<int, string> OnPeerMessageDataReceived;        
         public event Action<string> OnStatusMessageUpdate;
@@ -37,9 +40,10 @@ namespace WebRtcWrapper
 
         private readonly CoreDispatcher _uiDispatcher;
 
-        public WebRtcControl()
+        public WebRtcControl(string configFilePath = null)
         {
             _uiDispatcher = CoreApplication.MainView.CoreWindow.Dispatcher;
+            _configFilePath = configFilePath ?? DEFAULT_CONFIG_FILE_PATH;
         }
 
         #region SETUP ROUTINES
@@ -263,7 +267,7 @@ namespace WebRtcWrapper
             var configTraceServerIp = new ValidableNonEmptyString("127.0.0.1");
 
             StorageFile configFile = await StorageFile.GetFileFromApplicationUriAsync(
-                new Uri("ms-appx:///Data/StreamingAssets/webrtcConfig.json"))
+                new Uri(_configFilePath))
                 .AsTask()
                 .ConfigureAwait(false);
 
@@ -295,47 +299,41 @@ namespace WebRtcWrapper
                 (int)json.GetObject().GetNamedNumber("heartbeat"), 0, 65535);
 
             var configIceServers = new ObservableCollection<IceServer>();
-            bool useDefaultIceServers = true;
-            if (useDefaultIceServers)
+
+            // Parses turn server.
+            if (json.GetObject().ContainsKey("turnServer"))
             {
-                // Clears all values.
-                configIceServers.Clear();
+                JsonValue turnServer = json.GetObject().GetNamedValue("turnServer");
+                string uri = turnServer.GetObject().GetNamedString("uri");
+                IceServer iceServer = new IceServer(
+                    uri.Substring(uri.IndexOf("turn:") + 5),
+                    IceServer.ServerType.TURN);
 
-                // Parses turn server.
-                if (json.GetObject().ContainsKey("turnServer"))
-                {
-                    JsonValue turnServer = json.GetObject().GetNamedValue("turnServer");
-                    string uri = turnServer.GetObject().GetNamedString("uri");
-                    IceServer iceServer = new IceServer(
-                        uri.Substring(uri.IndexOf("turn:") + 5),
-                        IceServer.ServerType.TURN);
-
-                    iceServer.Credential = turnServer.GetObject().GetNamedString("username");
-                    iceServer.Username = turnServer.GetObject().GetNamedString("password");
-                    configIceServers.Add(iceServer);
-                }
-
-                // Parses stun server.
-                if (json.GetObject().ContainsKey("stunServer"))
-                {
-                    JsonValue stunServer = json.GetObject().GetNamedValue("stunServer");
-                    string uri = stunServer.GetObject().GetNamedString("uri");
-                    IceServer iceServer = new IceServer(
-                        uri.Substring(uri.IndexOf("stun:") + 5),
-                        IceServer.ServerType.STUN);
-
-                    iceServer.Credential = stunServer.GetObject().GetNamedString("username");
-                    iceServer.Username = stunServer.GetObject().GetNamedString("password");
-                    configIceServers.Add(iceServer);
-                }
-
-                // Default ones.
-                configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-                configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+                iceServer.Credential = turnServer.GetObject().GetNamedString("username");
+                iceServer.Username = turnServer.GetObject().GetNamedString("password");
+                configIceServers.Add(iceServer);
             }
+
+            // Parses stun server.
+            if (json.GetObject().ContainsKey("stunServer"))
+            {
+                JsonValue stunServer = json.GetObject().GetNamedValue("stunServer");
+                string uri = stunServer.GetObject().GetNamedString("uri");
+                IceServer iceServer = new IceServer(
+                    uri.Substring(uri.IndexOf("stun:") + 5),
+                    IceServer.ServerType.STUN);
+
+                iceServer.Credential = stunServer.GetObject().GetNamedString("username");
+                iceServer.Username = stunServer.GetObject().GetNamedString("password");
+                configIceServers.Add(iceServer);
+            }
+
+            // Default ones.
+            configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+            configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+            configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+            configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+            configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
 
             Conductor.Instance.ConfigureIceServers(configIceServers);
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
@@ -394,11 +392,10 @@ namespace WebRtcWrapper
             });
         }
 
-        public void ConnectToServer(string peerName, int heartbeatMs)
+        public void ConnectToServer(string peerName = "", int heartbeatMs = -1)
         {
             Task.Run(async () =>
             {
-
                 IsConnecting = true;
                 await LoadSettings().ConfigureAwait(false);                
                 Conductor.Instance.Signaller.SetHeartbeatMs(Convert.ToInt32(HeartBeat.Value));
@@ -929,6 +926,16 @@ namespace WebRtcWrapper
         {
             get { return _hasServer; }
             set { _hasServer = value; }
+        }
+
+        private string _configFilePath;
+        public string ConfigFilePath
+        {
+            get { return _configFilePath; }
+            set
+            {
+                _configFilePath = value;
+            }
         }
 
         private ValidableNonEmptyString _ntpServer;

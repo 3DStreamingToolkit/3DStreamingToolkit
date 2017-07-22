@@ -5,13 +5,12 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StreamingDirectxHololensClient", "DirectxClient\StreamingDirectxHololensClient.csproj", "{6963DC83-256B-4AA3-B37B-530111B90537}"
 	ProjectSection(ProjectDependencies) = postProject
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B} = {FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}
 		{80204D5C-6E4D-46A6-8506-C1280966FD16} = {80204D5C-6E4D-46A6-8506-C1280966FD16}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectxClientComponent", "DirectxClientComponent\DirectxClientComponent.vcxproj", "{80204D5C-6E4D-46A6-8506-C1280966FD16}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcWrapper", "WebRtcWrapper\WebRtcWrapper.csproj", "{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRtcWrapper", "..\..\..\Plugins\UnityClientPlugin\WebRtcWrapper\WebRtcWrapper.csproj", "{1857162F-96CC-451F-A4E2-3616207943AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,14 +40,14 @@ Global
 		{80204D5C-6E4D-46A6-8506-C1280966FD16}.Release|x64.Build.0 = Release|x64
 		{80204D5C-6E4D-46A6-8506-C1280966FD16}.Release|x86.ActiveCfg = Release|Win32
 		{80204D5C-6E4D-46A6-8506-C1280966FD16}.Release|x86.Build.0 = Release|Win32
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Debug|x64.ActiveCfg = Debug|x64
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Debug|x64.Build.0 = Debug|x64
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Debug|x86.ActiveCfg = Debug|x86
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Debug|x86.Build.0 = Debug|x86
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Release|x64.ActiveCfg = Release|x64
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Release|x64.Build.0 = Release|x64
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Release|x86.ActiveCfg = Release|x86
-		{FD9E6A0F-1DD6-4F65-B41C-E4FF0FE7709B}.Release|x86.Build.0 = Release|x86
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Debug|x64.ActiveCfg = Debug|x64
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Debug|x64.Build.0 = Debug|x64
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Debug|x86.ActiveCfg = Debug|x86
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Debug|x86.Build.0 = Debug|x86
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x64.ActiveCfg = Release|x64
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x64.Build.0 = Release|x64
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x86.ActiveCfg = Release|x86
+		{1857162F-96CC-451F-A4E2-3616207943AB}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

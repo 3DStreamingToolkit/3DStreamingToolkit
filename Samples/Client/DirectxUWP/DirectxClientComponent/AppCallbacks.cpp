@@ -10,6 +10,9 @@ using namespace Platform;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 
+#define VIDEO_FRAME_WIDTH	1280 * 2
+#define VIDEO_FRAME_HEIGHT	720
+
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
@@ -83,7 +86,8 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 
 		// Creates a dummy renderer and texture until the first frame is received from WebRTC
 		ID3D11ShaderResourceView* textureView;
-		HRESULT result = m_player->GetPrimaryTexture(2560, 720, (void**)&textureView);
+		HRESULT result = m_player->GetPrimaryTexture(
+			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
 
 		// Enables the stereo output mode.
 		String^ msg =
