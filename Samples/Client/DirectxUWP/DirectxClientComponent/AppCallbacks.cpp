@@ -89,17 +89,23 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 		HRESULT result = m_player->GetPrimaryTexture(
 			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
 
-		// Enables the stereo output mode.
-		String^ msg =
-			"{" +
-			"  \"type\":\"stereo-rendering\"," +
-			"  \"body\":\"1\"" +
-			"}";
-
-		m_sendInputDataHandler(msg);
-
 		// Initializes the video render.
 		InitVideoRender(m_deviceResources, textureView);
+
+		// Enables the stereo output mode.
+		Windows::Foundation::EventRegistrationToken token =
+			m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(
+				[&](MEPlayer^ mc, int width, int height)
+		{
+			String^ msg =
+				"{" +
+				"  \"type\":\"stereo-rendering\"," +
+				"  \"body\":\"1\"" +
+				"}";
+
+			m_sendInputDataHandler(msg);
+			m_player->FrameTransferred -= token;
+		});
 
 		// Starts receiving frames.
 		m_player->SetMediaStreamSource(source);
