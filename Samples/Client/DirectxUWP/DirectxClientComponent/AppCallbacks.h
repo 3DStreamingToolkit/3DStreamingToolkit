@@ -14,7 +14,7 @@ using namespace Windows::UI::Core;
 
 namespace DirectXClientComponent
 {
-	public delegate void SendInputDataHandler(String^ msg);
+	public delegate bool SendInputDataHandler(String^ msg);
 
     public ref class AppCallbacks sealed
     {
@@ -39,6 +39,8 @@ namespace DirectXClientComponent
 		MEPlayer^												m_player;
 		std::unique_ptr<HolographicAppMain>						m_main;
 		SendInputDataHandler^									m_sendInputDataHandler;
+		bool													m_sentStereoMode;
+		ABI::Windows::Media::Core::IMediaStreamSource *			m_mediaSource;
 		
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;

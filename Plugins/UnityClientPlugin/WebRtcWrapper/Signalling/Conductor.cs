@@ -363,9 +363,11 @@ namespace PeerConnectionClient.Signalling
             Debug.WriteLine("DataChannel: {0}-{1}", _peerId, msg);
         }
 
-        public void SendPeerDataChannelMessage(string msg)
+        public bool SendPeerDataChannelMessage(string msg)
         {
             _peerSendDataChannel?.Send(new StringDataChannelMessage(msg));
+
+            return _peerReceiveDataChannel != null;
         }
 
         private void PeerSendDataChannelOnClose()

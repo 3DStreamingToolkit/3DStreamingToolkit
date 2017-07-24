@@ -100,9 +100,9 @@ namespace StreamingDirectXHololensClient
             return this;
         }
 
-        private void SendInputData(string msg)
+        private bool SendInputData(string msg)
         {
-            Conductor.Instance.SendPeerDataChannelMessage(msg);
+            return Conductor.Instance.SendPeerDataChannelMessage(msg);
         }
     }
 }

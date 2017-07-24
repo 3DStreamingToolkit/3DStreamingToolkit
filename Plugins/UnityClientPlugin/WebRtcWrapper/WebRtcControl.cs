@@ -354,9 +354,9 @@ namespace WebRtcWrapper
 
         #region COMMANDS
 
-        public void SendPeerDataChannelMessage(string msg)
+        public bool SendPeerDataChannelMessage(string msg)
         {
-            Conductor.Instance.SendPeerDataChannelMessage(msg);
+            return Conductor.Instance.SendPeerDataChannelMessage(msg);
         }
 
         public void SendPeerMessageData(string msg)

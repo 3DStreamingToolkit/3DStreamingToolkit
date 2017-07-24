@@ -30,7 +30,6 @@ public class ControlScript : MonoBehaviour
     public InputField MessageInputField;
     public Transform VirtualCamera;
     
-
     public RawImage LeftCanvas;
     public RawImage RightCanvas;
 
@@ -44,8 +43,6 @@ public class ControlScript : MonoBehaviour
     private WebRtcControl _webRtcControl;
     private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
 
-    private float startTime = 0;
-    private float endTime = 0;
     private bool enabledStereo = false;
 #else
     private static readonly Queue<Action> _executionQueue = new Queue<Action>();
@@ -90,10 +87,6 @@ public class ControlScript : MonoBehaviour
             System.Diagnostics.Debug.WriteLine(
                 "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
                 evt.Stream.GetVideoTracks().Count);
-
-
-            // Wait one second after connection to set the stereo mode for the server.
-            EnqueueAction(() => { endTime = (startTime = Time.time) + 3.0f; });
         }
         else
         {
@@ -249,33 +242,24 @@ public class ControlScript : MonoBehaviour
            "  \"body\":\"" + cameraTransformBody + "\"" +
            "}";
 
+        _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
 
-        if (endTime != 0 && Time.time > endTime && enabledStereo)
+        if (!enabledStereo && _peerVideoTrack != null)
         {
-            // Send the left and right eye transform
-            _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
-        }
-
-        if (endTime != 0 && Time.time > endTime && !enabledStereo)
-        {
-            enabledStereo = true;
             // Enables the stereo output mode.
             var msg = "{" +
             "  \"type\":\"stereo-rendering\"," +
             "  \"body\":\"1\"" +
             "}";
-           _webRtcControl.SendPeerDataChannelMessage(msg);
-            
-            // Send the left and right eye transform
-            _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
 
-            // Start sending camera updates after 1 second worth of frames.
-            EnqueueAction(() => { endTime = (startTime = Time.time) + 1.0f; });
-            
-            // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
-            var source = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, FrameRate, "media");
-            Plugin.LoadMediaStreamSource((MediaStreamSource)source);
-            Plugin.Play();
+            if(_webRtcControl.SendPeerDataChannelMessage(msg))
+            {
+                // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
+                var source = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, FrameRate, "media");
+                Plugin.LoadMediaStreamSource((MediaStreamSource)source);
+                Plugin.Play();
+                enabledStereo = true;
+            }
         }
 
         lock (_executionQueue)

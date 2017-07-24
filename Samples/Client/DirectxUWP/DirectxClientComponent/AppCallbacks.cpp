@@ -16,6 +16,7 @@ using namespace Windows::Perception::Spatial;
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
+	m_sentStereoMode(false),
 	m_sendInputDataHandler(sendInputDataHandler)
 {
 }
@@ -76,10 +77,10 @@ void AppCallbacks::Run()
 
 void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle)
 {
-	ABI::Windows::Media::Core::IMediaStreamSource * source = 
+	m_mediaSource =
 		reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
 
-	if (source != nullptr)
+	if (m_mediaSource != nullptr)
 	{
 		// Initializes the media engine player.
 		m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
@@ -91,25 +92,6 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 
 		// Initializes the video render.
 		InitVideoRender(m_deviceResources, textureView);
-
-		// Enables the stereo output mode.
-		Windows::Foundation::EventRegistrationToken token =
-			m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(
-				[&](MEPlayer^ mc, int width, int height)
-		{
-			String^ msg =
-				"{" +
-				"  \"type\":\"stereo-rendering\"," +
-				"  \"body\":\"1\"" +
-				"}";
-
-			m_sendInputDataHandler(msg);
-			m_player->FrameTransferred -= token;
-		});
-
-		// Starts receiving frames.
-		m_player->SetMediaStreamSource(source);
-		m_player->Play();
 	}
 }
 
@@ -129,6 +111,24 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 	SpatialCoordinateSystem^ currentCoordinateSystem =
 		m_main->GetReferenceFrame()->CoordinateSystem;
+
+	// Attempt to set server to stereo mode
+	if (!m_sentStereoMode && m_mediaSource)
+	{
+		String^ msg =
+			"{" +
+			"  \"type\":\"stereo-rendering\"," +
+			"  \"body\":\"1\"" +
+			"}";
+
+		if (m_sendInputDataHandler(msg))
+		{
+			// This is required to avoid corrupt frames at startup.
+			m_player->SetMediaStreamSource(m_mediaSource);
+			m_player->Play();
+			m_sentStereoMode = true;
+		}
+	}
 
 	for (auto cameraPose : prediction->CameraPoses)
 	{
