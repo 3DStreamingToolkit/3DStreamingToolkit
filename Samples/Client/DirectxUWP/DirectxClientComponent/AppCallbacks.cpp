@@ -123,6 +123,7 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 
 		if (m_sendInputDataHandler(msg))
 		{
+			// The server is now in stereo mode. Start receiving frames.
 			// This is required to avoid corrupt frames at startup.
 			m_player->SetMediaStreamSource(m_mediaSource);
 			m_player->Play();
