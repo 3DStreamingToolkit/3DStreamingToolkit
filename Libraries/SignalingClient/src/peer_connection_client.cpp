@@ -60,6 +60,7 @@ void PeerConnectionClient::InitSocketSignals()
 	RTC_DCHECK(hanging_get_.get() != NULL);
 	control_socket_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
 	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnSignalingServerClose);
+	heartbeat_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetClose);
 
 	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
 	hanging_get_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnHangingGetConnect);
@@ -166,7 +167,7 @@ std::string PeerConnectionClient::PrepareRequest(const std::string& method, cons
 {
 	std::string result;
 
-	for (auto i = 0; i < method.length(); ++i)
+	for (size_t i = 0; i < method.length(); ++i)
 	{
 		result += (char)toupper(method[i]);
 	}
@@ -644,6 +645,17 @@ void PeerConnectionClient::OnSignalingServerClose(rtc::AsyncSocket* socket, int 
 	Close();
 }
 
+void PeerConnectionClient::OnHeartbeatGetClose(rtc::AsyncSocket* socket, int err)
+{
+	// if we're still connected, schedule a reconnect
+	if (state_ == State::CONNECTED)
+	{
+		LOG(INFO) << "heartbeat socket closed (" << err << "), scheduling reconnection attempt";
+
+		rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, heartbeat_tick_ms_, this, kHeartbeatScheduleId);
+	}
+}
+
 void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err) 
 {
 	LOG(INFO) << __FUNCTION__;
@@ -696,11 +708,17 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 			return;
 		}
 
-		// if the socket is still open, close it and then reconnect to trigger the beat
+		// if the socket is still open, close it and then reconnect to trigger the beat...
 		if (heartbeat_get_->GetState() != rtc::Socket::ConnState::CS_CLOSED)
 		{
+			// but note that closing the heartbeat retriggers this message...
 			heartbeat_get_->Close();
+
+			// so we actually just return here, and the next iteration will execute connect
+			// since the socket will then be closed.
+			return;
 		}
+
 		heartbeat_get_->Connect(server_address_);
 	}
 	else

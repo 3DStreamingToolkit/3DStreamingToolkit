@@ -142,6 +142,8 @@ protected:
 
 	void OnSignalingServerClose(rtc::AsyncSocket* socket, int err);
 
+	void OnHeartbeatGetClose(rtc::AsyncSocket* socket, int err);
+
 	void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
 	std::string PrepareRequest(const std::string& method, const std::string& fragment, std::map<std::string, std::string> headers);
