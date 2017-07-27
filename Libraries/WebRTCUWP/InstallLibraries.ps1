@@ -124,5 +124,5 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "Org.WebRtc" -path "\Org.WebRTC\"
+DecompressZip -filename "Org.WebRtc_v1.1" -path "\Org.WebRTC\"
 DecompressZip -filename "libyuv" -path "\libyuv\"

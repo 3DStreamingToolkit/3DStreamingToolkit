@@ -8,7 +8,6 @@ public class UIControls : MonoBehaviour
     public RectTransform panelMain;
 
     private IEnumerator panelCoRoutineControl;
-    private float width;
     private float height;
     private float xPos;
     private float yPos;
@@ -17,7 +16,6 @@ public class UIControls : MonoBehaviour
 
     void Start()
     {
-        width = panelMain.rect.width;
         height = panelMain.rect.height;
         moveSpeed = height * 3f;
 

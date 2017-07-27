@@ -93,13 +93,13 @@
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Plugins\UnityClientPlugin\WebRtcWrapper\WebRtcWrapper.csproj">
+      <Project>{1857162f-96cc-451f-a4e2-3616207943ab}</Project>
+      <Name>WebRtcWrapper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DirectxClientComponent\DirectxClientComponent.vcxproj">
       <Project>{80204d5c-6e4d-46a6-8506-c1280966fd16}</Project>
       <Name>DirectxClientComponent</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\WebRtcWrapper\WebRtcWrapper.csproj">
-      <Project>{fd9e6a0f-1dd6-4f65-b41c-e4ff0fe7709b}</Project>
-      <Name>WebRtcWrapper</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

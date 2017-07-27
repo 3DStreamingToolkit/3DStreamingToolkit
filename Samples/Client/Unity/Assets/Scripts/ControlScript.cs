@@ -11,86 +11,56 @@ using UnityEngine.UI;
 using Org.WebRtc;
 using WebRtcWrapper;
 using PeerConnectionClient.Signalling;
+using Windows.Media.Playback;
+using Windows.Media.Core;
 #endif
 
 public class ControlScript : MonoBehaviour
 {
-    private const int textureWidth = 1280;
-    private const int textureHeight = 480;
+    public uint TextureWidth = 2560;
+    public uint TextureHeight = 720;
+    public uint FrameRate = 30;
+
+    // Heartbeat interval in ms (-1 will disable)
+    public int HeartbeatInputText = 5000;
     public Text StatusText;
     public Text MessageText;
     public InputField ServerInputTextField;
-    public InputField HeartbeatInputTextField;
     public InputField PeerInputTextField;
     public InputField MessageInputField;
     public Transform VirtualCamera;
-
+    
     public RawImage LeftCanvas;
     public RawImage RightCanvas;
-    public float TextureScale = 1f;
-    public int PluginMode = 0;
 
-    private Transform camTransform;
-    private Vector3 prevPos;
-    private Quaternion prevRot;
-
-    private int frameCounter = 0;
-    private int fpsCounter = 0;
-    private float fpsCount = 0f;
-    private float startTime = 0;
-    private float endTime = 0;
+    public Camera LeftCamera;
+    public Camera RightCamera;
     
 #if !UNITY_EDITOR
+    private Matrix4x4 leftViewProjection;
+    private Matrix4x4 rightViewProjection;
+    private string cameraTransformMsg;
     private WebRtcControl _webRtcControl;
     private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
+
+    private bool enabledStereo = false;
 #else
     private static readonly Queue<Action> _executionQueue = new Queue<Action>();
 #endif
-    private bool frame_ready_receive = true;
-    private string messageText;
 
     #region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
-    public DecodedVideoSource decodedVideo;
     private MediaVideoTrack _peerVideoTrack;
-
-    [DllImport("TexturesUWP")]
-    private static extern void SetTextureFromUnity(System.IntPtr texture, int w, int h);
-
-    [DllImport("TexturesUWP")]
-    private static extern void ProcessRawFrame(uint w, uint h, IntPtr yPlane, uint yStride, IntPtr uPlane, uint uStride,
-        IntPtr vPlane, uint vStride);
-
-    [DllImport("TexturesUWP")]
-    private static extern void ProcessRawH264Frame(uint w, uint h, IntPtr data, uint dataSize);
-
-    [DllImport("TexturesUWP")]
-    private static extern IntPtr GetRenderEventFunc();
-
-    [DllImport("TexturesUWP")]
-    private static extern void SetPluginMode(int mode);
 #endif
     #endregion
 
     void Awake()
     {
-        // Azure Host Details
-        ServerInputTextField.text = "signalingserver.centralus.cloudapp.azure.com:3000";
-
-        // Heartbeat interval in ms (-1 will disable) 
-        HeartbeatInputTextField.text = "5000";
-
-        // Local Dev Setup - Define Host Workstation IP Address
-        //ServerInputTextField.text = "127.0.0.1:8888";
     }
-
+    
     void Start()
     {
-        camTransform = Camera.main.transform;
-        prevPos = camTransform.position;
-        prevRot = camTransform.rotation;
-
-#if !UNITY_EDITOR        
+#if !UNITY_EDITOR
         _webRtcControl = new WebRtcControl();
         _webRtcControl.OnInitialized += WebRtcControlOnInitialized;
         _webRtcControl.OnPeerMessageDataReceived += WebRtcControlOnPeerMessageDataReceived;
@@ -98,21 +68,6 @@ public class ControlScript : MonoBehaviour
 
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
         _webRtcControl.Initialize();
-
-        // Setup Low-Level Graphics Plugin        
-        CreateTextureAndPassToPlugin(textureWidth, textureHeight);
-        SetPluginMode(PluginMode);
-        StartCoroutine(CallPluginAtEndOfFrames());
-#endif
-    }
-
-    private void SetupTexturePlugin(uint width, uint height)
-    {
-#if !UNITY_EDITOR
-        // Setup Low-Level Graphics Plugin        
-        CreateTextureAndPassToPlugin(width, height);
-        SetPluginMode(PluginMode);
-        StartCoroutine(CallPluginAtEndOfFrames());
 #endif
     }
 
@@ -126,61 +81,12 @@ public class ControlScript : MonoBehaviour
             System.Diagnostics.Debug.WriteLine(
                 "Conductor_OnAddRemoteStream() - GetVideoTracks: {0}",
                 evt.Stream.GetVideoTracks().Count);
-
-            decodedVideo = Media.CreateMedia().CreateDecodedVideoSource(_peerVideoTrack);
-            decodedVideo.OnDecodedVideoFrame += DecodedVideo_OnDecodedVideoFrame;
         }
         else
         {
             System.Diagnostics.Debug.WriteLine("Conductor_OnAddRemoteStream() - peerVideoTrack NULL");
         }
         _webRtcControl.IsReadyToDisconnect = true;
-    }
-
-    private void DecodedVideo_OnDecodedVideoFrame(uint w, uint h, byte[] data)
-    {
-        frameCounter++;
-        fpsCounter++;
-        messageText = data.Length.ToString();
-        if (data.Length == 0)
-            return;
-
-        if (frame_ready_receive)
-            frame_ready_receive = false;
-        else
-            return;
-        
-        GCHandle buf = GCHandle.Alloc(data, GCHandleType.Pinned);
-        ProcessRawH264Frame(w, h, buf.AddrOfPinnedObject(), (uint)data.Length);
-        buf.Free();
-    }
-
-    private void Source_OnRawVideoFrame(uint w, uint h, byte[] yPlane, uint yStride, byte[] vPlane, uint vStride, byte[] uPlane, uint uStride)
-    {
-        frameCounter++;
-        fpsCounter++;
-
-        messageText = string.Format("{0}-{1}\n{2}-{3}\n{4}-{5}",
-            yPlane != null ? yPlane.Length.ToString() : "X", yStride,
-            vPlane != null ? vPlane.Length.ToString() : "X", vStride,
-            uPlane != null ? uPlane.Length.ToString() : "X", uStride);
-
-        if ((yPlane == null) || (uPlane == null) || (vPlane == null))
-            return;
-
-        if (frame_ready_receive)
-            frame_ready_receive = false;
-        else
-            return;
-
-        GCHandle yP = GCHandle.Alloc(yPlane, GCHandleType.Pinned);
-        GCHandle uP = GCHandle.Alloc(uPlane, GCHandleType.Pinned);
-        GCHandle vP = GCHandle.Alloc(vPlane, GCHandleType.Pinned);
-        ProcessRawFrame(w, h, yP.AddrOfPinnedObject(), yStride, uP.AddrOfPinnedObject(), uStride,
-            vP.AddrOfPinnedObject(), vStride);
-        yP.Free();
-        uP.Free();
-        vP.Free();
     }
 #endif
 
@@ -194,14 +100,7 @@ public class ControlScript : MonoBehaviour
     private void OnInitialized()
     {
 #if !UNITY_EDITOR
-        // _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
-        // _webRtcUtils.IsMicrophoneEnabled = false;
-        //      //  PeerConnectionClient.Signalling.Conductor.Instance.MuteMicrophone();
-#if VP8_ENCODING
-        _webRtcUtils.SelectedVideoCodec = _webRtcUtils.VideoCodecs.FirstOrDefault(x => x.Name.Contains("VP8"));
-#else
         _webRtcControl.SelectedVideoCodec = _webRtcControl.VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
-#endif
 #endif
         StatusText.text += "WebRTC Initialized\n";
     }
@@ -228,6 +127,7 @@ public class ControlScript : MonoBehaviour
 
     public void ConnectToServer()
     {
+#if !UNITY_EDITOR
         var signalhost = ServerInputTextField.text.Split(':');
         var host = string.Empty;
         var port = string.Empty;
@@ -241,15 +141,8 @@ public class ControlScript : MonoBehaviour
             host = signalhost[0];
             port = "8888";
         }
-
-        int heartbeatMs;
-        if (!int.TryParse(HeartbeatInputTextField.text, out heartbeatMs))
-        {
-            heartbeatMs = -1;
-        }
         
-#if !UNITY_EDITOR
-        _webRtcControl.ConnectToServer(host, port, PeerInputTextField.text, heartbeatMs);
+        _webRtcControl.ConnectToServer(PeerInputTextField.text, HeartbeatInputText);
 #endif
     }
 
@@ -261,14 +154,12 @@ public class ControlScript : MonoBehaviour
     }
 
     public void ConnectToPeer()
-    {
-        // TODO: Support Peer Selection        
+    {    
 #if !UNITY_EDITOR
         if (_webRtcControl.Peers.Count > 0)
         {
             _webRtcControl.SelectedPeer = _webRtcControl.Peers[0];
             _webRtcControl.ConnectToPeer();
-            endTime = (startTime = Time.time) + 10f;
         }
 #endif
     }
@@ -276,11 +167,6 @@ public class ControlScript : MonoBehaviour
     public void DisconnectFromPeer()
     {
 #if !UNITY_EDITOR
-        if (decodedVideo != null)
-        {
-            decodedVideo.OnDecodedVideoFrame -= DecodedVideo_OnDecodedVideoFrame;
-        }
-
         _webRtcControl.DisconnectFromPeer();
 #endif
     }
@@ -310,104 +196,107 @@ public class ControlScript : MonoBehaviour
         }
     }
 
+    private void OnEnable()
+    {
+        Plugin.CreateMediaPlayback();
+        GetPlaybackTextureFromPlugin();
+    }
+
+    private void OnDisable()
+    {
+        Plugin.ReleaseMediaPlayback();
+    }
+
     void Update()
     {
-        #region Virtual Camera Control
-
-        if (Vector3.Distance(prevPos, VirtualCamera.position) > 0.05f ||
-            Quaternion.Angle(prevRot, VirtualCamera.rotation) > 2f)
-        {
-            prevPos = VirtualCamera.position;
-            prevRot = VirtualCamera.rotation;
-            var eulerRot = prevRot.eulerAngles;
-            var lookAt = VirtualCamera.forward;
-            var upVector = -VirtualCamera.up;
-            var format = @"{{""type"":""camera-transform-lookat"",""body"":""{0},{1},{2},{3},{4},{5},{6},{7},{8}""}}";
-
-            var camMsg = string.Format(
-                format,
-                prevPos.x,
-                prevPos.y,
-                prevPos.z,
-                lookAt.x,
-                lookAt.y,
-                lookAt.z,
-                upVector.x,
-                upVector.y,
-                upVector.z);
 #if !UNITY_EDITOR
-            _webRtcControl.SendPeerDataChannelMessage(camMsg);
-#endif
-        }
-        #endregion
+        leftViewProjection = LeftCamera.cullingMatrix;
+        rightViewProjection = RightCamera.cullingMatrix;
 
-        if (Time.time > endTime)
+        // Builds the camera transform message.
+        var leftCameraTransform = "";
+        var rightCameraTransform = "";
+        for (int i = 0; i < 4; i++)
         {
-            fpsCount = (float)fpsCounter / (Time.time - startTime);
-            fpsCounter = 0;
-            endTime = (startTime = Time.time) + 3;
-        }
-
-        MessageText.text = string.Format("Raw Frame: {0}\nFPS: {1}\n{2}", frameCounter, fpsCount, messageText);
-
-#if !UNITY_EDITOR
-        lock (_executionQueue)
-        {
-            while (!_executionQueue.IsEmpty)
+            for (int j = 0; j < 4; j++)
             {
-                Action qa;
-                if (_executionQueue.TryDequeue(out qa))
+                leftCameraTransform += leftViewProjection[i, j] + ",";
+                rightCameraTransform += rightViewProjection[i, j];
+                if (i != 3 || j != 3)
                 {
-                    if (qa != null)
-                        qa.Invoke();
+                    rightCameraTransform += ",";
                 }
             }
         }
-#endif
-    }
 
-    private void CreateTextureAndPassToPlugin(uint width, uint height)
-    {
-#if !UNITY_EDITOR
-        Texture2D tex = new Texture2D((int)width, (int)height, TextureFormat.ARGB32, false);
-        tex.filterMode = FilterMode.Point;
-        tex.Apply();
+        var cameraTransformBody = leftCameraTransform + rightCameraTransform;
+        cameraTransformMsg =
+           "{" +
+           "  \"type\":\"camera-transform-stereo\"," +
+           "  \"body\":\"" + cameraTransformBody + "\"" +
+           "}";
 
-        LeftCanvas.texture = tex;
-        RightCanvas.texture = tex;
+        _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
 
-        SetTextureFromUnity(tex.GetNativeTexturePtr(), tex.width, tex.height);
-#endif
-    }
-
-    private IEnumerator CallPluginAtEndOfFrames()
-    {
-        while (true)
+        if (!enabledStereo && _peerVideoTrack != null)
         {
-            // Wait until all frame rendering is done
-            yield return new WaitForEndOfFrame();
+            // Enables the stereo output mode.
+            var msg = "{" +
+            "  \"type\":\"stereo-rendering\"," +
+            "  \"body\":\"1\"" +
+            "}";
 
-            // Issue a plugin event with arbitrary integer identifier.
-            // The plugin can distinguish between different
-            // things it needs to do based on this ID.
-            // For our simple plugin, it does not matter which ID we pass here.
+            if(_webRtcControl.SendPeerDataChannelMessage(msg))
+            {
+                // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
+                var source = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, FrameRate, "media");
+                Plugin.LoadMediaStreamSource((MediaStreamSource)source);
+                Plugin.Play();
+                enabledStereo = true;
+            }
+        }
+#endif
+    }
 
+    private void GetPlaybackTextureFromPlugin()
+    {
+        IntPtr nativeTex = IntPtr.Zero;
+        Plugin.GetPrimaryTexture(TextureWidth, TextureHeight, out nativeTex);
+        var primaryPlaybackTexture = Texture2D.CreateExternalTexture((int)TextureWidth, (int)TextureHeight, TextureFormat.BGRA32, false, false, nativeTex);
+
+        LeftCanvas.texture = primaryPlaybackTexture;
+        RightCanvas.texture = primaryPlaybackTexture;
+    }
+
+    private static class Plugin
+    {
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "CreateMediaPlayback")]
+        internal static extern void CreateMediaPlayback();
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "ReleaseMediaPlayback")]
+        internal static extern void ReleaseMediaPlayback();
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetPrimaryTexture")]
+        internal static extern void GetPrimaryTexture(UInt32 width, UInt32 height, out System.IntPtr playbackTexture);
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadContent")]
+        internal static extern void LoadContent([MarshalAs(UnmanagedType.BStr)] string sourceURL);
 #if !UNITY_EDITOR
 
-            switch (PluginMode)
-            {
-                case 0:
-                    if (!frame_ready_receive)
-                    {
-                        GL.IssuePluginEvent(GetRenderEventFunc(), 1);
-                        frame_ready_receive = true;
-                    }
-                    break;
-                default:
-                    GL.IssuePluginEvent(GetRenderEventFunc(), 1);
-                    break;
-            }
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaSource")]
+        internal static extern void LoadMediaSource(IMediaSource IMediaSourceHandler);
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "LoadMediaStreamSource")]
+        internal static extern void LoadMediaStreamSource(MediaStreamSource IMediaSourceHandler);
 #endif
-        }
+    
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Play")]
+        internal static extern void Play();
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Pause")]
+        internal static extern void Pause();
+
+        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Stop")]
+        internal static extern void Stop();
     }
 }

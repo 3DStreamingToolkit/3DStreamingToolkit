@@ -12,7 +12,7 @@ namespace DirectXClientComponent
 	{
 	public:
 		VideoRenderer(const std::shared_ptr<DX::DeviceResources>& deviceResources, 
-			int width, int height);
+			ID3D11ShaderResourceView* textureView);
 
 		void CreateDeviceDependentResources();
 
@@ -22,24 +22,13 @@ namespace DirectXClientComponent
 
 		void Render();
 
-		void UpdateFrame(const uint8_t* data);
-
 		// Property accessors.
 		void SetPosition(Windows::Foundation::Numerics::float3 pos) { m_position = pos; }
 
 		Windows::Foundation::Numerics::float3 GetPosition() { return m_position; }
 
-		int GetWidth() { return m_width; }
-
-		int GetHeight() { return m_height; }
-
 	private:
 		std::shared_ptr<DX::DeviceResources>		m_deviceResources;
-		int											m_width;
-		int											m_height;
-		const uint8_t*								m_frameData;
-		ID3D11Texture2D*							m_videoTexture;
-		D3D11_TEXTURE2D_DESC						m_videoTextureDesc;
 
 		// Direct3D resources for geometry.
 		ComPtr<ID3D11Buffer>						m_vertexBuffer;
