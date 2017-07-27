@@ -80,29 +80,29 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
-    <OutDir>$(SolutionDir)Build\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</OutDir>
-    <IntDir>$(ProjectDir)Build\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(PlatformShortName)\$(Configuration)\</IntDir>
     <TargetName>MediaEngineUWP</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <GenerateManifest>false</GenerateManifest>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
-    <OutDir>$(SolutionDir)Build\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</OutDir>
-    <IntDir>$(ProjectDir)Build\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(PlatformShortName)\$(Configuration)\</IntDir>
     <TargetName>MediaEngineUWP</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
-    <OutDir>$(SolutionDir)Build\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</OutDir>
-    <IntDir>$(ProjectDir)Build\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(PlatformShortName)\$(Configuration)\</IntDir>
     <TargetName>$(SolutionName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
-    <OutDir>$(SolutionDir)Build\$(Configuration)\$(PlatformShortName)\$(ProjectName)\</OutDir>
-    <IntDir>$(ProjectDir)Build\$(Configuration)\$(PlatformShortName)\</IntDir>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(PlatformShortName)\$(Configuration)\</IntDir>
     <TargetName>$(SolutionName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

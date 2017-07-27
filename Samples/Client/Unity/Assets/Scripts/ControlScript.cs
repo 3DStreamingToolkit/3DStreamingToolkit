@@ -57,12 +57,8 @@ public class ControlScript : MonoBehaviour
     void Awake()
     {
     }
-
-#if UNITY_EDITOR
+    
     void Start()
-#else
-    IEnumerator Start()
-#endif
     {
 #if !UNITY_EDITOR
         _webRtcControl = new WebRtcControl();
@@ -72,8 +68,6 @@ public class ControlScript : MonoBehaviour
 
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
         _webRtcControl.Initialize();
-
-        yield return StartCoroutine("CallPluginAtEndOfFrames");
 #endif
     }
 
@@ -261,19 +255,6 @@ public class ControlScript : MonoBehaviour
                 enabledStereo = true;
             }
         }
-
-        lock (_executionQueue)
-        {
-            while (!_executionQueue.IsEmpty)
-            {
-                Action qa;
-                if (_executionQueue.TryDequeue(out qa))
-                {
-                    if (qa != null)
-                        qa.Invoke();
-                }
-            }
-        }
 #endif
     }
 
@@ -285,24 +266,6 @@ public class ControlScript : MonoBehaviour
 
         LeftCanvas.texture = primaryPlaybackTexture;
         RightCanvas.texture = primaryPlaybackTexture;
-    }
-
-    private IEnumerator CallPluginAtEndOfFrames()
-    {
-        while (true)
-        {
-            // Wait until all frame rendering is done
-            yield return new WaitForEndOfFrame();
-
-            // Set time for the plugin
-            Plugin.SetTimeFromUnity(Time.timeSinceLevelLoad);
-
-            // Issue a plugin event with arbitrary integer identifier.
-            // The plugin can distinguish between different
-            // things it needs to do based on this ID.
-            // For our simple plugin, it does not matter which ID we pass here.
-            GL.IssuePluginEvent(Plugin.GetRenderEventFunc(), 1);
-        }
     }
 
     private static class Plugin
@@ -335,12 +298,5 @@ public class ControlScript : MonoBehaviour
 
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Stop")]
         internal static extern void Stop();
-
-        // Unity plugin
-        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "SetTimeFromUnity")]
-        internal static extern void SetTimeFromUnity(float t);
-
-        [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetRenderEventFunc")]
-        internal static extern IntPtr GetRenderEventFunc();
     }
 }

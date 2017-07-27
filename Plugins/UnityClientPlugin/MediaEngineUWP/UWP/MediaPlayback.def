@@ -7,11 +7,9 @@ EXPORTS
    UnityPluginLoad
    UnityPluginUnload   
    CreateMediaPlayback   
-   GetRenderEventFunc
    ReleaseMediaPlayback
    GetPrimaryTexture
    LoadContent
    LoadMediaStreamSource
    Play
    Pause
-   SetTimeFromUnity

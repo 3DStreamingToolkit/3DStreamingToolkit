@@ -19,7 +19,6 @@ static UnityGfxRenderer s_DeviceType = kUnityGfxRenderernullptr;
 static IUnityInterfaces* s_UnityInterfaces = nullptr;
 static IUnityGraphics* s_Graphics = nullptr;
 
-static float g_Time;
 static MEPlayer^ m_player;
 
 STDAPI_(BOOL) DllMain(
@@ -155,29 +154,3 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
     s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 }
-
-
-// --------------------------------------------------------------------------
-// SetTimeFromUnity, an example function we export which is called by one of the scripts.
-extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API SetTimeFromUnity(float t)
-{ 
-    g_Time = t;
-}
-
-// --------------------------------------------------------------------------
-// OnRenderEvent
-// This will be called for GL.IssuePluginEvent script calls; eventID will
-// be the integer passed to IssuePluginEvent. In this example, we just ignore
-// that value.
-static void UNITY_INTERFACE_API OnRenderEvent(int eventID)
-{
-}
-
-
-// --------------------------------------------------------------------------
-// GetRenderEventFunc, an example function we export which is used to get a rendering event callback function.
-extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
-{
-    return OnRenderEvent;
-}
-
