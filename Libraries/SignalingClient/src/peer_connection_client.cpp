@@ -713,10 +713,6 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 		{
 			// but note that closing the heartbeat retriggers this message...
 			heartbeat_get_->Close();
-
-			// so we actually just return here, and the next iteration will execute connect
-			// since the socket will then be closed.
-			return;
 		}
 
 		heartbeat_get_->Connect(server_address_);
