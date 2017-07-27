@@ -711,7 +711,6 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 		// if the socket is still open, close it and then reconnect to trigger the beat...
 		if (heartbeat_get_->GetState() != rtc::Socket::ConnState::CS_CLOSED)
 		{
-			// but note that closing the heartbeat retriggers this message...
 			heartbeat_get_->Close();
 		}
 
