@@ -140,8 +140,6 @@ protected:
 
 	void OnClose(rtc::AsyncSocket* socket, int err);
 
-	void OnSignalingServerClose(rtc::AsyncSocket* socket, int err);
-
 	void OnHeartbeatGetClose(rtc::AsyncSocket* socket, int err);
 
 	void OnResolveResult(rtc::AsyncResolverInterface* resolver);

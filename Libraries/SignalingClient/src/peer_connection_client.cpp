@@ -59,7 +59,7 @@ void PeerConnectionClient::InitSocketSignals()
 	RTC_DCHECK(control_socket_.get() != NULL);
 	RTC_DCHECK(hanging_get_.get() != NULL);
 	control_socket_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
-	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnSignalingServerClose);
+	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
 	heartbeat_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetClose);
 
 	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
@@ -639,12 +639,6 @@ bool PeerConnectionClient::ParseServerResponse(const std::string& response,
 	return true;
 }
 
-
-void PeerConnectionClient::OnSignalingServerClose(rtc::AsyncSocket* socket, int err) 
-{
-	Close();
-}
-
 void PeerConnectionClient::OnHeartbeatGetClose(rtc::AsyncSocket* socket, int err)
 {
 	// if we're still connected, schedule a reconnect
@@ -747,6 +741,12 @@ void PeerConnectionClient::OnHeartbeatGetRead(rtc::AsyncSocket* socket)
 	size_t content_length = 0;
 	if (ReadIntoBuffer(socket, &data, &content_length))
 	{
+		// empty data can sometimes occur, we wish to ignore it
+		if (data.empty())
+		{
+			return;
+		}
+
 		size_t peer_id = 0, eoh = 0;
 		int status = GetResponseStatus(data);
 
