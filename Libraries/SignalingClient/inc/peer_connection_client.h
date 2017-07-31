@@ -135,7 +135,7 @@ protected:
 
 	int GetResponseStatus(const std::string& response);
 
-	bool ParseServerResponse(const std::string& response, size_t content_length,
+	int ParseServerResponse(const std::string& response, size_t content_length,
 							size_t* peer_id, size_t* eoh);
 
 	void OnClose(rtc::AsyncSocket* socket, int err);
