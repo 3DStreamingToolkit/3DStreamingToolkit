@@ -51,14 +51,15 @@
 #pragma comment(lib, "metrics_default.lib")
 #pragma comment(lib, "protobuf_full.lib")
 
-
 using namespace Microsoft::WRL;
 using namespace Toolkit3DLibrary;
 
 void(__stdcall*s_onInputUpdate)(const char *msg);
+void(__stdcall*s_onLog)(const int level, const char *msg);
+
+#define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
 
 DEFINE_GUID(IID_Texture2D, 0x6f15aaf2, 0xd208, 0x4e89, 0x9a, 0xb4, 0x48, 0x95, 0x35, 0xd3, 0x4f, 0x9c);
-
 
 static IUnityInterfaces* s_UnityInterfaces = nullptr;
 static IUnityGraphics* s_Graphics = nullptr;
@@ -84,14 +85,17 @@ bool s_closing = false;
 
 void FrameUpdate()
 {
+	ULOG(INFO, __FUNCTION__);
 }
 
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
+	ULOG(INFO, __FUNCTION__);
+
 	if (s_onInputUpdate)
 	{
-		LOG(INFO) << message;
+		ULOG(INFO, message.c_str());
 
 		(*s_onInputUpdate)(message.c_str());
 	}
@@ -100,6 +104,8 @@ void InputUpdate(const std::string& message)
 
 void InitWebRTC()
 {
+	ULOG(INFO, __FUNCTION__);
+
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
@@ -167,6 +173,7 @@ void InitWebRTC()
 			}
 			catch (const std::exception& e) { // reference to the base of a polymorphic object
 				std::cout << e.what(); // information from length_error printed
+				ULOG(LERROR, e.what());
 			}
 		}
 	}
@@ -175,6 +182,8 @@ void InitWebRTC()
 
 static void UNITY_INTERFACE_API OnEncode(int eventID)
 {
+	ULOG(INFO, __FUNCTION__);
+
 	if (s_Context)
     {
 		if (s_frameBuffer == nullptr)
@@ -207,6 +216,8 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 
 extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType)
 {
+	ULOG(INFO, __FUNCTION__);
+
     switch (eventType)
     {
         case kUnityGfxDeviceEventInitialize:
@@ -233,12 +244,15 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
 extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
+	ULOG(INFO, __FUNCTION__);
+
 #if SHOW_CONSOLE
     AllocConsole();
     FILE* out(nullptr);
     freopen_s(&out, "CONOUT$", "w", stdout);
 
     std::cout << "Console open..." << std::endl;
+	ULOG(INFO, "Console open...")
 #endif
 	
     s_UnityInterfaces = unityInterfaces;
@@ -254,6 +268,8 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 
 extern "C" __declspec(dllexport) void Close()
 {
+	ULOG(INFO, __FUNCTION__);
+
 	if (s_conductor != nullptr)
 	{
 		MainWindowCallback *callback = s_conductor;
@@ -273,6 +289,8 @@ extern "C" __declspec(dllexport) void Close()
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
+	ULOG(INFO, __FUNCTION__);
+
     s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 	Close();
@@ -280,11 +298,21 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
 {
+	ULOG(INFO, __FUNCTION__);
+
     return OnEncode;
 }
 
 extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
 {
+	ULOG(INFO, __FUNCTION__);
+
 	s_onInputUpdate = onInputUpdate;
 }
 
+extern "C" __declspec(dllexport) void SetLogCallback(void(__stdcall*onLog)(const int level, const char *msg))
+{
+	ULOG(INFO, __FUNCTION__);
+
+	s_onLog = onLog;
+}

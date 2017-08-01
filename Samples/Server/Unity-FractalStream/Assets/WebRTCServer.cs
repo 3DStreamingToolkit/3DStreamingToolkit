@@ -6,11 +6,12 @@ using UnityEngine.Rendering;
 public class WebRTCServer : MonoBehaviour
 {
     public delegate void FPtr([MarshalAs(UnmanagedType.LPStr)]string value);
+    public delegate void LogPtr(int level, [MarshalAs(UnmanagedType.LPStr)]string value);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("StreamingUnityServerPlugin")]
+	[DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern IntPtr GetRenderEventFunc();
     
@@ -24,7 +25,14 @@ public class WebRTCServer : MonoBehaviour
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("StreamingUnityServerPlugin")]
+	[DllImport("StreamingUnityServerPlugin")]
+#endif
+	public static extern void SetLogCallback(LogPtr cb);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+	[DllImport ("__Internal")]
+#else
+	[DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern void Close();
     
@@ -70,8 +78,10 @@ public class WebRTCServer : MonoBehaviour
         Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, cmb);
         
         FPtr cb = new FPtr(OnInputData);
+		LogPtr logCb = new LogPtr(OnLog);
 
-        SetInputDataCallback(cb);
+		SetInputDataCallback(cb);
+		SetLogCallback(logCb);
     }
 
     void Stop()
@@ -169,4 +179,9 @@ public class WebRTCServer : MonoBehaviour
                 break;
         }
     }
+
+	void OnLog(int level, string message)
+	{
+		Debug.Log(string.Format("[{0}] : {1}", level, message));
+	}
 }
