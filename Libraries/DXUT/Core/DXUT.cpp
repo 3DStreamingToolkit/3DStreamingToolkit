@@ -2862,17 +2862,19 @@ void WINAPI DXUTRender3DEnvironment()
         }
 
 #if defined(DEBUG) || defined(_DEBUG)
+		// Phong Cao: Disables these since we allow swapchain to have a different size
+
         // The back buffer should always match the client rect 
         // if the Direct3D backbuffer covers the entire window
-        RECT rcClient;
-        GetClientRect( DXUTGetHWND(), &rcClient );
-        if( !IsIconic( DXUTGetHWND() ) )
-        {
-            GetClientRect( DXUTGetHWND(), &rcClient );
-            
-            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right );
-            assert( DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom );
-        }
+        //RECT rcClient;
+        //GetClientRect( DXUTGetHWND(), &rcClient );
+        //if( !IsIconic( DXUTGetHWND() ) )
+        //{
+        //    GetClientRect( DXUTGetHWND(), &rcClient );
+    
+        //    assert( DXUTGetDXGIBackBufferSurfaceDesc()->Width == (UINT)rcClient.right );
+        //    assert( DXUTGetDXGIBackBufferSurfaceDesc()->Height == (UINT)rcClient.bottom );
+        //}
 #endif
     }
 
@@ -3717,8 +3719,11 @@ void DXUTResizeDXGIBuffers( UINT Width, UINT Height, BOOL bFullScreen )
 
     if( !GetDXUTState().GetDoNotStoreBufferSize() )
     {
-        pDevSettings->d3d11.sd.BufferDesc.Width = ( UINT )rcCurrentClient.right;
-        pDevSettings->d3d11.sd.BufferDesc.Height = ( UINT )rcCurrentClient.bottom;
+		// Phong Cao: We should store the resized buffer not the current window size.
+        //pDevSettings->d3d11.sd.BufferDesc.Width = ( UINT )rcCurrentClient.right;
+        //pDevSettings->d3d11.sd.BufferDesc.Height = ( UINT )rcCurrentClient.bottom;
+		pDevSettings->d3d11.sd.BufferDesc.Width = Width;
+		pDevSettings->d3d11.sd.BufferDesc.Height = Height;
     }
 
     // Save off backbuffer desc

@@ -46,6 +46,9 @@
 using namespace DirectX;
 using namespace Toolkit3DLibrary;
 
+// Extern method from DXUT.cpp
+void DXUTResizeDXGIBuffers(_In_ UINT Width, _In_ UINT Height, _In_ BOOL bFullscreen);
+
 // #defines for compile-time Debugging switches:
 //#define ADJUSTABLE_LIGHT          // The 0th light is adjustable with the mouse (right mouse button down)
 #define RENDER_SCENE_LIGHT_POV      // F4 toggles between the usual camera and the 0th light's point-of-view
@@ -460,12 +463,22 @@ void InputUpdate(const std::string& message)
 		strcpy(body, msg.get("body", "").asCString());
 		std::istringstream datastream(body);
 		std::string token;
-
 		if (strcmp(type, "stereo-rendering") == 0)
 		{
 			getline(datastream, token, ',');
-			int stereo = stoi(token);
-			g_CameraResources.SetStereo(stereo == 1);
+			bool isStereo = stoi(token) == 1;
+			if (isStereo == g_CameraResources.IsStereo())
+			{
+				return;
+			}
+
+			g_CameraResources.SetStereo(isStereo);
+			DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
+			int width = deviceSettings.d3d11.sd.BufferDesc.Width;
+			int height = deviceSettings.d3d11.sd.BufferDesc.Height;
+			int newWidth = isStereo ? width << 1 : width >> 1;
+			SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+			DXUTResizeDXGIBuffers(newWidth, height, false);
 		}
 		else if (strcmp(type, "camera-transform-lookat") == 0)
 		{
@@ -496,6 +509,7 @@ void InputUpdate(const std::string& message)
 			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
 			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
 			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+
 			// TODO
 			//g_Camera.SetViewParams(eye, lookAt, up);
 			g_Camera.SetViewParams(eye, lookAt);
@@ -563,7 +577,11 @@ int InitWebRTC(char* server, int port, int heartbeat)
 		DEFAULT_FRAME_BUFFER_WIDTH,
 		DEFAULT_FRAME_BUFFER_HEIGHT);
 
+	// Initializes viewport for left and right cameras.
 	g_CameraResources.SetViewport(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
+	
+	// Resizes swapchain's buffer to match the supported video frame size: 1280x720...
+	DXUTResizeDXGIBuffers(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT, false);
 
 #ifdef NO_UI
 	ShowWindow(wnd.handle(), SW_HIDE);
@@ -2346,7 +2364,7 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 		SceneParamsDynamic DynamicParamsLeft;
 		XMMATRIX leftViewMatrix = XMLoadFloat4x4(g_CameraResources.GetViewMatrix());
 		XMMATRIX leftProjMatrix = XMLoadFloat4x4(g_CameraResources.GetProjMatrix());
-		mvp = scaleMatrix * transMatrix * leftViewMatrix * XMMatrixTranspose(leftProjMatrix);
+		mvp = scaleMatrix * transMatrix * XMMatrixTranspose(leftViewMatrix * leftProjMatrix);
 		XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
 
 		V(RenderScene(
@@ -2359,7 +2377,7 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 		SceneParamsDynamic DynamicParamsRight;
 		XMMATRIX rightViewMatrix = XMLoadFloat4x4(g_CameraResources.GetViewMatrix() + 1);
 		XMMATRIX rightProjMatrix = XMLoadFloat4x4(g_CameraResources.GetProjMatrix() + 1);
-		mvp = scaleMatrix * transMatrix * rightViewMatrix * rightProjMatrix;
+		mvp = scaleMatrix * transMatrix * XMMatrixTranspose(rightViewMatrix * rightProjMatrix);
 		XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
 
 		V(RenderScene(
