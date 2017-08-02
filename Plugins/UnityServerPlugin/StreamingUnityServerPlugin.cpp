@@ -110,14 +110,14 @@ void InitWebRTC()
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 	rtc::InitializeSSL();
-	
+
 	PeerConnectionClient client;
 
 	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
 		true, 1280, 720);
-	
+
 	wnd->Create();
-	
+
 	// Try parsing config file.
 	std::string configFilePath = webrtc::ExePath("webrtcConfig.json");
 	std::ifstream webrtcConfigFile(configFilePath);
@@ -151,7 +151,7 @@ void InitWebRTC()
 	client.SetHeartbeatMs(heartbeat);
 
 	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
-	
+
 	if (s_conductor != nullptr)
 	{
 		MainWindowCallback *callback = s_conductor;
@@ -185,14 +185,16 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 	ULOG(INFO, __FUNCTION__);
 
 	if (s_Context)
-    {
+	{
+		ULOG(INFO, "s_Context is ~NULL");
+
 		if (s_frameBuffer == nullptr)
 		{
 			ID3D11RenderTargetView* rtv(nullptr);
 			ID3D11DepthStencilView* depthStencilView(nullptr);
 
 			s_Context->OMGetRenderTargets(1, &rtv, &depthStencilView);
-			
+
 			if (rtv)
 			{
 				rtv->GetResource(reinterpret_cast<ID3D11Resource**>(&s_frameBuffer));
@@ -201,43 +203,43 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				D3D11_TEXTURE2D_DESC desc;
 
 				s_frameBuffer->GetDesc(&desc);
-					
+
 				g_videoHelper->Initialize(s_frameBuffer, desc.Format, desc.Width, desc.Height);
-				
+
 				s_frameBuffer->Release();
-				
+
 				messageThread = new std::thread(InitWebRTC);
 			}
 		}
 
-        return;
-    }
+		return;
+	}
 }
 
 extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType)
 {
 	ULOG(INFO, __FUNCTION__);
 
-    switch (eventType)
-    {
-        case kUnityGfxDeviceEventInitialize:
-        {
-            s_DeviceType = s_Graphics->GetRenderer();
-            s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
-            s_Device->GetImmediateContext(&s_Context);
-			
-			break;
-        }
+	switch (eventType)
+	{
+	case kUnityGfxDeviceEventInitialize:
+	{
+		s_DeviceType = s_Graphics->GetRenderer();
+		s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
+		s_Device->GetImmediateContext(&s_Context);
 
-        case kUnityGfxDeviceEventShutdown:
-        {
-			s_Context.Reset();
-            s_Device.Reset();
-            s_DeviceType = kUnityGfxRendererNull;
+		break;
+	}
 
-            break;
-        }
-    }
+	case kUnityGfxDeviceEventShutdown:
+	{
+		s_Context.Reset();
+		s_Device.Reset();
+		s_DeviceType = kUnityGfxRendererNull;
+
+		break;
+	}
+	}
 }
 
 
@@ -247,20 +249,20 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 	ULOG(INFO, __FUNCTION__);
 
 #if SHOW_CONSOLE
-    AllocConsole();
-    FILE* out(nullptr);
-    freopen_s(&out, "CONOUT$", "w", stdout);
+	AllocConsole();
+	FILE* out(nullptr);
+	freopen_s(&out, "CONOUT$", "w", stdout);
 
-    std::cout << "Console open..." << std::endl;
+	std::cout << "Console open..." << std::endl;
 	ULOG(INFO, "Console open...")
 #endif
-	
-    s_UnityInterfaces = unityInterfaces;
-    s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
-    s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
-    // Run OnGraphicsDeviceEvent(initialize) manually on plugin load
-    OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
+		s_UnityInterfaces = unityInterfaces;
+	s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
+	s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
+
+	// Run OnGraphicsDeviceEvent(initialize) manually on plugin load
+	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
 
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(s_Device.Get(), s_Context.Get());
@@ -279,7 +281,7 @@ extern "C" __declspec(dllexport) void Close()
 		callback->Close();
 
 		s_conductor = nullptr;
-		
+
 		rtc::CleanupSSL();
 
 		s_closing = true;
@@ -291,7 +293,7 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
 	ULOG(INFO, __FUNCTION__);
 
-    s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
+	s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 	Close();
 }
@@ -300,7 +302,7 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 {
 	ULOG(INFO, __FUNCTION__);
 
-    return OnEncode;
+	return OnEncode;
 }
 
 extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
