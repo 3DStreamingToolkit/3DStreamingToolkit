@@ -2862,7 +2862,7 @@ void WINAPI DXUTRender3DEnvironment()
         }
 
 #if defined(DEBUG) || defined(_DEBUG)
-		// Phong Cao: Disables these since we allow swapchain to have a different size
+		// Phong Cao: Disables these since we allow swapchain to have a different size.
 
         // The back buffer should always match the client rect 
         // if the Direct3D backbuffer covers the entire window
@@ -4362,7 +4362,9 @@ void DXUTApplyDefaultDeviceSettings(DXUTDeviceSettings *modifySettings)
     modifySettings->d3d11.Output = 0;
     modifySettings->d3d11.PresentFlags = 0;
     modifySettings->d3d11.sd.BufferCount = 2;
-    modifySettings->d3d11.sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	// Phong Cao: Azure GPU doesn't support DXGI_FORMAT_R8G8B8A8_UNORM_SRGB.
+	//modifySettings->d3d11.sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+    modifySettings->d3d11.sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     modifySettings->d3d11.sd.BufferDesc.Height = 600;
     modifySettings->d3d11.sd.BufferDesc.RefreshRate.Numerator = 0;
     modifySettings->d3d11.sd.BufferDesc.RefreshRate.Denominator = 0;
