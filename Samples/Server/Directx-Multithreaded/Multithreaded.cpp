@@ -663,6 +663,9 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     DXUTCreateWindow( L"MultithreadedRendering11" );
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
 
+	// Initializes viewport for left and right cameras.
+	g_CameraResources.SetViewport(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
+
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
 
