@@ -23,7 +23,10 @@
     <ClCompile Include="MultiDeviceContextDXUTMesh.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\Libraries\DXUT\Stereo\CameraResources.cpp">
+    <ClCompile Include="..\..\..\Libraries\DXUT\Remoting\CameraResources.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Libraries\DXUT\Remoting\RemotingModelViewerCamera.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,7 +57,10 @@
     <ClInclude Include="MultiDeviceContextDXUTMesh.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\Libraries\DXUT\Stereo\CameraResources.h">
+    <ClInclude Include="..\..\..\Libraries\DXUT\Remoting\CameraResources.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Libraries\DXUT\Remoting\RemotingModelViewerCamera.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

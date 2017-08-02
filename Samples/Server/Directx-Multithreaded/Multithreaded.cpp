@@ -26,6 +26,7 @@
 #include "MultiDeviceContextDXUTMesh.h"
 #include "defs.h"
 #include "CameraResources.h"
+#include "RemotingModelViewerCamera.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -251,7 +252,7 @@ bool                        g_bWireFrame = false;
 //--------------------------------------------------------------------------------------
 // Default view parameters
 //--------------------------------------------------------------------------------------
-CModelViewerCamera          g_Camera;               // A model viewing camera
+RemotingModelViewerCamera   g_Camera;               // A model viewing camera
 CameraResources				g_CameraResources;      // Camera resources for stereo output
 
 #if defined(TEST_RUNNER)
@@ -510,9 +511,7 @@ void InputUpdate(const std::string& message)
 			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
 			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
 
-			// TODO
-			//g_Camera.SetViewParams(eye, lookAt, up);
-			g_Camera.SetViewParams(eye, lookAt);
+			g_Camera.SetViewParams(eye, lookAt, up);
 			g_Camera.FrameMove(0);
 		}
 		else if (strcmp(type, "camera-transform-stereo") == 0)
