@@ -13,14 +13,7 @@ public class WebRTCServer : MonoBehaviour
     [DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern IntPtr GetRenderEventFunc();
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-	[DllImport ("__Internal")]
-#else
-    [DllImport("StreamingUnityServerPlugin")]
-#endif
-    private static extern void Login(string server, Int32 port);
-
+    
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
@@ -75,8 +68,6 @@ public class WebRTCServer : MonoBehaviour
         cmb.IssuePluginEvent(GetRenderEventFunc(), 0);
 
         Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, cmb);
-        
-        Login("localhost", 8888);
         
         FPtr cb = new FPtr(OnInputData);
 

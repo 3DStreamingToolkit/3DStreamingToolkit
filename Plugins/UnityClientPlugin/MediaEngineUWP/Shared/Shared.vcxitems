@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{fe4a5965-ec67-4f68-b11d-6608906ef016}</ItemsProjectGuid>
+    <ItemsSccProjectName>SAK</ItemsSccProjectName>
+    <ItemsSccAuxPath>SAK</ItemsSccAuxPath>
+    <ItemsSccLocalPath>SAK</ItemsSccLocalPath>
+    <ItemsSccProvider>SAK</ItemsSccProvider>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaHelpers.cpp">
+      <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaEnginePlayer.cpp">
+      <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)MediaEngine.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)dllmain.cpp">
+      <PrecompiledHeaderFile>MediaEngine.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)d3dmanagerlock.hxx" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaHelpers.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaEnginePlayer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)MediaEngine.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)targetver.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphics.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphicsD3D11.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphicsD3D12.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphicsD3D9.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityGraphicsMetal.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\IUnityInterface.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Unity\PlatformBase.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\UWP\MediaPlayback.def" />
+  </ItemGroup>
+</Project>

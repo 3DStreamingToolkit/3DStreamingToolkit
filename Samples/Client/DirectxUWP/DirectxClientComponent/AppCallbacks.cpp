@@ -2,22 +2,21 @@
 
 #include "AppCallbacks.h"
 #include "DirectXHelper.h"
-#include "libyuv/convert.h"
 
 using namespace DirectXClientComponent;
 using namespace DirectX;
 using namespace Microsoft::WRL::Wrappers;
 using namespace Platform;
-using namespace Windows::System::Profile;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 
-static uint8_t* s_videoRGBFrame = nullptr;
-static CriticalSection s_lock;
+#define VIDEO_FRAME_WIDTH	1280 * 2
+#define VIDEO_FRAME_HEIGHT	720
 
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
+	m_sentStereoMode(false),
 	m_sendInputDataHandler(sendInputDataHandler)
 {
 }
@@ -25,7 +24,6 @@ AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 AppCallbacks::~AppCallbacks()
 {
 	delete m_videoRenderer;
-	delete []s_videoRGBFrame;
 }
 
 void AppCallbacks::Initialize(CoreApplicationView^ appView)
@@ -60,8 +58,6 @@ void AppCallbacks::Run()
 
 		if (m_videoRenderer)
 		{
-			auto lock = s_lock.Lock();
-
 			// Updates.
 			HolographicFrame^ holographicFrame = m_main->Update();
 
@@ -79,102 +75,35 @@ void AppCallbacks::Run()
 	}
 }
 
-void AppCallbacks::OnFrame(
-	uint32_t width,
-	uint32_t height,
-	const Array<uint8_t>^ dataY,
-	uint32_t strideY,
-	const Array<uint8_t>^ dataU,
-	uint32_t strideU,
-	const Array<uint8_t>^ dataV,
-	uint32_t strideV)
+void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle)
 {
-	if (!s_videoRGBFrame)
+	m_mediaSource =
+		reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
+
+	if (m_mediaSource != nullptr)
 	{
-		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
-		s_videoRGBFrame = new uint8_t[width * height * 4];
-		m_main->SetVideoRender(m_videoRenderer);
-	}
+		// Initializes the media engine player.
+		m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
 
-	libyuv::I420ToARGB(
-		dataY->Data,
-		strideY,
-		dataU->Data,
-		strideU,
-		dataV->Data,
-		strideV,
-		s_videoRGBFrame,
-		width * 4,
-		width,
-		height);
+		// Creates a dummy renderer and texture until the first frame is received from WebRTC
+		ID3D11ShaderResourceView* textureView;
+		HRESULT result = m_player->GetPrimaryTexture(
+			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
 
-	m_videoRenderer->UpdateFrame(s_videoRGBFrame);
-}
-
-void AppCallbacks::OnDecodedFrame(
-	uint32_t width,
-	uint32_t height,
-	const Array<uint8_t>^ decodedData)
-{
-	auto lock = s_lock.Lock();
-
-	if (!m_videoRenderer)
-	{
-		// Enables the stereo output mode.
-		String^ msg =
-			"{" +
-			"  \"type\":\"stereo-rendering\"," +
-			"  \"body\":\"1\"" +
-			"}";
-
-		m_sendInputDataHandler(msg);
-	}
-
-	InitVideoRender(m_deviceResources, width, height);
-
-	if (!libyuv::YUY2ToARGB(
-		decodedData->Data,
-		width * 2,
-		s_videoRGBFrame,
-		width * 4,
-		width,
-		height))
-	{
-		m_videoRenderer->UpdateFrame(s_videoRGBFrame);
+		// Initializes the video render.
+		InitVideoRender(m_deviceResources, textureView);
 	}
 }
 
 void AppCallbacks::InitVideoRender(
 	std::shared_ptr<DX::DeviceResources> deviceResources,
-	int width,
-	int height)
+	ID3D11ShaderResourceView* textureView)
 {
-	if (m_videoRenderer)
-	{
-		// Do nothing if width and height don't change.
-		if (m_videoRenderer->GetWidth() == width &&
-			m_videoRenderer->GetHeight() == height)
-		{
-			return;
-		}
-
-		// Releases old resources.
-		delete m_videoRenderer;
-		delete []s_videoRGBFrame;
-	}
-
 	// Initializes the video renderer.
-	m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
+	m_videoRenderer = new VideoRenderer(m_deviceResources, textureView);
+
+	// Initializes the new video texture
 	m_main->SetVideoRender(m_videoRenderer);
-
-	// Initalizes the temp buffers.
-	int bufferSize = width * height * 4;
-	int half_width = (width + 1) / 2;
-	size_t size_y = static_cast<size_t>(width) * height;
-	size_t size_uv = static_cast<size_t>(half_width) * ((height + 1) / 2);
-
-	s_videoRGBFrame = new uint8_t[bufferSize];
-	memset(s_videoRGBFrame, 0, bufferSize);
 }
 
 void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
@@ -182,6 +111,25 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 	SpatialCoordinateSystem^ currentCoordinateSystem =
 		m_main->GetReferenceFrame()->CoordinateSystem;
+
+	// Attempt to set server to stereo mode
+	if (!m_sentStereoMode && m_mediaSource)
+	{
+		String^ msg =
+			"{" +
+			"  \"type\":\"stereo-rendering\"," +
+			"  \"body\":\"1\"" +
+			"}";
+
+		if (m_sendInputDataHandler(msg))
+		{
+			// The server is now in stereo mode. Start receiving frames.
+			// This is required to avoid corrupt frames at startup.
+			m_player->SetMediaStreamSource(m_mediaSource);
+			m_player->Play();
+			m_sentStereoMode = true;
+		}
+	}
 
 	for (auto cameraPose : prediction->CameraPoses)
 	{
@@ -235,3 +183,4 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 		}
 	}
 }
+
