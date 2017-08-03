@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: CameraResources.h
+// File: RemotingModelViewerCamera.h
 //
 // Helper functions for Direct3D programming.
 //
