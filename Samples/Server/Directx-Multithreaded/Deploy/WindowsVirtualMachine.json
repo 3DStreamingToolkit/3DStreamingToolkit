@@ -78,7 +78,7 @@
     "diagnosticsStorageAccountName": "[variables('vhdStorageAccountName')]",
     "wadmetricsresourceid": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
     "scriptCommand": "powershell.exe -ExecutionPolicy Unrestricted -File deploy-rendering-server.ps1 [parameters('serverType')]",
-    "scriptUri": "https://raw.githubusercontent.com/catalystcode/3dtoolkit/arm-deploy/samples/server/directx-multithreaded/azure-deploy/deploy-rendering-server.ps1"
+    "scriptUri": "https://raw.githubusercontent.com/CatalystCode/3dtoolkit/master/Samples/Server/Directx-Multithreaded/Deploy/deploy-rendering-server.ps1"
   },
   "resources": [
     {
@@ -302,6 +302,9 @@
       "apiVersion": "2016-03-30",
       "location": "[resourceGroup().location]",
       "properties": {
+        "protectedSettings": {
+          "commandToExecute": "[variables('scriptCommand')]"
+        },
         "publisher": "Microsoft.Compute",
         "type": "CustomScriptExtension",
         "typeHandlerVersion": "1.3",
@@ -309,8 +312,7 @@
         "settings": {
           "fileUris": [
             "[variables('scriptUri')]"
-          ],
-          "commandToExecute": "[variables('scriptCommand')]"
+          ]
         }
       },
       "dependsOn": [

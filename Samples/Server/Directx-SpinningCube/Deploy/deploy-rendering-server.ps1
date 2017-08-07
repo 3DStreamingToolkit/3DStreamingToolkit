@@ -4,21 +4,27 @@ $gpuDriverBaseUri = "http://us.download.nvidia.com/Windows/Quadro_Certified/"
 
 # Expect that the contents of the zip will have an x86 and x64 folder at root, with exes contained within
 $RelativePathToServerExe = "\x64"
+$DestinationFolder = "C:\3Dtoolkit"
 $BinariesFolder = $DestinationFolder + "\binaries\SpinningCubeServer"
 $BinariesZipPath = "https://3dtoolkitstorage.blob.core.windows.net/releases/"
 $BinariesZip = "3DStreamingToolkit-20170717.17-SpinningCubeServer-Release.zip"
 $ExeName = "SpinningCubeServerService.exe"
 
-$DestinationFolder = "C:\3Dtoolkit"
 if((Test-Path ($DestinationFolder)) -eq $false) {
     New-Item -Path $DestinationFolder -ItemType Directory -Force 
+}
+
+function Get-ScriptDirectory
+{
+  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
+  Split-Path $Invocation.MyCommand.Path
 }
 
 cd $DestinationFolder
 
 $PathToExecutable = $BinariesFolder+$RelativePathToServerExe
 
-if((Test-Path ($PSScriptRoot+"\"+$BinariesZip)) -eq $false) {
+if((Test-Path ((Get-ScriptDirectory)+"\"+$BinariesZip)) -eq $false) {
     $client = new-object System.Net.WebClient
     $client.DownloadFile($BinariesZipPath+$BinariesZip,$BinariesZip)
 }
@@ -29,11 +35,11 @@ if((Test-Path ($PathToExecutable + "\" + $ExeName)) -eq $false) {
     [IO.Compression.ZipFile]::ExtractToDirectory($BinariesZip, $BinariesFolder)
 }
 
-if((Test-Path ($PSScriptRoot+"\"+$gpuDriverVersion+$gpuDriverSuffix)) -eq $false) {
+if((Test-Path ((Get-ScriptDirectory)+"\"+$gpuDriverVersion+$gpuDriverSuffix)) -eq $false) {
     $client = new-object System.Net.WebClient
     $client.DownloadFile(($gpuDriverBaseUri+$gpuDriverVersion+"/"+$gpuDriverVersion+$gpuDriverSuffix),($gpuDriverVersion+$gpuDriverSuffix))
 
-    & ($gpuDriverVersion+$gpuDriverSuffix) /s /noreboot /clean /noeula /nofinish /passive | Out-Null
+    & ((Get-ScriptDirectory)+"\"+$gpuDriverVersion+$gpuDriverSuffix) /s /noreboot /clean /noeula /nofinish /passive | Out-Null
 }
 
 cd (Split-Path -Path $PathToExecutable)
