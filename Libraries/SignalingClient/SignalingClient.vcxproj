@@ -101,6 +101,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="inc\authentication_provider.h" />
     <ClInclude Include="inc\ssl_capable_socket.h" />
     <ClInclude Include="inc\peer_connection_client.h" />
   </ItemGroup>

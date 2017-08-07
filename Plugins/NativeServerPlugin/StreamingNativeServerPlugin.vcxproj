@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -182,6 +182,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\server_authentication_provider.cpp" />
     <ClCompile Include="src\conductor.cpp" />
     <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
@@ -190,6 +191,7 @@
     <ClCompile Include="src\video_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\server_authentication_provider.h" />
     <ClInclude Include="inc\conductor.h" />
     <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
