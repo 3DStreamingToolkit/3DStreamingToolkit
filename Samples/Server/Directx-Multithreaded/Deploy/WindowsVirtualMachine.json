@@ -302,9 +302,6 @@
       "apiVersion": "2016-03-30",
       "location": "[resourceGroup().location]",
       "properties": {
-        "protectedSettings": {
-          "commandToExecute": "[variables('scriptCommand')]"
-        },
         "publisher": "Microsoft.Compute",
         "type": "CustomScriptExtension",
         "typeHandlerVersion": "1.3",
