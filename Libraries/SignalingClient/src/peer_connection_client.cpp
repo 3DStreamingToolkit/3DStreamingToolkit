@@ -59,7 +59,8 @@ void PeerConnectionClient::InitSocketSignals()
 	RTC_DCHECK(control_socket_.get() != NULL);
 	RTC_DCHECK(hanging_get_.get() != NULL);
 	control_socket_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
-	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnSignalingServerClose);
+	hanging_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnClose);
+	heartbeat_get_->SignalCloseEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetClose);
 
 	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
 	hanging_get_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnHangingGetConnect);
@@ -166,7 +167,7 @@ std::string PeerConnectionClient::PrepareRequest(const std::string& method, cons
 {
 	std::string result;
 
-	for (auto i = 0; i < method.length(); ++i)
+	for (size_t i = 0; i < method.length(); ++i)
 	{
 		result += (char)toupper(method[i]);
 	}
@@ -458,8 +459,8 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 	if (ReadIntoBuffer(socket, &control_data_, &content_length))
 	{
 		size_t peer_id = 0, eoh = 0;
-		bool ok = ParseServerResponse(control_data_, content_length, &peer_id, &eoh);
-		if (ok) 
+		int status = ParseServerResponse(control_data_, content_length, &peer_id, &eoh);
+		if (status == 200) 
 		{
 			if (my_id_ == -1) 
 			{
@@ -506,9 +507,27 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			{
 				SignOut();
 			}
-		}
 
-		control_data_.clear();
+			control_data_.clear();
+		}
+		else
+		{
+			LOG(LS_ERROR) << "Received error from server: " << std::to_string(status);
+
+			// TODO(bengreenier): special case for azure 500 issue
+			// see https://github.com/CatalystCode/3dtoolkit/issues/45
+			if (status == 500)
+			{
+				control_socket_->Close();
+				control_socket_->Connect(server_address_);
+			}
+			else
+			{
+				Close();
+				callback_->OnDisconnected();
+				control_data_.clear();
+			}
+		}
 
 		if (state_ == SIGNING_IN) 
 		{
@@ -531,9 +550,9 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 	if (ReadIntoBuffer(socket, &notification_data_, &content_length))
 	{
 		size_t peer_id = 0, eoh = 0;
-		bool ok = ParseServerResponse(notification_data_, content_length, &peer_id, &eoh);
+		int status = ParseServerResponse(notification_data_, content_length, &peer_id, &eoh);
 
-		if (ok) 
+		if (status == 200) 
 		{
 			// Store the position where the body begins.
 			size_t pos = eoh + 4;
@@ -562,6 +581,23 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 			else 
 			{
 				OnMessageFromPeer(static_cast<int>(peer_id), notification_data_.substr(pos));
+			}
+		}
+		else
+		{
+			LOG(LS_ERROR) << "Received error from server: " << std::to_string(status);
+
+			// TODO(bengreenier): special case for azure 500 issue
+			// see https://github.com/CatalystCode/3dtoolkit/issues/45
+			if (status == 500)
+			{
+				hanging_get_->Close();
+				hanging_get_->Connect(server_address_);
+			}
+			else
+			{
+				Close();
+				callback_->OnDisconnected();
 			}
 		}
 
@@ -610,38 +646,40 @@ int PeerConnectionClient::GetResponseStatus(const std::string& response)
 	return status;
 }
 
-bool PeerConnectionClient::ParseServerResponse(const std::string& response, 
+int PeerConnectionClient::ParseServerResponse(const std::string& response, 
 	size_t content_length, size_t* peer_id, size_t* eoh)
 {
 	int status = GetResponseStatus(response.c_str());
-	if (status != 200) 
+	
+	if (status == 200)
 	{
-		LOG(LS_ERROR) << "Received error from server";
-		Close();
-		callback_->OnDisconnected();
-		return false;
+
+		*eoh = response.find("\r\n\r\n");
+		RTC_DCHECK(*eoh != std::string::npos);
+		if (*eoh == std::string::npos)
+		{
+			return -1;
+		}
+
+		*peer_id = -1;
+
+		// See comment in peer_channel.cc for why we use the Pragma header and
+		// not e.g. "X-Peer-Id".
+		GetHeaderValue(response, *eoh, "\r\nPragma: ", peer_id);
 	}
 
-	*eoh = response.find("\r\n\r\n");
-	RTC_DCHECK(*eoh != std::string::npos);
-	if (*eoh == std::string::npos)
-	{
-		return false;
-	}
-
-	*peer_id = -1;
-
-	// See comment in peer_channel.cc for why we use the Pragma header and
-	// not e.g. "X-Peer-Id".
-	GetHeaderValue(response, *eoh, "\r\nPragma: ", peer_id);
-
-	return true;
+	return status;
 }
 
-
-void PeerConnectionClient::OnSignalingServerClose(rtc::AsyncSocket* socket, int err) 
+void PeerConnectionClient::OnHeartbeatGetClose(rtc::AsyncSocket* socket, int err)
 {
-	Close();
+	// if we're still connected, schedule a reconnect
+	if (state_ == State::CONNECTED)
+	{
+		LOG(INFO) << "heartbeat socket closed (" << err << "), scheduling reconnection attempt";
+
+		rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, heartbeat_tick_ms_, this, kHeartbeatScheduleId);
+	}
 }
 
 void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err) 
@@ -696,11 +734,12 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 			return;
 		}
 
-		// if the socket is still open, close it and then reconnect to trigger the beat
+		// if the socket is still open, close it and then reconnect to trigger the beat...
 		if (heartbeat_get_->GetState() != rtc::Socket::ConnState::CS_CLOSED)
 		{
 			heartbeat_get_->Close();
 		}
+
 		heartbeat_get_->Connect(server_address_);
 	}
 	else
@@ -734,6 +773,12 @@ void PeerConnectionClient::OnHeartbeatGetRead(rtc::AsyncSocket* socket)
 	size_t content_length = 0;
 	if (ReadIntoBuffer(socket, &data, &content_length))
 	{
+		// empty data can sometimes occur, we wish to ignore it
+		if (data.empty())
+		{
+			return;
+		}
+
 		size_t peer_id = 0, eoh = 0;
 		int status = GetResponseStatus(data);
 
