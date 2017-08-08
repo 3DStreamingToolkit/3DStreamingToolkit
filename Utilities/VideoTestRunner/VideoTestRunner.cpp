@@ -160,7 +160,11 @@ void VideoTestRunner::GetDefaultEncodeConfig()
 
 	//Unused by nvEncode.
 	m_encodeConfig.startFrameIdx = 0;
+#ifdef _DEBUG
 	m_encodeConfig.endFrameIdx = 300;
+#else // _DEBUG
+	m_encodeConfig.endFrameIdx = 1000;
+#endif // _DEBUG
 
 	//DeviceType 1 = Force CUDA.
 	m_encodeConfig.deviceType = 0;

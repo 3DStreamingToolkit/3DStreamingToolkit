@@ -96,7 +96,7 @@
     <PostBuildEvent>
       <Command>
       IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul > $(OutDir)xcopy.lock
+      type nul &gt; $(OutDir)xcopy.lock
         xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
       )
@@ -114,7 +114,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;$(ProjectDir)..\..\..\Utilities\VideoTestRunner\inc;$(ProjectDir)..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -155,7 +155,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;$(ProjectDir)..\..\..\Utilities\VideoTestRunner\inc;$(ProjectDir)..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -198,7 +198,7 @@
       <FloatingPointModel>Fast</FloatingPointModel>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;$(ProjectDir)..\..\..\Utilities\VideoTestRunner\inc;$(ProjectDir)..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -240,7 +240,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir);DXUT\Core;DXUT\Optional;$(ProjectDir)..\..\..\Utilities\VideoTestRunner\inc;$(ProjectDir)..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -273,61 +273,37 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DXUT\Core\DDSTextureLoader.cpp" />
-    <ClCompile Include="DXUT\Core\dxerr.cpp" />
-    <ClCompile Include="DXUT\Core\DXUT.cpp">
+    <ClCompile Include="..\..\..\Libraries\DXUT\Remoting\CameraResources.cpp" />
+    <ClCompile Include="..\..\..\Libraries\DXUT\Remoting\RemotingModelViewerCamera.cpp" />
+    <ClCompile Include="MultiDeviceContextDXUTMesh.cpp" />
+    <ClCompile Include="Multithreaded.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="DXUT\Core\DXUTDevice11.cpp" />
-    <ClCompile Include="DXUT\Core\DXUTmisc.cpp" />
-    <ClCompile Include="DXUT\Core\ScreenGrab.cpp" />
-    <ClCompile Include="DXUT\Core\WICTextureLoader.cpp" />
-    <ClCompile Include="DXUT\Optional\DXUTcamera.cpp" />
-    <ClCompile Include="DXUT\Optional\DXUTgui.cpp" />
-    <ClCompile Include="DXUT\Optional\DXUTguiIME.cpp" />
-    <ClCompile Include="DXUT\Optional\DXUTres.cpp" />
-    <ClCompile Include="DXUT\Optional\DXUTsettingsdlg.cpp" />
-    <ClCompile Include="DXUT\Optional\ImeUi.cpp" />
-    <ClCompile Include="DXUT\Optional\SDKmesh.cpp" />
-    <ClCompile Include="DXUT\Optional\SDKmisc.cpp" />
-    <ClCompile Include="MultiDeviceContextDXUTMesh.cpp" />
-    <ClCompile Include="Multithreaded.cpp" />
+    <ClInclude Include="..\..\..\Libraries\DXUT\Remoting\CameraResources.h" />
+    <ClInclude Include="..\..\..\Libraries\DXUT\Remoting\RemotingModelViewerCamera.h" />
     <ClInclude Include="defs.h" />
-    <ClInclude Include="DXUT\Core\DDSTextureLoader.h" />
-    <ClInclude Include="DXUT\Core\dxerr.h" />
-    <ClInclude Include="DXUT\Core\DXUT.h" />
-    <ClInclude Include="DXUT\Core\DXUTDevice11.h" />
-    <ClInclude Include="DXUT\Core\DXUTmisc.h" />
-    <ClInclude Include="DXUT\Core\ScreenGrab.h" />
-    <ClInclude Include="DXUT\Core\WICTextureLoader.h" />
-    <ClInclude Include="DXUT\Optional\DXUTcamera.h" />
-    <ClInclude Include="DXUT\Optional\DXUTgui.h" />
-    <ClInclude Include="DXUT\Optional\DXUTguiIME.h" />
-    <ClInclude Include="DXUT\Optional\DXUTLockFreePipe.h" />
-    <ClInclude Include="DXUT\Optional\DXUTres.h" />
-    <ClInclude Include="DXUT\Optional\DXUTsettingsdlg.h" />
-    <ClInclude Include="DXUT\Optional\ImeUi.h" />
-    <ClInclude Include="DXUT\Optional\SDKmesh.h" />
-    <ClInclude Include="DXUT\Optional\SDKmisc.h" />
     <CLInclude Include="MultiDeviceContextDXUTMesh.h" />
     <ClInclude Include="server_renderer.h" />
     <ClInclude Include="test_runner.h" />
     <ClInclude Include="webrtc.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DXUT\Core\DXUT_2012.vcxproj" />
-    <None Include="DXUT\Optional\DXUTOpt_2012.vcxproj" />
     <None Include="Multithreaded_PS.hlsl" />
     <None Include="Multithreaded_VS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h" />
-    <ResourceCompile Include="Multithreaded.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Libraries\DXUT\Core\DXUT_2015_Win10.vcxproj">
+      <Project>{85344b7f-5aa0-4e12-a065-d1333d11f6ca}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Libraries\DXUT\Optional\DXUTOpt_2015_Win10.vcxproj">
+      <Project>{61b333c2-c4f7-4cc1-a9bf-83f6d95588eb}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Utilities\VideoTestRunner\VideoTestRunner.vcxproj">
       <Project>{ca5235e8-c2da-4e7b-a200-8aafe4db070b}</Project>
     </ProjectReference>

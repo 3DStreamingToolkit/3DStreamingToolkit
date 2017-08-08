@@ -24,6 +24,9 @@
 #include <fstream>
 
 #include "MultiDeviceContextDXUTMesh.h"
+#include "defs.h"
+#include "CameraResources.h"
+#include "RemotingModelViewerCamera.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -43,6 +46,9 @@
 
 using namespace DirectX;
 using namespace Toolkit3DLibrary;
+
+// Extern method from DXUT.cpp
+void DXUTResizeDXGIBuffers(_In_ UINT Width, _In_ UINT Height, _In_ BOOL bFullscreen);
 
 // #defines for compile-time Debugging switches:
 //#define ADJUSTABLE_LIGHT          // The 0th light is adjustable with the mouse (right mouse button down)
@@ -246,7 +252,8 @@ bool                        g_bWireFrame = false;
 //--------------------------------------------------------------------------------------
 // Default view parameters
 //--------------------------------------------------------------------------------------
-CModelViewerCamera          g_Camera;               // A model viewing camera
+RemotingModelViewerCamera   g_Camera;               // A model viewing camera
+CameraResources				g_CameraResources;      // Camera resources for stereo output
 
 #if defined(TEST_RUNNER)
 static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
@@ -457,12 +464,22 @@ void InputUpdate(const std::string& message)
 		strcpy(body, msg.get("body", "").asCString());
 		std::istringstream datastream(body);
 		std::string token;
-
 		if (strcmp(type, "stereo-rendering") == 0)
 		{
 			getline(datastream, token, ',');
-			int stereo = stoi(token);
-			DXUTSetStereo(stereo == 1);
+			bool isStereo = stoi(token) == 1;
+			if (isStereo == g_CameraResources.IsStereo())
+			{
+				return;
+			}
+
+			g_CameraResources.SetStereo(isStereo);
+			DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
+			int width = deviceSettings.d3d11.sd.BufferDesc.Width;
+			int height = deviceSettings.d3d11.sd.BufferDesc.Height;
+			int newWidth = isStereo ? width << 1 : width >> 1;
+			SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+			DXUTResizeDXGIBuffers(newWidth, height, false);
 		}
 		else if (strcmp(type, "camera-transform-lookat") == 0)
 		{
@@ -493,6 +510,7 @@ void InputUpdate(const std::string& message)
 			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
 			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
 			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+
 			g_Camera.SetViewParams(eye, lookAt, up);
 			g_Camera.FrameMove(0);
 		}
@@ -523,8 +541,8 @@ void InputUpdate(const std::string& message)
 			// Updates the camera's matrices.
 			XMFLOAT4X4 id;
 			XMStoreFloat4x4(&id, XMMatrixIdentity());
-			g_Camera.SetViewMatrixStereo(id);
-			g_Camera.SetProjMatrixStereo(viewProjectionLeft, viewProjectionRight);
+			g_CameraResources.SetViewMatrix(id, id);
+			g_CameraResources.SetProjMatrix(viewProjectionLeft, viewProjectionRight);
 			g_Camera.FrameMove(0);
 		}
 	}
@@ -557,6 +575,12 @@ int InitWebRTC(char* server, int port, int heartbeat)
 		true,
 		DEFAULT_FRAME_BUFFER_WIDTH,
 		DEFAULT_FRAME_BUFFER_HEIGHT);
+
+	// Initializes viewport for left and right cameras.
+	g_CameraResources.SetViewport(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
+	
+	// Resizes swapchain's buffer to match the supported video frame size: 1280x720...
+	DXUTResizeDXGIBuffers(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT, false);
 
 #ifdef NO_UI
 	ShowWindow(wnd.handle(), SW_HIDE);
@@ -638,6 +662,9 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( L"MultithreadedRendering11" );
 	DXUTCreateDevice(D3D_FEATURE_LEVEL_11_0, true, DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
+
+	// Initializes viewport for left and right cameras.
+	g_CameraResources.SetViewport(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);
 
 	// Initializes the video test runner
 	g_videoTestRunner->StartTestRunner(DXUTGetDXGISwapChain());
@@ -1747,7 +1774,7 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(
     V_RETURN( g_D3DSettingsDlg.OnD3D11ResizedSwapChain( pd3dDevice, pBackBufferSurfaceDesc ) );
 
     // Setup the camera's projection parameters
-	float bufferWidth = DXUTIsStereo() ? pBackBufferSurfaceDesc->Width >> 1 : pBackBufferSurfaceDesc->Width;
+	float bufferWidth = g_CameraResources.IsStereo() ? pBackBufferSurfaceDesc->Width >> 1 : pBackBufferSurfaceDesc->Width;
 	float fAspectRatio = bufferWidth / (FLOAT)pBackBufferSurfaceDesc->Height;
 	g_Camera.SetProjParams(s_fFOV, fAspectRatio, s_fNearPlane, s_fFarPlane);
 	g_Camera.SetWindow(bufferWidth, pBackBufferSurfaceDesc->Height);
@@ -1969,7 +1996,7 @@ HRESULT RenderSceneSetup( ID3D11DeviceContext* pd3dContext, const SceneParamsSta
             XMVECTOR vLightPos = XMVectorSetW( g_vLightPos[iLight], 1.0f ); 
             XMVECTOR vLightDir = XMVectorSetW( g_vLightDir[iLight], 0.0f ); 
             XMMATRIX mLightViewProj;
-			if (DXUTIsStereo())
+			if (g_CameraResources.IsStereo())
 			{
 				mLightViewProj = scaleMatrix * transMatrix * CalcLightViewProj(iLight);
 			}
@@ -2062,7 +2089,7 @@ HRESULT RenderScene( ID3D11DeviceContext* pd3dContext, const SceneParamsStatic *
     }
 
 	// Gets the viewport.
-	D3D11_VIEWPORT* viewports = DXUTGetD3D11ScreenViewport();
+	D3D11_VIEWPORT* viewports = g_CameraResources.GetViewport();
 
 	if (outputType == STEREO_OUTPUT_TYPE::DEFAULT ||
 		outputType == STEREO_OUTPUT_TYPE::LEFT_EYE)
@@ -2330,14 +2357,16 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 {
     HRESULT hr;
     XMMATRIX mvp;
-	if (DXUTIsStereo())
+	if (g_CameraResources.IsStereo())
 	{
 		XMMATRIX scaleMatrix = XMMatrixScalingFromVector(s_vDefaultScale);
 		XMMATRIX transMatrix = XMMatrixTranslationFromVector(s_vDefaultEye);
 
 		// Render scene in the left eye.
 		SceneParamsDynamic DynamicParamsLeft;
-		mvp = scaleMatrix * transMatrix * g_Camera.GetViewMatrix() * XMMatrixTranspose(XMLoadFloat4x4(g_Camera.GetProjMatrixStereo()));
+		XMMATRIX leftViewMatrix = XMLoadFloat4x4(g_CameraResources.GetViewMatrix());
+		XMMATRIX leftProjMatrix = XMLoadFloat4x4(g_CameraResources.GetProjMatrix());
+		mvp = scaleMatrix * transMatrix * XMMatrixTranspose(leftViewMatrix * leftProjMatrix);
 		XMStoreFloat4x4(&DynamicParamsLeft.m_mViewProj, mvp);
 
 		V(RenderScene(
@@ -2348,7 +2377,9 @@ VOID RenderSceneDirect( ID3D11DeviceContext* pd3dContext )
 
 		// Render scene in the right eye.
 		SceneParamsDynamic DynamicParamsRight;
-		mvp = scaleMatrix * transMatrix * g_Camera.GetViewMatrix() * XMMatrixTranspose(XMLoadFloat4x4(g_Camera.GetProjMatrixStereo() + 1));
+		XMMATRIX rightViewMatrix = XMLoadFloat4x4(g_CameraResources.GetViewMatrix() + 1);
+		XMMATRIX rightProjMatrix = XMLoadFloat4x4(g_CameraResources.GetProjMatrix() + 1);
+		mvp = scaleMatrix * transMatrix * XMMatrixTranspose(rightViewMatrix * rightProjMatrix);
 		XMStoreFloat4x4(&DynamicParamsRight.m_mViewProj, mvp);
 
 		V(RenderScene(
@@ -2613,7 +2644,7 @@ void OnD3D11FrameRenderEye(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pd3dIm
 
 	// Render the HUD
 #if !defined(TEST_RUNNER)
-	if (!DXUTIsStereo())
+	if (!g_CameraResources.IsStereo())
 	{
 		DXUT_BeginPerfEvent(DXUT_PERFEVENTCOLOR, L"HUD / Stats");
 		g_HUD.OnRender(fElapsedTime);
