@@ -27,4 +27,6 @@ var aadConfig = {
 
 var identityManagementConfig = {
     turnCredsUrl: "https://identitymanagementapi"
-}
+};
+
+var heartbeatIntervalInMs = 5000;

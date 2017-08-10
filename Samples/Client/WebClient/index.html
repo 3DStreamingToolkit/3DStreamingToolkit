@@ -225,6 +225,25 @@
         }
     }
 
+    var heartbeatInterval = null;
+    function startHeartbeat() {
+        // issue these indefinitely
+        heartbeatInterval = setInterval(function () {
+            try {
+                // note: we don't really care what the response looks like here, so we don't observe it
+                heartbeatGet = new XMLHttpRequest();
+                heartbeatGet.open("GET", server + "/heartbeat?peer_id=" + myId, true);
+                heartbeatGet.setRequestHeader("Peer-Type", 'Client');
+                if (accessToken) {
+                    heartbeatGet.setRequestHeader("Authorization", 'Bearer ' + accessToken);
+                }
+                heartbeatGet.send();
+            } catch (e) {
+                trace("error" + e.description);
+            }
+        }, heartbeatIntervalInMs);
+    }
+
     function onHangingGetTimeout() {
         trace("hanging get timeout. issuing again.");
         hangingGet.abort();
@@ -248,6 +267,7 @@
                         }
                     }
                     startHangingGet();
+                    startHeartbeat();
                     request = null;
                 }
             }
@@ -321,6 +341,11 @@
         if (hangingGet) {
             hangingGet.abort();
             hangingGet = null;
+        }
+
+        if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
         }
 
         if (myId != -1) {
