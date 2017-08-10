@@ -58,14 +58,19 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	rtc::InitializeSSL();
 
 	std::unique_ptr<OAuth24DProvider> oauth;
-	if (strcmp(authCodeUri, FLAG_authCodeUri) != 0 && strcmp(authPollUri, FLAG_authPollUri) != 0)
+	if (strcmp(authCodeUri, FLAG_authCodeUri) != 0 &&
+		strcmp(authPollUri, FLAG_authPollUri) != 0 &&
+		!std::string(authCodeUri).empty() &&
+		!std::string(authPollUri).empty())
 	{
 		oauth.reset(new OAuth24DProvider(authCodeUri, authPollUri));
 	}
 
 	// depends on oauth
 	std::unique_ptr<TurnCredentialProvider> turn;
-	if (oauth.get() != nullptr && strcmp(turnUri, FLAG_turnUri) != 0)
+	if (oauth.get() != nullptr &&
+		strcmp(turnUri, FLAG_turnUri) != 0 &&
+		!std::string(turnUri).empty())
 	{
 		turn.reset(new TurnCredentialProvider(turnUri));
 	}
