@@ -24,6 +24,9 @@ DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(autoconnect, false, "Connect to the server without user "
                                 "intervention.");
 DEFINE_string(server, "signalingserveruri", "The server to connect to.");
+DEFINE_string(authCodeUri, "authcodeuri", "The server uri that auth code initiation should connect to.");
+DEFINE_string(authPollUri, "authpolluri", "The server uri that auth code polling should connect to.");
+DEFINE_string(turnUri, "turncredentialserveruri", "The turn credential provider uri that we connect to for creds.");
 DEFINE_int(port, kDefaultServerPort,
            "The port on which the server is listening.");
 DEFINE_bool(autocall, false, "Call the first available other client on "
