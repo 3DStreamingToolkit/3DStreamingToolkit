@@ -46,7 +46,13 @@ rtc::SocketAddress OAuth24DProvider::SocketAddressFromString(const std::string& 
 	auto tempHost = str.substr(str.find_first_of("://") + 3);
 	tempHost = tempHost.substr(0, tempHost.find_first_of("/"));
 
-	auto tempPort = tempHost.substr(tempHost.find_first_of(":") + 1);
+	std::string tempPort;
+	
+	if (tempHost.find_first_of(":") != std::string::npos)
+	{
+		tempPort = tempHost.substr(tempHost.find_first_of(":") + 1);
+	}
+
 	tempHost = tempHost.substr(0, tempHost.find_first_of(":"));
 
 	auto addrPort = tempPort.empty() ? (std::string("https://").compare(str.substr(0, 8)) == 0 ? 443 : 80) : atoi(tempPort.c_str());
