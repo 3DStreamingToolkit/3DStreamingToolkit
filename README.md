@@ -113,7 +113,7 @@ https://github.com/anastasiia-zolochevska/turn-server-docker-image
 
 Be sure to install all of the C++ language tools and the Windows Universal Components.
 
-Once finished installing, install the [Windows DDK](https://go.microsoft.com/fwlink/p/?LinkID=845298) as it contains debugging tools needed by WebRTC.
+Once finished installing, install the [Windows DDK version 1607](https://go.microsoft.com/fwlink/p/?LinkId=526733) as it contains debugging tools needed by WebRTC.
 
 Finally, launch PowerShell with Administrative persmissions and run 
 ```
