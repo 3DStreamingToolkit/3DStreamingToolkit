@@ -129,7 +129,11 @@ public class WebRTCServer : MonoBehaviour
                 var kbBody = node["body"];
                 int kbMsg = kbBody["msg"];
                 int kbWParam = kbBody["wParam"];
-                Debug.Log("Message(" + kbMsg.ToString() + ", " + kbWParam.ToString() + ")");      
+                if (Debug.isDebugBuild)
+                {
+                    Debug.Log("Message(" + kbMsg.ToString() + ", " + kbWParam.ToString() + ")");
+                }
+                    
                 break;
 
             case "mouse-event":
@@ -137,7 +141,11 @@ public class WebRTCServer : MonoBehaviour
                 int mouseMsg = mouseBody["msg"];
                 int mouseWParam = mouseBody["wParam"];
                 int mouseLParam = mouseBody["lParam"];
-                Debug.Log("Message(" + mouseMsg.ToString() + ", " + mouseWParam.ToString() + ", " + mouseLParam.ToString() + ")");
+                if (Debug.isDebugBuild)
+                {
+                    Debug.Log("Message(" + mouseMsg.ToString() + ", " + mouseWParam.ToString() + ", " + mouseLParam.ToString() + ")");
+                }
+
                 break;
 
             case "camera-transform-lookat":
@@ -168,12 +176,13 @@ public class WebRTCServer : MonoBehaviour
                 break;
 
             default:
-                Debug.Log("InputData(" + val + ")");
-                Debug.Log("");
-
-                foreach (var child in node.Children)
+                if (Debug.isDebugBuild)
                 {
-                    Debug.Log(child.ToString());
+                    Debug.Log("InputData(" + val + ")");
+                    foreach (var child in node.Children)
+                    {
+                        Debug.Log(child.ToString());
+                    }
                 }
 
                 break;
@@ -182,6 +191,9 @@ public class WebRTCServer : MonoBehaviour
 
 	void OnLog(int level, string message)
 	{
-		Debug.Log(string.Format("[{0}] : {1}", level, message));
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log(string.Format("[{0}] : {1}", level, message));
+        }
 	}
 }
