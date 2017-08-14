@@ -6,11 +6,12 @@ using UnityEngine.Rendering;
 public class WebRTCServer : MonoBehaviour
 {
     public delegate void FPtr([MarshalAs(UnmanagedType.LPStr)]string value);
+    public delegate void LogPtr(int level, [MarshalAs(UnmanagedType.LPStr)]string value);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("StreamingUnityServerPlugin")]
+	[DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern IntPtr GetRenderEventFunc();
     
@@ -24,7 +25,14 @@ public class WebRTCServer : MonoBehaviour
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
 	[DllImport ("__Internal")]
 #else
-    [DllImport("StreamingUnityServerPlugin")]
+	[DllImport("StreamingUnityServerPlugin")]
+#endif
+	public static extern void SetLogCallback(LogPtr cb);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+	[DllImport ("__Internal")]
+#else
+	[DllImport("StreamingUnityServerPlugin")]
 #endif
     private static extern void Close();
     
@@ -70,8 +78,10 @@ public class WebRTCServer : MonoBehaviour
         Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, cmb);
         
         FPtr cb = new FPtr(OnInputData);
+		LogPtr logCb = new LogPtr(OnLog);
 
-        SetInputDataCallback(cb);
+		SetInputDataCallback(cb);
+		SetLogCallback(logCb);
     }
 
     void Stop()
@@ -119,7 +129,11 @@ public class WebRTCServer : MonoBehaviour
                 var kbBody = node["body"];
                 int kbMsg = kbBody["msg"];
                 int kbWParam = kbBody["wParam"];
-                Debug.Log("Message(" + kbMsg.ToString() + ", " + kbWParam.ToString() + ")");      
+                if (Debug.isDebugBuild)
+                {
+                    Debug.Log("Message(" + kbMsg.ToString() + ", " + kbWParam.ToString() + ")");
+                }
+                    
                 break;
 
             case "mouse-event":
@@ -127,7 +141,11 @@ public class WebRTCServer : MonoBehaviour
                 int mouseMsg = mouseBody["msg"];
                 int mouseWParam = mouseBody["wParam"];
                 int mouseLParam = mouseBody["lParam"];
-                Debug.Log("Message(" + mouseMsg.ToString() + ", " + mouseWParam.ToString() + ", " + mouseLParam.ToString() + ")");
+                if (Debug.isDebugBuild)
+                {
+                    Debug.Log("Message(" + mouseMsg.ToString() + ", " + mouseWParam.ToString() + ", " + mouseLParam.ToString() + ")");
+                }
+
                 break;
 
             case "camera-transform-lookat":
@@ -158,15 +176,24 @@ public class WebRTCServer : MonoBehaviour
                 break;
 
             default:
-                Debug.Log("InputData(" + val + ")");
-                Debug.Log("");
-
-                foreach (var child in node.Children)
+                if (Debug.isDebugBuild)
                 {
-                    Debug.Log(child.ToString());
+                    Debug.Log("InputData(" + val + ")");
+                    foreach (var child in node.Children)
+                    {
+                        Debug.Log(child.ToString());
+                    }
                 }
 
                 break;
         }
     }
+
+	void OnLog(int level, string message)
+	{
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log(string.Format("[{0}] : {1}", level, message));
+        }
+	}
 }
