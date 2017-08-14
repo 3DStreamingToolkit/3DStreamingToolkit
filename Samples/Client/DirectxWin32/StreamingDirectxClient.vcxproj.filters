@@ -28,6 +28,9 @@
     <ClCompile Include="src\win32_data_channel_handler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\oauth24d_provider.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -62,6 +65,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\win32_data_channel_handler.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\oauth24d_provider.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
