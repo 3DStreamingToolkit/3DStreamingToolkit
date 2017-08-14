@@ -83,6 +83,12 @@ public:
 		return wnd_;
 	}
 
+	void SetAuthCode(const std::wstring& str);
+
+	void SetAuthUri(const std::wstring& str);
+
+	void SetConnectButtonState(bool enabled);
+
 	class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame>
 	{
 	public:
@@ -158,6 +164,7 @@ protected:
 		LABEL1_ID,
 		LABEL2_ID,
 		LISTBOX_ID,
+		AUTH_ID
 	};
 
 	void OnPaint();
@@ -195,6 +202,10 @@ private:
 	HWND label2_;
 	HWND button_;
 	HWND listbox_;
+	HWND auth_uri_;
+	HWND auth_uri_label_;
+	HWND auth_code_;
+	HWND auth_code_label_;
 	ID2D1Factory* direct2d_factory_;
 	ID2D1HwndRenderTarget* render_target_;
 	bool destroyed_;
@@ -203,8 +214,11 @@ private:
 	static ATOM wnd_class_;
 	std::string server_;
 	std::string port_;
+	std::wstring auth_code_val_;
+	std::wstring auth_uri_val_;
 	bool auto_connect_;
 	bool auto_call_;
+	bool connect_button_state_;
 
 	Win32DataChannelHandler* data_channel_handler_;
 

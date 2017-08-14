@@ -3,9 +3,14 @@
   "turnServer": {
     "uri": "turn:turnserveruri:5349",
     "username": "username",
-    "password": "password"
+    "password": "password",
+    "provider":  ""
   },
   "server": "https://signalingserveruri",
   "port": 443,
-  "heartbeat": 5000
+  "heartbeat": 5000,
+  "authentication": {
+    "codeUri": "",
+    "pollUri": ""
+  }
 }
