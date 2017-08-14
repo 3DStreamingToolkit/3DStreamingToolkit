@@ -655,11 +655,11 @@ void DefaultMainWindow::CreateChildWindow(HWND* wnd, DefaultMainWindow::ChildWin
 void DefaultMainWindow::CreateChildWindows()
 {
 	// Create the child windows in tab order.
-	CreateChildWindow(&auth_uri_label_, AUTH_ID, L"Static", ES_LEFT | ES_READONLY, 0);
-	CreateChildWindow(&auth_uri_, AUTH_ID, L"Static", ES_CENTER | ES_READONLY, 0);
+	CreateChildWindow(&auth_uri_label_, AUTH_ID, L"Static", ES_CENTER | ES_READONLY, 0);
+	CreateChildWindow(&auth_uri_, AUTH_ID, L"Edit", ES_LEFT , 0);
 
-	CreateChildWindow(&auth_code_label_, AUTH_ID, L"Static", ES_LEFT | ES_READONLY, 0);
-	CreateChildWindow(&auth_code_, AUTH_ID, L"Static", ES_CENTER | ES_READONLY, 0);
+	CreateChildWindow(&auth_code_label_, AUTH_ID, L"Static", ES_CENTER | ES_READONLY, 0);
+	CreateChildWindow(&auth_code_, AUTH_ID, L"Edit", ES_LEFT  , 0);
 
 	CreateChildWindow(&label1_, LABEL1_ID, L"Static", ES_CENTER | ES_READONLY, 0);
 	CreateChildWindow(&edit1_, EDIT_ID, L"Edit", ES_LEFT | ES_NOHIDESEL | WS_TABSTOP,
@@ -689,11 +689,11 @@ void DefaultMainWindow::LayoutConnectUI(bool show)
 	} windows[] =
 	{
 		{ auth_uri_label_, L"Auth Uri"},
-		{ auth_uri_, auth_uri_val_.c_str()},
+		{ auth_uri_,L"XXXyyyYYYgggXXXyyyYYYgggXXXyyyYYYggggggXXXyyyYYYgggXXXyyyYYYgggXXXyy" },
 		{ auth_code_label_, L"Auth Code" },
-		{ auth_code_, auth_code_val_.c_str()},
+		{ auth_code_, L"XXXyyyYYYgggXXXyy" },
 		{ label1_, L"Server" },
-		{ edit1_, L"XXXyyyYYYgggXXXyyyYYYgggXXXyyyYYYggg" },
+		{ edit1_, L"XXXyyyYYYgggXXXyyyYYYgggXXXyyyYYYggggggXXXyyyYYYgggXXXyyyYYYgggXXXyy" },
 		{ label2_, L":" },
 		{ edit2_, L"XyXyX" },
 		{ button_, L"Connect" },
@@ -846,11 +846,13 @@ void DefaultMainWindow::HandleTabbing()
 void DefaultMainWindow::SetAuthCode(const std::wstring& str)
 {
 	auth_code_val_ = str;
+	::SetWindowText(auth_code_, auth_code_val_.c_str());
 }
 
 void DefaultMainWindow::SetAuthUri(const std::wstring& str)
 {
 	auth_uri_val_ = str;
+	::SetWindowText(auth_uri_, auth_uri_val_.c_str());
 }
 
 void DefaultMainWindow::SetConnectButtonState(bool enabled)
