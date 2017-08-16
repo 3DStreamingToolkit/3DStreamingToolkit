@@ -13,9 +13,6 @@
     <ClCompile Include="src\conductor.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="src\default_main_window.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="src\defaults.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -34,9 +31,6 @@
     <ClInclude Include="inc\conductor.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\default_main_window.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\defaults.h">
       <Filter>Headers</Filter>
     </ClInclude>
@@ -47,9 +41,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\macros.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\main_window.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\webrtc.h">

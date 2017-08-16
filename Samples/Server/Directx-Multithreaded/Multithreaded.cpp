@@ -27,6 +27,7 @@
 #include "defs.h"
 #include "CameraResources.h"
 #include "RemotingModelViewerCamera.h"
+#include "server_main_window.h"
 #include "server_authentication_provider.h"
 #include "turn_credential_provider.h"
 
@@ -562,9 +563,9 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 #ifdef NO_UI
-	DefaultMainWindow wnd(server, port, true, true, true);
+	ServerMainWindow wnd(server, port, true, true, true);
 #else // NO_UI
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
+	ServerMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
 #endif // NO_UI
 
 	if (!wnd.Create())
@@ -611,6 +612,12 @@ int InitWebRTC(char* server, int port, int heartbeat,
 			if (data.successFlag)
 			{
 				client.SetAuthorizationHeader("Bearer " + data.accessToken);
+
+				// indicate to the user auth is complete (only if turn isn't in play)
+				if (turnProvider.get() == nullptr)
+				{
+					wnd.SetAuthCode(L"OK");
+				}
 			}
 		});
 
@@ -632,6 +639,9 @@ int InitWebRTC(char* server, int port, int heartbeat,
 			if (creds.successFlag)
 			{
 				conductor->SetTurnCredentials(creds.username, creds.password);
+
+				// indicate to the user turn is done
+				wnd.SetAuthCode(L"OK");
 			}
 		});
 
@@ -644,11 +654,18 @@ int InitWebRTC(char* server, int port, int heartbeat,
 
 			// if we have auth, first get it
 			authProvider->Authenticate();
+
+			// indicate to the user we're authenticating
+			wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
+			wnd.SetAuthCode(L"Loading");
 		}
 		else
 		{
 			// no auth, just get creds
 			turnProvider->RequestCredentials();
+
+			// indicate to the user we're turning
+			wnd.SetAuthCode(L"Loading");
 		}
 	}
 

@@ -8,14 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pch.h"
+#include "stdafx.h"
 
 #include <math.h>
 
-#include "macros.h"
-#include "default_main_window.h"
-#include "win32_data_channel_handler.h"
-#include "defaults.h"
+#include "client_main_window.h"
 #include "libyuv/convert_argb.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/base/arraysize.h"
@@ -28,8 +25,8 @@ using namespace DirectX::SimpleMath;
 using rtc::sprintfn;
 using Microsoft::WRL::ComPtr;
 
-ATOM DefaultMainWindow::wnd_class_ = 0;
-const wchar_t DefaultMainWindow::kClassName[] = L"WebRTC_MainWindow";
+ATOM ClientMainWindow::wnd_class_ = 0;
+const wchar_t ClientMainWindow::kClassName[] = L"WebRTC_MainWindow";
 
 namespace
 {
@@ -77,7 +74,7 @@ void AddListBoxItem(HWND listbox, const std::string& str, LPARAM item_data)
 
 }  // namespace
 
-DefaultMainWindow::DefaultMainWindow(
+ClientMainWindow::ClientMainWindow(
 	const char* server,
 	int port,
 	bool auto_connect,
@@ -101,7 +98,6 @@ DefaultMainWindow::DefaultMainWindow(
 		render_target_(NULL),
 		destroyed_(false),
 		callback_(NULL),
-		data_channel_handler_(NULL),
 		nested_msg_(NULL),
 		server_(server),
 		auto_connect_(auto_connect),
@@ -115,14 +111,14 @@ DefaultMainWindow::DefaultMainWindow(
 	port_ = buffer;
 }
 
-DefaultMainWindow::~DefaultMainWindow()
+ClientMainWindow::~ClientMainWindow()
 {
 	RTC_DCHECK(!IsWindow());
 	SAFE_RELEASE(direct2d_factory_);
 	SAFE_RELEASE(render_target_);
 }
 
-bool DefaultMainWindow::Create()
+bool ClientMainWindow::Create()
 {
 	RTC_DCHECK(wnd_ == NULL);
 
@@ -170,7 +166,7 @@ bool DefaultMainWindow::Create()
 	return wnd_ != NULL;
 }
 
-bool DefaultMainWindow::Destroy()
+bool ClientMainWindow::Destroy()
 {
 	BOOL ret = FALSE;
 	if (IsWindow())
@@ -178,28 +174,20 @@ bool DefaultMainWindow::Destroy()
 		ret = ::DestroyWindow(wnd_);
 	}
 
-	delete data_channel_handler_;
-	data_channel_handler_ = NULL;
-
 	return ret != FALSE;
 }
 
-void DefaultMainWindow::RegisterObserver(MainWindowCallback* callback) 
+void ClientMainWindow::RegisterObserver(MainWindowCallback* callback)
 {
 	callback_ = callback;
-
-	if (!data_channel_handler_)
-	{
-		data_channel_handler_ = new Win32DataChannelHandler(callback);
-	}
 }
 
-bool DefaultMainWindow::IsWindow()
+bool ClientMainWindow::IsWindow()
 {
 	return wnd_ && ::IsWindow(wnd_) != FALSE;
 }
 
-bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
+bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 {
 	bool ret = false;
 	WPARAM wParam = msg->wParam;
@@ -237,7 +225,7 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 
 	if (ui_ == STREAMING && callback_ && !ret)
 	{
-		data_channel_handler_->ProcessMessage(msg);
+		SignalDataChannelMessage.emit(msg);
 	}
 
 	// UI callback
@@ -252,7 +240,7 @@ bool DefaultMainWindow::PreTranslateMessage(MSG* msg)
 	return ret;
 }
 
-void DefaultMainWindow::SwitchToConnectUI()
+void ClientMainWindow::SwitchToConnectUI()
 {
 	RTC_DCHECK(IsWindow());
 	LayoutPeerListUI(false);
@@ -266,14 +254,14 @@ void DefaultMainWindow::SwitchToConnectUI()
 	}
 }
 
-void DefaultMainWindow::SwitchToPeerList(const Peers& peers)
+void ClientMainWindow::SwitchToPeerList(const std::map<int, std::string>& peers)
 {
 	LayoutConnectUI(false);
 
 	::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
 
 	AddListBoxItem(listbox_, "List of currently connected peers:", -1);
-	Peers::const_iterator i = peers.begin();
+	std::map<int, std::string>::const_iterator i = peers.begin();
 	for (; i != peers.end(); ++i)
 	AddListBoxItem(listbox_, i->second.c_str(), i->first);
 
@@ -301,14 +289,14 @@ void DefaultMainWindow::SwitchToPeerList(const Peers& peers)
 	}
 }
 
-void DefaultMainWindow::SwitchToStreamingUI()
+void ClientMainWindow::SwitchToStreamingUI()
 {
 	LayoutConnectUI(false);
 	LayoutPeerListUI(false);
 	ui_ = STREAMING;
 }
 
-void DefaultMainWindow::MessageBox(const char* caption, const char* text, bool is_error) 
+void ClientMainWindow::MessageBox(const char* caption, const char* text, bool is_error)
 {
 	DWORD flags = MB_OK;
 	if (is_error)
@@ -320,31 +308,31 @@ void DefaultMainWindow::MessageBox(const char* caption, const char* text, bool i
 }
 
 
-void DefaultMainWindow::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
+void ClientMainWindow::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
 {
 }
 
-void DefaultMainWindow::StopLocalRenderer()
+void ClientMainWindow::StopLocalRenderer()
 {
 }
 
-void DefaultMainWindow::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
+void ClientMainWindow::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
 {
 	remote_renderer_.reset(new VideoRenderer(handle(), 1, 1, remote_video));
 }
 
-void DefaultMainWindow::StopRemoteRenderer()
+void ClientMainWindow::StopRemoteRenderer()
 {
 	remote_renderer_.reset();
 }
 
-void DefaultMainWindow::QueueUIThreadCallback(int msg_id, void* data)
+void ClientMainWindow::QueueUIThreadCallback(int msg_id, void* data)
 {
 	::PostThreadMessage(ui_thread_id_, UI_THREAD_CALLBACK,
 		static_cast<WPARAM>(msg_id), reinterpret_cast<LPARAM>(data));
 }
 
-void DefaultMainWindow::OnPaint()
+void ClientMainWindow::OnPaint()
 {
 	PAINTSTRUCT ps;
 	RECT rc;
@@ -425,12 +413,12 @@ void DefaultMainWindow::OnPaint()
 	::EndPaint(handle(), &ps);
 }
 
-void DefaultMainWindow::OnDestroyed()
+void ClientMainWindow::OnDestroyed()
 {
 	PostQuitMessage(0);
 }
 
-void DefaultMainWindow::OnDefaultAction()
+void ClientMainWindow::OnDefaultAction()
 {
 	if (!callback_)
 	{
@@ -462,7 +450,7 @@ void DefaultMainWindow::OnDefaultAction()
 	}
 }
 
-bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result)
+bool ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result)
 {
 	switch (msg)
 	{
@@ -503,7 +491,7 @@ bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* resul
 					GetClientRect(wnd_, &rc);
 					D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
 					render_target_->Resize(size);
-					data_channel_handler_->ProcessMessage(msg, wp, lp);
+					SignalWindowMessage.emit(msg, wp, lp);
 				}
 			}
 			
@@ -567,15 +555,15 @@ bool DefaultMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* resul
 }
 
 // static
-LRESULT CALLBACK DefaultMainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+LRESULT CALLBACK ClientMainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
-	DefaultMainWindow* me = reinterpret_cast<DefaultMainWindow*>(
+	ClientMainWindow* me = reinterpret_cast<ClientMainWindow*>(
 		::GetWindowLongPtr(hwnd, GWLP_USERDATA));
 
 	if (!me && WM_CREATE == msg)
 	{
 		CREATESTRUCT* cs = reinterpret_cast<CREATESTRUCT*>(lp);
-		me = reinterpret_cast<DefaultMainWindow*>(cs->lpCreateParams);
+		me = reinterpret_cast<ClientMainWindow*>(cs->lpCreateParams);
 		me->wnd_ = hwnd;
 		::SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(me));
 	}
@@ -614,7 +602,7 @@ LRESULT CALLBACK DefaultMainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wp, LPAR
 }
 
 // static
-bool DefaultMainWindow::RegisterWindowClass()
+bool ClientMainWindow::RegisterWindowClass()
 {
 	if (wnd_class_)
 	{
@@ -633,7 +621,7 @@ bool DefaultMainWindow::RegisterWindowClass()
 	return wnd_class_ != 0;
 }
 
-void DefaultMainWindow::CreateChildWindow(HWND* wnd, DefaultMainWindow::ChildWindowID id,
+void ClientMainWindow::CreateChildWindow(HWND* wnd, ClientMainWindow::ChildWindowID id,
 	const wchar_t* class_name, DWORD control_style, DWORD ex_style)
 {
 	if (::IsWindow(*wnd))
@@ -650,7 +638,7 @@ void DefaultMainWindow::CreateChildWindow(HWND* wnd, DefaultMainWindow::ChildWin
 	::SendMessage(*wnd, WM_SETFONT, reinterpret_cast<WPARAM>(GetDefaultFont()), TRUE);
 }
 
-void DefaultMainWindow::CreateChildWindows()
+void ClientMainWindow::CreateChildWindows()
 {
 	// Create the child windows in tab order.
 	CreateChildWindow(&auth_uri_label_, AUTH_ID, L"Static", ES_CENTER | ES_READONLY, 0);
@@ -676,7 +664,7 @@ void DefaultMainWindow::CreateChildWindows()
 	::SetWindowTextA(edit2_, port_.c_str());
 }
 
-void DefaultMainWindow::LayoutConnectUI(bool show)
+void ClientMainWindow::LayoutConnectUI(bool show)
 {
 	struct Windows
 	{
@@ -794,7 +782,7 @@ void DefaultMainWindow::LayoutConnectUI(bool show)
 	}
 }
 
-void DefaultMainWindow::LayoutPeerListUI(bool show)
+void ClientMainWindow::LayoutPeerListUI(bool show)
 {
 	if (show)
 	{
@@ -810,7 +798,7 @@ void DefaultMainWindow::LayoutPeerListUI(bool show)
 	}
 }
 
-void DefaultMainWindow::HandleTabbing()
+void ClientMainWindow::HandleTabbing()
 {
 	bool shift = ((::GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0);
 	UINT next_cmd = shift ? GW_HWNDPREV : GW_HWNDNEXT;
@@ -841,26 +829,26 @@ void DefaultMainWindow::HandleTabbing()
 	::SetFocus(next);
 }
 
-void DefaultMainWindow::SetAuthCode(const std::wstring& str)
+void ClientMainWindow::SetAuthCode(const std::wstring& str)
 {
 	::SetWindowText(auth_code_, str.c_str());
 }
 
-void DefaultMainWindow::SetAuthUri(const std::wstring& str)
+void ClientMainWindow::SetAuthUri(const std::wstring& str)
 {
 	::SetWindowText(auth_uri_, str.c_str());
 }
 
-void DefaultMainWindow::SetConnectButtonState(bool enabled)
+void ClientMainWindow::SetConnectButtonState(bool enabled)
 {
 	connect_button_state_ = enabled;
 }
 
 //
-// DefaultMainWindow::VideoRenderer
+// ClientMainWindow::VideoRenderer
 //
 
-DefaultMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
+ClientMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
     webrtc::VideoTrackInterface* track_to_render) :
 		wnd_(wnd),
 		rendered_track_(track_to_render)
@@ -877,13 +865,13 @@ DefaultMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
 	rendered_track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
 }
 
-DefaultMainWindow::VideoRenderer::~VideoRenderer()
+ClientMainWindow::VideoRenderer::~VideoRenderer()
 {
 	rendered_track_->RemoveSink(this);
 	::DeleteCriticalSection(&buffer_lock_);
 }
 
-void DefaultMainWindow::VideoRenderer::SetSize(int width, int height)
+void ClientMainWindow::VideoRenderer::SetSize(int width, int height)
 {
 	AutoLock<VideoRenderer> lock(this);
 
@@ -898,7 +886,7 @@ void DefaultMainWindow::VideoRenderer::SetSize(int width, int height)
 	image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
 }
 
-void DefaultMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame) 
+void ClientMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame)
 {
 	AutoLock<VideoRenderer> lock(this);
 

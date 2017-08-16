@@ -18,9 +18,9 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/win32.h"
+#include "webrtc/base/sigslot.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
-#include "peer_connection_client.h"
 
 class MainWindowCallback
 {
@@ -54,6 +54,10 @@ public:
 
 	virtual ~MainWindow() {}
 
+	sigslot::signal1<MSG*> SignalDataChannelMessage;
+
+	sigslot::signal3<UINT, WPARAM, LPARAM> SignalWindowMessage;
+
 	virtual void RegisterObserver(MainWindowCallback* callback) = 0;
 
 	virtual bool IsWindow() = 0;
@@ -64,7 +68,7 @@ public:
 
 	virtual void SwitchToConnectUI() = 0;
 
-	virtual void SwitchToPeerList(const Peers& peers) = 0;
+	virtual void SwitchToPeerList(const std::map<int, std::string>& peers) = 0;
 
 	virtual void SwitchToStreamingUI() = 0;
 
@@ -77,6 +81,10 @@ public:
 	virtual void StopRemoteRenderer() = 0;
 
 	virtual void QueueUIThreadCallback(int msg_id, void* data) = 0;
+
+	virtual void SetAuthCode(const std::wstring& str) = 0;
+
+	virtual void SetAuthUri(const std::wstring& str) = 0;
 };
 
 #endif // WEBRTC_MAIN_WINDOW_H_

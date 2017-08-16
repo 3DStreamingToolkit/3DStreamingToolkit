@@ -9,6 +9,8 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\Authentication\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\UserInterface\exports.props" />
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)\StreamingNativeServerPlugin.vcxproj">
       <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>

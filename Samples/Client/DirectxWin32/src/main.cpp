@@ -9,6 +9,8 @@
 #include "webrtc.h"
 #include "third_party/jsoncpp/source/include/json/json.h"
 
+#include "client_main_window.h"
+#include "win32_data_channel_handler.h"
 #include "oauth24d_provider.h"
 #include "turn_credential_provider.h"
 
@@ -47,8 +49,8 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
-
+	ClientMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
+	
 	if (!wnd.Create())
 	{
 		RTC_NOTREACHED();
@@ -65,9 +67,15 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	{
 		oauth.reset(new OAuth24DProvider(authCodeUri, authPollUri));
 	}
+	else
+	{
+		wnd.SetAuthCode(L"Not configured");
+		wnd.SetAuthUri(L"Not configured");
+	}
 
 	// depends on oauth
 	std::unique_ptr<TurnCredentialProvider> turn;
+
 	if (oauth.get() != nullptr &&
 		strcmp(turnUri, FLAG_turnUri) != 0 &&
 		!std::string(turnUri).empty())
@@ -78,6 +86,10 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(&client, &wnd));
+	Win32DataChannelHandler dcHandler(conductor.get());
+
+	wnd.SignalWindowMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
+	wnd.SignalDataChannelMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
 
 	// set our client heartbeat interval
 	client.SetHeartbeatMs(heartbeat);
@@ -92,7 +104,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 			wnd.SetConnectButtonState(true);
 
 			// redraw the ui that shows the connect button only if we're currently in that ui
-			if (wnd.current_ui() == DefaultMainWindow::UI::CONNECT_TO_SERVER)
+			if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 			{
 				wnd.SwitchToConnectUI();
 			}
@@ -108,7 +120,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 		wnd.SetAuthUri(wuri);
 
 		// redraw the ui that shows the code only if we're currently in that ui
-		if (wnd.current_ui() == DefaultMainWindow::UI::CONNECT_TO_SERVER)
+		if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 		{
 			wnd.SwitchToConnectUI();
 		}
@@ -123,7 +135,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 			wnd.SetAuthUri(L"Authenticated");
 
 			// redraw the ui that shows the code only if we're currently in that ui
-			if (wnd.current_ui() == DefaultMainWindow::UI::CONNECT_TO_SERVER)
+			if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 			{
 				wnd.SwitchToConnectUI();
 			}
@@ -137,7 +149,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 		wnd.SetConnectButtonState(false);
 
 		// redraw the ui that shows the code only if we're currently in that ui
-		if (wnd.current_ui() == DefaultMainWindow::UI::CONNECT_TO_SERVER)
+		if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 		{
 			wnd.SwitchToConnectUI();
 		}
@@ -158,7 +170,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 		wnd.SetAuthUri(L"Connecting");
 		
 		// redraw the ui that shows the code only if we're currently in that ui
-		if (wnd.current_ui() == DefaultMainWindow::UI::CONNECT_TO_SERVER)
+		if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 		{
 			wnd.SwitchToConnectUI();
 		}

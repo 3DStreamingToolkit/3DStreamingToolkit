@@ -1,42 +1,27 @@
-/*
-*  Copyright 2012 The WebRTC Project Authors. All rights reserved.
-*
-*  Use of this source code is governed by a BSD-style license
-*  that can be found in the LICENSE file in the root of the source
-*  tree. An additional intellectual property rights grant can be found
-*  in the file PATENTS.  All contributing project authors may
-*  be found in the AUTHORS file in the root of the source tree.
-*/
-
-#ifndef WEBRTC_DEFAULT_MAIN_WINDOW_H_
-#define WEBRTC_DEFAULT_MAIN_WINDOW_H_
+#pragma once
 
 #include <map>
 #include <memory>
 #include <string>
 
-#include "defs.h"
 #include "main_window.h"
-#include "peer_connection_client.h"
-#include "win32_data_channel_handler.h"
-
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/win32.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
 
-class DefaultMainWindow : public MainWindow 
+class ServerMainWindow : public MainWindow
 {
 public:
 	static const wchar_t kClassName[];
 
-	enum WindowMessages 
+	enum WindowMessages
 	{
 		UI_THREAD_CALLBACK = WM_APP + 1,
 	};
 
-	DefaultMainWindow(
+	ServerMainWindow(
 		const char* server,
 		int port,
 		bool auto_connect,
@@ -45,7 +30,7 @@ public:
 		int width = CW_USEDEFAULT,
 		int height = CW_USEDEFAULT);
 
-	~DefaultMainWindow();
+	~ServerMainWindow();
 
 	bool Create();
 
@@ -59,7 +44,7 @@ public:
 
 	virtual void SwitchToConnectUI();
 
-	virtual void SwitchToPeerList(const Peers& peers);
+	virtual void SwitchToPeerList(const std::map<int, std::string>& peers);
 
 	virtual void SwitchToStreamingUI();
 
@@ -83,11 +68,9 @@ public:
 		return wnd_;
 	}
 
-	void SetAuthCode(const std::wstring& str);
+	virtual void SetAuthCode(const std::wstring& str);
 
-	void SetAuthUri(const std::wstring& str);
-
-	void SetConnectButtonState(bool enabled);
+	virtual void SetAuthUri(const std::wstring& str);
 
 	class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame>
 	{
@@ -164,7 +147,6 @@ protected:
 		LABEL1_ID,
 		LABEL2_ID,
 		LISTBOX_ID,
-		AUTH_ID
 	};
 
 	void OnPaint();
@@ -191,6 +173,7 @@ protected:
 	void HandleTabbing();
 
 private:
+	bool has_no_UI_;
 	std::unique_ptr<VideoRenderer> local_renderer_;
 	std::unique_ptr<VideoRenderer> remote_renderer_;
 	UI ui_;
@@ -202,12 +185,6 @@ private:
 	HWND label2_;
 	HWND button_;
 	HWND listbox_;
-	HWND auth_uri_;
-	HWND auth_uri_label_;
-	HWND auth_code_;
-	HWND auth_code_label_;
-	ID2D1Factory* direct2d_factory_;
-	ID2D1HwndRenderTarget* render_target_;
 	bool destroyed_;
 	void* nested_msg_;
 	MainWindowCallback* callback_;
@@ -216,12 +193,6 @@ private:
 	std::string port_;
 	bool auto_connect_;
 	bool auto_call_;
-	bool connect_button_state_;
-
-	Win32DataChannelHandler* data_channel_handler_;
-
 	int width_;
 	int height_;
 };
-
-#endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_
