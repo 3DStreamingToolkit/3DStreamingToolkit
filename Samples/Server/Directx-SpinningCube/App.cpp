@@ -179,7 +179,15 @@ int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthentication
 	if (!authInfo.authority.empty())
 	{
 		authProvider.reset(new ServerAuthenticationProvider(authInfo));
-		client.SetAuthenticationProvider(authProvider.get());
+
+		AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
+			if (data.successFlag)
+			{
+				client.SetAuthorizationHeader("Bearer " + data.accessToken);
+			}
+		});
+
+		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 	}
 
 	client.SetHeartbeatMs(heartbeat);

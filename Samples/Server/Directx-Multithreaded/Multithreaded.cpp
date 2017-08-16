@@ -27,13 +27,13 @@
 #include "defs.h"
 #include "CameraResources.h"
 #include "RemotingModelViewerCamera.h"
-#include "server_authentication_provider.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
 #else // TEST_RUNNER
 #include "server_renderer.h"
 #include "webrtc.h"
+#include "server_authentication_provider.h"
 #endif // TEST_RUNNER
 
 // Required app libs
@@ -602,7 +602,15 @@ int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthentication
 	if (!authInfo.authority.empty())
 	{
 		authProvider.reset(new ServerAuthenticationProvider(authInfo));
-		client.SetAuthenticationProvider(authProvider.get());
+
+		AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
+			if (data.successFlag)
+			{
+				client.SetAuthorizationHeader("Bearer " + data.accessToken);
+			}
+		});
+
+		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 	}
 
 	client.SetHeartbeatMs(heartbeat);

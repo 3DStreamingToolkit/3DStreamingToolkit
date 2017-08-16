@@ -151,10 +151,7 @@ void ServerAuthenticationProvider::SocketRead(rtc::AsyncSocket* socket)
 		}
 
 		// emit the event
-		if (callback_ != nullptr)
-		{
-			callback_->OnAuthenticationComplete(completionData);
-		}
+		SignalAuthenticationComplete.emit(completionData);
 
 		// after emission, we can close our socket 
 		// note: we don't really mind if this fails, it doesn't matter until 
