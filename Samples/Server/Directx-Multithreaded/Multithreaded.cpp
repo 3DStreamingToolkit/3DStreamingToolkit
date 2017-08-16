@@ -603,70 +603,76 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
-	
-	if (!authInfo.authority.empty())
-	{
-		authProvider.reset(new ServerAuthenticationProvider(authInfo));
-
-		AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
-			if (data.successFlag)
-			{
-				client.SetAuthorizationHeader("Bearer " + data.accessToken);
-
-				// indicate to the user auth is complete (only if turn isn't in play)
-				if (turnProvider.get() == nullptr)
-				{
-					wnd.SetAuthCode(L"OK");
-				}
-			}
-		});
-
-		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
-	}
-
-	client.SetHeartbeatMs(heartbeat);
-
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
 			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
 
+	client.SetHeartbeatMs(heartbeat);
+
+	// configure callbacks (which may or may not be used)
+	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
+		if (data.successFlag)
+		{
+			client.SetAuthorizationHeader("Bearer " + data.accessToken);
+
+			// indicate to the user auth is complete (only if turn isn't in play)
+			if (turnProvider.get() == nullptr)
+			{
+				wnd.SetAuthCode(L"OK");
+			}
+		}
+	});
+
+	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
+	{
+		if (creds.successFlag)
+		{
+			conductor->SetTurnCredentials(creds.username, creds.password);
+
+			// indicate to the user turn is done
+			wnd.SetAuthCode(L"OK");
+		}
+	});
+
+	// configure auth, if needed
+	if (!authInfo.authority.empty())
+	{
+		authProvider.reset(new ServerAuthenticationProvider(authInfo));
+
+		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
+	}
+
+	// configure turn, if needed
 	if (!turnCredentialUri.empty())
 	{
 		turnProvider.reset(new TurnCredentialProvider(turnCredentialUri));
 
-		TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
-		{
-			if (creds.successFlag)
-			{
-				conductor->SetTurnCredentials(creds.username, creds.password);
-
-				// indicate to the user turn is done
-				wnd.SetAuthCode(L"OK");
-			}
-		});
-
 		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
+	}
 
-		if (authProvider.get() != nullptr)
+	// start auth or turn if needed
+	if (authProvider.get() != nullptr)
+	{
+		if (turnProvider.get() != nullptr)
 		{
 			// set an auth provider, upon authenticating it will trigger turn credential retrieval automatically
 			turnProvider->SetAuthenticationProvider(authProvider.get());
-
-			// if we have auth, first get it
-			authProvider->Authenticate();
-
-			// indicate to the user we're authenticating
-			wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
-			wnd.SetAuthCode(L"Loading");
 		}
-		else
-		{
-			// no auth, just get creds
-			turnProvider->RequestCredentials();
 
-			// indicate to the user we're turning
-			wnd.SetAuthCode(L"Loading");
-		}
+		// if we have auth, first get it
+		authProvider->Authenticate();
+
+		// indicate to the user we're authenticating
+		wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
+		wnd.SetAuthCode(L"Loading");
+	}
+	else if (turnProvider.get() != nullptr)
+	{
+		// no auth, just get creds
+		turnProvider->RequestCredentials();
+
+		// indicate to the user we're turning
+		wnd.SetAuthCode(L"Loading");
 	}
 
 	// Main loop.
