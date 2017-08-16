@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "oauth24d_provider.h"
 
 OAuth24DProvider::OAuth24DProvider(const std::string& codeUri, const std::string& pollUri) :

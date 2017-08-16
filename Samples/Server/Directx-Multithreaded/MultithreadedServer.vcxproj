@@ -347,6 +347,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Libraries\Authentication\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

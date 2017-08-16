@@ -1,5 +1,3 @@
-#include "pch.h"
-
 #include "server_authentication_provider.h"
 
 ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo& authInfo) :

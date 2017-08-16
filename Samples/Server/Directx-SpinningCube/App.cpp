@@ -7,6 +7,7 @@
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
 #include "server_authentication_provider.h"
+#include "turn_credential_provider.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -139,7 +140,9 @@ void InputUpdate(const std::string& message)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthenticationProvider::ServerAuthInfo& authInfo)
+int InitWebRTC(char* server, int port, int heartbeat,
+	const ServerAuthenticationProvider::ServerAuthInfo& authInfo,
+	const std::string& turnCredentialUri)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -174,6 +177,7 @@ int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthentication
 	rtc::InitializeSSL();
 
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
+	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
 
 	if (!authInfo.authority.empty())
@@ -195,6 +199,36 @@ int InitWebRTC(char* server, int port, int heartbeat, const ServerAuthentication
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
 			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
+
+
+	if (!turnCredentialUri.empty())
+	{
+		turnProvider.reset(new TurnCredentialProvider(turnCredentialUri));
+
+		TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
+		{
+			if (creds.successFlag)
+			{
+				conductor->SetTurnCredentials(creds.username, creds.password);
+			}
+		});
+
+		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
+
+		if (authProvider.get() != nullptr)
+		{
+			// set an auth provider, upon authenticating it will trigger turn credential retrieval automatically
+			turnProvider->SetAuthenticationProvider(authProvider.get());
+
+			// if we have auth, first get it
+			authProvider->Authenticate();
+		}
+		else
+		{
+			// no auth, just get creds
+			turnProvider->RequestCredentials();
+		}
+	}
 
 	// Main loop.
 	MSG msg;
@@ -389,6 +423,7 @@ int WINAPI wWinMain(
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
 	int heartbeat = FLAG_heartbeat;
+	std::string turnCredentialUri;
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
@@ -422,6 +457,16 @@ int WINAPI wWinMain(
 				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
 			}
 
+			if (root.isMember("turn"))
+			{
+				auto turnNode = root.get("turn", NULL);
+
+				if (turnNode.isMember("provider"))
+				{
+					turnCredentialUri = turnNode.get("provider", "").asString();
+				}
+			}
+
 			if (root.isMember("authentication"))
 			{
 				auto authenticationNode = root.get("authentication", NULL);
@@ -449,6 +494,6 @@ int WINAPI wWinMain(
 		}
 	}
 
-	return InitWebRTC(server, port, heartbeat, authInfo);
+	return InitWebRTC(server, port, heartbeat, authInfo, turnCredentialUri);
 #endif // TEST_RUNNER
 }
