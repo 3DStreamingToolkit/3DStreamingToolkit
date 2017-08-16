@@ -214,8 +214,6 @@ private:
 	static ATOM wnd_class_;
 	std::string server_;
 	std::string port_;
-	std::wstring auth_code_val_;
-	std::wstring auth_uri_val_;
 	bool auto_connect_;
 	bool auto_call_;
 	bool connect_button_state_;
