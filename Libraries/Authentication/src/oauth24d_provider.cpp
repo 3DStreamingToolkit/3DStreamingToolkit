@@ -161,8 +161,7 @@ void OAuth24DProvider::SocketRead(rtc::AsyncSocket* socket)
 
 	// if we didn't have a body, something is up.
 	// we want to ignore that data
-	if (data.empty() ||
-		bodyStart == std::string::npos)
+	if (data.empty() || bodyStart == std::string::npos)
 	{
 		return;
 	}
