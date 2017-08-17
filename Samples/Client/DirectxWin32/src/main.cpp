@@ -134,6 +134,11 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 			wnd.SetAuthCode(L"OK");
 			wnd.SetAuthUri(L"Authenticated");
 
+			if (turn.get() == nullptr)
+			{
+				wnd.SetConnectButtonState(true);
+			}
+
 			// redraw the ui that shows the code only if we're currently in that ui
 			if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 			{
@@ -145,15 +150,6 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	// if we have real turn values, configure turn
 	if (turn.get() != nullptr)
 	{
-		// disable the connect button until turn is resolved
-		wnd.SetConnectButtonState(false);
-
-		// redraw the ui that shows the code only if we're currently in that ui
-		if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
-		{
-			wnd.SwitchToConnectUI();
-		}
-
 		turn->SetAuthenticationProvider(oauth.get());
 
 		turn->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
@@ -166,6 +162,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 		oauth->SignalCodeComplete.connect(&codeComplete, &OAuth24DProvider::CodeCompleteCallback::Handle);
 		oauth->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 
+		wnd.SetConnectButtonState(false);
 		wnd.SetAuthCode(L"Connecting");
 		wnd.SetAuthUri(L"Connecting");
 		
