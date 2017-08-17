@@ -230,27 +230,29 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	}
 
 	// start auth or turn if needed
-	if (authProvider.get() != nullptr)
+	if (turnProvider.get() != nullptr)
 	{
-		if (turnProvider.get() != nullptr)
+		if (authProvider.get() != nullptr)
 		{
-			// set an auth provider, upon authenticating it will trigger turn credential retrieval automatically
 			turnProvider->SetAuthenticationProvider(authProvider.get());
 		}
-
-		// if we have auth, first get it
-		authProvider->Authenticate();
-
-		// indicate to the user we're authenticating
-		wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
-		wnd.SetAuthCode(L"Loading");
-	}
-	else if (turnProvider.get() != nullptr)
-	{
-		// no auth, just get creds
+		
+		// under the hood, this will trigger authProvider->Authenticate() if it exists
 		turnProvider->RequestCredentials();
+	}
+	else if (authProvider.get() != nullptr)
+	{
+		authProvider->Authenticate();
+	}
 
-		// indicate to the user we're turning
+	// let the user know what we're doing
+	if (turnProvider.get() != nullptr || authProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
+		}
+
 		wnd.SetAuthCode(L"Loading");
 	}
 
@@ -481,9 +483,9 @@ int WINAPI wWinMain(
 				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
 			}
 
-			if (root.isMember("turn"))
+			if (root.isMember("turnServer"))
 			{
-				auto turnNode = root.get("turn", NULL);
+				auto turnNode = root.get("turnServer", NULL);
 
 				if (turnNode.isMember("provider"))
 				{
