@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
+using Microsoft.Toolkit.ThreeD;
 
 #if !UNITY_EDITOR
 using Org.WebRtc;
@@ -35,26 +36,23 @@ public class ControlScript : MonoBehaviour
 
     public Camera LeftCamera;
     public Camera RightCamera;
-    
+
 #if !UNITY_EDITOR
     private Matrix4x4 leftViewProjection;
     private Matrix4x4 rightViewProjection;
     private string cameraTransformMsg;
     private WebRtcControl _webRtcControl;
-    private static readonly ConcurrentQueue<Action> _executionQueue = new ConcurrentQueue<Action>();
-
+    
     private bool enabledStereo = false;
-#else
-    private static readonly Queue<Action> _executionQueue = new Queue<Action>();
 #endif
 
-    #region Graphics Low-Level Plugin DLL Setup
+	#region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
     private MediaVideoTrack _peerVideoTrack;
 #endif
-    #endregion
+	#endregion
 
-    void Awake()
+	void Awake()
     {
     }
     
@@ -67,9 +65,10 @@ public class ControlScript : MonoBehaviour
         _webRtcControl.OnStatusMessageUpdate += WebRtcControlOnStatusMessageUpdate;
 
         Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream;
-        _webRtcControl.Initialize();
+
+		_webRtcControl.Initialize();
 #endif
-    }
+	}
 
 #if !UNITY_EDITOR
     private void Conductor_OnAddRemoteStream(MediaStreamEvent evt)
@@ -90,11 +89,13 @@ public class ControlScript : MonoBehaviour
     }
 #endif
 
-    private void WebRtcControlOnInitialized()
+	private void WebRtcControlOnInitialized()
     {
         EnqueueAction(OnInitialized);
-
-        ConnectToServer();
+		
+		// note: this will start the work of connecting to a server
+		// note: this work MAY include authentication
+		ConnectToServer();
     }
 
     private void OnInitialized()
@@ -128,25 +129,11 @@ public class ControlScript : MonoBehaviour
     public void ConnectToServer()
     {
 #if !UNITY_EDITOR
-        var signalhost = ServerInputTextField.text.Split(':');
-        var host = string.Empty;
-        var port = string.Empty;
-        if (signalhost.Length > 1)
-        {
-            host = signalhost[0];
-            port = signalhost[1];
-        }
-        else
-        {
-            host = signalhost[0];
-            port = "8888";
-        }
-        
-        _webRtcControl.ConnectToServer(PeerInputTextField.text, HeartbeatInputText);
+        _webRtcControl.ConnectToServer(ServerInputTextField.text, PeerInputTextField.text, HeartbeatInputText);
 #endif
-    }
+	}
 
-    public void DisconnectFromServer()
+	public void DisconnectFromServer()
     {
 #if !UNITY_EDITOR
         _webRtcControl.DisconnectFromServer();
@@ -190,10 +177,7 @@ public class ControlScript : MonoBehaviour
 
     public void EnqueueAction(Action action)
     {
-        lock (_executionQueue)
-        {
-            _executionQueue.Enqueue(action);
-        }
+		UIThreadSingleton.Dispatch(action);
     }
 
     private void OnEnable()
@@ -268,7 +252,7 @@ public class ControlScript : MonoBehaviour
         RightCanvas.texture = primaryPlaybackTexture;
     }
 
-    private static class Plugin
+	private static class Plugin
     {
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "CreateMediaPlayback")]
         internal static extern void CreateMediaPlayback();
@@ -298,5 +282,5 @@ public class ControlScript : MonoBehaviour
 
         [DllImport("MediaEngineUWP", CallingConvention = CallingConvention.StdCall, EntryPoint = "Stop")]
         internal static extern void Stop();
-    }
+	}
 }

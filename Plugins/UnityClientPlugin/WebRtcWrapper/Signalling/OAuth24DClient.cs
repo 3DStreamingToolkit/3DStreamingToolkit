@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Data.Json;
 
-namespace WebRtcWrapper.Signalling
+namespace PeerConnectionClient.Signalling
 {
 	/// <summary>
 	/// An OAuth24D authentication client
@@ -173,9 +173,9 @@ namespace WebRtcWrapper.Signalling
 
 					// schedule our polling logic
 					this.pollTimer = new Timer(PollTimer,
-						null,
+						eventData.device_code,
 						TimeSpan.FromMilliseconds(0),
-						TimeSpan.FromMilliseconds(eventData.interval));
+						TimeSpan.FromSeconds(eventData.interval));
 				}
 
 				this.CodeComplete?.Invoke(eventData);
@@ -192,10 +192,20 @@ namespace WebRtcWrapper.Signalling
 		/// <remarks>
 		/// The state parameter is required by <see cref="TimerCallback"/>, but is always null here
 		/// </remarks>
-		/// <param name="state"><c>null</c></param>
+		/// <param name="state">the device_code to poll with, given as a string</param>
 		private void PollTimer(object state)
 		{
-			this.client.GetAsync(this.pollUri).ContinueWith(async (Task<HttpResponseMessage> prev) =>
+			var device_code = state as string;
+			var queryToAppend = "device_code=" + device_code;
+			var baseUri = new UriBuilder(this.pollUri);
+
+			// <sigh>..see https://msdn.microsoft.com/en-us/library/system.uribuilder.query(v=vs.110).aspx
+			if (baseUri.Query != null && baseUri.Query.Length > 1)
+				baseUri.Query = baseUri.Query.Substring(1) + "&" + queryToAppend;
+			else
+				baseUri.Query = queryToAppend;
+			
+			this.client.GetAsync(baseUri.Uri).ContinueWith(async (Task<HttpResponseMessage> prev) =>
 			{
 				var message = prev.Result;
 

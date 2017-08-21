@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Data.Json;
 
-namespace WebRtcWrapper.Signalling
+namespace PeerConnectionClient.Signalling
 {
 	/// <summary>
 	/// A temporary turn credential client
 	/// </summary>
-	class TemporaryTurnClient : IDisposable
+	public class TemporaryTurnClient : IDisposable
 	{
 		/// <summary>
 		/// Represents the credentials provided by a turn credential provider service
@@ -90,9 +91,15 @@ namespace WebRtcWrapper.Signalling
 		/// This returns a boolean to remain compatible with our native
 		/// implementation - however it always returns true in managed code
 		/// </remarks>
+		/// <param name="authHeader">the value of the authentication header to use</param>
 		/// <returns><c>true</c></returns>
-		public bool RequestCredentials()
+		public bool RequestCredentials(AuthenticationHeaderValue authHeader = null)
 		{
+			if (authHeader != null)
+			{
+				this.client.DefaultRequestHeaders.Authorization = authHeader;
+			}
+
 			this.client.GetAsync(this.turnCredentialUri).ContinueWith(async (Task<HttpResponseMessage> prev) =>
 			{
 				var message = prev.Result;
