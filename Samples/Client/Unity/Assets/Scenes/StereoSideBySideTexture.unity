@@ -42,7 +42,7 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 11
+  serializedVersion: 9
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -54,7 +54,7 @@ LightmapSettings:
     m_EnableBakedLightmaps: 1
     m_EnableRealtimeLightmaps: 1
   m_LightmapEditorSettings:
-    serializedVersion: 9
+    serializedVersion: 8
     m_Resolution: 2
     m_BakeResolution: 40
     m_TextureWidth: 1024
@@ -87,7 +87,7 @@ LightmapSettings:
     m_PVRFilteringAtrousNormalSigma: 1
     m_PVRFilteringAtrousPositionSigma: 1
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 1
+  m_ShadowMaskMode: 2
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -210,24 +210,6 @@ Prefab:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 1304715564}
-    - target: {fileID: 114126599379972318, guid: 5609f3b3a40f1db42b110e1c441d45cc,
-        type: 2}
-      propertyPath: m_Texture
-      value: 
-      objectReference: {fileID: 2800000, guid: 574891f26fb39f94d9e2e1e3d968ed2f, type: 3}
-    - target: {fileID: 114126599379972318, guid: 5609f3b3a40f1db42b110e1c441d45cc,
-        type: 2}
-      propertyPath: m_UVRect.width
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1070065205006000, guid: 5609f3b3a40f1db42b110e1c441d45cc, type: 2}
-      propertyPath: m_Layer
-      value: 13
-      objectReference: {fileID: 0}
-    - target: {fileID: 1327150407788740, guid: 5609f3b3a40f1db42b110e1c441d45cc, type: 2}
-      propertyPath: m_Layer
-      value: 13
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 5609f3b3a40f1db42b110e1c441d45cc, type: 2}
   m_IsPrefabParent: 0
@@ -388,6 +370,12 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 136016223}
+--- !u!114 &137976099 stripped
+MonoBehaviour:
+  m_PrefabParentObject: {fileID: 114119599789412686, guid: 5609f3b3a40f1db42b110e1c441d45cc,
+    type: 2}
+  m_PrefabInternal: {fileID: 15576733}
+  m_Script: {fileID: 708705254, guid: f70555f144d8491a825f0804e09c671c, type: 3}
 --- !u!1 &290663758
 GameObject:
   m_ObjectHideFlags: 0
@@ -920,34 +908,6 @@ Prefab:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 1264895378}
-    - target: {fileID: 114719838081649638, guid: 2886981e38be5ac40bee2f8cc0e981f6,
-        type: 2}
-      propertyPath: m_Texture
-      value: 
-      objectReference: {fileID: 2800000, guid: 574891f26fb39f94d9e2e1e3d968ed2f, type: 3}
-    - target: {fileID: 114719838081649638, guid: 2886981e38be5ac40bee2f8cc0e981f6,
-        type: 2}
-      propertyPath: m_Material
-      value: 
-      objectReference: {fileID: 2100000, guid: 7bf1bdd475667324e92859d25b0f0166, type: 2}
-    - target: {fileID: 114719838081649638, guid: 2886981e38be5ac40bee2f8cc0e981f6,
-        type: 2}
-      propertyPath: m_UVRect.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 114719838081649638, guid: 2886981e38be5ac40bee2f8cc0e981f6,
-        type: 2}
-      propertyPath: m_UVRect.width
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1924249254299106, guid: 2886981e38be5ac40bee2f8cc0e981f6, type: 2}
-      propertyPath: m_Layer
-      value: 14
-      objectReference: {fileID: 0}
-    - target: {fileID: 1429672322550328, guid: 2886981e38be5ac40bee2f8cc0e981f6, type: 2}
-      propertyPath: m_Layer
-      value: 14
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 2886981e38be5ac40bee2f8cc0e981f6, type: 2}
   m_IsPrefabParent: 0
@@ -1103,6 +1063,7 @@ GameObject:
   - component: {fileID: 669725302}
   - component: {fileID: 669725304}
   - component: {fileID: 669725305}
+  - component: {fileID: 669725306}
   m_Layer: 8
   m_Name: Control
   m_TagString: Untagged
@@ -1160,10 +1121,7 @@ MonoBehaviour:
   RightCanvas: {fileID: 482189657}
   LeftCamera: {fileID: 1304715564}
   RightCamera: {fileID: 1264895378}
-  CredentialCodeUri: https://3dtoolkit-identity-management.azurewebsites.net/device/new
-  CredentialPollUri: https://3dtoolkit-identity-management.azurewebsites.net/device/device_code
-  TemporaryTurnCredentialUri: https://3dtoolkit-identity-management.azurewebsites.net/turnCreds
-  AuthenticateTemporaryTurnCredentials: 1
+  HoloStatus: {fileID: 669725306}
 --- !u!114 &669725304
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1189,6 +1147,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0740cd14086bd8f438892cbbc1dcfd89, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &669725306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 669725300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0dc0c33738df3c44959b24d7a3fdca2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  LeftStatus: {fileID: 137976099}
+  RightStatus: {fileID: 1926052049}
+  FlashTimeout: 10
+  FadeOut: 1
+  FadeTimeout: 2
 --- !u!1 &677331402
 GameObject:
   m_ObjectHideFlags: 0
@@ -2038,20 +2012,6 @@ Light:
   m_Lightmapping: 4
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
-  m_FalloffTable:
-    m_Table[0]: 0
-    m_Table[1]: 0
-    m_Table[2]: 0
-    m_Table[3]: 0
-    m_Table[4]: 0
-    m_Table[5]: 0
-    m_Table[6]: 0
-    m_Table[7]: 0
-    m_Table[8]: 0
-    m_Table[9]: 0
-    m_Table[10]: 0
-    m_Table[11]: 0
-    m_Table[12]: 0
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
   m_ShadowRadius: 0
@@ -3334,6 +3294,12 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1926052049 stripped
+MonoBehaviour:
+  m_PrefabParentObject: {fileID: 114840952828475832, guid: 2886981e38be5ac40bee2f8cc0e981f6,
+    type: 2}
+  m_PrefabInternal: {fileID: 482189656}
+  m_Script: {fileID: 708705254, guid: f70555f144d8491a825f0804e09c671c, type: 3}
 --- !u!1 &1934395798
 GameObject:
   m_ObjectHideFlags: 0
