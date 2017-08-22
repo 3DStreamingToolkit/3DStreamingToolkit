@@ -138,3 +138,11 @@ Once finished building, for local use, copy the contents of
 C:\<path to source>\webrtv-checkout\dist
 ```
 to the `WebRTCLibs` folder in this repo.
+
+# !IMPORTANT - USING UNITY AS A 3D VIDEO STREAMING SERVER IS AGAINST THE SOFTWARE TERMS OF SERVICE - THE UNITY SERVER SAMPLE IS PROVIDED FOR DEMO AND EDUCATIONAL PURPOSES ONLY.  CONTACT UNITY FOR LICENSING IF YOU WANT TO USE THE UNITY SERVER SAMPLE IN ANY COMMERCIAL ENVIRONMENT
+
+## Please refer to https://unity3d.com/legal/terms-of-service/software 
+
+> ### Streaming and Cloud Gaming Restrictions
+
+> You may not directly or indirectly distribute Your Project Content by means of streaming or broadcasting where Your Project Content is primarily executed on a server and transmitted as a video stream or via low level graphics render commands over the open Internet to end user devices without a separate license from Unity. This restriction does not prevent end users from remotely accessing Your Project Content from an end user device that is running on another end user device.
