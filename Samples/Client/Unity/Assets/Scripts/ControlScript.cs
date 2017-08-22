@@ -37,6 +37,8 @@ public class ControlScript : MonoBehaviour
     public Camera LeftCamera;
     public Camera RightCamera;
 
+	public HolographicStatus HoloStatus;
+
 #if !UNITY_EDITOR
     private Matrix4x4 leftViewProjection;
     private Matrix4x4 rightViewProjection;
@@ -123,6 +125,11 @@ public class ControlScript : MonoBehaviour
 
     private void UpdateStatusText(string msg)
     {
+		if (HoloStatus)
+		{
+			HoloStatus.ShowStatus(msg);
+		}
+
         StatusText.text += msg;
     }
 

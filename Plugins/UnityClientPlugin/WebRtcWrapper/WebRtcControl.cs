@@ -456,10 +456,10 @@ namespace WebRtcWrapper
 
 					Conductor.Instance.AuthClient.AuthenticationComplete += (OAuth24DClient.AuthCompletionData eventData) =>
 					{
-						OnStatusMessageUpdate?.Invoke("Authentication check got status: " + eventData.http_status);
-
 						if (eventData.http_status == 200 && Conductor.Instance.TurnClient == null)
 						{
+							OnStatusMessageUpdate?.Invoke("Authentication recieved, logging in");
+
 							Conductor.Instance.StartLogin(this.Uri.Value, peerName);
 						}
 					};
