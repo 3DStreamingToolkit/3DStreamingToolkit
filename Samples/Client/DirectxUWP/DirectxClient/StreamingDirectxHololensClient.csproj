@@ -69,7 +69,9 @@
     <None Include="project.json" />
     <Content Include="VPRTVertexShader.cso" />
     <Content Include="VertexShader.cso" />
-    <Content Include="webrtcConfig.json" />
+    <Content Include="webrtcConfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
