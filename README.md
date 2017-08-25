@@ -2,7 +2,17 @@
 
 A toolkit for building powerful stereoscopic 3d experiences that run on the cloud and stream to devices. :muscle: :eye: :cloud:
 
-> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
+## Features
+
+> See our client and server implementation feature matrices [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices)!
+
++ WebRTC powered audio/video content streaming
++ Client user input streaming
++ Low-latency communication channels
++ Secure communication channels
++ Client user authentication
++ Server application authentication
++ Sample implementations for servers and clients
 
 ## Grabbing latest prebuilt binaries
 
@@ -39,6 +49,8 @@ This will install and configure the following:
 Once you see `Libraries retrieved and up to date` you may proceed.
 
 ## Building the Toolkit
+
+> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
 
 > Note: To build the unity client library, you must use `Release` and `x86` for the desired configuration
 
