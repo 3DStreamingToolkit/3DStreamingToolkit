@@ -1,6 +1,7 @@
 #include "turn_credential_provider.h"
 
-TurnCredentialProvider::TurnCredentialProvider(const std::string& uri)
+TurnCredentialProvider::TurnCredentialProvider(const std::string& uri) :
+	state_(State::NOT_ACTIVE)
 {
 	// take the hostname, <protocol>://<hostname>[:port]/ 
 	auto tempAuthHost = uri.substr(uri.find_first_of("://") + 3);
