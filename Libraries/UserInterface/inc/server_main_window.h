@@ -124,6 +124,7 @@ protected:
 		LABEL1_ID,
 		LABEL2_ID,
 		LISTBOX_ID,
+		AUTH_ID
 	};
 
 	VideoRenderer* AllocateVideoRenderer(HWND wnd, int width, int height, webrtc::VideoTrackInterface* track);
@@ -145,6 +146,10 @@ private:
 	HWND label2_;
 	HWND button_;
 	HWND listbox_;
+	HWND auth_uri_;
+	HWND auth_uri_label_;
+	HWND auth_code_;
+	HWND auth_code_label_;
 	std::string server_;
 	std::string port_;
 	bool auto_connect_;
