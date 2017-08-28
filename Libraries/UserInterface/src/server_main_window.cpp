@@ -9,9 +9,6 @@
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 
-ATOM ServerMainWindow::wnd_class_ = 0;
-const wchar_t ServerMainWindow::kClassName[] = L"WebRTC_MainWindow";
-
 using rtc::sprintfn;
 
 namespace
@@ -69,17 +66,13 @@ ServerMainWindow::ServerMainWindow(
 	bool has_no_UI,
 	int width,
 	int height) :
-	ui_(CONNECT_TO_SERVER),
-	wnd_(NULL),
+	MainWindow([&](HWND a, int b, int c, webrtc::VideoTrackInterface* d) { return AllocateVideoRenderer(a, b, c, d); }),
 	edit1_(NULL),
 	edit2_(NULL),
 	label1_(NULL),
 	label2_(NULL),
 	button_(NULL),
 	listbox_(NULL),
-	destroyed_(false),
-	callback_(NULL),
-	nested_msg_(NULL),
 	server_(server),
 	auto_connect_(auto_connect),
 	auto_call_(auto_call),
@@ -87,6 +80,8 @@ ServerMainWindow::ServerMainWindow(
 	width_(width),
 	height_(height)
 {
+	SignalWindowMessage.connect(this, &ServerMainWindow::OnMessage);
+
 	char buffer[10] = { 0 };
 	sprintfn(buffer, sizeof(buffer), "%i", port);
 	port_ = buffer;
@@ -132,16 +127,6 @@ bool ServerMainWindow::Destroy()
 	return ret != FALSE;
 }
 
-void ServerMainWindow::RegisterObserver(MainWindowCallback* callback)
-{
-	callback_ = callback;
-}
-
-bool ServerMainWindow::IsWindow()
-{
-	return wnd_ && ::IsWindow(wnd_) != FALSE;
-}
-
 bool ServerMainWindow::PreTranslateMessage(MSG* msg)
 {
 	bool ret = false;
@@ -161,7 +146,7 @@ bool ServerMainWindow::PreTranslateMessage(MSG* msg)
 		{
 			if (callback_)
 			{
-				if (ui_ == STREAMING)
+				if (current_ui_ == STREAMING)
 				{
 					callback_->DisconnectFromCurrentPeer();
 				}
@@ -182,100 +167,6 @@ bool ServerMainWindow::PreTranslateMessage(MSG* msg)
 	return ret;
 }
 
-void ServerMainWindow::SwitchToConnectUI()
-{
-	RTC_DCHECK(IsWindow());
-	LayoutPeerListUI(false);
-	ui_ = CONNECT_TO_SERVER;
-	LayoutConnectUI(true);
-	::SetFocus(edit1_);
-
-	if (auto_connect_)
-	{
-		::PostMessage(button_, BM_CLICK, 0, 0);
-	}
-}
-
-void ServerMainWindow::SwitchToPeerList(const std::map<int, std::string>& peers)
-{
-	LayoutConnectUI(false);
-
-	::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
-
-	AddListBoxItem(listbox_, "List of currently connected peers:", -1);
-	std::map<int,std::string>::const_iterator i = peers.begin();
-	for (; i != peers.end(); ++i)
-		AddListBoxItem(listbox_, i->second.c_str(), i->first);
-
-	ui_ = LIST_PEERS;
-	LayoutPeerListUI(true);
-	::SetFocus(listbox_);
-
-	if (auto_call_ && peers.begin() != peers.end())
-	{
-		// Get the number of items in the list
-		LRESULT count = ::SendMessage(listbox_, LB_GETCOUNT, 0, 0);
-		if (count != LB_ERR)
-		{
-			// Select the last item in the list
-			LRESULT selection = ::SendMessage(listbox_, LB_SETCURSEL, count - 1, 0);
-			if (selection != LB_ERR)
-			{
-				::PostMessage(
-					wnd_,
-					WM_COMMAND,
-					MAKEWPARAM(GetDlgCtrlID(listbox_), LBN_DBLCLK),
-					reinterpret_cast<LPARAM>(listbox_));
-			}
-		}
-	}
-}
-
-void ServerMainWindow::SwitchToStreamingUI()
-{
-	LayoutConnectUI(false);
-	LayoutPeerListUI(false);
-	ui_ = STREAMING;
-}
-
-void ServerMainWindow::MessageBox(const char* caption, const char* text, bool is_error)
-{
-	DWORD flags = MB_OK;
-	if (is_error)
-	{
-		flags |= MB_ICONERROR;
-	}
-
-	::MessageBoxA(handle(), text, caption, flags);
-}
-
-
-void ServerMainWindow::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
-{
-	local_renderer_.reset(new VideoRenderer(handle(), 1, 1, local_video));
-}
-
-void ServerMainWindow::StopLocalRenderer()
-{
-	local_renderer_.reset();
-}
-
-void ServerMainWindow::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
-{
-	remote_renderer_.reset(new VideoRenderer(handle(), 1, 1, remote_video));
-}
-
-void ServerMainWindow::StopRemoteRenderer()
-{
-	remote_renderer_.reset();
-}
-
-void ServerMainWindow::QueueUIThreadCallback(int msg_id, void* data)
-{
-	::PostThreadMessage(ui_thread_id_, UI_THREAD_CALLBACK,
-		static_cast<WPARAM>(msg_id), reinterpret_cast<LPARAM>(data));
-}
-
 void ServerMainWindow::SetAuthCode(const std::wstring& str)
 {
 	// TODO(bengreenier): improve implementation
@@ -291,13 +182,13 @@ void ServerMainWindow::SetAuthUri(const std::wstring& str)
 void ServerMainWindow::OnPaint()
 {
 	PAINTSTRUCT ps;
-	::BeginPaint(handle(), &ps);
+	::BeginPaint(wnd_, &ps);
 
 	RECT rc;
-	::GetClientRect(handle(), &rc);
+	::GetClientRect(wnd_, &rc);
 
-	VideoRenderer* local_renderer = local_renderer_.get();
-	if (ui_ == STREAMING && local_renderer)
+	VideoRenderer* local_renderer = local_video_renderer_.get();
+	if (current_ui_ == STREAMING && local_renderer)
 	{
 		AutoLock<VideoRenderer> local_lock(local_renderer);
 		const BITMAPINFO& bmi = local_renderer->bmi();
@@ -371,12 +262,7 @@ void ServerMainWindow::OnPaint()
 		::DeleteObject(brush);
 	}
 
-	::EndPaint(handle(), &ps);
-}
-
-void ServerMainWindow::OnDestroyed()
-{
-	PostQuitMessage(0);
+	::EndPaint(wnd_, &ps);
 }
 
 void ServerMainWindow::OnDefaultAction()
@@ -386,14 +272,14 @@ void ServerMainWindow::OnDefaultAction()
 		return;
 	}
 
-	if (ui_ == CONNECT_TO_SERVER)
+	if (current_ui_ == CONNECT_TO_SERVER)
 	{
 		std::string server(GetWindowText(edit1_));
 		std::string port_str(GetWindowText(edit2_));
 		int port = port_str.length() ? atoi(port_str.c_str()) : 0;
 		callback_->StartLogin(server, port);
 	}
-	else if (ui_ == LIST_PEERS)
+	else if (current_ui_ == LIST_PEERS)
 	{
 		LRESULT sel = ::SendMessage(listbox_, LB_GETCURSEL, 0, 0);
 		if (sel != LB_ERR)
@@ -411,45 +297,27 @@ void ServerMainWindow::OnDefaultAction()
 	}
 }
 
-bool ServerMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result)
+VideoRenderer* ServerMainWindow::AllocateVideoRenderer(HWND wnd, int width, int height, webrtc::VideoTrackInterface* track)
+{
+	return new ServerVideoRenderer(wnd, width, height, track);
+}
+
+void ServerMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result, bool* retCode)
 {
 	switch (msg)
 	{
-	case WM_ERASEBKGND:
-		*result = TRUE;
-		return true;
-
-	case WM_PAINT:
-		OnPaint();
-		return true;
-
 	case WM_SETFOCUS:
-		if (ui_ == CONNECT_TO_SERVER)
+		if (current_ui_ == CONNECT_TO_SERVER)
 		{
 			SetFocus(edit1_);
 		}
-		else if (ui_ == LIST_PEERS)
+		else if (current_ui_ == LIST_PEERS)
 		{
 			SetFocus(listbox_);
 		}
 
-		return true;
-
-	case WM_SIZE:
-		if (ui_ == CONNECT_TO_SERVER)
-		{
-			LayoutConnectUI(true);
-		}
-		else if (ui_ == LIST_PEERS)
-		{
-			LayoutPeerListUI(true);
-		}
-
+		*retCode = true;
 		break;
-
-	case WM_CTLCOLORSTATIC:
-		*result = reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_WINDOW));
-		return true;
 
 	case WM_COMMAND:
 		if (button_ == reinterpret_cast<HWND>(lp))
@@ -467,85 +335,9 @@ bool ServerMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result
 			}
 		}
 
-		return true;
-
-	case WM_CLOSE:
-		if (callback_)
-		{
-			callback_->Close();
-		}
-
+		*retCode = true;
 		break;
 	}
-
-	return false;
-}
-
-// static
-LRESULT CALLBACK ServerMainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-	ServerMainWindow* me = reinterpret_cast<ServerMainWindow*>(
-		::GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-	if (!me && WM_CREATE == msg)
-	{
-		CREATESTRUCT* cs = reinterpret_cast<CREATESTRUCT*>(lp);
-		me = reinterpret_cast<ServerMainWindow*>(cs->lpCreateParams);
-		me->wnd_ = hwnd;
-		::SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(me));
-	}
-
-	LRESULT result = 0;
-	if (me)
-	{
-		void* prev_nested_msg = me->nested_msg_;
-		me->nested_msg_ = &msg;
-
-		bool handled = me->OnMessage(msg, wp, lp, &result);
-		if (WM_NCDESTROY == msg)
-		{
-			me->destroyed_ = true;
-		}
-		else if (!handled)
-		{
-			result = ::DefWindowProc(hwnd, msg, wp, lp);
-		}
-
-		if (me->destroyed_ && prev_nested_msg == NULL)
-		{
-			me->OnDestroyed();
-			me->wnd_ = NULL;
-			me->destroyed_ = false;
-		}
-
-		me->nested_msg_ = prev_nested_msg;
-	}
-	else
-	{
-		result = ::DefWindowProc(hwnd, msg, wp, lp);
-	}
-
-	return result;
-}
-
-// static
-bool ServerMainWindow::RegisterWindowClass()
-{
-	if (wnd_class_)
-	{
-		return true;
-	}
-
-	WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
-	wcex.style = CS_DBLCLKS;
-	wcex.hInstance = GetModuleHandle(NULL);
-	wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-	wcex.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-	wcex.lpfnWndProc = &WndProc;
-	wcex.lpszClassName = kClassName;
-	wnd_class_ = ::RegisterClassEx(&wcex);
-	RTC_DCHECK(wnd_class_ != 0);
-	return wnd_class_ != 0;
 }
 
 void ServerMainWindow::CreateChildWindow(HWND* wnd, ServerMainWindow::ChildWindowID id,
@@ -641,16 +433,47 @@ void ServerMainWindow::LayoutConnectUI(bool show)
 			::ShowWindow(windows[i].wnd, SW_HIDE);
 		}
 	}
+
+	if (auto_connect_)
+	{
+		::PostMessage(button_, BM_CLICK, 0, 0);
+	}
 }
 
-void ServerMainWindow::LayoutPeerListUI(bool show)
+void ServerMainWindow::LayoutPeerListUI(const std::map<int, std::string>& peers, bool show)
 {
 	if (show)
 	{
+		::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
+
+		AddListBoxItem(listbox_, "List of currently connected peers:", -1);
+		std::map<int, std::string>::const_iterator i = peers.begin();
+		for (; i != peers.end(); ++i)
+			AddListBoxItem(listbox_, i->second.c_str(), i->first);
+
 		RECT rc;
 		::GetClientRect(wnd_, &rc);
 		::MoveWindow(listbox_, 0, 0, rc.right, rc.bottom, TRUE);
 		::ShowWindow(listbox_, SW_SHOWNA);
+
+		if (auto_call_ && peers.begin() != peers.end())
+		{
+			// Get the number of items in the list
+			LRESULT count = ::SendMessage(listbox_, LB_GETCOUNT, 0, 0);
+			if (count != LB_ERR)
+			{
+				// Select the last item in the list
+				LRESULT selection = ::SendMessage(listbox_, LB_SETCURSEL, count - 1, 0);
+				if (selection != LB_ERR)
+				{
+					::PostMessage(
+						wnd_,
+						WM_COMMAND,
+						MAKEWPARAM(GetDlgCtrlID(listbox_), LBN_DBLCLK),
+						reinterpret_cast<LPARAM>(listbox_));
+				}
+			}
+		}
 	}
 	else
 	{
@@ -693,7 +516,7 @@ void ServerMainWindow::HandleTabbing()
 // DefaultMainWindow::VideoRenderer
 //
 
-ServerMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
+ServerMainWindow::ServerVideoRenderer::ServerVideoRenderer(HWND wnd, int width, int height,
 	webrtc::VideoTrackInterface* track_to_render) :
 	wnd_(wnd),
 	rendered_track_(track_to_render)
@@ -710,13 +533,13 @@ ServerMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
 	rendered_track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
 }
 
-ServerMainWindow::VideoRenderer::~VideoRenderer()
+ServerMainWindow::ServerVideoRenderer::~ServerVideoRenderer()
 {
 	rendered_track_->RemoveSink(this);
 	::DeleteCriticalSection(&buffer_lock_);
 }
 
-void ServerMainWindow::VideoRenderer::SetSize(int width, int height)
+void ServerMainWindow::ServerVideoRenderer::SetSize(int width, int height)
 {
 	AutoLock<VideoRenderer> lock(this);
 
@@ -731,7 +554,7 @@ void ServerMainWindow::VideoRenderer::SetSize(int width, int height)
 	image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
 }
 
-void ServerMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame)
+void ServerMainWindow::ServerVideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame)
 {
 	AutoLock<VideoRenderer> lock(this);
 

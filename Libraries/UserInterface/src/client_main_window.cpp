@@ -25,9 +25,6 @@ using namespace DirectX::SimpleMath;
 using rtc::sprintfn;
 using Microsoft::WRL::ComPtr;
 
-ATOM ClientMainWindow::wnd_class_ = 0;
-const wchar_t ClientMainWindow::kClassName[] = L"WebRTC_MainWindow";
-
 namespace
 {
 const char kConnecting[] = "Connecting... ";
@@ -82,8 +79,7 @@ ClientMainWindow::ClientMainWindow(
 	bool has_no_UI,
 	int width,
 	int height) : 
-		ui_(CONNECT_TO_SERVER),
-		wnd_(NULL),
+		MainWindow([&](HWND a, int b, int c, webrtc::VideoTrackInterface* d) { return AllocateVideoRenderer(a, b, c, d); }),
 		edit1_(NULL),
 		edit2_(NULL),
 		label1_(NULL),
@@ -96,9 +92,6 @@ ClientMainWindow::ClientMainWindow(
 		auth_uri_label_(NULL),
 		direct2d_factory_(NULL),
 		render_target_(NULL),
-		destroyed_(false),
-		callback_(NULL),
-		nested_msg_(NULL),
 		server_(server),
 		auto_connect_(auto_connect),
 		auto_call_(auto_call),
@@ -106,6 +99,8 @@ ClientMainWindow::ClientMainWindow(
 		height_(height),
 		connect_button_state_(true)
 {
+	SignalWindowMessage.connect(this, &ClientMainWindow::OnMessage);
+
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
 	port_ = buffer;
@@ -177,16 +172,6 @@ bool ClientMainWindow::Destroy()
 	return ret != FALSE;
 }
 
-void ClientMainWindow::RegisterObserver(MainWindowCallback* callback)
-{
-	callback_ = callback;
-}
-
-bool ClientMainWindow::IsWindow()
-{
-	return wnd_ && ::IsWindow(wnd_) != FALSE;
-}
-
 bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 {
 	bool ret = false;
@@ -209,7 +194,7 @@ bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 		{
 			if (callback_)
 			{
-				if (ui_ == STREAMING)
+				if (current_ui_ == STREAMING)
 				{
 					callback_->DisconnectFromCurrentPeer();
 				} 
@@ -223,7 +208,7 @@ bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 		}
 	}
 
-	if (ui_ == STREAMING && callback_ && !ret)
+	if (current_ui_ == STREAMING && callback_ && !ret)
 	{
 		SignalDataChannelMessage.emit(msg);
 	}
@@ -240,98 +225,6 @@ bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 	return ret;
 }
 
-void ClientMainWindow::SwitchToConnectUI()
-{
-	RTC_DCHECK(IsWindow());
-	LayoutPeerListUI(false);
-	ui_ = CONNECT_TO_SERVER;
-	LayoutConnectUI(true);
-	::SetFocus(edit1_);
-
-	if (auto_connect_)
-	{
-		::PostMessage(button_, BM_CLICK, 0, 0);
-	}
-}
-
-void ClientMainWindow::SwitchToPeerList(const std::map<int, std::string>& peers)
-{
-	LayoutConnectUI(false);
-
-	::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
-
-	AddListBoxItem(listbox_, "List of currently connected peers:", -1);
-	std::map<int, std::string>::const_iterator i = peers.begin();
-	for (; i != peers.end(); ++i)
-	AddListBoxItem(listbox_, i->second.c_str(), i->first);
-
-	ui_ = LIST_PEERS;
-	LayoutPeerListUI(true);
-	::SetFocus(listbox_);
-
-	if (auto_call_ && peers.begin() != peers.end())
-	{
-		// Get the number of items in the list
-		LRESULT count = ::SendMessage(listbox_, LB_GETCOUNT, 0, 0);
-		if (count != LB_ERR)
-		{
-			// Select the last item in the list
-			LRESULT selection = ::SendMessage(listbox_, LB_SETCURSEL , count - 1, 0);
-			if (selection != LB_ERR)
-			{
-				::PostMessage(
-					wnd_,
-					WM_COMMAND,
-					MAKEWPARAM(GetDlgCtrlID(listbox_), LBN_DBLCLK),
-					reinterpret_cast<LPARAM>(listbox_));
-			}
-		}
-	}
-}
-
-void ClientMainWindow::SwitchToStreamingUI()
-{
-	LayoutConnectUI(false);
-	LayoutPeerListUI(false);
-	ui_ = STREAMING;
-}
-
-void ClientMainWindow::MessageBox(const char* caption, const char* text, bool is_error)
-{
-	DWORD flags = MB_OK;
-	if (is_error)
-	{
-		flags |= MB_ICONERROR;
-	}
-
-	::MessageBoxA(handle(), text, caption, flags);
-}
-
-
-void ClientMainWindow::StartLocalRenderer(webrtc::VideoTrackInterface* local_video)
-{
-}
-
-void ClientMainWindow::StopLocalRenderer()
-{
-}
-
-void ClientMainWindow::StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video)
-{
-	remote_renderer_.reset(new VideoRenderer(handle(), 1, 1, remote_video));
-}
-
-void ClientMainWindow::StopRemoteRenderer()
-{
-	remote_renderer_.reset();
-}
-
-void ClientMainWindow::QueueUIThreadCallback(int msg_id, void* data)
-{
-	::PostThreadMessage(ui_thread_id_, UI_THREAD_CALLBACK,
-		static_cast<WPARAM>(msg_id), reinterpret_cast<LPARAM>(data));
-}
-
 void ClientMainWindow::OnPaint()
 {
 	PAINTSTRUCT ps;
@@ -339,8 +232,8 @@ void ClientMainWindow::OnPaint()
 	FLOAT dpiX, dpiY;
 	FLOAT scaleX, scaleY;
 
-	::BeginPaint(handle(), &ps);
-	::GetClientRect(handle(), &rc);
+	::BeginPaint(wnd_, &ps);
+	::GetClientRect(wnd_, &rc);
 	direct2d_factory_->GetDesktopDpi(&dpiX, &dpiY);
 	scaleX = 96.0f / dpiX;
 	scaleY = 96.0f / dpiY;
@@ -353,8 +246,8 @@ void ClientMainWindow::OnPaint()
 		rc.bottom * scaleY
 	};
 
-	VideoRenderer* remote_renderer = remote_renderer_.get();
-	if (ui_ == STREAMING && remote_renderer)
+	VideoRenderer* remote_renderer = remote_video_renderer_.get();
+	if (current_ui_ == STREAMING && remote_renderer)
 	{
 		AutoLock<VideoRenderer> remote_lock(remote_renderer);
 		const BITMAPINFO& bmi = remote_renderer->bmi();
@@ -410,12 +303,7 @@ void ClientMainWindow::OnPaint()
 		::DeleteObject(brush);
 	}
 
-	::EndPaint(handle(), &ps);
-}
-
-void ClientMainWindow::OnDestroyed()
-{
-	PostQuitMessage(0);
+	::EndPaint(wnd_, &ps);
 }
 
 void ClientMainWindow::OnDefaultAction()
@@ -425,14 +313,14 @@ void ClientMainWindow::OnDefaultAction()
 		return;
 	}
 
-	if (ui_ == CONNECT_TO_SERVER)
+	if (current_ui_ == CONNECT_TO_SERVER)
 	{
 		std::string server(GetWindowText(edit1_));
 		std::string port_str(GetWindowText(edit2_));
 		int port = port_str.length() ? atoi(port_str.c_str()) : 0;
 		callback_->StartLogin(server, port);
 	}
-	else if (ui_ == LIST_PEERS)
+	else if (current_ui_ == LIST_PEERS)
 	{
 		LRESULT sel = ::SendMessage(listbox_, LB_GETCURSEL, 0, 0);
 		if (sel != LB_ERR)
@@ -450,40 +338,31 @@ void ClientMainWindow::OnDefaultAction()
 	}
 }
 
-bool ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result)
+
+VideoRenderer* ClientMainWindow::AllocateVideoRenderer(HWND wnd, int width, int height, webrtc::VideoTrackInterface* track)
+{
+	return new ClientVideoRenderer(wnd, width, height, track);
+}
+
+void ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result, bool* retCode)
 {
 	switch (msg)
 	{
-		case WM_ERASEBKGND:
-			*result = TRUE;
-			return true;
-
-		case WM_PAINT:
-			OnPaint();
-			return true;
-
 		case WM_SETFOCUS:
-			if (ui_ == CONNECT_TO_SERVER) 
+			if (current_ui_ == CONNECT_TO_SERVER)
 			{
 				SetFocus(edit1_);
 			}
-			else if (ui_ == LIST_PEERS)
+			else if (current_ui_ == LIST_PEERS)
 			{
 				SetFocus(listbox_);
 			}
 
-			return true;
+			*retCode = true;
+			break;
 
 		case WM_SIZE:
-			if (ui_ == CONNECT_TO_SERVER)
-			{
-				LayoutConnectUI(true);
-			}
-			else if (ui_ == LIST_PEERS)
-			{
-				LayoutPeerListUI(true);
-			}
-			else
+			if (current_ui_ != CONNECT_TO_SERVER && current_ui_ == LIST_PEERS)
 			{
 				if (render_target_)
 				{
@@ -491,7 +370,7 @@ bool ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result
 					GetClientRect(wnd_, &rc);
 					D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
 					render_target_->Resize(size);
-					SignalWindowMessage.emit(msg, wp, lp);
+					SignalClientWindowMessage.emit(msg, wp, lp);
 				}
 			}
 			
@@ -499,7 +378,8 @@ bool ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result
 
 		case WM_CTLCOLORSTATIC:
 			*result = reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_WINDOW));
-			return true;
+			*retCode = true;
+			break;
 
 		case WM_COMMAND:
 			if (button_ == reinterpret_cast<HWND>(lp))
@@ -517,7 +397,8 @@ bool ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result
 				}
 			}
 
-			return true;
+			*retCode = true;
+			break;
 
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
@@ -540,85 +421,7 @@ bool ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result
 		case WM_MOUSEHOVER:
 			Mouse::ProcessMessage(msg, wp, lp);
 			break;
-
-		case WM_CLOSE:
-			if (callback_)
-			{
-				callback_->Close();
-				callback_ = NULL;
-			}
-
-			break;
 	}
-
-	return false;
-}
-
-// static
-LRESULT CALLBACK ClientMainWindow::WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
-{
-	ClientMainWindow* me = reinterpret_cast<ClientMainWindow*>(
-		::GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-	if (!me && WM_CREATE == msg)
-	{
-		CREATESTRUCT* cs = reinterpret_cast<CREATESTRUCT*>(lp);
-		me = reinterpret_cast<ClientMainWindow*>(cs->lpCreateParams);
-		me->wnd_ = hwnd;
-		::SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(me));
-	}
-
-	LRESULT result = 0;
-	if (me)
-	{
-		void* prev_nested_msg = me->nested_msg_;
-		me->nested_msg_ = &msg;
-
-		bool handled = me->OnMessage(msg, wp, lp, &result);
-		if (WM_NCDESTROY == msg)
-		{
-			me->destroyed_ = true;
-		}
-		else if (!handled) 
-		{
-			result = ::DefWindowProc(hwnd, msg, wp, lp);
-		}
-
-		if (me->destroyed_ && prev_nested_msg == NULL)
-		{
-			me->OnDestroyed();
-			me->wnd_ = NULL;
-			me->destroyed_ = false;
-		}
-
-		me->nested_msg_ = prev_nested_msg;
-	}
-	else
-	{
-		result = ::DefWindowProc(hwnd, msg, wp, lp);
-	}
-
-	return result;
-}
-
-// static
-bool ClientMainWindow::RegisterWindowClass()
-{
-	if (wnd_class_)
-	{
-		return true;
-	}
-
-	WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
-	wcex.style = CS_DBLCLKS;
-	wcex.hInstance = GetModuleHandle(NULL);
-	wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
-	wcex.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-	wcex.lpfnWndProc = &WndProc;
-	wcex.lpszClassName = kClassName;
-	wnd_class_ = ::RegisterClassEx(&wcex);
-	RTC_DCHECK(wnd_class_ != 0);
-	return wnd_class_ != 0;
 }
 
 void ClientMainWindow::CreateChildWindow(HWND* wnd, ClientMainWindow::ChildWindowID id,
@@ -780,16 +583,47 @@ void ClientMainWindow::LayoutConnectUI(bool show)
 			::ShowWindow(windows[i].wnd, SW_HIDE);
 		}
 	}
+
+	if (auto_connect_)
+	{
+		::PostMessage(button_, BM_CLICK, 0, 0);
+	}
 }
 
-void ClientMainWindow::LayoutPeerListUI(bool show)
+void ClientMainWindow::LayoutPeerListUI(const std::map<int, std::string>& peers, bool show)
 {
 	if (show)
 	{
+		::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
+
+		AddListBoxItem(listbox_, "List of currently connected peers:", -1);
+		std::map<int, std::string>::const_iterator i = peers.begin();
+		for (; i != peers.end(); ++i)
+			AddListBoxItem(listbox_, i->second.c_str(), i->first);
+
 		RECT rc;
 		::GetClientRect(wnd_, &rc);
 		::MoveWindow(listbox_, 0, 0, rc.right, rc.bottom, TRUE);
 		::ShowWindow(listbox_, SW_SHOWNA);
+
+		if (auto_call_ && peers.begin() != peers.end())
+		{
+			// Get the number of items in the list
+			LRESULT count = ::SendMessage(listbox_, LB_GETCOUNT, 0, 0);
+			if (count != LB_ERR)
+			{
+				// Select the last item in the list
+				LRESULT selection = ::SendMessage(listbox_, LB_SETCURSEL, count - 1, 0);
+				if (selection != LB_ERR)
+				{
+					::PostMessage(
+						wnd_,
+						WM_COMMAND,
+						MAKEWPARAM(GetDlgCtrlID(listbox_), LBN_DBLCLK),
+						reinterpret_cast<LPARAM>(listbox_));
+				}
+			}
+		}
 	}
 	else
 	{
@@ -848,7 +682,7 @@ void ClientMainWindow::SetConnectButtonState(bool enabled)
 // ClientMainWindow::VideoRenderer
 //
 
-ClientMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
+ClientMainWindow::ClientVideoRenderer::ClientVideoRenderer(HWND wnd, int width, int height,
     webrtc::VideoTrackInterface* track_to_render) :
 		wnd_(wnd),
 		rendered_track_(track_to_render)
@@ -865,13 +699,13 @@ ClientMainWindow::VideoRenderer::VideoRenderer(HWND wnd, int width, int height,
 	rendered_track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
 }
 
-ClientMainWindow::VideoRenderer::~VideoRenderer()
+ClientMainWindow::ClientVideoRenderer::~ClientVideoRenderer()
 {
 	rendered_track_->RemoveSink(this);
 	::DeleteCriticalSection(&buffer_lock_);
 }
 
-void ClientMainWindow::VideoRenderer::SetSize(int width, int height)
+void ClientMainWindow::ClientVideoRenderer::SetSize(int width, int height)
 {
 	AutoLock<VideoRenderer> lock(this);
 
@@ -886,7 +720,7 @@ void ClientMainWindow::VideoRenderer::SetSize(int width, int height)
 	image_.reset(new uint8_t[bmi_.bmiHeader.biSizeImage]);
 }
 
-void ClientMainWindow::VideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame)
+void ClientMainWindow::ClientVideoRenderer::OnFrame(const webrtc::VideoFrame& video_frame)
 {
 	AutoLock<VideoRenderer> lock(this);
 

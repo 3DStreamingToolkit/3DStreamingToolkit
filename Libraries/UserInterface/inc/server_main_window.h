@@ -11,11 +11,9 @@
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
 
-class ServerMainWindow : public MainWindow
+class ServerMainWindow : public MainWindow, public sigslot::has_slots<>
 {
 public:
-	static const wchar_t kClassName[];
-
 	enum WindowMessages
 	{
 		UI_THREAD_CALLBACK = WM_APP + 1,
@@ -32,60 +30,39 @@ public:
 
 	~ServerMainWindow();
 
-	bool Create();
-
-	bool Destroy();
-
 	bool PreTranslateMessage(MSG* msg);
 
-	virtual void RegisterObserver(MainWindowCallback* callback);
+	virtual bool Create() override;
 
-	virtual bool IsWindow();
+	virtual bool Destroy() override;
 
-	virtual void SwitchToConnectUI();
+	virtual void SetAuthCode(const std::wstring& str) override;
 
-	virtual void SwitchToPeerList(const std::map<int, std::string>& peers);
+	virtual void SetAuthUri(const std::wstring& str) override;
 
-	virtual void SwitchToStreamingUI();
+	virtual void LayoutConnectUI(bool visible) override;
 
-	virtual void MessageBox(const char* caption, const char* text,
-		bool is_error);
+	virtual void LayoutPeerListUI(const std::map<int, std::string>& peers, bool visible) override;
 
-	virtual UI current_ui() { return ui_; }
+	virtual void OnDefaultAction() override;
+	
+	virtual void OnPaint() override;
+	
 
-	virtual void StartLocalRenderer(webrtc::VideoTrackInterface* local_video);
-
-	virtual void StopLocalRenderer();
-
-	virtual void StartRemoteRenderer(webrtc::VideoTrackInterface* remote_video);
-
-	virtual void StopRemoteRenderer();
-
-	virtual void QueueUIThreadCallback(int msg_id, void* data);
-
-	HWND handle() const
-	{
-		return wnd_;
-	}
-
-	virtual void SetAuthCode(const std::wstring& str);
-
-	virtual void SetAuthUri(const std::wstring& str);
-
-	class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame>
+	class ServerVideoRenderer : public VideoRenderer
 	{
 	public:
-		VideoRenderer(HWND wnd, int width, int height,
+		ServerVideoRenderer(HWND wnd, int width, int height,
 			webrtc::VideoTrackInterface* track_to_render);
 
-		virtual ~VideoRenderer();
+		virtual ~ServerVideoRenderer();
 
-		void Lock()
+		virtual void Lock() override
 		{
 			::EnterCriticalSection(&buffer_lock_);
 		}
 
-		void Unlock()
+		virtual void Unlock() override
 		{
 			::LeaveCriticalSection(&buffer_lock_);
 		}
@@ -93,12 +70,12 @@ public:
 		// VideoSinkInterface implementation
 		void OnFrame(const webrtc::VideoFrame& frame) override;
 
-		const BITMAPINFO& bmi() const
+		virtual const BITMAPINFO& bmi() const override
 		{
 			return bmi_;
 		}
 
-		const uint8_t* image() const
+		virtual const uint8_t* image() const override
 		{
 			return image_.get();
 		}
@@ -149,46 +126,25 @@ protected:
 		LISTBOX_ID,
 	};
 
-	void OnPaint();
+	VideoRenderer* AllocateVideoRenderer(HWND wnd, int width, int height, webrtc::VideoTrackInterface* track);
 
-	void OnDestroyed();
-
-	void OnDefaultAction();
-
-	bool OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result);
-
-	static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
-
-	static bool RegisterWindowClass();
+	void OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result, bool* retCode);
 
 	void CreateChildWindow(HWND* wnd, ChildWindowID id, const wchar_t* class_name,
 		DWORD control_style, DWORD ex_style);
 
 	void CreateChildWindows();
 
-	void LayoutConnectUI(bool show);
-
-	void LayoutPeerListUI(bool show);
-
 	void HandleTabbing();
 
 private:
 	bool has_no_UI_;
-	std::unique_ptr<VideoRenderer> local_renderer_;
-	std::unique_ptr<VideoRenderer> remote_renderer_;
-	UI ui_;
-	HWND wnd_;
-	DWORD ui_thread_id_;
 	HWND edit1_;
 	HWND edit2_;
 	HWND label1_;
 	HWND label2_;
 	HWND button_;
 	HWND listbox_;
-	bool destroyed_;
-	void* nested_msg_;
-	MainWindowCallback* callback_;
-	static ATOM wnd_class_;
 	std::string server_;
 	std::string port_;
 	bool auto_connect_;

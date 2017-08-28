@@ -88,7 +88,7 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 		new rtc::RefCountedObject<Conductor>(&client, &wnd));
 	Win32DataChannelHandler dcHandler(conductor.get());
 
-	wnd.SignalWindowMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
+	wnd.SignalClientWindowMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
 	wnd.SignalDataChannelMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
 
 	// set our client heartbeat interval
