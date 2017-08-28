@@ -109,6 +109,10 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 				wnd.SwitchToConnectUI();
 			}
 		}
+		else
+		{
+			wnd.MessageBoxW("Turn Credentials", "Unable to retrieve turn creds", true);
+		}
 	});
 	OAuth24DProvider::CodeCompleteCallback codeComplete([&](const OAuth24DProvider::CodeData& data) {
 		std::wstring wcode(data.user_code.begin(), data.user_code.end());
