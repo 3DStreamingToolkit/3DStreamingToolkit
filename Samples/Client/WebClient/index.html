@@ -105,7 +105,7 @@
             // get the currently selected peer from the peerList
             var list = document.getElementById("peerList");
             var peerName = list.value;
-			var receivedOffer = '';
+            var receivedOffer = '';
 
             // lookup the peerid
             for (var peerId in otherPeers) {
@@ -114,12 +114,12 @@
                 if (peer == peerName) {
                     // Create peer connection
                     createPeerConnection(peerId);
-					
-					// Create data channel
-					inputChannel = pc.createDataChannel("inputDataChannel");
-					inputChannel.onopen = handleSendChannelOpen;
-					inputChannel.onclose = handleSendChannelClose;						
-					            
+                    
+                    // Create data channel
+                    inputChannel = pc.createDataChannel("inputDataChannel");
+                    inputChannel.onopen = handleSendChannelOpen;
+                    inputChannel.onclose = handleSendChannelClose;                        
+                                
                     // Create Offer
                     var offerOptions = {
                         offerToReceiveAudio: 0,
@@ -128,14 +128,14 @@
                     
                     pc.createOffer(offerOptions).then(function(offer) {
                         var offerMsg = JSON.stringify(offer);
-						
-						// This forces WebRTC to use H264 codec instead of VP8
-						// https://stackoverflow.com/questions/26924430/how-can-i-change-the-default-codec-used-in-webrtc
-                        offerMsg = offerMsg.replace('96 98 100 102', '100 96 98 102');	
-						
-						// Re-create the new offer object
-						receivedOffer = JSON.parse(offerMsg);
-						
+                        
+                        // This forces WebRTC to use H264 codec instead of VP8
+                        // https://stackoverflow.com/questions/26924430/how-can-i-change-the-default-codec-used-in-webrtc
+                        offerMsg = offerMsg.replace('96 98 100 102', '100 96 98 102');    
+                        
+                        // Re-create the new offer object
+                        receivedOffer = JSON.parse(offerMsg);
+                        
                         // Set local description
                         pc.setLocalDescription(receivedOffer);
                     }).then(function() {
@@ -176,11 +176,11 @@
             pc.onopen = onSessionOpened;
             pc.onaddstream = onRemoteStreamAdded;
             pc.onremovestream = onRemoteStreamRemoved;
-			pc.ondatachannel = function(ev) {
-				inputChannel = ev.channel;
-				inputChannel.onopen = handleSendChannelOpen;
-				inputChannel.onclose = handleSendChannelClose;		
-			};		
+            pc.ondatachannel = function(ev) {
+                inputChannel = ev.channel;
+                inputChannel.onopen = handleSendChannelOpen;
+                inputChannel.onclose = handleSendChannelClose;        
+            };        
             console.log("Created RTCPeerConnnection with config: " + JSON.stringify(pcConfig));
         }
         catch (e) {
@@ -193,7 +193,7 @@
         console.log("Remote stream added:", URL.createObjectURL(event.stream));
         var remoteVideoElement = document.getElementById('remote-video');
         remoteVideoElement.src = URL.createObjectURL(event.stream);
-        remoteVideoElement.play();	
+        remoteVideoElement.play();    
     }
 
     function handleSendChannelOpen()
@@ -226,14 +226,14 @@
         downLocation[1] = navLocation[1];
         downLocation[2] = navLocation[2];
 
-        preventDefault();
+        event.preventDefault();
     }
 
     function navOnMouseUp()
     {
         isMouseDown = false;
 
-        preventDefault();
+        event.preventDefault();
     }
 
     function navOnMouseMove(event)
@@ -277,7 +277,7 @@
                 sendTransform();
             }
 
-            preventDefault();
+            event.preventDefault();
         }
     }
 
@@ -327,16 +327,16 @@
         }
         else if (data.search("answer") != -1) {
             console.log("Got answer ", dataJson);
-			pc.setRemoteDescription(new RTCSessionDescription(dataJson), onRemoteSdpSucces, onRemoteSdpError);
+            pc.setRemoteDescription(new RTCSessionDescription(dataJson), onRemoteSdpSucces, onRemoteSdpError);
         }
         else {
             console.log("Adding ICE candiate ", dataJson);
             var candidate = new RTCIceCandidate({ sdpMLineIndex: dataJson.sdpMLineIndex, candidate: dataJson.candidate });
-			pc.addIceCandidate(candidate).then(_=>{
-			  // Do nothing
-			}).catch(e=>{
-				trace("Error: Failure during addIceCandidate() " + e);
-			});
+            pc.addIceCandidate(candidate).then(() => {
+              // Do nothing
+            }).catch(e=>{
+                trace("Error: Failure during addIceCandidate() " + e);
+            });
         }
     }
 
