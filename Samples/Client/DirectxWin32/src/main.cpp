@@ -149,6 +149,10 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 				wnd.SwitchToConnectUI();
 			}
 		}
+		else
+		{
+			wnd.MessageBoxW("Authentication", "Unable to complete authentication", true);
+		}
 	});
 
 	// if we have real turn values, configure turn
