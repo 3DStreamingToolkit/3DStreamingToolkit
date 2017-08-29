@@ -1,11 +1,22 @@
 # 3D Toolkit
 
-A toolkit for building powerful stereoscopic 3d experiences that run on azure
-and stream to devices. :muscle: :eye: :cloud:
+A toolkit for building powerful stereoscopic 3d experiences that run on the cloud and stream to devices. :muscle: :eye: :cloud:
 
-> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
+## Features
+
+> See our client and server implementation feature matrices [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices)!
+
++ WebRTC powered audio/video content streaming
++ Client user input streaming
++ Low-latency communication channels
++ Secure communication channels
++ Client user authentication
++ Server application authentication
++ Sample implementations for servers and clients
 
 ## Grabbing latest prebuilt binaries
+
+> These binaries are prebuilt toolkit binaries - if you're looking to contribute, or build your own, keep reading! 
 
 [CI Builds](https://3dtoolkitstorage.blob.core.windows.net/builds/index.html) - Not recommended
 
@@ -13,39 +24,51 @@ and stream to devices. :muscle: :eye: :cloud:
 
 [Release/Stable Tagged Builds](https://3dtoolkitstorage.blob.core.windows.net/releases/index.html)
 
-## Prerequisites
+## Prerequisite Tooling
 
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016
 + Visual Studio 2015 Update 3
 + Windows 10 SDK - 10.0.14393.795
-+ [Windows 10 DDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573(v=vs.85).aspx) - If building WebRTC Library from source
++ [WDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573.aspx) - If building WebRTC Library from source (note: this is likely not the case, and is only necessary if you're planning to modify our dependency library, WebRTC)
 
-## Installing Prebuilt Libraries for /3dtoolkit-directx
+## Installing Prebuilt Dependencies
+
+> Before running our `setup.cmd` script, please ensure powershell is set to [enable unrestricted script execution](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1&viewFallbackFrom=powershell-Microsoft.PowerShell.Core).
 
 After cloning this repository, run `.\setup.cmd` before opening the Project/Solution structure.
 
 This will install and configure the following:
 
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
-+ [This patch](.\WebRTCLibs\nvencoder.patch) will be applied to the above
++ [This patch](.\WebRTCLibs\nvencoder.patch), which adds nvencode support to webrtc, and will be applied to the above
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit
 + [WebRTC-UWP](https://github.com/webrtc-uwp/webrtc-uwp-sdk) M54 synced release for UWP-based clients (Hololens)
 
 > Note: We can't currently use the [directxtk nuget packages](https://www.nuget.org/packages?q=directxtk) because they don't provide static linking targets for release builds.
 
-Once you see `Libraries retrieved and up to date` you may proceed and open [the solution](.\3dtoolkit-directx\Toolkit3D.sln).
+Once you see `Libraries retrieved and up to date` you may proceed.
+
+## Building the Toolkit
+
+> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
+
+> Note: To build the unity client library, you must use `Release` and `x86` for the desired configuration
+
++ Open [the 3dtoolkit solution](./3DStreamingToolKit.sln) in Visual Studio
++ Build the solution (Build -> Build Solution) in the desired configuration (Build -> Configuration Manager -> Dropdowns at the top)
++ Done!
 
 ## Build output
 
-Build the solution from Visual Studio, and look in:
+> Note: Webrtc example binaries (for example, peerconnection_server, turnserver) can be found in `\Libraries\WebRTC\Win32\Release\exe` and can be useful for testing certain scenarios, but are __not required__ nor developed by us.
 
-+ `\3dtoolkit-directx\Samples\**\Build\**` for server binaries.
-+ `\WebRTCNativeClient\Build\**` for the native client binaries.
-+ `\WebRTCLibs\**\Exe\**` for the sample signaling, turn and stun server binaries.
+The solution builds binaries for our pluggable components and our sample implementations. All of these are output to the `Build` directory in the root of the project directory. They'll be in subfolders for the desired build configuration, in folders named according to their project name. For instance, `Client\` contains our native client, and `SpinningCubeServer\` contains our spinning cube example.
 
 ## Building HoloLens Unity client 
 
- > Note: Make sure you have Unity version 5.6.1f1 with UWP tools support. 
+ > Note: Make sure you have Unity version 5.6.3f1 with UWP tools support. 
+
+These steps are unique, and specific to producing a unity client application for a hololens device.
 
 You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The HoloLens client is using a native dll library for video decoding and rendering that needs to be built before you open the sample in Unity. Follow these steps:
 + Open `3DStreamingToolKit.sln` from the root folder 
@@ -70,7 +93,9 @@ You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The Ho
 + Deploy to your machine or HoloLens. Make sure the server is running, the app will automatically connect to the ip address that was set in the step above.
 + Open the desired server and connect to the Unity client. 
 
-## JSON Configuration Options for Native Client and Native Servers:
+## JSON Configuration:
+
+> These configuration files control how our sample clients and servers communicate and connect. More information can be found [in the wiki](https://github.com/CatalystCode/3dtoolkit/wiki/JSON-Config-Files).
 
 Use [webrtcConfig.json](https://github.com/CatalystCode/3dtoolkit/blob/master/Plugins/NativeServerPlugin/webrtcConfig.json) for TURN relay communication
 
