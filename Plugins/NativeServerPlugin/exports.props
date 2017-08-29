@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
+  <PropertyGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
     <LibraryPath>$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
     <ClCompile>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(SolutionDir)\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\Authentication\exports.props" />
-  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\UserInterface\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\Authentication\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\UserInterface\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)\StreamingNativeServerPlugin.vcxproj">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\StreamingNativeServerPlugin.vcxproj" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Lib)!=true" >
       <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
     </ProjectReference>
   </ItemGroup>

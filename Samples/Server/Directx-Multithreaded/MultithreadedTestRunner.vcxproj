@@ -309,6 +309,11 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <PropertyGroup>
+    <!-- we don't want to consume anything other than source and header references from NativeServerPlugin -->
+    <ThreeDToolkit_Ignore_NativeServerPlugin_Lib>true</ThreeDToolkit_Ignore_NativeServerPlugin_Lib>
+    <ThreeDToolkit_Ignore_NativeServerPlugin_Deps>true</ThreeDToolkit_Ignore_NativeServerPlugin_Deps>
+  </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

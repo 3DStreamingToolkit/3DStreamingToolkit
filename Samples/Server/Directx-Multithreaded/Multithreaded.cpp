@@ -27,13 +27,13 @@
 #include "defs.h"
 #include "CameraResources.h"
 #include "RemotingModelViewerCamera.h"
-#include "server_main_window.h"
-#include "server_authentication_provider.h"
-#include "turn_credential_provider.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
 #else // TEST_RUNNER
+#include "server_main_window.h"
+#include "server_authentication_provider.h"
+#include "turn_credential_provider.h"
 #include "server_renderer.h"
 #include "webrtc.h"
 #endif // TEST_RUNNER
