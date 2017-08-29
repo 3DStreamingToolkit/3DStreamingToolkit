@@ -676,6 +676,11 @@ int InitWebRTC(char* server, int port, int heartbeat,
 
 		wnd.SetAuthCode(L"Loading");
 	}
+	else
+	{
+		wnd.SetAuthCode(L"Not configured");
+		wnd.SetAuthUri(L"Not configured");
+	}
 
 	// Main loop.
 	MSG msg;
