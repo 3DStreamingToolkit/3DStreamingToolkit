@@ -29,7 +29,7 @@ A toolkit for building powerful stereoscopic 3d experiences that run on the clou
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016
 + Visual Studio 2015 Update 3
 + Windows 10 SDK - 10.0.14393.795
-+ [Windows 10 DDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573(v=vs.85).aspx) - If building WebRTC Library from source (note: this is likely not the case, and is only necessary if you're planning to modify our dependency library, WebRTC)
++ [WDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573.aspx) - If building WebRTC Library from source (note: this is likely not the case, and is only necessary if you're planning to modify our dependency library, WebRTC)
 
 ## Installing Prebuilt Dependencies
 
@@ -40,7 +40,7 @@ After cloning this repository, run `.\setup.cmd` before opening the Project/Solu
 This will install and configure the following:
 
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
-+ [This patch](.\WebRTCLibs\nvencoder.patch) that adds nvencode support to webrtc, and will be applied to the above
++ [This patch](.\WebRTCLibs\nvencoder.patch), which adds nvencode support to webrtc, and will be applied to the above
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit
 + [WebRTC-UWP](https://github.com/webrtc-uwp/webrtc-uwp-sdk) M54 synced release for UWP-based clients (Hololens)
 
@@ -59,6 +59,8 @@ Once you see `Libraries retrieved and up to date` you may proceed.
 + Done!
 
 ## Build output
+
+> Note: Webrtc example binaries (for example, peerconnection_server, turnserver) can be found in `\Libraries\WebRTC\Win32\Release\exe` and can be useful for testing certain scenarios, but are __not required__ nor developed by us.
 
 The solution builds binaries for our pluggable components and our sample implementations. All of these are output to the `Build` directory in the root of the project directory. They'll be in subfolders for the desired build configuration, in folders named according to their project name. For instance, `Client\` contains our native client, and `SpinningCubeServer\` contains our spinning cube example.
 
