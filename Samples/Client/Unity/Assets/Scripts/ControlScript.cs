@@ -131,6 +131,7 @@ public class ControlScript : MonoBehaviour
 		}
 
         StatusText.text += msg;
+		Debug.Log(msg);
     }
 
     public void ConnectToServer()

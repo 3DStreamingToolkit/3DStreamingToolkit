@@ -327,8 +327,8 @@ namespace WebRtcWrapper
 				}
 				else
 				{
-					iceServer.Credential = turnServer.GetObject().GetNamedString("username");
-					iceServer.Username = turnServer.GetObject().GetNamedString("password");
+					iceServer.Username = turnServer.GetObject().GetNamedString("username");
+					iceServer.Credential = turnServer.GetObject().GetNamedString("password");
 				}
 
                 configIceServers.Add(iceServer);
@@ -343,17 +343,19 @@ namespace WebRtcWrapper
                     uri.Substring(uri.IndexOf("stun:") + 5),
                     IceServer.ServerType.STUN);
 
-                iceServer.Credential = stunServer.GetObject().GetNamedString("username");
-                iceServer.Username = stunServer.GetObject().GetNamedString("password");
+                iceServer.Username = stunServer.GetObject().GetNamedString("username");
+                iceServer.Credential = stunServer.GetObject().GetNamedString("password");
                 configIceServers.Add(iceServer);
             }
 
             // Default ones.
-            configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+
+			// TODO(bengreenier): uncomment after testing!!!
+            //configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+            //configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+            //configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+            //configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+            //configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
 
             Conductor.Instance.ConfigureIceServers(configIceServers);
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
@@ -424,19 +426,27 @@ namespace WebRtcWrapper
 				{
 					Conductor.Instance.TurnClient.CredentialsRetrieved += (TemporaryTurnClient.TurnCredentials eventData) =>
 					{
-						if (eventData.http_status == 200 && IceServers.Count > 0)
+						var statusMessage = "Temporary turn got status: " + eventData.http_status;
+
+						if (_iceServers.Count > 0)
 						{
-							// we currently only support once ice server, so this works
-							_iceServers[0].Credential = eventData.username;
-							_iceServers[0].Username = eventData.password;
+							// we currently only support one manually configured ice server, so this works
+							_iceServers[0].Username = eventData.username;
+							_iceServers[0].Credential = eventData.password;
 
-							OnStatusMessageUpdate?.Invoke("Temporary turn credentials got status: " + eventData.http_status);
-
-							if (eventData.http_status == 200)
-							{
-								Conductor.Instance.StartLogin(this.Uri.Value, peerName);
-							}
+							// then, we have to reconfigure the conductor iceServers 
+							Conductor.Instance.ConfigureIceServers(_iceServers);
+							
+							statusMessage += ", using " + eventData.username + ":" + eventData.password;
 						}
+						
+						if (eventData.http_status == 200)
+						{
+							statusMessage += ", starting login";
+							Conductor.Instance.StartLogin(this.Uri.Value, peerName);
+						}
+
+						OnStatusMessageUpdate?.Invoke(statusMessage);
 					};
 				}
 
