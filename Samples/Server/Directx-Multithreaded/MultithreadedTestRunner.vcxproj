@@ -116,7 +116,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WEBRTC_WIN;WIN32_LEAN_AND_MEAN;SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -157,7 +157,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WEBRTC_WIN;WIN32_LEAN_AND_MEAN;SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
@@ -200,7 +200,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WEBRTC_WIN;WIN32_LEAN_AND_MEAN;SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NDEBUG;WIN32;_WIN32_WINNT=0x0602;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
@@ -242,7 +242,7 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <AdditionalIncludeDirectories>$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Utilities\VideoTestRunner\inc;..\..\..\Libraries\NvEncoder\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
-      <PreprocessorDefinitions>WEBRTC_WIN;WIN32_LEAN_AND_MEAN;SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>SERVER_APP;TEST_RUNNER;_CRT_SECURE_NO_WARNINGS;_WINDOWS;NDEBUG;_WIN32_WINNT=0x0600;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>DXUT.h</PrecompiledHeaderFile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
