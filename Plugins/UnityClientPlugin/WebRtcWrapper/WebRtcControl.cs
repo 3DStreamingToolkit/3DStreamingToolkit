@@ -427,8 +427,8 @@ namespace WebRtcWrapper
 						if (eventData.http_status == 200 && IceServers.Count > 0)
 						{
 							// we currently only support once ice server, so this works
-							_iceServers[0].Username = eventData.username;
-							_iceServers[0].Credential = eventData.password;
+							_iceServers[0].Credential = eventData.username;
+							_iceServers[0].Username = eventData.password;
 
 							OnStatusMessageUpdate?.Invoke("Temporary turn credentials got status: " + eventData.http_status);
 
