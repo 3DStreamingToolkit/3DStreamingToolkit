@@ -362,16 +362,13 @@ void ClientMainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result
 			break;
 
 		case WM_SIZE:
-			if (current_ui_ != CONNECT_TO_SERVER && current_ui_ == LIST_PEERS)
+			if (current_ui_ == STREAMING && render_target_)
 			{
-				if (render_target_)
-				{
-					RECT rc;
-					GetClientRect(wnd_, &rc);
-					D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
-					render_target_->Resize(size);
-					SignalClientWindowMessage.emit(msg, wp, lp);
-				}
+				RECT rc;
+				GetClientRect(wnd_, &rc);
+				D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
+				render_target_->Resize(size);
+				SignalClientWindowMessage.emit(msg, wp, lp);
 			}
 			
 			break;
