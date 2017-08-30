@@ -348,16 +348,14 @@ namespace WebRtcWrapper
                 configIceServers.Add(iceServer);
             }
 
-            // Default ones.
+			// Default ones.
+			configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
 
-			// TODO(bengreenier): uncomment after testing!!!
-            //configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-            //configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-            //configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-            //configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-            //configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
-
-            Conductor.Instance.ConfigureIceServers(configIceServers);
+			Conductor.Instance.ConfigureIceServers(configIceServers);
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
             RunOnUiThread(() =>
             {

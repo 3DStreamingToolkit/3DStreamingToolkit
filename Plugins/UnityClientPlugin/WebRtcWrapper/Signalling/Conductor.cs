@@ -313,9 +313,8 @@ namespace PeerConnectionClient.Signalling
                     IceServers = new List<RTCIceServer>(_iceServers),
                 }
 #else
-				// TODO(bengreenier): change back after testing!!!
-                IceTransportPolicy = RTCIceTransportPolicy.Relay,
-                IceServers = _iceServers.Take(1).ToArray()
+                IceTransportPolicy = RTCIceTransportPolicy.All,
+                IceServers = _iceServers
 #endif
             };
 
