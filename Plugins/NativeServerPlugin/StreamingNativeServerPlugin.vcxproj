@@ -186,7 +186,6 @@
     <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\default_data_channel_observer.cpp" />
-    <ClCompile Include="src\default_main_window.cpp" />
     <ClCompile Include="src\video_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -194,11 +193,9 @@
     <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\default_data_channel_observer.h" />
-    <ClInclude Include="inc\default_main_window.h" />
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
-    <ClInclude Include="inc\main_window.h" />
     <ClInclude Include="inc\pch.h" />
     <ClInclude Include="inc\video_helper.h" />
     <ClInclude Include="pch.h" />
@@ -213,8 +210,9 @@
     </None>
     <None Include="webrtcConfigStunTemplate.json" />
   </ItemGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\UserInterface\exports.props" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

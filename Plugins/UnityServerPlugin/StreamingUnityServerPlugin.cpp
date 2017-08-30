@@ -17,7 +17,7 @@
 
 #include "video_helper.h"
 #include "conductor.h"
-#include "default_main_window.h"
+#include "server_main_window.h"
 #include "flagdefs.h"
 #include "peer_connection_client.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
@@ -74,7 +74,7 @@ static ID3D11Texture2D*		s_frameBuffer = nullptr;
 static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
 
 
-DefaultMainWindow *wnd;
+ServerMainWindow *wnd;
 std::thread *messageThread;
 
 std::string s_server = "signalingserveruri";
@@ -113,7 +113,7 @@ void InitWebRTC()
 
 	PeerConnectionClient client;
 
-	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+	wnd = new ServerMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
 		true, 1280, 720);
 
 	wnd->Create();

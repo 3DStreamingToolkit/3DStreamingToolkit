@@ -31,6 +31,9 @@
 #ifdef TEST_RUNNER
 #include "test_runner.h"
 #else // TEST_RUNNER
+#include "server_main_window.h"
+#include "server_authentication_provider.h"
+#include "turn_credential_provider.h"
 #include "server_renderer.h"
 #include "webrtc.h"
 #endif // TEST_RUNNER
@@ -551,16 +554,18 @@ void InputUpdate(const std::string& message)
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port, int heartbeat)
+int InitWebRTC(char* server, int port, int heartbeat,
+	const ServerAuthenticationProvider::ServerAuthInfo& authInfo,
+	const std::string turnCredentialUri)
 {
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 #ifdef NO_UI
-	DefaultMainWindow wnd(server, port, true, true, true);
+	ServerMainWindow wnd(server, port, true, true, true);
 #else // NO_UI
-	DefaultMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
+	ServerMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
 #endif // NO_UI
 
 	if (!wnd.Create())
@@ -594,13 +599,88 @@ int InitWebRTC(char* server, int port, int heartbeat)
 	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
 
 	rtc::InitializeSSL();
+
+	std::shared_ptr<ServerAuthenticationProvider> authProvider;
+	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
-
-	client.SetHeartbeatMs(heartbeat);
-
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
 			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
+
+	client.SetHeartbeatMs(heartbeat);
+
+	// configure callbacks (which may or may not be used)
+	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
+		if (data.successFlag)
+		{
+			client.SetAuthorizationHeader("Bearer " + data.accessToken);
+
+			// indicate to the user auth is complete (only if turn isn't in play)
+			if (turnProvider.get() == nullptr)
+			{
+				wnd.SetAuthCode(L"OK");
+			}
+		}
+	});
+
+	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
+	{
+		if (creds.successFlag)
+		{
+			conductor->SetTurnCredentials(creds.username, creds.password);
+
+			// indicate to the user turn is done
+			wnd.SetAuthCode(L"OK");
+		}
+	});
+
+	// configure auth, if needed
+	if (!authInfo.authority.empty())
+	{
+		authProvider.reset(new ServerAuthenticationProvider(authInfo));
+
+		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
+	}
+
+	// configure turn, if needed
+	if (!turnCredentialUri.empty())
+	{
+		turnProvider.reset(new TurnCredentialProvider(turnCredentialUri));
+
+		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
+	}
+
+	// start auth or turn if needed
+	if (turnProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			turnProvider->SetAuthenticationProvider(authProvider.get());
+		}
+
+		// under the hood, this will trigger authProvider->Authenticate() if it exists
+		turnProvider->RequestCredentials();
+	}
+	else if (authProvider.get() != nullptr)
+	{
+		authProvider->Authenticate();
+	}
+
+	// let the user know what we're doing
+	if (turnProvider.get() != nullptr || authProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
+		}
+
+		wnd.SetAuthCode(L"Loading");
+	}
+	else
+	{
+		wnd.SetAuthCode(L"Not configured");
+		wnd.SetAuthUri(L"Not configured");
+	}
 
 	// Main loop.
 	MSG msg;
@@ -678,6 +758,8 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	strcpy(server, FLAG_server);
 	int port = FLAG_port;
 	int heartbeat = FLAG_heartbeat;
+	std::string turnCredentialUri;
+	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
 
 	// Try parsing command line arguments.
@@ -709,10 +791,45 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 			{
 				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
 			}
+
+			if (root.isMember("turnServer"))
+			{
+				auto turnNode = root.get("turnServer", NULL);
+
+				if (turnNode.isMember("provider"))
+				{
+					turnCredentialUri = turnNode.get("provider", "").asString();
+				}
+			}
+
+			if (root.isMember("authentication"))
+			{
+				auto authenticationNode = root.get("authentication", NULL);
+
+				if (authenticationNode.isMember("authority"))
+				{
+					authInfo.authority = authenticationNode.get("authority", "").asString();
+				}
+
+				if (authenticationNode.isMember("resource"))
+				{
+					authInfo.resource = authenticationNode.get("resource", "").asString();
+				}
+
+				if (authenticationNode.isMember("clientId"))
+				{
+					authInfo.clientId = authenticationNode.get("clientId", "").asString();
+				}
+
+				if (authenticationNode.isMember("clientSecret"))
+				{
+					authInfo.clientSecret = authenticationNode.get("clientSecret", "").asString();
+				}
+			}
 		}
 	}
 
-	return InitWebRTC(server, port, heartbeat);
+	return InitWebRTC(server, port, heartbeat, authInfo, turnCredentialUri);
 #endif // TEST_RUNNER
 }
 

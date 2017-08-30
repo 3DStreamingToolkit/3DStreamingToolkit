@@ -19,6 +19,7 @@
 
 #include "peer_connection_client.h"
 #include "main_window.h"
+#include "data_channel_handler.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 
@@ -35,7 +36,8 @@ namespace cricket
 class Conductor : public webrtc::PeerConnectionObserver,
 	public webrtc::CreateSessionDescriptionObserver,
     public PeerConnectionClientObserver,
-	public MainWindowCallback
+	public MainWindowCallback,
+	public DataChannelCallback
 {
 public:
 	enum CallbackID 
@@ -50,6 +52,8 @@ public:
 	Conductor(PeerConnectionClient* client, MainWindow* main_window);
 
 	bool connection_active() const;
+
+	void SetTurnCredentials(const std::string& username, const std::string& password);
 
 	virtual void Close();
 
@@ -128,6 +132,7 @@ protected:
 
 	void UIThreadCallback(int msg_id, void* data) override;
 
+	// DataChannelCallback implementation.
 	bool SendInputData(const std::string& message) override;
 
 	// CreateSessionDescriptionObserver implementation.
@@ -153,6 +158,8 @@ protected:
 		active_streams_;
 
 	std::string server_;
+	std::string turn_username_;
+	std::string turn_password_;
 };
 
 #endif // WEBRTC_CONDUCTOR_H_

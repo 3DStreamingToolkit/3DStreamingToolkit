@@ -11,10 +11,13 @@
  */
 
 #pragma once
+
+#include "webrtc/base/sigslot.h"
 #include "data_channel_handler.h"
 #include "arc_ball.h"
 
-class Win32DataChannelHandler : public DataChannelHandler
+class Win32DataChannelHandler : public sigslot::has_slots<>,
+	public DataChannelHandler
 {
 public:
 	Win32DataChannelHandler(DataChannelCallback* data_channel_callback);
