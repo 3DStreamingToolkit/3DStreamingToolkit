@@ -304,14 +304,14 @@
       <Command>
       IF NOT EXIST $(OutDir)binarycopy.lock (
       type nul &gt; $(OutDir)binarycopy.lock
-      robocopy /NP /R:3 /W:2 "$(ProjectDir)Media" "$(OutDir)."
+      robocopy /NP /R:3 /W:2 /S "$(ProjectDir)Media" "$(OutDir)."
       IF %ERRORLEVEL% GTR 7 exit 1
       robocopy /NP /R:3 /W:2 "$(ProjectDir)." "$(OutDir)." *.hlsl
       IF %ERRORLEVEL% GTR 7 exit 2
       robocopy /NP /R:3 /W:2 "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll" "$(OutDir)." boringssl.dll ffmpeg.dll
       IF %ERRORLEVEL% GTR 7 (exit 3) ELSE (exit 0)
       )
-      del /f /q binarycopy.lock
+      del /f /q $(OutDir)binarycopy.lock
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
