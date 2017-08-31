@@ -19,12 +19,16 @@
 #include "conductor.h"
 #include "server_main_window.h"
 #include "flagdefs.h"
-#include "peer_connection_client.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/win32socketserver.h"
+
+#include "turn_credential_provider.h"
+#include "server_authentication_provider.h"
+#include "peer_connection_client.h"
+
 
 #pragma warning( disable : 4100 )
 #pragma comment(lib, "ws2_32.lib") 
@@ -112,9 +116,12 @@ void InitWebRTC()
 	rtc::InitializeSSL();
 
 	PeerConnectionClient client;
-
+	std::shared_ptr<ServerAuthenticationProvider> authProvider;
+	std::shared_ptr<TurnCredentialProvider> turnProvider;
+	
 	wnd = new ServerMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
 		true, 1280, 720);
+	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
 
 	wnd->Create();
 
@@ -126,6 +133,8 @@ void InitWebRTC()
 	char server[1024];
 	//int port = 443;
 	int heartbeat = 5000;
+	std::string turnCredentialUri;
+	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 
 	if (webrtcConfigFile.good())
 	{
@@ -146,17 +155,134 @@ void InitWebRTC()
 		{
 			heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
 		}
+
+		if (root.isMember("turnServer"))
+		{
+			auto turnNode = root.get("turnServer", NULL);
+
+			if (turnNode.isMember("provider"))
+			{
+				turnCredentialUri = turnNode.get("provider", "").asString();
+			}
+		}
+
+		if (root.isMember("authentication"))
+		{
+			auto authenticationNode = root.get("authentication", NULL);
+
+			if (authenticationNode.isMember("authority"))
+			{
+				authInfo.authority = authenticationNode.get("authority", "").asString();
+			}
+
+			if (authenticationNode.isMember("resource"))
+			{
+				authInfo.resource = authenticationNode.get("resource", "").asString();
+			}
+
+			if (authenticationNode.isMember("clientId"))
+			{
+				authInfo.clientId = authenticationNode.get("clientId", "").asString();
+			}
+
+			if (authenticationNode.isMember("clientSecret"))
+			{
+				authInfo.clientSecret = authenticationNode.get("clientSecret", "").asString();
+			}
+		}
 	}
 
 	client.SetHeartbeatMs(heartbeat);
 
-	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
-
-	if (s_conductor != nullptr)
+	// configure callbacks (which may or may not be used)
+	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data)
 	{
-		MainWindowCallback *callback = s_conductor;
+		if (data.successFlag)
+		{
+			client.SetAuthorizationHeader("Bearer " + data.accessToken);
 
-		callback->StartLogin(s_server, s_port);
+			// indicate to the user auth is complete and login (only if turn isn't in play)
+			if (turnProvider.get() == nullptr)
+			{
+				wnd->SetAuthCode(L"OK");
+
+				// login
+				if (s_conductor != nullptr)
+				{
+					((MainWindowCallback*)s_conductor)->StartLogin(s_server, s_port);
+				}
+			}
+		}
+	});
+
+	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
+	{
+		if (creds.successFlag)
+		{
+			// indicate to the user turn is done
+			wnd->SetAuthCode(L"OK");
+
+			// login
+			if (s_conductor != nullptr)
+			{
+				s_conductor->SetTurnCredentials(creds.username, creds.password);
+			
+				((MainWindowCallback*)s_conductor)->StartLogin(s_server, s_port);
+			}
+		}
+	});
+
+	// configure auth, if needed
+	if (!authInfo.authority.empty())
+	{
+		authProvider.reset(new ServerAuthenticationProvider(authInfo));
+
+		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
+	}
+
+	// configure turn, if needed
+	if (!turnCredentialUri.empty())
+	{
+		turnProvider.reset(new TurnCredentialProvider(turnCredentialUri));
+
+		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
+	}
+
+	// let the user know what we're doing
+	if (turnProvider.get() != nullptr || authProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			wnd->SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
+		}
+
+		wnd->SetAuthCode(L"Loading");
+	}
+	else
+	{
+		wnd->SetAuthCode(L"Not configured");
+		wnd->SetAuthUri(L"Not configured");
+	}
+
+	// start auth or turn or login
+	if (turnProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			turnProvider->SetAuthenticationProvider(authProvider.get());
+		}
+
+		// under the hood, this will trigger authProvider->Authenticate() if it exists
+		turnProvider->RequestCredentials();
+	}
+	else if (authProvider.get() != nullptr)
+	{
+		authProvider->Authenticate();
+	}
+	else
+	{
+		// login
+		((MainWindowCallback*)s_conductor)->StartLogin(s_server, s_port);
 	}
 
 	// Main loop.
