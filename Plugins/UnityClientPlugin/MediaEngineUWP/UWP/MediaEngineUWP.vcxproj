@@ -119,25 +119,6 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>MediaPlayback.def</ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP$(TargetExt)"
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP.pdb"
-ENDLOCAL
-      </Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -152,25 +133,6 @@ ENDLOCAL
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile>MediaPlayback.def</ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP$(TargetExt)"
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\MediaEngineUWP.pdb"
-ENDLOCAL
-      </Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -187,14 +149,6 @@ ENDLOCAL
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -211,16 +165,18 @@ ENDLOCAL
       <ModuleDefinitionFile>
       </ModuleDefinitionFile>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      </Command>
-    </PostBuildEvent>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>SETLOCAL
+set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\..\Samples\Client\Unity\Assets\
+echo Target Plugin Path is %25TARGET_PLUGIN_PATH%25
+robocopy /NP /R:3 /W:2 "$(OutDir)." "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)." "$(TargetName)$(TargetExt)" "$(TargetName).pdb"
+IF %ERRORLEVEL% GTR 7 (exit 1) ELSE (exit 0)
+ENDLOCAL</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>

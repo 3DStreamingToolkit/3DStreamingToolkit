@@ -107,9 +107,6 @@
     <FxCompile>
       <ObjectFileOutput>$(OutDir)%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
@@ -131,9 +128,6 @@
       <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
@@ -225,4 +219,12 @@
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Libraries\Authentication\exports.props" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Libraries\UserInterface\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll" "$(OutDir)." boringssl.dll ffmpeg.dll
+      IF %ERRORLEVEL% GTR 7 (exit 1) ELSE (exit 0)
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>

@@ -109,9 +109,6 @@
     <FxCompile>
       <ObjectFileOutput>$(OutDir)%(Filename).cso</ObjectFileOutput>
     </FxCompile>
-    <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -133,9 +130,6 @@
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -160,9 +154,6 @@
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir)</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -187,9 +178,6 @@
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir)</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\PixelShader.hlsl">
@@ -229,4 +217,15 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <ImportGroup Label="ExtensionTargets" />
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)." "$(OutDir)." *.cso
+      IF %ERRORLEVEL% GTR 7 exit 1
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll" "$(OutDir)." boringssl.dll ffmpeg.dll
+      IF %ERRORLEVEL% GTR 7 (exit 2) ELSE (exit 0)
+      exit 0
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>

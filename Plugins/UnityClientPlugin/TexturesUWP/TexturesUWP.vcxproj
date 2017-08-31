@@ -93,21 +93,6 @@
       <AdditionalDependencies>libyuv_win10_x86.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib</AdditionalOptions>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\TexturesUWP$(TargetExt)"
-      ENDLOCAL
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -127,21 +112,6 @@
       </AdditionalManifestDependencies>
       <AdditionalOptions>/nodefaultlib:vccorlib /nodefaultlib:msvcrt vccorlib.lib msvcrt.lib</AdditionalOptions>
     </Link>
-    <PostBuildEvent>
-      <Command>
-      SETLOCAL
-      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
-
-      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
-
-      mkdir "%TARGET_PLUGIN_PATH%Plugins"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
-      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
-
-      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\TexturesUWP$(TargetExt)"
-      ENDLOCAL
-      </Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -227,4 +197,14 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>SETLOCAL
+set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
+echo Target Plugin Path is %25TARGET_PLUGIN_PATH%25
+robocopy /NP /R:3 /W:2 "$(OutDir)." "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)." "$(TargetName)$(TargetExt)" "$(TargetName).pdb"
+IF %ERRORLEVEL% GTR 7 (exit 1) ELSE (exit 0)
+ENDLOCAL</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>

@@ -111,9 +111,6 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -132,9 +129,6 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -153,9 +147,6 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -174,9 +165,6 @@
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\d3dmanagerlock.hxx" />
@@ -248,4 +236,12 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      robocopy /NP /R:3 /W:2 "$(OutDir)\." "$(ProjectDir)..\DirectxClient" *.cso
+      IF %ERRORLEVEL% GTR 7 (exit 1) ELSE (exit 0)
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>
