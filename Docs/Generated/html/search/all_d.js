@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['lastcuinctb',['lastCUInCTB',['../struct___n_v___e_n_c___h_e_v_c___m_v___d_a_t_a.html#a35d3a5b193d2c22a5937ac1bb0da53cb',1,'_NV_ENC_HEVC_MV_DATA']]],
+  ['lastofmb',['lastOfMB',['../struct___n_v_e_n_c___e_x_t_e_r_n_a_l___m_e___h_i_n_t.html#ad6fb22ba5e30d939040317b6c028d42a',1,'_NVENC_EXTERNAL_ME_HINT']]],
+  ['lastofpart',['lastofPart',['../struct___n_v_e_n_c___e_x_t_e_r_n_a_l___m_e___h_i_n_t.html#a1a9e93f126575e727af587b63232d804',1,'_NVENC_EXTERNAL_ME_HINT']]],
+  ['lastvalidbyteoffset',['lastValidByteOffset',['../struct___n_v___e_n_c___s_t_a_t.html#a77ae9d8068e873d17c380567f5a49dcc',1,'_NV_ENC_STAT']]],
+  ['left',['left',['../struct_c_u_v_i_d_e_o_f_o_r_m_a_t.html#aeb9f9a39f9fbeb18343fd9a184ce1bd7',1,'CUVIDEOFORMAT::left()'],['../struct___n_v_e_n_c___r_e_c_t.html#a2276732930a96b3222fa4a601be19b77',1,'_NVENC_RECT::left()']]],
+  ['level',['level',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#a0af7026cf7736b65d6612973dbe39935',1,'_NV_ENC_CONFIG_H264::level()'],['../struct___n_v___e_n_c___c_o_n_f_i_g___h_e_v_c.html#a77ce001d36358eb688868f66bf4b5a79',1,'_NV_ENC_CONFIG_HEVC::level()']]],
+  ['lightdatastruct',['LightDataStruct',['../struct_c_b___p_s___p_e_r___l_i_g_h_t_1_1_light_data_struct.html',1,'CB_PS_PER_LIGHT']]],
+  ['lookaheaddepth',['lookaheadDepth',['../struct___n_v___e_n_c___r_c___p_a_r_a_m_s.html#a7bc045e56a94124e5c38a24ff4ad25d2',1,'_NV_ENC_RC_PARAMS']]],
+  ['ltrframe',['ltrFrame',['../struct___n_v___e_n_c___l_o_c_k___b_i_t_s_t_r_e_a_m.html#a8b46075e3e2ca8fbad82b9d0627e36a1',1,'_NV_ENC_LOCK_BITSTREAM']]],
+  ['ltrframebitmap',['ltrFrameBitmap',['../struct___n_v___e_n_c___l_o_c_k___b_i_t_s_t_r_e_a_m.html#a461f7ad1cb1fff570e395c23b9ef1401',1,'_NV_ENC_LOCK_BITSTREAM']]],
+  ['ltrframeidx',['ltrFrameIdx',['../struct___n_v___e_n_c___l_o_c_k___b_i_t_s_t_r_e_a_m.html#ac6475ee47f8e2895a7fdca07a2664717',1,'_NV_ENC_LOCK_BITSTREAM']]],
+  ['ltrmarkframe',['ltrMarkFrame',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h264.html#aedc217f49bbeeee3f42cd721065ae719',1,'_NV_ENC_PIC_PARAMS_H264::ltrMarkFrame()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h_e_v_c.html#a3a4a9f3f37985038170b8805c773dc01',1,'_NV_ENC_PIC_PARAMS_HEVC::ltrMarkFrame()']]],
+  ['ltrmarkframeidx',['ltrMarkFrameIdx',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h264.html#ac4aafd0bff536a54779d21e4eb544e1f',1,'_NV_ENC_PIC_PARAMS_H264::ltrMarkFrameIdx()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h_e_v_c.html#a1b40b82fea941174f2aa3c98c4278297',1,'_NV_ENC_PIC_PARAMS_HEVC::ltrMarkFrameIdx()']]],
+  ['ltrnumframes',['ltrNumFrames',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#a6e49b84380b5a73757dbfe1219340c12',1,'_NV_ENC_CONFIG_H264::ltrNumFrames()'],['../struct___n_v___e_n_c___c_o_n_f_i_g___h_e_v_c.html#aedd1907efa9c52cdcb2456de5825798a',1,'_NV_ENC_CONFIG_HEVC::ltrNumFrames()']]],
+  ['ltrtrustmode',['ltrTrustMode',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#ad7bce01d165641f516d1d761dd64922a',1,'_NV_ENC_CONFIG_H264::ltrTrustMode()'],['../struct___n_v___e_n_c___c_o_n_f_i_g___h_e_v_c.html#a55055ea1f7e58e8e007551057c69807b',1,'_NV_ENC_CONFIG_HEVC::ltrTrustMode()']]],
+  ['ltrusagemode',['ltrUsageMode',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h264.html#a2bdb3372f108af3d2363d80a13bddc77',1,'_NV_ENC_PIC_PARAMS_H264::ltrUsageMode()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h_e_v_c.html#a63c0eaf4ef5a27ae75b378c712fbbb01',1,'_NV_ENC_PIC_PARAMS_HEVC::ltrUsageMode()']]],
+  ['ltruseframebitmap',['ltrUseFrameBitmap',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h264.html#aa2f5a859399246f038f6e012c38f6b30',1,'_NV_ENC_PIC_PARAMS_H264::ltrUseFrameBitmap()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h_e_v_c.html#a23fee551415b7d3a9653710737481a06',1,'_NV_ENC_PIC_PARAMS_HEVC::ltrUseFrameBitmap()']]],
+  ['ltruseframes',['ltrUseFrames',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h264.html#a1c6bd4468caeab799a40b5199158fe38',1,'_NV_ENC_PIC_PARAMS_H264::ltrUseFrames()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s___h_e_v_c.html#adffa20d229196fdbbb0786a2944fad7e',1,'_NV_ENC_PIC_PARAMS_HEVC::ltrUseFrames()']]]
+];
