@@ -131,13 +131,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PreBuildEvent>
-      <Command>
-      </Command>
-    </PreBuildEvent>
-    <PostBuildEvent>
-      <Command>xcopy /y /s /d $(ProjectDir)Media $(OutDir) &amp;&amp; xcopy /y /d $(ProjectDir)*.hlsl  $(OutDir) &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
     <ProjectReference />
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -180,18 +173,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PostBuildEvent>
-      <Command>
-      IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul &gt; $(OutDir)xcopy.lock
-        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
-        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
-        xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" 
-        xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
-      )
-      del /f /q xcopy.lock
-      </Command>
-    </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -235,16 +216,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PostBuildEvent>
-      <Command>
-      IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul &gt; $(OutDir)xcopy.lock
-        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
-        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
-      )
-      del /f /q xcopy.lock
-      </Command>
-    </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -287,16 +258,6 @@
     <Manifest>
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <PostBuildEvent>
-      <Command>
-      IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul &gt; $(OutDir)xcopy.lock
-        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
-        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
-      )
-      del /f /q xcopy.lock
-      </Command>
-    </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
@@ -338,4 +299,20 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <ImportGroup Label="ExtensionTargets" />
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      IF NOT EXIST $(OutDir)binarycopy.lock (
+      type nul &gt; $(OutDir)binarycopy.lock
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)Media" "$(OutDir)."
+      IF %ERRORLEVEL% GTR 7 exit 1
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)." "$(OutDir)." *.hlsl
+      IF %ERRORLEVEL% GTR 7 exit 2
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll" "$(OutDir)." boringssl.dll ffmpeg.dll
+      IF %ERRORLEVEL% GTR 7 (exit 3) ELSE (exit 0)
+      )
+      del /f /q binarycopy.lock
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>

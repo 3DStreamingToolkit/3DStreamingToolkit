@@ -92,18 +92,6 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup>
-    <PostBuildEvent>
-      <Command>
-      IF NOT EXIST $(OutDir)xcopy.lock (
-      type nul &gt; $(OutDir)xcopy.lock
-        xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
-        xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
-      )
-      del /f /q xcopy.lock
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -316,4 +304,18 @@
   </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <ImportGroup Label="ExtensionTargets" />
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+      IF NOT EXIST $(OutDir)binarycopy.lock (
+      type nul &gt; $(OutDir)binarycopy.lock
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)Media" "$(OutDir)."
+      IF %ERRORLEVEL% GTR 7 exit 1
+      robocopy /NP /R:3 /W:2 "$(ProjectDir)." "$(OutDir)." *.hlsl
+      IF %ERRORLEVEL% GTR 7 (exit 2) ELSE (exit 0)
+      )
+      del /f /q binarycopy.lock
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>
