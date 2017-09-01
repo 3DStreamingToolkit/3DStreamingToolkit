@@ -2,7 +2,7 @@
 #include "custom_video_capturer.h"
 #include <fstream>
 
-namespace Toolkit3DLibrary
+namespace StreamingToolkit
 {
 	class CustomVideoCapturer::InsertFrameTask : public rtc::QueuedTask {
 	public:
@@ -66,7 +66,7 @@ namespace Toolkit3DLibrary
 	};
 
 	CustomVideoCapturer::CustomVideoCapturer(webrtc::Clock* clock,
-		Toolkit3DLibrary::VideoHelper* video_helper,
+		StreamingToolkit::VideoHelper* video_helper,
 		void(*frame_update_func)(),
 		int target_fps) : 
 		clock_(clock),
@@ -266,5 +266,4 @@ namespace Toolkit3DLibrary
 		task_queue_.PostTask(
 			std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(this, 0)));
 	}
-
 };

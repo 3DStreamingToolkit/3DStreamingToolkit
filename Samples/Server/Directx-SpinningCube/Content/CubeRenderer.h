@@ -2,7 +2,7 @@
 
 #include "DeviceResources.h"
 
-namespace Toolkit3DSample
+namespace StreamingToolkitSample
 {
 	// Constant buffer used to send model matrix to the vertex shader.
 	struct ModelConstantBuffer

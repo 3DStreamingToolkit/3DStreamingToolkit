@@ -63,19 +63,20 @@ protected:
 	~DummySetSessionDescriptionObserver() {}
 };
 
+using namespace StreamingToolkit;
+
 Conductor::Conductor(
 	PeerConnectionClient* client,
 	MainWindow* main_window,
 	void (*frame_update_func)(),
-	void (*input_update_func)(const std::string&),
-	Toolkit3DLibrary::VideoHelper* video_helper) :
+	VideoHelper* video_helper) :
 		peer_id_(-1),
 		loopback_(false),
 		client_(client),
 		main_window_(main_window),
 		frame_update_func_(frame_update_func),
-		input_update_func_(input_update_func),
-		video_helper_(video_helper)
+		video_helper_(video_helper),
+		input_data_handler_(nullptr)
 {
 	client_->RegisterObserver(this);
 	main_window->RegisterObserver(this);
@@ -95,6 +96,11 @@ void Conductor::SetTurnCredentials(const std::string& username, const std::strin
 {
 	turn_username_ = username;
 	turn_password_ = password;
+}
+
+void Conductor::SetInputDataHandler(InputDataHandler* handler)
+{
+	input_data_handler_ = handler;
 }
 
 void Conductor::Close() 
@@ -185,7 +191,6 @@ bool Conductor::CreatePeerConnection(bool dtls)
 
 	if (configFile.good())
 	{
-
 		reader.parse(configFile, root, true);
 		if (root.isMember("iceConfiguration"))
 		{
@@ -196,7 +201,6 @@ bool Conductor::CreatePeerConnection(bool dtls)
 				turnServer.uri = "";
 				turnServer.username = "";
 				turnServer.password = "";
-
 
 				if (root.isMember("turnServer"))
 				{
@@ -309,8 +313,7 @@ void Conductor::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> 
 void Conductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
 {
 	data_channel_ = channel;
-	data_channel_observer_.reset(
-		new DefaultDataChannelObserver(channel, input_update_func_));
+	data_channel_observer_.reset(new InputDataChannelObserver(channel, input_data_handler_));
 }
 
 void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
@@ -570,9 +573,7 @@ void Conductor::ConnectToPeer(int peer_id)
 		config.ordered = false;
 		config.maxRetransmits = 0;
 		data_channel_ = peer_connection_->CreateDataChannel(kInputDataChannelName, &config);
-		data_channel_observer_.reset(
-			new DefaultDataChannelObserver(data_channel_, input_update_func_));
-
+		data_channel_observer_.reset(new InputDataChannelObserver(data_channel_, input_data_handler_));
 		peer_connection_->CreateOffer(this, NULL);
 	}
 	else
@@ -581,48 +582,9 @@ void Conductor::ConnectToPeer(int peer_id)
 	}
 }
 
-std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice() 
+std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice()
 {
-	std::vector<std::string> device_names;
-	{
-		std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
-			webrtc::VideoCaptureFactory::CreateDeviceInfo());
-
-		if (!info) 
-		{
-			return nullptr;
-		}
-
-		int num_devices = info->NumberOfDevices();
-		for (int i = 0; i < num_devices; ++i) 
-		{
-			const uint32_t kSize = 256;
-			char name[kSize] = { 0 };
-			char id[kSize] = { 0 };
-			if (info->GetDeviceName(i, name, kSize, id, kSize) != -1) 
-			{
-				device_names.push_back(name);
-			}
-		}
-	}
-
-	cricket::WebRtcVideoDeviceCapturerFactory factory;
-	std::unique_ptr<cricket::VideoCapturer> capturer;
-	for (const auto& name : device_names) 
-	{
-		capturer = factory.Create(cricket::Device(name, 0));
-		if (capturer) 
-		{
-			break;
-		}
-	}
-
-	return capturer;
-}
-
-std::unique_ptr<cricket::VideoCapturer> Conductor::OpenFakeVideoCaptureDevice()
-{
-	Toolkit3DLibrary::VideoCapturerFactoryCustom factory;
+	VideoCapturerFactoryCustom factory;
 	std::unique_ptr<cricket::VideoCapturer> capturer;
 	cricket::Device dummyDevice;
 	dummyDevice.name = "custom dummy device";
@@ -645,7 +607,7 @@ void Conductor::AddStreams()
 		peer_connection_factory_->CreateVideoTrack(
 			kVideoLabel,
 			peer_connection_factory_->CreateVideoSource(
-				OpenFakeVideoCaptureDevice(),
+				OpenVideoCaptureDevice(),
 				NULL)));
 
 	main_window_->StartLocalRenderer(video_track);

@@ -36,7 +36,7 @@
 using namespace Concurrency;
 using namespace webrtc;
 
-namespace Toolkit3DLibrary
+namespace StreamingToolkit
 {
 	class SinkWantsObserver {
 	public:
@@ -54,7 +54,7 @@ namespace Toolkit3DLibrary
 	{
 	public:
 		explicit CustomVideoCapturer(webrtc::Clock* clock,
-			Toolkit3DLibrary::VideoHelper* video_helper,
+			StreamingToolkit::VideoHelper* video_helper,
 			void(*frame_update_func)(),
 			int target_fps);
 
@@ -151,7 +151,7 @@ namespace Toolkit3DLibrary
 		rtc::CriticalSection lock_;
 
 		void(*frame_update_func_)();
-		Toolkit3DLibrary::VideoHelper* video_helper_;
+		StreamingToolkit::VideoHelper* video_helper_;
 
 		int64_t first_frame_capture_time_;
 		// Must be the last field, so it will be deconstructed first as tasks
@@ -177,7 +177,7 @@ namespace Toolkit3DLibrary
 			webrtc::Clock* clock,
 			const cricket::Device& device,
 			void(*frame_update_func)(),
-			Toolkit3DLibrary::VideoHelper* video_helper)
+			StreamingToolkit::VideoHelper* video_helper)
 		{
 			// XXX: WebRTC uses device name to instantiate the capture, which is always 0.
 			return std::unique_ptr<cricket::VideoCapturer>(

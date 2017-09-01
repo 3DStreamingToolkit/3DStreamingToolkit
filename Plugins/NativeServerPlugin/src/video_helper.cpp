@@ -5,7 +5,7 @@
 #include "webrtc/modules/video_coding/codecs/h264/include/nvFileIO.h"
 #include "webrtc/modules/video_coding/codecs/h264/include/nvUtils.h"
 
-using namespace Toolkit3DLibrary;
+using namespace StreamingToolkit;
 
 // Constructor for VideoHelper.
 VideoHelper::VideoHelper(ID3D11Device* device, ID3D11DeviceContext* context) :

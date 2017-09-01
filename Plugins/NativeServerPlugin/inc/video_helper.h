@@ -8,7 +8,7 @@
 
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 
-namespace Toolkit3DLibrary
+namespace StreamingToolkit
 {
     class VideoHelper
     {

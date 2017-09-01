@@ -7,53 +7,62 @@
     <Filter Include="Source">
       <UniqueIdentifier>{9842d50a-0500-4f58-9a77-aa5cc85a2907}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\webrtc">
+      <UniqueIdentifier>{d1d23560-c755-4078-8e06-f7c1213c3a45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers\StreamingToolkit">
+      <UniqueIdentifier>{48037dfb-a9eb-42a6-860a-90e71a4cbd7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\webrtc">
+      <UniqueIdentifier>{beee4047-8fb4-43c0-ad25-bb82ae27a505}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\StreamingToolkit">
+      <UniqueIdentifier>{f7153af4-a5f7-4c27-9a25-eec57aa89d8b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="src\conductor.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\webrtc</Filter>
     </ClCompile>
     <ClCompile Include="src\defaults.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="src\custom_video_capturer.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\webrtc</Filter>
     </ClCompile>
     <ClCompile Include="src\video_helper.cpp">
-      <Filter>Source</Filter>
+      <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
-    <ClCompile Include="src\default_data_channel_observer.cpp">
-      <Filter>Source</Filter>
+    <ClCompile Include="src\custom_video_capturer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input_data_channel_observer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="inc\conductor.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\webrtc</Filter>
     </ClInclude>
     <ClInclude Include="inc\defaults.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\webrtc</Filter>
     </ClInclude>
     <ClInclude Include="inc\flagdefs.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\macros.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\pch.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\webrtc</Filter>
     </ClInclude>
     <ClInclude Include="inc\custom_video_capturer.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\macros.h">
+      <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
     <ClInclude Include="inc\video_helper.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\default_data_channel_observer.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
     <ClInclude Include="inc\plugindefs.h">
-      <Filter>Headers</Filter>
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\input_data_channel_observer.h">
+      <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

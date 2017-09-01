@@ -48,7 +48,7 @@
 #pragma comment(lib, "usp10.lib")
 
 using namespace DirectX;
-using namespace Toolkit3DLibrary;
+using namespace StreamingToolkit;
 
 // Extern method from DXUT.cpp
 void DXUTResizeDXGIBuffers(_In_ UINT Width, _In_ UINT Height, _In_ BOOL bFullscreen);
@@ -452,106 +452,6 @@ void FrameUpdate()
 
 #ifndef TEST_RUNNER
 
-// Handles input from client.
-void InputUpdate(const std::string& message)
-{
-	char type[256];
-	char body[1024];
-	Json::Reader reader;
-	Json::Value msg = NULL;
-	reader.parse(message, msg, false);
-
-	if (msg.isMember("type") && msg.isMember("body"))
-	{
-		strcpy(type, msg.get("type", "").asCString());
-		strcpy(body, msg.get("body", "").asCString());
-		std::istringstream datastream(body);
-		std::string token;
-		
-		if (strcmp(type, "stereo-rendering") == 0)
-		{
-			getline(datastream, token, ',');
-			bool isStereo = stoi(token) == 1;
-			if (isStereo == g_CameraResources.IsStereo())
-			{
-				return;
-			}
-
-			g_CameraResources.SetStereo(isStereo);
-			DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
-			int width = deviceSettings.d3d11.sd.BufferDesc.Width;
-			int height = deviceSettings.d3d11.sd.BufferDesc.Height;
-			int newWidth = isStereo ? width << 1 : width >> 1;
-			SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
-			DXUTResizeDXGIBuffers(newWidth, height, false);
-		}
-		else if (strcmp(type, "camera-transform-lookat") == 0)
-		{
-			// Eye point.
-			getline(datastream, token, ',');
-			float eyeX = stof(token);
-			getline(datastream, token, ',');
-			float eyeY = stof(token);
-			getline(datastream, token, ',');
-			float eyeZ = stof(token);
-
-			// Focus point.
-			getline(datastream, token, ',');
-			float focusX = stof(token);
-			getline(datastream, token, ',');
-			float focusY = stof(token);
-			getline(datastream, token, ',');
-			float focusZ = stof(token);
-
-			// Up vector.
-			getline(datastream, token, ',');
-			float upX = stof(token);
-			getline(datastream, token, ',');
-			float upY = stof(token);
-			getline(datastream, token, ',');
-			float upZ = stof(token);
-
-			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-
-			g_Camera.SetViewParams(eye, lookAt, up);
-			g_Camera.FrameMove(0);
-		}
-		else if (strcmp(type, "camera-transform-stereo") == 0)
-		{
-			// Parses the left view projection matrix.
-			DirectX::XMFLOAT4X4 viewProjectionLeft;
-			for (int i = 0; i < 4; i++)
-			{
-				for (int j = 0; j < 4; j++)
-				{
-					getline(datastream, token, ',');
-					viewProjectionLeft.m[i][j] = stof(token);
-				}
-			}
-
-			// Parses the right view projection matrix.
-			DirectX::XMFLOAT4X4 viewProjectionRight;
-			for (int i = 0; i < 4; i++)
-			{
-				for (int j = 0; j < 4; j++)
-				{
-					getline(datastream, token, ',');
-					viewProjectionRight.m[i][j] = stof(token);
-				}
-			}
-
-			// Updates the camera's matrices.
-			XMFLOAT4X4 id;
-			XMStoreFloat4x4(&id, XMMatrixIdentity());
-			g_CameraResources.SetViewMatrix(id, id);
-			g_CameraResources.SetProjMatrix(viewProjectionLeft, viewProjectionRight);
-			g_Camera.FrameMove(0);
-		}
-	}
-}
-
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
@@ -606,8 +506,108 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
 		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, &InputUpdate, g_videoHelper));
+			&client, &wnd, &FrameUpdate, g_videoHelper));
 
+	// Handles input from client.
+	InputDataHandler inputHandler([&](const std::string& message)
+	{
+		char type[256];
+		char body[1024];
+		Json::Reader reader;
+		Json::Value msg = NULL;
+		reader.parse(message, msg, false);
+
+		if (msg.isMember("type") && msg.isMember("body"))
+		{
+			strcpy(type, msg.get("type", "").asCString());
+			strcpy(body, msg.get("body", "").asCString());
+			std::istringstream datastream(body);
+			std::string token;
+			if (strcmp(type, "stereo-rendering") == 0)
+			{
+				getline(datastream, token, ',');
+				bool isStereo = stoi(token) == 1;
+				if (isStereo == g_CameraResources.IsStereo())
+				{
+					return;
+				}
+
+				g_CameraResources.SetStereo(isStereo);
+				DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
+				int width = deviceSettings.d3d11.sd.BufferDesc.Width;
+				int height = deviceSettings.d3d11.sd.BufferDesc.Height;
+				int newWidth = isStereo ? width << 1 : width >> 1;
+				SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+				DXUTResizeDXGIBuffers(newWidth, height, false);
+			}
+			else if (strcmp(type, "camera-transform-lookat") == 0)
+			{
+				// Eye point.
+				getline(datastream, token, ',');
+				float eyeX = stof(token);
+				getline(datastream, token, ',');
+				float eyeY = stof(token);
+				getline(datastream, token, ',');
+				float eyeZ = stof(token);
+
+				// Focus point.
+				getline(datastream, token, ',');
+				float focusX = stof(token);
+				getline(datastream, token, ',');
+				float focusY = stof(token);
+				getline(datastream, token, ',');
+				float focusZ = stof(token);
+
+				// Up vector.
+				getline(datastream, token, ',');
+				float upX = stof(token);
+				getline(datastream, token, ',');
+				float upY = stof(token);
+				getline(datastream, token, ',');
+				float upZ = stof(token);
+
+				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
+				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
+				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
+
+				g_Camera.SetViewParams(eye, lookAt, up);
+				g_Camera.FrameMove(0);
+			}
+			else if (strcmp(type, "camera-transform-stereo") == 0)
+			{
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Updates the camera's matrices.
+				XMFLOAT4X4 id;
+				XMStoreFloat4x4(&id, XMMatrixIdentity());
+				g_CameraResources.SetViewMatrix(id, id);
+				g_CameraResources.SetProjMatrix(viewProjectionLeft, viewProjectionRight);
+				g_Camera.FrameMove(0);
+			}
+		}
+	});
+
+	conductor->SetInputDataHandler(&inputHandler);
 	client.SetHeartbeatMs(heartbeat);
 
 	// configure callbacks (which may or may not be used)

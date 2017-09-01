@@ -4,7 +4,7 @@
 
 using namespace DirectX;
 using namespace DX;
-using namespace Toolkit3DSample;
+using namespace StreamingToolkitSample;
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
 static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };

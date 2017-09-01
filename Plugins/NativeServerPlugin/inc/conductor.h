@@ -19,20 +19,10 @@
 
 #include "video_helper.h"
 #include "peer_connection_client.h"
-#include "default_data_channel_observer.h"
+#include "input_data_channel_observer.h"
 #include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-
-namespace webrtc
-{
-	class VideoCaptureModule;
-}
-
-namespace cricket
-{
-	class VideoRenderer;
-}
 
 class Conductor : public webrtc::PeerConnectionObserver,
 	public webrtc::CreateSessionDescriptionObserver,
@@ -50,12 +40,14 @@ public:
 	};
 
 	Conductor(PeerConnectionClient* client, MainWindow* main_window,
-		void (*frame_update_func)(), void (*input_update_func)(const std::string&), 
-		Toolkit3DLibrary::VideoHelper* video_helper);
+		void (*frame_update_func)(), 
+		StreamingToolkit::VideoHelper* video_helper);
 
 	bool connection_active() const;
 
 	void SetTurnCredentials(const std::string& username, const std::string& password);
+
+	void SetInputDataHandler(StreamingToolkit::InputDataHandler* handler);
 
 	virtual void Close();
 
@@ -75,7 +67,6 @@ protected:
 	void AddStreams();
 
 	std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
-	std::unique_ptr<cricket::VideoCapturer> OpenFakeVideoCaptureDevice();
 
 	//-------------------------------------------------------------------------
 	// PeerConnectionObserver implementation.
@@ -154,11 +145,11 @@ protected:
 
 	PeerConnectionClient* client_;
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
-	std::unique_ptr<DefaultDataChannelObserver> data_channel_observer_;
+	std::unique_ptr<StreamingToolkit::InputDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;
 	void (*frame_update_func_)();
-	void (*input_update_func_)(const std::string&);
-	Toolkit3DLibrary::VideoHelper* video_helper_;
+	StreamingToolkit::InputDataHandler* input_data_handler_;
+	StreamingToolkit::VideoHelper* video_helper_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
 		active_streams_;
