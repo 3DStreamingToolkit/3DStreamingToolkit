@@ -186,7 +186,7 @@
     <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\input_data_channel_observer.cpp" />
-    <ClCompile Include="src\video_helper.cpp" />
+    <ClCompile Include="src\buffer_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\conductor.h" />
@@ -196,7 +196,7 @@
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
-    <ClInclude Include="inc\video_helper.h" />
+    <ClInclude Include="inc\buffer_renderer.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>

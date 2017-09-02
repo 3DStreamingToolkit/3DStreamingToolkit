@@ -17,7 +17,7 @@
 #include <set>
 #include <string>
 
-#include "video_helper.h"
+#include "buffer_renderer.h"
 #include "peer_connection_client.h"
 #include "input_data_channel_observer.h"
 #include "main_window.h"
@@ -39,9 +39,10 @@ public:
 		STREAM_REMOVED,
 	};
 
-	Conductor(PeerConnectionClient* client, MainWindow* main_window,
-		void (*frame_update_func)(), 
-		StreamingToolkit::VideoHelper* video_helper);
+	Conductor(
+		PeerConnectionClient* client,
+		MainWindow* main_window,
+		StreamingToolkit::BufferRenderer* buffer_renderer);
 
 	bool connection_active() const;
 
@@ -140,19 +141,16 @@ protected:
 	int peer_id_;
 	bool loopback_;
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-		peer_connection_factory_;
+	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
 	PeerConnectionClient* client_;
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 	std::unique_ptr<StreamingToolkit::InputDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;
-	void (*frame_update_func_)();
 	StreamingToolkit::InputDataHandler* input_data_handler_;
-	StreamingToolkit::VideoHelper* video_helper_;
+	StreamingToolkit::BufferRenderer* buffer_renderer_;
 	std::deque<std::string*> pending_messages_;
-	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
-		active_streams_;
+	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> active_streams_;
 
 	std::string server_;
 	std::string turn_username_;

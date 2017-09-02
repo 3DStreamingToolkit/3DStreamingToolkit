@@ -28,6 +28,7 @@
 #pragma comment(lib, "winmm.lib")
 
 using namespace DX;
+using namespace Microsoft::WRL;
 using namespace StreamingToolkit;
 using namespace StreamingToolkitSample;
 
@@ -40,17 +41,8 @@ CubeRenderer*		g_cubeRenderer = nullptr;
 #ifdef TEST_RUNNER
 VideoTestRunner*	g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
-VideoHelper*		g_videoHelper = nullptr;
+BufferRenderer*		g_bufferRenderer = nullptr;
 #endif // TESTRUNNER
-
-//--------------------------------------------------------------------------------------
-// Global Methods
-//--------------------------------------------------------------------------------------
-void FrameUpdate()
-{
-	g_cubeRenderer->Update();
-	g_cubeRenderer->Render();
-}
 
 #ifndef TEST_RUNNER
 
@@ -84,21 +76,34 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext());
+	// Render loop.
+	std::function<void()> frameRenderFunc = ([&]
+	{
+		g_cubeRenderer->Update();
+		g_cubeRenderer->Render();
+	});
 
-	g_videoHelper->Initialize(g_deviceResources->GetSwapChain());
+	// Gets the frame buffer from the swap chain.
+	ComPtr<ID3D11Texture2D> frameBuffer;
+	HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(0,
+		__uuidof(ID3D11Texture2D),
+		reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+	// Initializes the buffer renderer.
+	g_bufferRenderer = new BufferRenderer(
+		1280,
+		720,
+		g_deviceResources->GetD3DDevice(),
+		frameRenderFunc,
+		frameBuffer.Get());
 
 	rtc::InitializeSSL();
 
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
-	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, g_videoHelper));
+	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
+		&client, &wnd, g_bufferRenderer));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -281,7 +286,7 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	rtc::CleanupSSL();
 
 	// Cleanup.
-	delete g_videoHelper;
+	delete g_bufferRenderer;
 	delete g_cubeRenderer;
 	delete g_deviceResources;
 

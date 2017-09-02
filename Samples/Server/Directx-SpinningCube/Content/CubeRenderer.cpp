@@ -274,17 +274,17 @@ void CubeRenderer::Update()
 		m_modelConstantBuffer, 0, NULL, &m_modelConstantBufferData, 0, 0, 0);
 }
 
-void CubeRenderer::Render()
+void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
 {
 	// Gets the device context.
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
 	// Sets the render target.
-	ID3D11RenderTargetView *const targets[1] = { m_deviceResources->GetBackBufferRenderTargetView() };
+	ID3D11RenderTargetView *const targets[1] = { renderTargetView };
 	context->OMSetRenderTargets(1, targets, nullptr);
 
 	// Clear the back buffer.
-	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::Black);
+	context->ClearRenderTargetView(renderTargetView, Colors::Black);
 
 	// Sets the vertex buffer and index buffer.
 	UINT stride = sizeof(VertexPositionColor);
@@ -331,6 +331,11 @@ void CubeRenderer::Render()
 		context->RSSetViewports(1, viewports);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
+}
+
+void CubeRenderer::Render()
+{
+	Render(m_deviceResources->GetBackBufferRenderTargetView());
 }
 
 void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)

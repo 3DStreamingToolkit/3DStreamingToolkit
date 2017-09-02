@@ -6,5 +6,5 @@
 #pragma warning(disable : 4244)
 
 #include "custom_video_capturer.h"
-#include "video_helper.h"
+#include "buffer_renderer.h"
 

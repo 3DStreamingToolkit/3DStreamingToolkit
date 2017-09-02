@@ -68,14 +68,12 @@ using namespace StreamingToolkit;
 Conductor::Conductor(
 	PeerConnectionClient* client,
 	MainWindow* main_window,
-	void (*frame_update_func)(),
-	VideoHelper* video_helper) :
+	BufferRenderer* buffer_renderer) :
 		peer_id_(-1),
 		loopback_(false),
 		client_(client),
 		main_window_(main_window),
-		frame_update_func_(frame_update_func),
-		video_helper_(video_helper),
+		buffer_renderer_(buffer_renderer),
 		input_data_handler_(nullptr)
 {
 	client_->RegisterObserver(this);
@@ -588,10 +586,10 @@ std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice()
 	std::unique_ptr<cricket::VideoCapturer> capturer;
 	cricket::Device dummyDevice;
 	dummyDevice.name = "custom dummy device";
-	capturer = factory.Create(webrtc::Clock::GetRealTimeClock(),
+	capturer = factory.Create(
+		webrtc::Clock::GetRealTimeClock(),
 		dummyDevice,
-		frame_update_func_,
-		video_helper_);
+		buffer_renderer_);
 
 	return capturer;
 }

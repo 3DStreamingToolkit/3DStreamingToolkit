@@ -48,6 +48,7 @@
 #pragma comment(lib, "usp10.lib")
 
 using namespace DirectX;
+using namespace Microsoft::WRL;
 using namespace StreamingToolkit;
 
 // Extern method from DXUT.cpp
@@ -386,9 +387,8 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 #ifdef TEST_RUNNER
 VideoTestRunner*			g_videoTestRunner = nullptr;
 #else
-VideoHelper*				g_videoHelper = nullptr;
+BufferRenderer*				g_bufferRenderer = nullptr;
 #endif // TEST_RUNNER
-
 
 
 //--------------------------------------------------------------------------------------
@@ -445,11 +445,6 @@ inline bool IsRenderDeferred()
     return IsRenderDeferredPerScene() || IsRenderDeferredPerChunk();
 }
 
-void FrameUpdate()
-{
-	DXUTRender3DEnvironment();
-}
-
 #ifndef TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
@@ -492,21 +487,33 @@ int InitWebRTC(char* server, int port, int heartbeat,
 	ShowWindow(wnd.handle(), SW_HIDE);
 #endif // NO_UI
 
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		DXUTGetD3D11Device(),
-		DXUTGetD3D11DeviceContext());
+	// Render loop.
+	std::function<void()> frameRenderFunc = ([&]
+	{
+		DXUTRender3DEnvironment();
+	});
 
-	g_videoHelper->Initialize(DXUTGetDXGISwapChain());
+	// Gets the frame buffer from the swap chain.
+	ComPtr<ID3D11Texture2D> frameBuffer;
+	HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(0,
+		__uuidof(ID3D11Texture2D),
+		reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+	// Initializes the buffer renderer.
+	g_bufferRenderer = new BufferRenderer(
+		1280,
+		720,
+		DXUTGetD3D11Device(),
+		frameRenderFunc,
+		frameBuffer.Get());
 
 	rtc::InitializeSSL();
 
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
-	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(
-			&client, &wnd, &FrameUpdate, g_videoHelper));
+	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
+		&client, &wnd, g_bufferRenderer));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -1866,13 +1873,7 @@ HRESULT CALLBACK OnD3D11CreateDevice( ID3D11Device* pd3dDevice, const DXGI_SURFA
 	g_videoTestRunner = new VideoTestRunner(
 		DXUTGetD3D11Device(),
 		DXUTGetD3D11DeviceContext());
-#else
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(
-		DXUTGetD3D11Device(),
-		DXUTGetD3D11DeviceContext());
 #endif // TEST_RUNNER
-
 
     return S_OK;
 }

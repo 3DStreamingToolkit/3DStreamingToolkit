@@ -4,7 +4,8 @@
 
 namespace StreamingToolkit
 {
-	class CustomVideoCapturer::InsertFrameTask : public rtc::QueuedTask {
+	class CustomVideoCapturer::InsertFrameTask : public rtc::QueuedTask 
+	{
 	public:
 		// Repeats in |repeat_interval_ms|. One-time if |repeat_interval_ms| == 0.
 		InsertFrameTask(
@@ -15,47 +16,60 @@ namespace StreamingToolkit
 			intended_run_time_ms_(-1) {}
 
 	private:
-		bool Run() override {
+		bool Run() override 
+		{
 			bool task_completed = true;
-			if (repeat_interval_ms_ > 0) {
+			if (repeat_interval_ms_ > 0) 
+			{
 				// This is not a one-off frame. Check if the frame interval for this
 				// task queue is the same same as the current configured frame rate.
 				uint32_t current_interval_ms =
 					1000 / frame_generator_capturer_->GetCurrentConfiguredFramerate();
-				if (repeat_interval_ms_ != current_interval_ms) {
+
+				if (repeat_interval_ms_ != current_interval_ms) 
+				{
 					// Frame rate has changed since task was started, create a new instance.
 					rtc::TaskQueue::Current()->PostDelayedTask(
 						std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(
 							frame_generator_capturer_, current_interval_ms)),
 						current_interval_ms);
 				}
-				else {
+				else 
+				{
 					// Schedule the next frame capture event to happen at approximately the
 					// correct absolute time point.
 					int64_t delay_ms;
 					int64_t time_now_ms = rtc::TimeMillis();
-					if (intended_run_time_ms_ > 0) {
+					if (intended_run_time_ms_ > 0) 
+					{
 						delay_ms = time_now_ms - intended_run_time_ms_;
 					}
-					else {
+					else 
+					{
 						delay_ms = 0;
 						intended_run_time_ms_ = time_now_ms;
 					}
+
 					intended_run_time_ms_ += repeat_interval_ms_;
-					if (delay_ms < repeat_interval_ms_) {
+					if (delay_ms < repeat_interval_ms_) 
+					{
 						rtc::TaskQueue::Current()->PostDelayedTask(
 							std::unique_ptr<rtc::QueuedTask>(this),
 							repeat_interval_ms_ - delay_ms);
 					}
-					else {
+					else 
+					{
 						rtc::TaskQueue::Current()->PostDelayedTask(
 							std::unique_ptr<rtc::QueuedTask>(this), 0);
 					}
+
 					// Repost of this instance, make sure it is not deleted.
 					task_completed = false;
 				}
 			}
+
 			frame_generator_capturer_->InsertFrame();
+
 			// Task should be deleted only if it's not repeating.
 			return task_completed;
 		}
@@ -66,8 +80,7 @@ namespace StreamingToolkit
 	};
 
 	CustomVideoCapturer::CustomVideoCapturer(webrtc::Clock* clock,
-		StreamingToolkit::VideoHelper* video_helper,
-		void(*frame_update_func)(),
+		StreamingToolkit::BufferRenderer* buffer_renderer,
 		int target_fps) : 
 		clock_(clock),
 		sending_(false),
@@ -75,8 +88,7 @@ namespace StreamingToolkit
 		use_software_encoder_(false),
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
-		frame_update_func_(frame_update_func),
-		video_helper_(video_helper),
+		buffer_renderer_(buffer_renderer),
 		first_frame_capture_time_(-1),
 		task_queue_("FrameGenCapQ",
 			rtc::TaskQueue::Priority::HIGH)
@@ -93,27 +105,27 @@ namespace StreamingToolkit
 		SetSupportedFormats(formats);
 	}
 
-	int CustomVideoCapturer::GetCurrentConfiguredFramerate() {
+	int CustomVideoCapturer::GetCurrentConfiguredFramerate() 
+	{
 		rtc::CritScope cs(&lock_);
 		if (wanted_fps_ && *wanted_fps_ < target_fps_)
 			return *wanted_fps_;
+
 		return target_fps_;
 	}
 
-	bool CustomVideoCapturer::Init() {
-		if (frame_update_func_)
-		{
-			int framerate_fps = GetCurrentConfiguredFramerate();
-			task_queue_.PostDelayedTask(
-				std::unique_ptr<rtc::QueuedTask>(
-					new InsertFrameTask(this, 1000 / framerate_fps)),
-				1000 / framerate_fps);
-		}
+	bool CustomVideoCapturer::Init() 
+	{
+		int framerate_fps = GetCurrentConfiguredFramerate();
+		task_queue_.PostDelayedTask(
+			std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(this, 1000 / framerate_fps)),
+			1000 / framerate_fps);
 
 		return true;
 	}
 
-	cricket::CaptureState CustomVideoCapturer::Start(const cricket::VideoFormat& format) {
+	cricket::CaptureState CustomVideoCapturer::Start(const cricket::VideoFormat& format) 
+	{
 		SetCaptureFormat(&format);
 
 		Json::Reader reader;
@@ -149,18 +161,14 @@ namespace StreamingToolkit
 		return cricket::CS_RUNNING;
 	}
 
-	void CustomVideoCapturer::InsertFrame() {
+	void CustomVideoCapturer::InsertFrame() 
+	{
 		rtc::CritScope cs(&lock_);
-		if (sending_) {
-			if (frame_update_func_)
-			{
-				frame_update_func_();
-			}
-
+		if (sending_) 
+		{
 			int width = 0;
 			int height = 0;
-
-			video_helper_->GetWidthAndHeight(&width, &height);
+			buffer_renderer_->GetDimension(&width, &height);
 			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(width, height);
 
 			if (use_software_encoder_)
@@ -168,7 +176,8 @@ namespace StreamingToolkit
 				void* pFrameBuffer = nullptr;
 				int frameSizeInBytes = 0;
 
-				video_helper_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
+				buffer_renderer_->Render();
+				buffer_renderer_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
 
 				if (frameSizeInBytes == 0)
 					return;
@@ -194,18 +203,21 @@ namespace StreamingToolkit
 
 			if (!use_software_encoder_)
 			{
-				ID3D11Texture2D* texture = nullptr;
-				video_helper_->Capture(&texture, &width, &height);
+				buffer_renderer_->Render();
+				ID3D11Texture2D* texture = buffer_renderer_->Capture();
+				texture->AddRef();
 				frame.SetID3D11Texture2D(texture);
 			}
 
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 			frame.set_rotation(fake_rotation_);
-			if (first_frame_capture_time_ == -1) {
+			if (first_frame_capture_time_ == -1) 
+			{
 				first_frame_capture_time_ = frame.ntp_time_ms();
 			}
 
-			if (sink_) {
+			if (sink_) 
+			{
 				sink_->OnFrame(frame);
 			}
 			else
@@ -215,12 +227,14 @@ namespace StreamingToolkit
 		}
 	}
 
-	void CustomVideoCapturer::Stop() {
+	void CustomVideoCapturer::Stop() 
+	{
 		rtc::CritScope cs(&lock_);
 		sending_ = false;
 	}
 
-	void CustomVideoCapturer::SetSinkWantsObserver(SinkWantsObserver* observer) {
+	void CustomVideoCapturer::SetSinkWantsObserver(SinkWantsObserver* observer) 
+	{
 		rtc::CritScope cs(&lock_);
 		RTC_DCHECK(!sink_wants_observer_);
 		sink_wants_observer_ = observer;
@@ -228,7 +242,8 @@ namespace StreamingToolkit
 
 	void CustomVideoCapturer::AddOrUpdateSink(
 		rtc::VideoSinkInterface<VideoFrame>* sink,
-		const rtc::VideoSinkWants& wants) {
+		const rtc::VideoSinkWants& wants) 
+	{
 		rtc::CritScope cs(&lock_);
 		//RTC_CHECK(!sink_ || sink_ == sink);
 		sink_ = sink;
@@ -239,28 +254,33 @@ namespace StreamingToolkit
 	bool CustomVideoCapturer::IsRunning() { return running_; }
 	bool CustomVideoCapturer::IsScreencast() const { return false; }
 
-	bool CustomVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
+	bool CustomVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) 
+	{
 		fourccs->push_back(cricket::FOURCC_H264);
 		return true;
 	}
 
-	void CustomVideoCapturer::SetFakeRotation(VideoRotation rotation) {
+	void CustomVideoCapturer::SetFakeRotation(VideoRotation rotation) 
+	{
 		rtc::CritScope cs(&lock_);
 		fake_rotation_ = rotation;
 	}
 
-	void CustomVideoCapturer::ChangeResolution(size_t width, size_t height) {
+	void CustomVideoCapturer::ChangeResolution(size_t width, size_t height) 
+	{
 		//TODO - change nvencode settings
 	}
 
 	void CustomVideoCapturer::RemoveSink(
-		rtc::VideoSinkInterface<VideoFrame>* sink) {
+		rtc::VideoSinkInterface<VideoFrame>* sink) 
+	{
 		rtc::CritScope cs(&lock_);
 		//RTC_CHECK(sink_ == sink);
 		sink_ = nullptr;
 	}
 
-	void CustomVideoCapturer::ForceFrame() {
+	void CustomVideoCapturer::ForceFrame() 
+	{
 		// One-time non-repeating task,
 		// therefore repeat_interval_ms is 0 in InsertFrameTask()
 		task_queue_.PostTask(

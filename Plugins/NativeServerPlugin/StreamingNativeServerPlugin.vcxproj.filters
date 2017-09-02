@@ -28,13 +28,13 @@
     <ClCompile Include="src\defaults.cpp">
       <Filter>Source\webrtc</Filter>
     </ClCompile>
-    <ClCompile Include="src\video_helper.cpp">
-      <Filter>Source\StreamingToolkit</Filter>
-    </ClCompile>
     <ClCompile Include="src\custom_video_capturer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
     <ClCompile Include="src\input_data_channel_observer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\buffer_renderer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
   </ItemGroup>
@@ -55,13 +55,13 @@
     <ClInclude Include="inc\macros.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
-    <ClInclude Include="inc\video_helper.h">
-      <Filter>Headers\StreamingToolkit</Filter>
-    </ClInclude>
     <ClInclude Include="inc\plugindefs.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
     <ClInclude Include="inc\input_data_channel_observer.h">
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\buffer_renderer.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
   </ItemGroup>
