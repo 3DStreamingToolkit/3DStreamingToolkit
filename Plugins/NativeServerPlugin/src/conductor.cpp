@@ -77,7 +77,10 @@ Conductor::Conductor(
 		input_data_handler_(nullptr)
 {
 	client_->RegisterObserver(this);
-	main_window->RegisterObserver(this);
+	if (main_window_->IsWindow())
+	{
+		main_window->RegisterObserver(this);
+	}
 }
 
 Conductor::~Conductor() 
@@ -135,10 +138,13 @@ bool Conductor::InitializePeerConnection()
 
 	if (!peer_connection_factory_.get())
 	{
-		main_window_->MessageBox(
-			"Error", 
-			"Failed to initialize PeerConnectionFactory", 
-			true);
+		if (main_window_->IsWindow())
+		{
+			main_window_->MessageBox(
+				"Error",
+				"Failed to initialize PeerConnectionFactory",
+				true);
+		}
 
 		DeletePeerConnection();
 		return false;
@@ -146,7 +152,11 @@ bool Conductor::InitializePeerConnection()
 
 	if (!CreatePeerConnection(DTLS_ON)) 
 	{
-		main_window_->MessageBox("Error", "CreatePeerConnection failed", true);
+		if (main_window_->IsWindow())
+		{
+			main_window_->MessageBox("Error", "CreatePeerConnection failed", true);
+		}
+
 		DeletePeerConnection();
 	}
 
@@ -271,8 +281,12 @@ void Conductor::DeletePeerConnection()
 	peer_connection_ = NULL;
 	active_streams_.clear();
 
-	main_window_->StopLocalRenderer();
-	main_window_->StopRemoteRenderer();
+	if (main_window_->IsWindow())
+	{
+		main_window_->StopLocalRenderer();
+		main_window_->StopRemoteRenderer();
+	}
+
 	peer_connection_factory_ = NULL;
 	peer_id_ = -1;
 	loopback_ = false;
@@ -281,12 +295,9 @@ void Conductor::DeletePeerConnection()
 void Conductor::EnsureStreamingUI()
 {
 	RTC_DCHECK(peer_connection_.get() != NULL);
-	if (main_window_->IsWindow())
+	if (main_window_->IsWindow() && main_window_->current_ui() != MainWindow::STREAMING)
 	{
-		if (main_window_->current_ui() != MainWindow::STREAMING)
-		{
-			main_window_->SwitchToStreamingUI();
-		}
+		main_window_->SwitchToStreamingUI();
 	}
 }
 
@@ -298,14 +309,28 @@ void Conductor::EnsureStreamingUI()
 void Conductor::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
 	LOG(INFO) << __FUNCTION__ << " " << stream->label();
-	main_window_->QueueUIThreadCallback(NEW_STREAM_ADDED, stream.release());
+	if (main_window_->IsWindow())
+	{
+		main_window_->QueueUIThreadCallback(NEW_STREAM_ADDED, stream.release());
+	}
+	else
+	{
+		NewStreamAdded(stream.release());
+	}
 }
 
 // Called when a remote stream is removed
 void Conductor::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
 	LOG(INFO) << __FUNCTION__ << " " << stream->label();
-	main_window_->QueueUIThreadCallback(STREAM_REMOVED, stream.release());
+	if (main_window_->IsWindow())
+	{
+		main_window_->QueueUIThreadCallback(STREAM_REMOVED, stream.release());
+	}
+	else
+	{
+		StreamRemoved(stream.release());
+	}
 }
 
 void Conductor::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
@@ -352,7 +377,10 @@ void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 void Conductor::OnSignedIn()
 {
 	LOG(INFO) << __FUNCTION__;
-	main_window_->SwitchToPeerList(client_->peers());
+	if (main_window_->IsWindow())
+	{
+		main_window_->SwitchToPeerList(client_->peers());
+	}
 }
 
 void Conductor::OnDisconnected()
@@ -371,7 +399,7 @@ void Conductor::OnPeerConnected(int id, const std::string& name)
 	LOG(INFO) << __FUNCTION__;
 
 	// Refresh the list if we're showing it.
-	if (main_window_->current_ui() == MainWindow::LIST_PEERS)
+	if (main_window_->IsWindow() && main_window_->current_ui() == MainWindow::LIST_PEERS)
 	{
 		main_window_->SwitchToPeerList(client_->peers());
 	}
@@ -380,18 +408,24 @@ void Conductor::OnPeerConnected(int id, const std::string& name)
 void Conductor::OnPeerDisconnected(int id)
 {
 	LOG(INFO) << __FUNCTION__;
-	if (id == peer_id_)
+	if (main_window_->IsWindow())
 	{
-		LOG(INFO) << "Our peer disconnected";
-		main_window_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, NULL);
-	}
-	else
-	{
-		// Refresh the list if we're showing it.
-		if (main_window_->current_ui() == MainWindow::LIST_PEERS)
+		if (id == peer_id_)
 		{
+			LOG(INFO) << "Our peer disconnected";
+			main_window_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, NULL);
+		}
+		else if (main_window_->current_ui() == MainWindow::LIST_PEERS)
+		{
+			// Refresh the list if we're showing it.
 			main_window_->SwitchToPeerList(client_->peers());
 		}
+	}
+	else if (id == peer_id_)
+	{
+		LOG(INFO) << "PEER_CONNECTION_CLOSED";
+		DeletePeerConnection();
+		DisconnectFromServer();
 	}
 }
 
@@ -518,12 +552,18 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 void Conductor::OnMessageSent(int err)
 {
 	// Process the next pending message if any.
-	main_window_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, NULL);
+	if (main_window_->IsWindow())
+	{
+		main_window_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, NULL);
+	}
 }
 
 void Conductor::OnServerConnectionFailure()
 {
-    main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
+	if (main_window_->IsWindow())
+	{
+		main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
+	}
 }
 
 //-------------------------------------------------------------------------
@@ -556,10 +596,13 @@ void Conductor::ConnectToPeer(int peer_id)
 
 	if (peer_connection_.get())
 	{
-		main_window_->MessageBox(
-			"Error",
-			"We only support connecting to one peer at a time",
-			true);
+		if (main_window_->IsWindow())
+		{
+			main_window_->MessageBox(
+				"Error",
+				"We only support connecting to one peer at a time",
+				true);
+		}
 
 		return;
 	}
@@ -574,7 +617,7 @@ void Conductor::ConnectToPeer(int peer_id)
 		data_channel_observer_.reset(new InputDataChannelObserver(data_channel_, input_data_handler_));
 		peer_connection_->CreateOffer(this, NULL);
 	}
-	else
+	else if (main_window_->IsWindow())
 	{
 		main_window_->MessageBox("Error", "Failed to initialize PeerConnection", true);
 	}
@@ -608,7 +651,10 @@ void Conductor::AddStreams()
 				OpenVideoCaptureDevice(),
 				NULL)));
 
-	main_window_->StartLocalRenderer(video_track);
+	if (main_window_->IsWindow())
+	{
+		main_window_->StartLocalRenderer(video_track);
+	}
 
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
 		peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
@@ -623,7 +669,10 @@ void Conductor::AddStreams()
 		MediaStreamPair;
 
 	active_streams_.insert(MediaStreamPair(stream->label(), stream));
-	main_window_->SwitchToStreamingUI();
+	if (main_window_->IsWindow())
+	{
+		main_window_->SwitchToStreamingUI();
+	}
 }
 
 void Conductor::DisconnectFromCurrentPeer()
@@ -650,85 +699,32 @@ void Conductor::UIThreadCallback(int msg_id, void* data)
 			DeletePeerConnection();
 
 			RTC_DCHECK(active_streams_.empty());
-
-			if (main_window_->IsWindow())
+			if (client_->is_connected())
 			{
-				if (client_->is_connected())
-				{
-					main_window_->SwitchToPeerList(client_->peers());
-				}
-				else
-				{
-					main_window_->SwitchToConnectUI();
-				}
+				main_window_->SwitchToPeerList(client_->peers());
 			}
 			else
 			{
-				DisconnectFromServer();
+				main_window_->SwitchToConnectUI();
 			}
 
 			break;
 
 		case SEND_MESSAGE_TO_PEER:
 		{
-			LOG(INFO) << "SEND_MESSAGE_TO_PEER";
-			std::string* msg = reinterpret_cast<std::string*>(data);
-
-			if (msg)
-			{
-				// For convenience, we always run the message through the queue.
-				// This way we can be sure that messages are sent to the server
-				// in the same order they were signaled without much hassle.
-				pending_messages_.push_back(msg);
-			}
-
-			if (!pending_messages_.empty() && !client_->IsSendingMessage())
-			{
-				msg = pending_messages_.front();
-				pending_messages_.pop_front();
-
-				if (!client_->SendToPeer(peer_id_, *msg) && peer_id_ != -1)
-				{
-					LOG(LS_ERROR) << "SendToPeer failed";
-					DisconnectFromServer();
-				}
-
-				delete msg;
-			}
-
-			if (!peer_connection_.get())
-			{
-				peer_id_ = -1;
-			}
-
+			SendMessageToPeer(data);
 			break;
 		}
 
 		case NEW_STREAM_ADDED:
 		{
-			webrtc::MediaStreamInterface* stream =
-				reinterpret_cast<webrtc::MediaStreamInterface*>(data);
-
-			webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
-
-			// Only render the first track.
-			if (!tracks.empty()) 
-			{
-				webrtc::VideoTrackInterface* track = tracks[0];
-				main_window_->StartRemoteRenderer(track);
-			}
-
-			stream->Release();
+			NewStreamAdded(data);
 			break;
 		}
 
 		case STREAM_REMOVED:
 		{
-			// Remote peer stopped sending a stream.
-			webrtc::MediaStreamInterface* stream =
-				reinterpret_cast<webrtc::MediaStreamInterface*>(data);
-
-			stream->Release();
+			StreamRemoved(data);
 			break;
 		}
 
@@ -774,5 +770,71 @@ void Conductor::OnFailure(const std::string& error)
 void Conductor::SendMessage(const std::string& json_object)
 {
 	std::string* msg = new std::string(json_object);
-	main_window_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, msg);
+	if (main_window_->IsWindow())
+	{
+		main_window_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, msg);
+	}
+	else
+	{
+		SendMessageToPeer(msg);
+	}
+}
+
+void Conductor::NewStreamAdded(void* data)
+{
+	webrtc::MediaStreamInterface* stream =
+		reinterpret_cast<webrtc::MediaStreamInterface*>(data);
+
+	webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
+
+	// Only render the first track.
+	if (!tracks.empty() && main_window_->IsWindow())
+	{
+		webrtc::VideoTrackInterface* track = tracks[0];
+		main_window_->StartRemoteRenderer(track);
+	}
+
+	stream->Release();
+}
+
+void Conductor::StreamRemoved(void* data)
+{
+	// Remote peer stopped sending a stream.
+	webrtc::MediaStreamInterface* stream =
+		reinterpret_cast<webrtc::MediaStreamInterface*>(data);
+
+	stream->Release();
+}
+
+void Conductor::SendMessageToPeer(void* data)
+{
+	LOG(INFO) << "SEND_MESSAGE_TO_PEER";
+	std::string* msg = reinterpret_cast<std::string*>(data);
+
+	if (msg)
+	{
+		// For convenience, we always run the message through the queue.
+		// This way we can be sure that messages are sent to the server
+		// in the same order they were signaled without much hassle.
+		pending_messages_.push_back(msg);
+	}
+
+	if (!pending_messages_.empty() && !client_->IsSendingMessage())
+	{
+		msg = pending_messages_.front();
+		pending_messages_.pop_front();
+
+		if (!client_->SendToPeer(peer_id_, *msg) && peer_id_ != -1)
+		{
+			LOG(LS_ERROR) << "SendToPeer failed";
+			DisconnectFromServer();
+		}
+
+		delete msg;
+	}
+
+	if (!peer_connection_.get())
+	{
+		peer_id_ = -1;
+	}
 }

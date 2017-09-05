@@ -106,75 +106,79 @@ HRESULT DeviceResources::CreateDeviceResources()
 // These resources need to be recreated every time the window size is changed.
 HRESULT DeviceResources::CreateWindowSizeDependentResources(HWND hWnd)
 {
-	// Obtains DXGI factory from device.
 	HRESULT hr = S_OK;
-	IDXGIDevice* dxgiDevice = nullptr;
-	IDXGIFactory1* dxgiFactory = nullptr;
-	hr = m_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
-	if (SUCCEEDED(hr))
+
+	if (hWnd)
 	{
-		IDXGIAdapter* adapter = nullptr;
-		hr = dxgiDevice->GetAdapter(&adapter);
+		// Obtains DXGI factory from device.
+		IDXGIDevice* dxgiDevice = nullptr;
+		IDXGIFactory1* dxgiFactory = nullptr;
+		hr = m_d3dDevice->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
 		if (SUCCEEDED(hr))
 		{
-			hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&dxgiFactory));
-			adapter->Release();
+			IDXGIAdapter* adapter = nullptr;
+			hr = dxgiDevice->GetAdapter(&adapter);
+			if (SUCCEEDED(hr))
+			{
+				hr = adapter->GetParent(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&dxgiFactory));
+				adapter->Release();
+			}
+
+			dxgiDevice->Release();
 		}
-
-		dxgiDevice->Release();
-	}
-
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-
-	// Creates swap chain.
-	IDXGIFactory2* dxgiFactory2 = nullptr;
-	hr = dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&dxgiFactory2));
-	if (dxgiFactory2)
-	{
-		DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
-		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = 2; // Front and back buffer to swap
-		swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
-		swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-		swapChainDesc.Width = m_outputSize.cx;
-		swapChainDesc.Height = m_outputSize.cy;
-
-		hr = dxgiFactory2->CreateSwapChainForHwnd(
-			m_d3dDevice, 
-			hWnd, 
-			&swapChainDesc,
-			nullptr, 
-			nullptr, 
-			&m_swapChain);
 
 		if (FAILED(hr))
 		{
 			return hr;
 		}
 
-		dxgiFactory2->Release();
-	}
+		// Creates swap chain.
+		IDXGIFactory2* dxgiFactory2 = nullptr;
+		hr = dxgiFactory->QueryInterface(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&dxgiFactory2));
+		if (dxgiFactory2)
+		{
+			DXGI_SWAP_CHAIN_DESC1 swapChainDesc = { 0 };
+			swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+			swapChainDesc.BufferCount = 2; // Front and back buffer to swap
+			swapChainDesc.SampleDesc.Count = 1; // Disable anti-aliasing
+			swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+			swapChainDesc.Width = m_outputSize.cx;
+			swapChainDesc.Height = m_outputSize.cy;
 
-	// Cleanup.
-	SAFE_RELEASE(dxgiFactory);
+			hr = dxgiFactory2->CreateSwapChainForHwnd(
+				m_d3dDevice,
+				hWnd,
+				&swapChainDesc,
+				nullptr,
+				nullptr,
+				&m_swapChain);
 
-	// Creates the render target view.
-	ID3D11Texture2D* frameBuffer = nullptr;
-	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
-	if (FAILED(hr))
-	{
-		return hr;
-	}
+			if (FAILED(hr))
+			{
+				return hr;
+			}
 
-	hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
-	SAFE_RELEASE(frameBuffer);
-	if (FAILED(hr))
-	{
-		return hr;
+			dxgiFactory2->Release();
+		}
+
+		// Cleanup.
+		SAFE_RELEASE(dxgiFactory);
+
+		// Creates the render target view.
+		ID3D11Texture2D* frameBuffer = nullptr;
+		hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
+		hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
+		SAFE_RELEASE(frameBuffer);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
 	}
 
 	// Initializes the viewport.

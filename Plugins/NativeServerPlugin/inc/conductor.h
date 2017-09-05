@@ -50,6 +50,11 @@ public:
 
 	void SetInputDataHandler(StreamingToolkit::InputDataHandler* handler);
 
+	//-------------------------------------------------------------------------
+	// MainWindowCallback implementation.
+	//-------------------------------------------------------------------------
+	void StartLogin(const std::string& server, int port) override;
+
 	virtual void Close();
 
 protected:
@@ -116,10 +121,8 @@ protected:
 	void OnServerConnectionFailure() override;
 
 	//-------------------------------------------------------------------------
-	// MainWndCallback implementation.
+	// MainWindowCallback implementation.
 	//-------------------------------------------------------------------------
-
-	void StartLogin(const std::string& server, int port) override;
 
 	void DisconnectFromServer() override;
 
@@ -133,6 +136,13 @@ protected:
 	void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
 
 	void OnFailure(const std::string& error) override;
+
+private:
+	void SendMessageToPeer(void* data);
+
+	void NewStreamAdded(void* data);
+
+	void StreamRemoved(void* data);
 
 protected:
 	// Send a message to the remote peer.
