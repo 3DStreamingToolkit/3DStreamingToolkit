@@ -3253,6 +3253,10 @@ react-devtools-core@^2.5.0:
     shell-quote "^1.6.1"
     ws "^2.0.3"
 
+react-native-gesture-handler@^1.0.0-alpha.19:
+  version "1.0.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-1.0.0-alpha.19.tgz#7ae7cc218549791d82ad28c083942e8da4f867a7"
+
 react-native-webrtc@^1.58.2:
   version "1.58.2"
   resolved "https://registry.yarnpkg.com/react-native-webrtc/-/react-native-webrtc-1.58.2.tgz#c67b691093d34c54699f38c0ff110ba3a5615e24"
