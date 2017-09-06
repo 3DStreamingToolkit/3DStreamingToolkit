@@ -12,6 +12,16 @@ import {
   View
 } from 'react-native';
 
+import {
+  RTCPeerConnection,
+  RTCIceCandidate,
+  RTCSessionDescription,
+  RTCView,
+  MediaStream,
+  MediaStreamTrack,
+  getUserMedia,
+} from 'react-native-webrtc';
+
 export default class rn3dtksample extends Component {
   render() {
     return (
