@@ -1,53 +1,44 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
-
 import React, { Component } from 'react';
 import {
   AppRegistry,
   StyleSheet,
   Text,
-  View
+  View,
+  Button,
+  Picker
 } from 'react-native';
 
+import { ThreeDStreamingClient } from '3dtoolkit';
+
+import Config from './config';
+
 export default class rn3dtksample extends Component {
+  constructor(props) {
+    super(props);
+  }
+  componentWillMount() {
+
+  }
+  componentWillUpdate(props, nextState) {
+  }
   render() {
     return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
-        </Text>
+      <View>
+        <Button title='click me' onPress={this.signIn.bind(this)}>Sign In</Button>
+        <Picker
+          selectedValue={this.state.currentPeerId}
+          onValueChange={(itemValue, itemIndex) => this.setState({currentPeerId: itemValue})}>
+            {this.renderPeers()}
+        </Picker>
+        <Button title="join peer" onPress={this.joinPeer.bind(this)}>Join Peer</Button>
       </View>
     );
   }
+  renderPeers() {
+    return Object.keys(this.state.otherPeers).map((key, index) => {
+      return <Picker.Item key={index} label={this.state.otherPeers[key]} value={key} />
+    });
+  }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});
 
 AppRegistry.registerComponent('rn3dtksample', () => rn3dtksample);
