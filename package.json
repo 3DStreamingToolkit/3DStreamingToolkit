@@ -8,7 +8,8 @@
 	},
 	"dependencies": {
 		"react": "16.0.0-alpha.12",
-		"react-native": "0.48.1"
+		"react-native": "0.48.1",
+		"react-native-webrtc": "^1.58.2"
 	},
 	"devDependencies": {
 		"babel-jest": "21.0.0",
