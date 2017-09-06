@@ -9,6 +9,7 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
+  TouchableHighlight,
   View
 } from 'react-native';
 
@@ -22,20 +23,27 @@ import {
   getUserMedia,
 } from 'react-native-webrtc';
 
+const XMLHttpRequest = require('XMLHttpRequest');
+
+var pcConfigStatic = {
+  "iceServers": [{
+    "urls": "turn:turnserver3dstreaming.centralus.cloudapp.azure.com:5349",
+    "username": "user",
+    "credential": "3Dtoolkit072017",
+    "credentialType": "password"
+  }],
+  "iceTransportPolicy": "relay"
+};
+
 export default class rn3dtksample extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.android.js
-        </Text>
-        <Text style={styles.instructions}>
-          Double tap R on your keyboard to reload,{'\n'}
-          Shake or press menu button for dev menu
-        </Text>
+        <TouchableHighlight onPress={this.login}>
+          <Text style={styles.welcome}>
+            Login
+          </Text>
+        </TouchableHighlight>
       </View>
     );
   }
