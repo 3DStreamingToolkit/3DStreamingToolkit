@@ -19,6 +19,15 @@
     <Filter Include="Source\StreamingToolkit">
       <UniqueIdentifier>{f7153af4-a5f7-4c27-9a25-eec57aa89d8b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Headers\service">
+      <UniqueIdentifier>{47673f50-b638-43ac-81e3-63374a345751}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\service">
+      <UniqueIdentifier>{7fc60957-07af-442f-990b-12d61c583d9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Config">
+      <UniqueIdentifier>{92ea109f-11f9-4448-b937-6b299ef6e133}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -35,6 +44,15 @@
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
     <ClCompile Include="src\buffer_renderer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\render_service.cpp">
+      <Filter>Source\service</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service_base.cpp">
+      <Filter>Source\service</Filter>
+    </ClCompile>
+    <ClCompile Include="src\config_parser.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
   </ItemGroup>
@@ -64,11 +82,35 @@
     <ClInclude Include="inc\buffer_renderer.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
+    <ClInclude Include="inc\service\render_service.h">
+      <Filter>Headers\service</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\service\service_base.h">
+      <Filter>Headers\service</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\service\thread_pool.h">
+      <Filter>Headers\service</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\structs.h">
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\config_parser.h">
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="nvEncConfig.json" />
-    <None Include="webrtcConfig.json" />
     <None Include="exports.props" />
-    <None Include="webrtcConfigStunTemplate.json" />
+    <None Include="nvEncConfig.json">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="webrtcConfig.json">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="webrtcConfigStunTemplate.json">
+      <Filter>Config</Filter>
+    </None>
+    <None Include="serverConfig.json">
+      <Filter>Config</Filter>
+    </None>
   </ItemGroup>
 </Project>

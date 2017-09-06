@@ -183,13 +183,17 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="src\conductor.cpp" />
+    <ClCompile Include="src\config_parser.cpp" />
     <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\input_data_channel_observer.cpp" />
     <ClCompile Include="src\buffer_renderer.cpp" />
+    <ClCompile Include="src\render_service.cpp" />
+    <ClCompile Include="src\service_base.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\conductor.h" />
+    <ClInclude Include="inc\config_parser.h" />
     <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\input_data_channel_observer.h" />
@@ -197,11 +201,18 @@
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
     <ClInclude Include="inc\buffer_renderer.h" />
+    <ClInclude Include="inc\service\render_service.h" />
+    <ClInclude Include="inc\service\service_base.h" />
+    <ClInclude Include="inc\service\thread_pool.h" />
+    <ClInclude Include="inc\structs.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.props" />
     <None Include="nvEncConfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serverConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="webrtcConfig.json">

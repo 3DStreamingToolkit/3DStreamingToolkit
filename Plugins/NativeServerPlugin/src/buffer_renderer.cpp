@@ -24,7 +24,7 @@ BufferRenderer::BufferRenderer(
 	// Gets the device context.
 	d3d_device_->GetImmediateContext(&d3d_context_);
 
-	// Service (headless)
+	// System service (headless mode)
 	D3D11_TEXTURE2D_DESC frame_buffer_desc = { 0 };
 	if (frame_buffer == nullptr)
 	{

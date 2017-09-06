@@ -36,6 +36,8 @@
 #include "turn_credential_provider.h"
 #include "server_renderer.h"
 #include "webrtc.h"
+#include "structs.h"
+#include "config_parser.h"
 #endif // TEST_RUNNER
 
 // Required app libs
@@ -388,6 +390,9 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 VideoTestRunner*			g_videoTestRunner = nullptr;
 #else
 BufferRenderer*				g_bufferRenderer = nullptr;
+ServerConfig				g_serverConfig;
+ServiceConfig				g_serviceConfig;
+WebRTCConfig				g_webrtcConfig;
 #endif // TEST_RUNNER
 
 
@@ -450,7 +455,17 @@ inline bool IsRenderDeferred()
 //--------------------------------------------------------------------------------------
 // WebRTC
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port, int heartbeat,
+
+void LoadConfigs()
+{
+	// Loads server config file.
+	ConfigParser::Parse("serverConfig.json", &g_serverConfig, &g_serviceConfig);
+
+	// Loads webrtc config file.
+	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
+}
+
+int InitWebRTC(const std::string& server, int port, int heartbeat,
 	const ServerAuthenticationProvider::ServerAuthInfo& authInfo,
 	const std::string turnCredentialUri)
 {
@@ -461,7 +476,8 @@ int InitWebRTC(char* server, int port, int heartbeat,
 #ifdef NO_UI
 	ServerMainWindow wnd(server, port, true, true, true);
 #else // NO_UI
-	ServerMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
+	ServerMainWindow wnd(server.c_str(), port, FLAG_autoconnect, FLAG_autocall, false,
+		g_serverConfig.width, g_serverConfig.height);
 #endif // NO_UI
 
 	if (!wnd.Create())
@@ -501,8 +517,8 @@ int InitWebRTC(char* server, int port, int heartbeat,
 
 	// Initializes the buffer renderer.
 	g_bufferRenderer = new BufferRenderer(
-		1280,
-		720,
+		g_serverConfig.width,
+		g_serverConfig.height,
 		DXUTGetD3D11Device(),
 		frameRenderFunc,
 		frameBuffer.Get());
@@ -761,83 +777,21 @@ int WINAPI wWinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     return DXUTGetExitCode();
 #else // TEST_RUNNER
-	int nArgs;
-	char server[1024];
-	strcpy(server, FLAG_server);
-	int port = FLAG_port;
-	int heartbeat = FLAG_heartbeat;
-	std::string turnCredentialUri;
+	// Loads all config files.
+	LoadConfigs();
+
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
-	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
+	authInfo.authority = g_webrtcConfig.authentication.authority;
+	authInfo.resource = g_webrtcConfig.authentication.resource;
+	authInfo.clientId = g_webrtcConfig.authentication.client_id;
+	authInfo.clientSecret = g_webrtcConfig.authentication.client_secret;
 
-	// Try parsing command line arguments.
-	if (szArglist && nArgs == 2)
-	{
-		wcstombs(server, szArglist[0], sizeof(server));
-		port = _wtoi(szArglist[1]);
-	}
-	else // Try parsing config file.
-	{
-		std::string configFilePath = ExePath("webrtcConfig.json");
-		std::ifstream webrtcConfigFile(configFilePath);
-		Json::Reader reader;
-		Json::Value root = NULL;
-		if (webrtcConfigFile.good())
-		{
-			reader.parse(webrtcConfigFile, root, true);
-			if (root.isMember("server"))
-			{
-				strcpy(server, root.get("server", FLAG_server).asCString());
-			}
-
-			if (root.isMember("port"))
-			{
-				port = root.get("port", FLAG_port).asInt();
-			}
-
-			if (root.isMember("heartbeat"))
-			{
-				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
-			}
-
-			if (root.isMember("turnServer"))
-			{
-				auto turnNode = root.get("turnServer", NULL);
-
-				if (turnNode.isMember("provider"))
-				{
-					turnCredentialUri = turnNode.get("provider", "").asString();
-				}
-			}
-
-			if (root.isMember("authentication"))
-			{
-				auto authenticationNode = root.get("authentication", NULL);
-
-				if (authenticationNode.isMember("authority"))
-				{
-					authInfo.authority = authenticationNode.get("authority", "").asString();
-				}
-
-				if (authenticationNode.isMember("resource"))
-				{
-					authInfo.resource = authenticationNode.get("resource", "").asString();
-				}
-
-				if (authenticationNode.isMember("clientId"))
-				{
-					authInfo.clientId = authenticationNode.get("clientId", "").asString();
-				}
-
-				if (authenticationNode.isMember("clientSecret"))
-				{
-					authInfo.clientSecret = authenticationNode.get("clientSecret", "").asString();
-				}
-			}
-		}
-	}
-
-	return InitWebRTC(server, port, heartbeat, authInfo, turnCredentialUri);
+	return InitWebRTC(
+		g_webrtcConfig.server,
+		g_webrtcConfig.port,
+		g_webrtcConfig.heartbeat,
+		authInfo,
+		g_webrtcConfig.turn_server.provider);
 #endif // TEST_RUNNER
 }
 

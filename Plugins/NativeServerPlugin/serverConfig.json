@@ -1,0 +1,13 @@
+{
+  "serverConfig": {
+    "width": 1280,
+    "height": 720,
+    "systemService": true
+  },
+  "serviceConfig": {
+    "name": "3DStreamingRenderingService",
+    "displayName": "3D Streaming Rendering Service",
+    "serviceAccount": "NT AUTHORITY\\NetworkService",
+    "servicePassword":  null
+  }
+}
