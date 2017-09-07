@@ -26,7 +26,7 @@
 
 RenderService::RenderService(
 	PWSTR pszServiceName, 
-	const std::function<void()>& serviceMainFunc,
+	const std::function<void(BOOL*)>& serviceMainFunc,
 	BOOL fCanStop, 
 	BOOL fCanShutdown, 
 	BOOL fCanPauseContinue) : 
@@ -287,15 +287,7 @@ void RenderService::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
 //
 void RenderService::ServiceWorkerThread(void)
 {
-    // Periodically check if the service is stopping.
-    while (!m_fStopping)
-    {
-        // Perform main service function here...
-		m_serviceMainFunc();
-    }
-
-    // Signal the stopped event.
-    SetEvent(m_hStoppedEvent);
+	m_serviceMainFunc(&m_fStopping);
 }
 
 
@@ -321,8 +313,4 @@ void RenderService::OnStop()
     // Indicate that the service is stopping and wait for the finish of the 
     // main service function (ServiceWorkerThread).
     m_fStopping = TRUE;
-    if (WaitForSingleObject(m_hStoppedEvent, INFINITE) != WAIT_OBJECT_0)
-    {
-        throw GetLastError();
-    }
 }

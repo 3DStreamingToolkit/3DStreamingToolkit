@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "CubeRenderer.h"
 #include "DirectXHelper.h"
+#include "config_parser.h"
 
 using namespace DirectX;
 using namespace DX;
+using namespace StreamingToolkit;
 using namespace StreamingToolkitSample;
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
@@ -97,7 +99,11 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
-	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+	errno_t error = fopen_s(
+		&vertexShaderFile,
+		ConfigParser::GetAbsolutePath("VertexShader.cso").c_str(),
+		"rb");
+
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -130,7 +136,11 @@ void CubeRenderer::InitPipeline()
 
 	// Creates the pixel shader.
 	FILE* pixelShaderFile = nullptr;
-	error = fopen_s(&pixelShaderFile, "PixelShader.cso", "rb");
+	error = fopen_s(
+		&pixelShaderFile,
+		ConfigParser::GetAbsolutePath("PixelShader.cso").c_str(),
+		"rb");
+
 	fseek(pixelShaderFile, 0, SEEK_END);
 	int pixelShaderFileSize = ftell(pixelShaderFile);
 	char* pixelShaderFileData = new char[pixelShaderFileSize];

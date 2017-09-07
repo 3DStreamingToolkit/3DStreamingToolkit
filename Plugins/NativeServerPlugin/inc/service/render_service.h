@@ -29,7 +29,7 @@ class RenderService : public CServiceBase
 public:
 	RenderService(
 		PWSTR pszServiceName,
-		const std::function<void()>& serviceMainFunc,
+		const std::function<void(BOOL*)>& serviceMainFunc,
         BOOL fCanStop = TRUE, 
         BOOL fCanShutdown = TRUE, 
         BOOL fCanPauseContinue = FALSE);
@@ -52,5 +52,5 @@ protected:
 private:
     BOOL m_fStopping;
     HANDLE m_hStoppedEvent;
-	std::function<void()> m_serviceMainFunc;
+	std::function<void(BOOL*)> m_serviceMainFunc;
 };

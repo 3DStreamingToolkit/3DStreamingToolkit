@@ -17,6 +17,7 @@
 #include "webrtc.h"
 #include "structs.h"
 #include "config_parser.h"
+#include "service/render_service.h"
 #endif // TEST_RUNNER
 
 // Required app libs
@@ -33,6 +34,12 @@ using namespace DX;
 using namespace Microsoft::WRL;
 using namespace StreamingToolkit;
 using namespace StreamingToolkitSample;
+
+//--------------------------------------------------------------------------------------
+// Forward declarations
+//--------------------------------------------------------------------------------------
+void RegisterService();
+void RemoveService();
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -64,10 +71,109 @@ void LoadConfigs()
 	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
 }
 
-int InitWebRTC(const std::string& server, int port, int heartbeat,
-	const ServerAuthenticationProvider::ServerAuthInfo& authInfo,
-	const std::string& turnCredentialUri)
+#else // TEST_RUNNER
+
+//--------------------------------------------------------------------------------------
+// Called every time the application receives a message
+//--------------------------------------------------------------------------------------
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	PAINTSTRUCT ps;
+	HDC hdc;
+
+	switch (message)
+	{
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+		EndPaint(hWnd, &ps);
+		break;
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+
+		// Note that this tutorial does not handle resizing (WM_SIZE) requests,
+		// so we created the window without the resize border.
+
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
+	return 0;
+}
+
+//--------------------------------------------------------------------------------------
+// Registers class and creates window
+//--------------------------------------------------------------------------------------
+HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
+{
+	// Registers class.
+	WNDCLASSEX wcex = { 0 };
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = 0;
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = nullptr;
+	wcex.lpszClassName = L"SpinningCubeClass";
+	if (!RegisterClassEx(&wcex))
+	{
+		return E_FAIL;
+	}
+
+	// Creates window.
+	RECT rc = { 0, 0, 1280, 720 };
+	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+	g_hWnd = CreateWindow(
+		L"SpinningCubeClass",
+		L"SpinningCube",
+		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		rc.right - rc.left,
+		rc.bottom - rc.top,
+		nullptr,
+		nullptr,
+		hInstance,
+		nullptr);
+
+	if (!g_hWnd)
+	{
+		return E_FAIL;
+	}
+
+	ShowWindow(g_hWnd, nCmdShow);
+
+	return S_OK;
+}
+
+//--------------------------------------------------------------------------------------
+// Render the frame
+//--------------------------------------------------------------------------------------
+void Render()
+{
+	FrameUpdate();
+	g_deviceResources->Present();
+}
+
+#endif // TEST_RUNNER
+
+//--------------------------------------------------------------------------------------
+// Entry point to the program. Initializes everything and goes into a message processing 
+// loop. Idle time is used to render the scene.
+//--------------------------------------------------------------------------------------
+bool AppMain(BOOL stopping)
+{
+	ServerAuthenticationProvider::ServerAuthInfo authInfo;
+	authInfo.authority = g_webrtcConfig.authentication.authority;
+	authInfo.resource = g_webrtcConfig.authentication.resource;
+	authInfo.clientId = g_webrtcConfig.authentication.client_id;
+	authInfo.clientSecret = g_webrtcConfig.authentication.client_secret;
+
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
@@ -75,11 +181,17 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 #ifdef NO_UI
 	ServerMainWindow wnd(server, port, true, true, true);
 #else // NO_UI
-	ServerMainWindow wnd(server.c_str(), port, FLAG_autoconnect, FLAG_autocall, false, 
-		g_serverConfig.width, g_serverConfig.height);
+	ServerMainWindow wnd(
+		g_webrtcConfig.server.c_str(),
+		g_webrtcConfig.port,
+		FLAG_autoconnect,
+		FLAG_autocall,
+		false,
+		g_serverConfig.width,
+		g_serverConfig.height);
 #endif // NO_UI
 
-	if (!wnd.Create())
+	if (!g_serverConfig.system_service && !wnd.Create())
 	{
 		RTC_NOTREACHED();
 		return -1;
@@ -96,14 +208,26 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 	std::function<void()> frameRenderFunc = ([&]
 	{
 		g_cubeRenderer->Update();
-		g_cubeRenderer->Render();
+
+		// For system service, we render to buffer instead of swap chain.
+		if (g_serverConfig.system_service)
+		{
+			g_cubeRenderer->Render(g_bufferRenderer->GetRenderTargetView());
+		}
+		else
+		{
+			g_cubeRenderer->Render();
+		}
 	});
 
-	// Gets the frame buffer from the swap chain.
 	ComPtr<ID3D11Texture2D> frameBuffer;
-	HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(0,
-		__uuidof(ID3D11Texture2D),
-		reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+	if (!g_serverConfig.system_service)
+	{
+		// Gets the frame buffer from the swap chain.
+		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(0,
+			__uuidof(ID3D11Texture2D),
+			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+	}
 
 	// Initializes the buffer renderer.
 	g_bufferRenderer = new BufferRenderer(
@@ -206,7 +330,7 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 	});
 
 	conductor->SetInputDataHandler(&inputHandler);
-	client.SetHeartbeatMs(heartbeat);
+	client.SetHeartbeatMs(g_webrtcConfig.heartbeat);
 
 	// configure callbacks (which may or may not be used)
 	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data)
@@ -243,11 +367,12 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 	}
 
 	// configure turn, if needed
-	if (!turnCredentialUri.empty())
+	if (!g_webrtcConfig.turn_server.provider.empty())
 	{
-		turnProvider.reset(new TurnCredentialProvider(turnCredentialUri));
-
-		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
+		turnProvider.reset(new TurnCredentialProvider(g_webrtcConfig.turn_server.provider));
+		turnProvider->SignalCredentialsRetrieved.connect(
+			&credentialsRetrieved,
+			&TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
 	}
 
 	// start auth or turn if needed
@@ -257,7 +382,7 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 		{
 			turnProvider->SetAuthenticationProvider(authProvider.get());
 		}
-		
+
 		// under the hood, this will trigger authProvider->Authenticate() if it exists
 		turnProvider->RequestCredentials();
 	}
@@ -282,20 +407,35 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 		wnd.SetAuthUri(L"Not configured");
 	}
 
+	// For system service, automatically connect to the signaling server.
+	if (g_serverConfig.system_service)
+	{
+		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
+	}
+
 	// Main loop.
 	MSG msg;
 	BOOL gm;
-	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	while (!stopping && (gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 	{
-		if (!wnd.PreTranslateMessage(&msg))
+		// For system service, ignore window and swap chain.
+		if (g_serverConfig.system_service)
 		{
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 		}
-
-		if (conductor->connection_active() || client.is_connected())
+		else
 		{
-			g_deviceResources->Present();
+			if (!wnd.PreTranslateMessage(&msg))
+			{
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			}
+
+			if (conductor->connection_active() || client.is_connected())
+			{
+				g_deviceResources->Present();
+			}
 		}
 	}
 
@@ -309,101 +449,6 @@ int InitWebRTC(const std::string& server, int port, int heartbeat,
 	return 0;
 }
 
-#else // TEST_RUNNER
-
-//--------------------------------------------------------------------------------------
-// Called every time the application receives a message
-//--------------------------------------------------------------------------------------
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	PAINTSTRUCT ps;
-	HDC hdc;
-
-	switch (message)
-	{
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		EndPaint(hWnd, &ps);
-		break;
-
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-
-		// Note that this tutorial does not handle resizing (WM_SIZE) requests,
-		// so we created the window without the resize border.
-
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-
-	return 0;
-}
-
-//--------------------------------------------------------------------------------------
-// Registers class and creates window
-//--------------------------------------------------------------------------------------
-HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
-{
-	// Registers class.
-	WNDCLASSEX wcex = { 0 };
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc = WndProc;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	wcex.hInstance = hInstance;
-	wcex.hIcon = 0;
-	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = nullptr;
-	wcex.lpszClassName = L"SpinningCubeClass";
-	if (!RegisterClassEx(&wcex))
-	{
-		return E_FAIL;
-	}
-
-	// Creates window.
-	RECT rc = { 0, 0, 1280, 720 };
-	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-	g_hWnd = CreateWindow(
-		L"SpinningCubeClass",
-		L"SpinningCube",
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		rc.right - rc.left,
-		rc.bottom - rc.top,
-		nullptr,
-		nullptr,
-		hInstance,
-		nullptr);
-
-	if (!g_hWnd)
-	{
-		return E_FAIL;
-	}
-
-	ShowWindow(g_hWnd, nCmdShow);
-
-	return S_OK;
-}
-
-//--------------------------------------------------------------------------------------
-// Render the frame
-//--------------------------------------------------------------------------------------
-void Render()
-{
-	FrameUpdate();
-	g_deviceResources->Present();
-}
-
-#endif // TEST_RUNNER
-
-//--------------------------------------------------------------------------------------
-// Entry point to the program. Initializes everything and goes into a message processing 
-// loop. Idle time is used to render the scene.
-//--------------------------------------------------------------------------------------
 int WINAPI wWinMain(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -473,17 +518,86 @@ int WINAPI wWinMain(
 	// Loads all config files.
 	LoadConfigs();
 
-	ServerAuthenticationProvider::ServerAuthInfo authInfo;
-	authInfo.authority = g_webrtcConfig.authentication.authority;
-	authInfo.resource = g_webrtcConfig.authentication.resource;
-	authInfo.clientId = g_webrtcConfig.authentication.client_id;
-	authInfo.clientSecret = g_webrtcConfig.authentication.client_secret;
+	if (!g_serverConfig.system_service)
+	{
+		// If the app isn't defined as a system service, remove it if present.
+		RemoveService();
 
-	return InitWebRTC(
-		g_webrtcConfig.server,
-		g_webrtcConfig.port,
-		g_webrtcConfig.heartbeat,
-		authInfo,
-		g_webrtcConfig.turn_server.provider);
+		// Starts the app main.
+		return AppMain(FALSE);
+	}
+	else
+	{
+		RegisterService();
+		return 0;
+	}
 #endif // TEST_RUNNER
+}
+
+//--------------------------------------------------------------------------------------
+// System service
+//--------------------------------------------------------------------------------------
+void RegisterService()
+{
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		SC_HANDLE schService = OpenService(
+			schSCManager,
+			g_serviceConfig.name.c_str(),
+			SERVICE_QUERY_STATUS);
+
+		if (schService == NULL)
+		{
+			// If the service isn't already present, install it.
+			RenderService::InstallService(
+				g_serviceConfig.name,
+				g_serviceConfig.display_name,
+				g_serviceConfig.service_account,
+				g_serviceConfig.service_password);
+		}
+
+		CloseServiceHandle(schService);
+		schService = NULL;
+
+		// Init service.
+		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
+		{
+			AppMain(*stopping);
+		};
+
+		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
+
+		// Starts the service to run the app persistently.
+		if (!CServiceBase::Run(service))
+		{
+			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+		}
+
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+}
+
+void RemoveService()
+{
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		SC_HANDLE schService = OpenService(
+			schSCManager,
+			g_serviceConfig.name.c_str(),
+			SERVICE_QUERY_STATUS);
+
+		if (schService)
+		{
+			RenderService::RemoveService(g_serviceConfig.name.c_str());
+		}
+
+		CloseServiceHandle(schService);
+		schService = NULL;
+
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
 }
