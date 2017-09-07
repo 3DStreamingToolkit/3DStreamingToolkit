@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 
 import {
   PanGestureHandler,
-  PinchGestureHandler,
   State,
 } from 'react-native-gesture-handler';
 
@@ -100,7 +99,8 @@ class SimpleCameraHandler extends Component {
     this.setState({
       heading: 0.0,
       pitch: 0.0,
-      lookat: createIdentityMatrix()
+      lookat: createIdentityMatrix(),
+      location: [0.0, 0.0, 0.0]      
     });
 
     this.props.onLookatChanged && this.props.onLookatChanged(lookat);
