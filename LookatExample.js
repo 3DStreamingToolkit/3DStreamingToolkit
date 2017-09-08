@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import {
   Button,
-  Picker,
   Platform,
   StyleSheet,
   Text,
@@ -52,14 +51,12 @@ class LookatExample extends Component {
           </View>
         </LookatMatrixGestureHandler>
         <View>
-          <Button onPress={() => _cameraHandler.reset()} title={'Reset'} />
-          <Picker
-            style={styles.picker} 
-            selectedValue={this.state.moveGesture}
-            onValueChange={value => this.setState({moveGesture: value})}>
-            <Picker.Item label="Pan to Move" value="pan" />
-            <Picker.Item label="Pinch to Move" value="pinch" />
-          </Picker>
+          <Button         
+            title={'Reset'}
+            onPress={() => _cameraHandler.reset()}  />
+          <Button 
+            title={this.state.moveGesture === 'pan' ? 'Switch to Pinch' : 'Switch to Pan'}
+            onPress={() => this.setState({moveGesture: this.state.moveGesture === 'pan' ? 'pinch' : 'pan'})} />
         </View>
       </View>
     );
@@ -68,6 +65,12 @@ class LookatExample extends Component {
 
 const styles = StyleSheet.create({
   container: {
+    ...Platform.select({
+      ios: {
+        paddingTop: 20,
+      },
+      android: {}
+    }),
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -87,17 +90,14 @@ const styles = StyleSheet.create({
   },
   matrixText: Platform.select({
     ios: {
-      fontSize: 20,
+      fontSize: 15,
       fontFamily: 'Courier'
     },
     android: {
       fontSize: 20,
       fontFamily: 'monospace',  
     },
-  }),
-  picker: {
-    width: 150,
-  }
+  })
 });
 
 module.exports = LookatExample;

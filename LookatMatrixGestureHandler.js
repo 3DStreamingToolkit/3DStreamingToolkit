@@ -17,7 +17,7 @@ import {
 
 const PropTypes = require('prop-types');
 
-class SimpleCameraHandler extends Component {
+class LookatMatrixGestureHandler extends Component {
   state = {
     lookat: createIdentityMatrix(),
     heading: 0.0,
@@ -172,4 +172,4 @@ class SimpleCameraHandler extends Component {
   }
 }
 
-module.exports = SimpleCameraHandler;
+module.exports = LookatMatrixGestureHandler;
