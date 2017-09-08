@@ -121,10 +121,6 @@ class SimpleCameraHandler extends Component {
     }
   }
 
-  _format(n) {
-    return (n >= 0 ? ' ' : '') + n.toFixed(3);
-  }
-
   reset = () => {
     const lookat = createIdentityMatrix(); 
     this.setState({
