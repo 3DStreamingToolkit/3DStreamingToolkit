@@ -50,8 +50,8 @@ class LookatExample extends Component {
             </Text>
           </View>
         </LookatMatrixGestureHandler>
-        <View>
-          <Button         
+        <View style={styles.buttonPanel}>
+          <Button    
             title={'Reset'}
             onPress={() => _cameraHandler.reset()}  />
           <Button 
@@ -97,7 +97,16 @@ const styles = StyleSheet.create({
       fontSize: 20,
       fontFamily: 'monospace',  
     },
-  })
+  }),
+  buttonPanel: Platform.select({
+    ios: {},
+    android: {
+      alignSelf: 'stretch',
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      margin: 5,
+    }
+  }),
 });
 
 module.exports = LookatExample;
