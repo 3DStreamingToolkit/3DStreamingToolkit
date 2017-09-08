@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 
 import {
   PanGestureHandler,
+  PinchGestureHandler,
   State,
 } from 'react-native-gesture-handler';
 
@@ -31,9 +32,9 @@ class SimpleCameraHandler extends Component {
     onLookatChanged: PropTypes.func,
   }
 
-  _onPanCamera = event => {
+  _onPan = event => {
     let dx = event.nativeEvent.translationX;
-    let dy = event.nativeEvent.translationY;
+    let dy = 0.0;//event.nativeEvent.translationY;
 
     // calc delta pitch & heading change
     let deltaPitch = 0.005 * dy;
@@ -58,8 +59,10 @@ class SimpleCameraHandler extends Component {
     this.props.onLookatChanged && this.props.onLookatChanged(lookat);
   }
 
-  _onPanXYZ = event => {
-    let dy = -event.nativeEvent.translationY;
+  _onPinch = event => {
+    let scale = event.nativeEvent.scale || 0.001;
+    let dy = scale > 1 ? (scale - 1.0) : -((1.0 / scale) - 1.0);
+    dy *= 100;
 
     // update the navigation origin
     let lookat = cloneMatrix(this.state.lookat);   
@@ -110,21 +113,18 @@ class SimpleCameraHandler extends Component {
   render() {
     return (
       <PanGestureHandler
-        onGestureEvent={this._onPanCamera}
+        onGestureEvent={this._onPan}
         onHandlerStateChange={this._onStateChange}
         minDist={10}
         minPointers={1}
         maxPointers={1}
         avgTouches>
-        <PanGestureHandler
-          onGestureEvent={this._onPanXYZ}
+        <PinchGestureHandler
+          onGestureEvent={this._onPinch}
           onHandlerStateChange={this._onStateChange}
-          minDist={10}
-          minPointers={2}
-          maxPointers={2}
           avgTouches>
           {this.props.children}
-        </PanGestureHandler>
+        </PinchGestureHandler>
       </PanGestureHandler>
     );
   }
