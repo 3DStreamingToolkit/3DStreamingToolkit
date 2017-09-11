@@ -28,10 +28,10 @@ These steps will ensure your development environment is configured properly, and
 
 > Note: If you are using Visual Studio 2017, ensure you have installed the Visual Studio 2015 Update 3 as well, and please do not update our projects when prompted to do so.
 
-+ Windows 10 Anniversary Update / Windows Server 2012 R2 /
-+ Windows Server 2016 
-+ Visual Studio 2015 Update 3 
-+ Windows 10 SDK - 10.0.14393.795 
++ Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016 (see [which version of Windows you have](https://binged.it/2xgQqRI)) 
++ [Visual Studio 2015 Update 3](https://www.visualstudio.com/en-us/news/releasenotes/vs2015-update3-vs)
++ [Windows 10 SDK - 10.0.14393.795](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
++ [Azure SDK 3.0.1](https://www.microsoft.com/web/handlers/webpi.ashx/getinstaller/VWDOrVs2015AzurePack.appids) for Visual Studio 2015 (Optional, but required to use the Server Azure Deployment projects)
 
 ### Installing dependencies
 
@@ -54,7 +54,7 @@ Once you see `Libraries retrieved and up to date` you may proceed.
 + Build the solution (Build -> Build Solution) in the desired configuration (Build -> Configuration Manager -> Dropdowns at the top)
 + Done!
 
-If you're seeing errors, check out the [troubleshooting guide](#todo-link) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new).
+If you're seeing errors, check out the [troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new).
 
 ## Build output
 
@@ -93,23 +93,23 @@ Here's a table illustrating where each sample implementation will be built to. T
 </tr>
 </table>
 
-Once you start both a server and client implementation, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](#todo-link) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](#todo-link).
+Once you start both a server and client implementation, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
 
 ## Specifics
 
 These resources will be critical to your success in configuring and scaling applications.
 
-+ [Sample implementation configuration files](#todo-link)
-+ [Configuring and deploying services](#todo-link)
-+ [Configuring authentication](#todo-link)
++ [Sample implementation configuration files](https://github.com/CatalystCode/3dtoolkit/wiki/JSON-Config-Files)
++ [Configuring and deploying services](https://github.com/CatalystCode/3dtoolkit/wiki#services-setup)
++ [Configuring authentication](https://github.com/CatalystCode/3dtoolkit/wiki/Configuring-authentication)
 
 ## Learn More
 
-+ [General Wiki]()
-+ [Building WebRTC from source]()
-+ [Tyler's talk about our 3DToolkit]()
-+ [WebRTC Homepage]()
-+ [NVEncode Homepage]()
++ [General Wiki](https://github.com/CatalystCode/3dtoolkit/wiki)
++ [Building WebRTC from source](https://github.com/CatalystCode/3dtoolkit/wiki/Building-WebRTC-from-source)
++ [Tyler's talk about our 3DToolkit](#todo-link)
++ [WebRTC Homepage](https://webrtc.org/)
++ [NVEncode Homepage](https://developer.nvidia.com/nvidia-video-codec-sdk)
 
 ## License
 
