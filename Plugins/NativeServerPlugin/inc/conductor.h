@@ -55,6 +55,8 @@ public:
 
 	bool connection_active() const;
 
+	void SetTurnCredentials(const std::string& username, const std::string& password);
+
 	virtual void Close();
 
 protected:
@@ -162,6 +164,8 @@ protected:
 		active_streams_;
 
 	std::string server_;
+	std::string turn_username_;
+	std::string turn_password_;
 };
 
 #endif // WEBRTC_CONDUCTOR_H_

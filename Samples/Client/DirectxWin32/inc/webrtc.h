@@ -7,7 +7,7 @@
 #pragma warning(disable : 4244)
 
 #include "conductor.h"
-#include "default_main_window.h"
+#include "client_main_window.h"
 #include "flagdefs.h"
 #include "peer_connection_client.h"
 #include "webrtc/base/checks.h"

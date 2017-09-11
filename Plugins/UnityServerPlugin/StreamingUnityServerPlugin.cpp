@@ -17,7 +17,7 @@
 
 #include "video_helper.h"
 #include "conductor.h"
-#include "default_main_window.h"
+#include "server_main_window.h"
 #include "flagdefs.h"
 #include "peer_connection_client.h"
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
@@ -51,14 +51,15 @@
 #pragma comment(lib, "metrics_default.lib")
 #pragma comment(lib, "protobuf_full.lib")
 
-
 using namespace Microsoft::WRL;
 using namespace Toolkit3DLibrary;
 
 void(__stdcall*s_onInputUpdate)(const char *msg);
+void(__stdcall*s_onLog)(const int level, const char *msg);
+
+#define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
 
 DEFINE_GUID(IID_Texture2D, 0x6f15aaf2, 0xd208, 0x4e89, 0x9a, 0xb4, 0x48, 0x95, 0x35, 0xd3, 0x4f, 0x9c);
-
 
 static IUnityInterfaces* s_UnityInterfaces = nullptr;
 static IUnityGraphics* s_Graphics = nullptr;
@@ -73,7 +74,7 @@ static ID3D11Texture2D*		s_frameBuffer = nullptr;
 static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
 
 
-DefaultMainWindow *wnd;
+ServerMainWindow *wnd;
 std::thread *messageThread;
 
 std::string s_server = "signalingserveruri";
@@ -84,14 +85,17 @@ bool s_closing = false;
 
 void FrameUpdate()
 {
+	ULOG(INFO, __FUNCTION__);
 }
 
 // Handles input from client.
 void InputUpdate(const std::string& message)
 {
+	ULOG(INFO, __FUNCTION__);
+
 	if (s_onInputUpdate)
 	{
-		LOG(INFO) << message;
+		ULOG(INFO, message.c_str());
 
 		(*s_onInputUpdate)(message.c_str());
 	}
@@ -100,18 +104,20 @@ void InputUpdate(const std::string& message)
 
 void InitWebRTC()
 {
+	ULOG(INFO, __FUNCTION__);
+
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 	rtc::InitializeSSL();
-	
+
 	PeerConnectionClient client;
 
-	wnd = new DefaultMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
+	wnd = new ServerMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
 		true, 1280, 720);
-	
+
 	wnd->Create();
-	
+
 	// Try parsing config file.
 	std::string configFilePath = webrtc::ExePath("webrtcConfig.json");
 	std::ifstream webrtcConfigFile(configFilePath);
@@ -145,7 +151,7 @@ void InitWebRTC()
 	client.SetHeartbeatMs(heartbeat);
 
 	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
-	
+
 	if (s_conductor != nullptr)
 	{
 		MainWindowCallback *callback = s_conductor;
@@ -167,6 +173,7 @@ void InitWebRTC()
 			}
 			catch (const std::exception& e) { // reference to the base of a polymorphic object
 				std::cout << e.what(); // information from length_error printed
+				ULOG(LERROR, e.what());
 			}
 		}
 	}
@@ -175,15 +182,19 @@ void InitWebRTC()
 
 static void UNITY_INTERFACE_API OnEncode(int eventID)
 {
+	ULOG(INFO, __FUNCTION__);
+
 	if (s_Context)
-    {
+	{
+		ULOG(INFO, "s_Context is ~NULL");
+
 		if (s_frameBuffer == nullptr)
 		{
 			ID3D11RenderTargetView* rtv(nullptr);
 			ID3D11DepthStencilView* depthStencilView(nullptr);
 
 			s_Context->OMGetRenderTargets(1, &rtv, &depthStencilView);
-			
+
 			if (rtv)
 			{
 				rtv->GetResource(reinterpret_cast<ID3D11Resource**>(&s_frameBuffer));
@@ -192,61 +203,66 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				D3D11_TEXTURE2D_DESC desc;
 
 				s_frameBuffer->GetDesc(&desc);
-					
+
 				g_videoHelper->Initialize(s_frameBuffer, desc.Format, desc.Width, desc.Height);
-				
+
 				s_frameBuffer->Release();
-				
+
 				messageThread = new std::thread(InitWebRTC);
 			}
 		}
 
-        return;
-    }
+		return;
+	}
 }
 
 extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType)
 {
-    switch (eventType)
-    {
-        case kUnityGfxDeviceEventInitialize:
-        {
-            s_DeviceType = s_Graphics->GetRenderer();
-            s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
-            s_Device->GetImmediateContext(&s_Context);
-			
-			break;
-        }
+	ULOG(INFO, __FUNCTION__);
 
-        case kUnityGfxDeviceEventShutdown:
-        {
-			s_Context.Reset();
-            s_Device.Reset();
-            s_DeviceType = kUnityGfxRendererNull;
+	switch (eventType)
+	{
+	case kUnityGfxDeviceEventInitialize:
+	{
+		s_DeviceType = s_Graphics->GetRenderer();
+		s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
+		s_Device->GetImmediateContext(&s_Context);
 
-            break;
-        }
-    }
+		break;
+	}
+
+	case kUnityGfxDeviceEventShutdown:
+	{
+		s_Context.Reset();
+		s_Device.Reset();
+		s_DeviceType = kUnityGfxRendererNull;
+
+		break;
+	}
+	}
 }
 
 
 
 extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
+	ULOG(INFO, __FUNCTION__);
+
 #if SHOW_CONSOLE
-    AllocConsole();
-    FILE* out(nullptr);
-    freopen_s(&out, "CONOUT$", "w", stdout);
+	AllocConsole();
+	FILE* out(nullptr);
+	freopen_s(&out, "CONOUT$", "w", stdout);
 
-    std::cout << "Console open..." << std::endl;
+	std::cout << "Console open..." << std::endl;
+	ULOG(INFO, "Console open...")
 #endif
-	
-    s_UnityInterfaces = unityInterfaces;
-    s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
-    s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
-    // Run OnGraphicsDeviceEvent(initialize) manually on plugin load
-    OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
+		s_UnityInterfaces = unityInterfaces;
+	s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
+	s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
+
+	// Run OnGraphicsDeviceEvent(initialize) manually on plugin load
+	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
 
 	// Creates and initializes the video helper library.
 	g_videoHelper = new VideoHelper(s_Device.Get(), s_Context.Get());
@@ -254,6 +270,8 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 
 extern "C" __declspec(dllexport) void Close()
 {
+	ULOG(INFO, __FUNCTION__);
+
 	if (s_conductor != nullptr)
 	{
 		MainWindowCallback *callback = s_conductor;
@@ -263,7 +281,7 @@ extern "C" __declspec(dllexport) void Close()
 		callback->Close();
 
 		s_conductor = nullptr;
-		
+
 		rtc::CleanupSSL();
 
 		s_closing = true;
@@ -273,18 +291,30 @@ extern "C" __declspec(dllexport) void Close()
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
-    s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
+	ULOG(INFO, __FUNCTION__);
+
+	s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 	Close();
 }
 
 extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRenderEventFunc()
 {
-    return OnEncode;
+	ULOG(INFO, __FUNCTION__);
+
+	return OnEncode;
 }
 
 extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
 {
+	ULOG(INFO, __FUNCTION__);
+
 	s_onInputUpdate = onInputUpdate;
 }
 
+extern "C" __declspec(dllexport) void SetLogCallback(void(__stdcall*onLog)(const int level, const char *msg))
+{
+	ULOG(INFO, __FUNCTION__);
+
+	s_onLog = onLog;
+}

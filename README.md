@@ -1,11 +1,22 @@
 # 3D Toolkit
 
-A toolkit for building powerful stereoscopic 3d experiences that run on azure
-and stream to devices. :muscle: :eye: :cloud:
+A toolkit for building powerful stereoscopic 3d experiences that run on the cloud and stream to devices. :muscle: :eye: :cloud:
 
-> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
+## Features
+
+> See our client and server implementation feature matrices [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices)!
+
++ WebRTC powered audio/video content streaming
++ Client user input streaming
++ Low-latency communication channels
++ Secure communication channels
++ Client user authentication
++ Server application authentication
++ Sample implementations for servers and clients
 
 ## Grabbing latest prebuilt binaries
+
+> These binaries are prebuilt toolkit binaries - if you're looking to contribute, or build your own, keep reading! 
 
 [CI Builds](https://3dtoolkitstorage.blob.core.windows.net/builds/index.html) - Not recommended
 
@@ -13,39 +24,56 @@ and stream to devices. :muscle: :eye: :cloud:
 
 [Release/Stable Tagged Builds](https://3dtoolkitstorage.blob.core.windows.net/releases/index.html)
 
-## Prerequisites
+## Prerequisite Tooling
 
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016
 + Visual Studio 2015 Update 3
 + Windows 10 SDK - 10.0.14393.795
-+ [Windows 10 DDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573(v=vs.85).aspx) - If building WebRTC Library from source
++ NVidia video card driver:
+   * Windows: Driver version 375.86  or higher
+   * Linux:   Driver version 375.20  or higher
+   * CUDA 7.5 Toolkit (optional)
++ [Azure SDK 3.0.1](https://www.microsoft.com/web/handlers/webpi.ashx/getinstaller/VWDOrVs2015AzurePack.appids) for Visual Studio 2015 (Optional, but required to use the Server Azure Deployment projects)
++ [WDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573.aspx) - If building WebRTC Library from source (note: this is likely not the case, and is only necessary if you're planning to modify our dependency library, WebRTC)
 
-## Installing Prebuilt Libraries for /3dtoolkit-directx
+## Installing Prebuilt Dependencies
+
+> Before running our `setup.cmd` script, please ensure powershell is set to [enable unrestricted script execution](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1&viewFallbackFrom=powershell-Microsoft.PowerShell.Core).
 
 After cloning this repository, run `.\setup.cmd` before opening the Project/Solution structure.
 
 This will install and configure the following:
 
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
-+ [This patch](.\WebRTCLibs\nvencoder.patch) will be applied to the above
++ [This patch](.\WebRTCLibs\nvencoder.patch), which adds nvencode support to webrtc, and will be applied to the above
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit
 + [WebRTC-UWP](https://github.com/webrtc-uwp/webrtc-uwp-sdk) M54 synced release for UWP-based clients (Hololens)
 
 > Note: We can't currently use the [directxtk nuget packages](https://www.nuget.org/packages?q=directxtk) because they don't provide static linking targets for release builds.
 
-Once you see `Libraries retrieved and up to date` you may proceed and open [the solution](.\3dtoolkit-directx\Toolkit3D.sln).
+Once you see `Libraries retrieved and up to date` you may proceed.
+
+## Building the Toolkit
+
+> Note: If you are using Visual Studio 2017, ensure you have installed the v140 c++ build tools, and please __do not update our projects when prompted to do so__.
+
+> Note: To build the unity client library, you must use `Release` and `x86` for the desired configuration
+
++ Open [the 3dtoolkit solution](./3DStreamingToolKit.sln) in Visual Studio
++ Build the solution (Build -> Build Solution) in the desired configuration (Build -> Configuration Manager -> Dropdowns at the top)
++ Done!
 
 ## Build output
 
-Build the solution from Visual Studio, and look in:
+> Note: Webrtc example binaries (for example, peerconnection_server, turnserver) can be found in `\Libraries\WebRTC\Win32\Release\exe` and can be useful for testing certain scenarios, but are __not required__ nor developed by us.
 
-+ `\3dtoolkit-directx\Samples\**\Build\**` for server binaries.
-+ `\WebRTCNativeClient\Build\**` for the native client binaries.
-+ `\WebRTCLibs\**\Exe\**` for the sample signaling, turn and stun server binaries.
+The solution builds binaries for our pluggable components and our sample implementations. All of these are output to the `Build` directory in the root of the project directory. They'll be in subfolders for the desired build configuration, in folders named according to their project name. For instance, `Client\` contains our native client, and `SpinningCubeServer\` contains our spinning cube example.
 
 ## Building HoloLens Unity client 
 
- > Note: Make sure you have Unity version 5.6.1f1 with UWP tools support. 
+ > Note: Make sure you have Unity version 5.6.3f1 with UWP tools support. 
+
+These steps are unique, and specific to producing a unity client application for a hololens device.
 
 You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The HoloLens client is using a native dll library for video decoding and rendering that needs to be built before you open the sample in Unity. Follow these steps:
 + Open `3DStreamingToolKit.sln` from the root folder 
@@ -70,7 +98,9 @@ You can find the HoloLens Unity client sample in `\Samples\Client\Unity`. The Ho
 + Deploy to your machine or HoloLens. Make sure the server is running, the app will automatically connect to the ip address that was set in the step above.
 + Open the desired server and connect to the Unity client. 
 
-## JSON Configuration Options for Native Client and Native Servers:
+## JSON Configuration:
+
+> These configuration files control how our sample clients and servers communicate and connect. More information can be found [in the wiki](https://github.com/CatalystCode/3dtoolkit/wiki/JSON-Config-Files).
 
 Use [webrtcConfig.json](https://github.com/CatalystCode/3dtoolkit/blob/master/Plugins/NativeServerPlugin/webrtcConfig.json) for TURN relay communication
 
@@ -94,12 +124,7 @@ https://3dtoolkitstorage.blob.core.windows.net/libs/m58patch_x64.zip
 ## Standing up production TURN/STUN/Signaling Servers
 
 + Signaling Server (Node.JS) - https://github.com/anastasiia-zolochevska/signaling-server
-+ TURN Server (optional, needed for VPN/Proxy networks) -
-   + Docker image for basic auth turn server - https://hub.docker.com/r/zolochevska/turn-server/ / 
-https://github.com/anastasiia-zolochevska/turn-server-docker-image
-   + Docker image for certificate based turn server that uses postgresql for user storage - https://hub.docker.com/r/zolochevska/3dsrelayadmin/ / https://github.com/anastasiia-zolochevska/3dsrelay
-   + Load balanced TURN Server Set - https://github.com/anastasiia-zolochevska/azturnlb
-   + TurnAdmin Instance (container for executing turnadmin commands) - https://hub.docker.com/r/zolochevska/3dsrelayadmin/ / https://github.com/anastasiia-zolochevska/3dsrelayadmin
++ TURN Server (optional, needed for VPN/Proxy networks) - https://github.com/anastasiia-zolochevska/coturn-to-azure-deployment
 
 ## Building WebRTC Libraries from Source (You don't need to do this unless you are changing the encoder)
 
@@ -113,7 +138,7 @@ https://github.com/anastasiia-zolochevska/turn-server-docker-image
 
 Be sure to install all of the C++ language tools and the Windows Universal Components.
 
-Once finished installing, install the [Windows DDK](https://go.microsoft.com/fwlink/p/?LinkID=845298) as it contains debugging tools needed by WebRTC.
+Once finished installing, install the [Windows DDK version 1607](https://go.microsoft.com/fwlink/p/?LinkId=526733) as it contains debugging tools needed by WebRTC.
 
 Finally, launch PowerShell with Administrative persmissions and run 
 ```
@@ -138,3 +163,11 @@ Once finished building, for local use, copy the contents of
 C:\<path to source>\webrtv-checkout\dist
 ```
 to the `WebRTCLibs` folder in this repo.
+
+# !IMPORTANT - USING UNITY AS A 3D VIDEO STREAMING SERVER IS AGAINST THE SOFTWARE TERMS OF SERVICE - THE UNITY SERVER SAMPLE IS PROVIDED FOR DEMO AND EDUCATIONAL PURPOSES ONLY.  CONTACT UNITY FOR LICENSING IF YOU WANT TO USE THE UNITY SERVER SAMPLE IN ANY COMMERCIAL ENVIRONMENT
+
+## Please refer to https://unity3d.com/legal/terms-of-service/software 
+
+> ### Streaming and Cloud Gaming Restrictions
+
+> You may not directly or indirectly distribute Your Project Content by means of streaming or broadcasting where Your Project Content is primarily executed on a server and transmitted as a video stream or via low level graphics render commands over the open Internet to end user devices without a separate license from Unity. This restriction does not prevent end users from remotely accessing Your Project Content from an end user device that is running on another end user device.
