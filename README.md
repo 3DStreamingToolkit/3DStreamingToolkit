@@ -16,7 +16,8 @@ The 3DToolkit project's purpose is to provide an approach for developing 3D serv
 4. High-performance video encoding and decoding using NVEncode
 
 ![WebRTC applied to 3D Streaming](http://avevawebrtc.azurewebsites.net/images//WebRTCStreaming.png)
-[comment]: <> (![high level architecture](./readme_data/hl-arch.png)
+<!---  (![high level architecture](./readme_data/hl-arch.png))--->
+
 Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3dtoolkit/wiki/What-is-3DToolkit#webrtc-httpwebrtcorg). 
 
 ## How to build
