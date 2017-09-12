@@ -145,22 +145,22 @@
 //--------------------------------------------------------------------------------------
 struct DXUTD3D11DeviceSettings
 {
-    UINT AdapterOrdinal;
-    D3D_DRIVER_TYPE DriverType;
-    UINT Output;
-    DXGI_SWAP_CHAIN_DESC sd;
-    UINT32 CreateFlags;
-    UINT32 SyncInterval;
-    DWORD PresentFlags;
-    bool AutoCreateDepthStencil; // DXUT will create the depth stencil resource and view if true
-    DXGI_FORMAT AutoDepthStencilFormat;
-    D3D_FEATURE_LEVEL DeviceFeatureLevel;
+	UINT AdapterOrdinal;
+	D3D_DRIVER_TYPE DriverType;
+	UINT Output;
+	DXGI_SWAP_CHAIN_DESC sd;
+	UINT32 CreateFlags;
+	UINT32 SyncInterval;
+	DWORD PresentFlags;
+	bool AutoCreateDepthStencil; // DXUT will create the depth stencil resource and view if true
+	DXGI_FORMAT AutoDepthStencilFormat;
+	D3D_FEATURE_LEVEL DeviceFeatureLevel;
 };
 
 struct DXUTDeviceSettings
 {
-    D3D_FEATURE_LEVEL MinimumFeatureLevel;
-    DXUTD3D11DeviceSettings d3d11;
+	D3D_FEATURE_LEVEL MinimumFeatureLevel;
+	DXUTD3D11DeviceSettings d3d11;
 };
 
 
@@ -183,68 +183,71 @@ struct DXUTDeviceSettings
 //--------------------------------------------------------------------------------------
 
 // General callbacks
-typedef void    (CALLBACK *LPDXUTCALLBACKFRAMEMOVE)( _In_ double fTime, _In_ float fElapsedTime, _In_opt_ void* pUserContext );
-typedef void    (CALLBACK *LPDXUTCALLBACKKEYBOARD)( _In_ UINT nChar, _In_ bool bKeyDown, _In_ bool bAltDown, _In_opt_ void* pUserContext );
-typedef void    (CALLBACK *LPDXUTCALLBACKMOUSE)( _In_ bool bLeftButtonDown, _In_ bool bRightButtonDown, _In_ bool bMiddleButtonDown,
-                                                 _In_ bool bSideButton1Down, _In_ bool bSideButton2Down, _In_ int nMouseWheelDelta,
-                                                 _In_ int xPos, _In_ int yPos, _In_opt_ void* pUserContext );
-typedef LRESULT (CALLBACK *LPDXUTCALLBACKMSGPROC)( _In_ HWND hWnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam,
-                                                   _Out_ bool* pbNoFurtherProcessing, _In_opt_ void* pUserContext );
-typedef void    (CALLBACK *LPDXUTCALLBACKTIMER)( _In_ UINT idEvent, _In_opt_ void* pUserContext );
-typedef bool    (CALLBACK *LPDXUTCALLBACKMODIFYDEVICESETTINGS)( _In_ DXUTDeviceSettings* pDeviceSettings, _In_opt_ void* pUserContext );
-typedef bool    (CALLBACK *LPDXUTCALLBACKDEVICEREMOVED)( _In_opt_ void* pUserContext );
+typedef void    (CALLBACK *LPDXUTCALLBACKFRAMEMOVE)(_In_ double fTime, _In_ float fElapsedTime, _In_opt_ void* pUserContext);
+typedef void    (CALLBACK *LPDXUTCALLBACKKEYBOARD)(_In_ UINT nChar, _In_ bool bKeyDown, _In_ bool bAltDown, _In_opt_ void* pUserContext);
+typedef void    (CALLBACK *LPDXUTCALLBACKMOUSE)(_In_ bool bLeftButtonDown, _In_ bool bRightButtonDown, _In_ bool bMiddleButtonDown,
+	_In_ bool bSideButton1Down, _In_ bool bSideButton2Down, _In_ int nMouseWheelDelta,
+	_In_ int xPos, _In_ int yPos, _In_opt_ void* pUserContext);
+typedef LRESULT(CALLBACK *LPDXUTCALLBACKMSGPROC)(_In_ HWND hWnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam,
+	_Out_ bool* pbNoFurtherProcessing, _In_opt_ void* pUserContext);
+typedef void    (CALLBACK *LPDXUTCALLBACKTIMER)(_In_ UINT idEvent, _In_opt_ void* pUserContext);
+typedef bool    (CALLBACK *LPDXUTCALLBACKMODIFYDEVICESETTINGS)(_In_ DXUTDeviceSettings* pDeviceSettings, _In_opt_ void* pUserContext);
+typedef bool    (CALLBACK *LPDXUTCALLBACKDEVICEREMOVED)(_In_opt_ void* pUserContext);
 
 class CD3D11EnumAdapterInfo;
 class CD3D11EnumDeviceInfo;
 
 // Direct3D 11 callbacks
-typedef bool    (CALLBACK *LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE)( _In_ const CD3D11EnumAdapterInfo *AdapterInfo, _In_ UINT Output, _In_ const CD3D11EnumDeviceInfo *DeviceInfo,
-                                                                   _In_ DXGI_FORMAT BackBufferFormat, _In_ bool bWindowed, _In_opt_ void* pUserContext );
-typedef HRESULT (CALLBACK *LPDXUTCALLBACKD3D11DEVICECREATED)( _In_ ID3D11Device* pd3dDevice, _In_ const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, _In_opt_ void* pUserContext );
-typedef HRESULT (CALLBACK *LPDXUTCALLBACKD3D11SWAPCHAINRESIZED)( _In_ ID3D11Device* pd3dDevice, _In_ IDXGISwapChain *pSwapChain, _In_ const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, _In_opt_ void* pUserContext );
-typedef void    (CALLBACK *LPDXUTCALLBACKD3D11FRAMERENDER)( _In_ ID3D11Device* pd3dDevice, _In_ ID3D11DeviceContext* pd3dImmediateContext, _In_ double fTime, _In_ float fElapsedTime, _In_opt_ void* pUserContext );
-typedef void    (CALLBACK *LPDXUTCALLBACKD3D11SWAPCHAINRELEASING)( _In_opt_ void* pUserContext );
-typedef void    (CALLBACK *LPDXUTCALLBACKD3D11DEVICEDESTROYED)( _In_opt_ void* pUserContext );
+typedef bool    (CALLBACK *LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE)(_In_ const CD3D11EnumAdapterInfo *AdapterInfo, _In_ UINT Output, _In_ const CD3D11EnumDeviceInfo *DeviceInfo,
+	_In_ DXGI_FORMAT BackBufferFormat, _In_ bool bWindowed, _In_opt_ void* pUserContext);
+typedef HRESULT(CALLBACK *LPDXUTCALLBACKD3D11DEVICECREATED)(_In_ ID3D11Device* pd3dDevice, _In_ const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, _In_opt_ void* pUserContext);
+typedef HRESULT(CALLBACK *LPDXUTCALLBACKD3D11SWAPCHAINRESIZED)(_In_ ID3D11Device* pd3dDevice, _In_ IDXGISwapChain *pSwapChain, _In_ const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc, _In_opt_ void* pUserContext);
+typedef void    (CALLBACK *LPDXUTCALLBACKD3D11FRAMERENDER)(_In_ ID3D11Device* pd3dDevice, _In_ ID3D11DeviceContext* pd3dImmediateContext, _In_ double fTime, _In_ float fElapsedTime, _In_opt_ void* pUserContext);
+typedef void    (CALLBACK *LPDXUTCALLBACKD3D11SWAPCHAINRELEASING)(_In_opt_ void* pUserContext);
+typedef void    (CALLBACK *LPDXUTCALLBACKD3D11DEVICEDESTROYED)(_In_opt_ void* pUserContext);
 
 // General callbacks
-void WINAPI DXUTSetCallbackFrameMove( _In_ LPDXUTCALLBACKFRAMEMOVE pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackKeyboard( _In_ LPDXUTCALLBACKKEYBOARD pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackMouse( _In_ LPDXUTCALLBACKMOUSE pCallback, bool bIncludeMouseMove = false, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackMsgProc( _In_ LPDXUTCALLBACKMSGPROC pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackDeviceChanging( _In_ LPDXUTCALLBACKMODIFYDEVICESETTINGS pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackDeviceRemoved( _In_ LPDXUTCALLBACKDEVICEREMOVED pCallback, _In_opt_ void* pUserContext = nullptr );
+void WINAPI DXUTSetCallbackFrameMove(_In_ LPDXUTCALLBACKFRAMEMOVE pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackKeyboard(_In_ LPDXUTCALLBACKKEYBOARD pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackMouse(_In_ LPDXUTCALLBACKMOUSE pCallback, bool bIncludeMouseMove = false, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackMsgProc(_In_ LPDXUTCALLBACKMSGPROC pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackDeviceChanging(_In_ LPDXUTCALLBACKMODIFYDEVICESETTINGS pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackDeviceRemoved(_In_ LPDXUTCALLBACKDEVICEREMOVED pCallback, _In_opt_ void* pUserContext = nullptr);
 
 // Direct3D 11 callbacks
-void WINAPI DXUTSetCallbackD3D11DeviceAcceptable( _In_ LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackD3D11DeviceCreated( _In_ LPDXUTCALLBACKD3D11DEVICECREATED pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackD3D11SwapChainResized( _In_ LPDXUTCALLBACKD3D11SWAPCHAINRESIZED pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackD3D11FrameRender( _In_ LPDXUTCALLBACKD3D11FRAMERENDER pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackD3D11SwapChainReleasing( _In_ LPDXUTCALLBACKD3D11SWAPCHAINRELEASING pCallback, _In_opt_ void* pUserContext = nullptr );
-void WINAPI DXUTSetCallbackD3D11DeviceDestroyed( _In_ LPDXUTCALLBACKD3D11DEVICEDESTROYED pCallback, _In_opt_ void* pUserContext = nullptr );
+void WINAPI DXUTSetCallbackD3D11DeviceAcceptable(_In_ LPDXUTCALLBACKISD3D11DEVICEACCEPTABLE pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackD3D11DeviceCreated(_In_ LPDXUTCALLBACKD3D11DEVICECREATED pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackD3D11SwapChainResized(_In_ LPDXUTCALLBACKD3D11SWAPCHAINRESIZED pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackD3D11FrameRender(_In_ LPDXUTCALLBACKD3D11FRAMERENDER pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackD3D11SwapChainReleasing(_In_ LPDXUTCALLBACKD3D11SWAPCHAINRELEASING pCallback, _In_opt_ void* pUserContext = nullptr);
+void WINAPI DXUTSetCallbackD3D11DeviceDestroyed(_In_ LPDXUTCALLBACKD3D11DEVICEDESTROYED pCallback, _In_opt_ void* pUserContext = nullptr);
 
 
 //--------------------------------------------------------------------------------------
 // Initialization
 //--------------------------------------------------------------------------------------
-HRESULT WINAPI DXUTInit( _In_ bool bParseCommandLine = true, 
-                         _In_ bool bShowMsgBoxOnError = true, 
-                         _In_opt_ WCHAR* strExtraCommandLineParams = nullptr,
-                         _In_ bool bThreadSafeDXUT = false );
+HRESULT WINAPI DXUTInit(_In_ bool bParseCommandLine = true,
+	_In_ bool bShowMsgBoxOnError = true,
+	_In_opt_ WCHAR* strExtraCommandLineParams = nullptr,
+	_In_ bool bThreadSafeDXUT = false);
 
 // Choose either DXUTCreateWindow or DXUTSetWindow.  If using DXUTSetWindow, consider using DXUTStaticWndProc
-HRESULT WINAPI DXUTCreateWindow( _In_z_ const WCHAR* strWindowTitle = L"Direct3D Window", 
-                                 _In_opt_ HINSTANCE hInstance = nullptr, _In_opt_ HICON hIcon = nullptr, _In_opt_ HMENU hMenu = nullptr,
-                                 _In_ int x = CW_USEDEFAULT, _In_ int y = CW_USEDEFAULT );
-HRESULT WINAPI DXUTSetWindow( _In_ HWND hWndFocus, _In_ HWND hWndDeviceFullScreen, _In_ HWND hWndDeviceWindowed, _In_ bool bHandleMessages = true );
-LRESULT CALLBACK DXUTStaticWndProc( _In_ HWND hWnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam );
+HRESULT WINAPI DXUTCreateWindow(_In_z_ const WCHAR* strWindowTitle = L"Direct3D Window",
+	_In_opt_ HINSTANCE hInstance = nullptr, _In_opt_ HICON hIcon = nullptr, _In_opt_ HMENU hMenu = nullptr,
+	_In_ int x = CW_USEDEFAULT, _In_ int y = CW_USEDEFAULT);
+HRESULT WINAPI DXUTSetWindow(_In_ HWND hWndFocus, _In_ HWND hWndDeviceFullScreen, _In_ HWND hWndDeviceWindowed, _In_ bool bHandleMessages = true);
+LRESULT CALLBACK DXUTStaticWndProc(_In_ HWND hWnd, _In_ UINT uMsg, _In_ WPARAM wParam, _In_ LPARAM lParam);
+
+// Set the custom render target view
+void WINAPI DXUTSetD3D11RenderTargetView(_In_ ID3D11RenderTargetView* pRenderTargetView);
 
 // Choose either DXUTCreateDevice or DXUTCreateD3DDeviceFromSettings
 
-HRESULT WINAPI DXUTCreateDevice(_In_ D3D_FEATURE_LEVEL reqFL, _In_ bool bWindowed= true, _In_ int nSuggestedWidth =0,_In_  int nSuggestedHeight =0 );
-HRESULT WINAPI DXUTCreateDeviceFromSettings( _In_ DXUTDeviceSettings* pDeviceSettings, _In_ bool bClipWindowToSingleAdapter = true );
+HRESULT WINAPI DXUTCreateDevice(_In_ D3D_FEATURE_LEVEL reqFL, _In_ bool bWindowed = true, _In_ int nSuggestedWidth = 0, _In_  int nSuggestedHeight = 0);
+HRESULT WINAPI DXUTCreateDeviceFromSettings(_In_ DXUTDeviceSettings* pDeviceSettings, _In_ bool bClipWindowToSingleAdapter = true);
 
 // Choose either DXUTMainLoop or implement your own main loop 
-HRESULT WINAPI DXUTMainLoop( _In_opt_ HACCEL hAccel = nullptr );
+HRESULT WINAPI DXUTMainLoop(_In_opt_ HACCEL hAccel = nullptr);
 
 // If not using DXUTMainLoop consider using DXUTRender3DEnvironment
 void WINAPI DXUTRender3DEnvironment();
@@ -256,19 +259,20 @@ void WINAPI DXUTRender3DEnvironment();
 HRESULT WINAPI DXUTToggleFullScreen();
 HRESULT WINAPI DXUTToggleREF();
 HRESULT WINAPI DXUTToggleWARP();
-void    WINAPI DXUTPause( _In_ bool bPauseTime, _In_ bool bPauseRendering );
-void    WINAPI DXUTSetConstantFrameTime( _In_ bool bConstantFrameTime, _In_ float fTimePerFrame = 0.0333f );
-void    WINAPI DXUTSetCursorSettings( _In_ bool bShowCursorWhenFullScreen = false, _In_ bool bClipCursorWhenFullScreen = false );
-void    WINAPI DXUTSetHotkeyHandling( _In_ bool bAltEnterToToggleFullscreen = true, _In_ bool bEscapeToQuit = true, _In_ bool bPauseToToggleTimePause = true );
-void    WINAPI DXUTSetMultimonSettings( _In_ bool bAutoChangeAdapter = true );
-void    WINAPI DXUTSetShortcutKeySettings( _In_ bool bAllowWhenFullscreen = false, _In_ bool bAllowWhenWindowed = true ); // Controls the Windows key, and accessibility shortcut keys
-void    WINAPI DXUTSetWindowSettings( _In_ bool bCallDefWindowProc = true );
-HRESULT WINAPI DXUTSetTimer( _In_ LPDXUTCALLBACKTIMER pCallbackTimer, _In_ float fTimeoutInSecs = 1.0f, _Out_opt_ UINT* pnIDEvent = nullptr, _In_opt_ void* pCallbackUserContext = nullptr );
-HRESULT WINAPI DXUTKillTimer( _In_ UINT nIDEvent );
+void    WINAPI DXUTPause(_In_ bool bPauseTime, _In_ bool bPauseRendering);
+void    WINAPI DXUTSetConstantFrameTime(_In_ bool bConstantFrameTime, _In_ float fTimePerFrame = 0.0333f);
+void    WINAPI DXUTSetCursorSettings(_In_ bool bShowCursorWhenFullScreen = false, _In_ bool bClipCursorWhenFullScreen = false);
+void    WINAPI DXUTSetHotkeyHandling(_In_ bool bAltEnterToToggleFullscreen = true, _In_ bool bEscapeToQuit = true, _In_ bool bPauseToToggleTimePause = true);
+void    WINAPI DXUTSetMultimonSettings(_In_ bool bAutoChangeAdapter = true);
+void    WINAPI DXUTSetShortcutKeySettings(_In_ bool bAllowWhenFullscreen = false, _In_ bool bAllowWhenWindowed = true); // Controls the Windows key, and accessibility shortcut keys
+void    WINAPI DXUTSetWindowSettings(_In_ bool bCallDefWindowProc = true);
+HRESULT WINAPI DXUTSetTimer(_In_ LPDXUTCALLBACKTIMER pCallbackTimer, _In_ float fTimeoutInSecs = 1.0f, _Out_opt_ UINT* pnIDEvent = nullptr, _In_opt_ void* pCallbackUserContext = nullptr);
+HRESULT WINAPI DXUTKillTimer(_In_ UINT nIDEvent);
 void    WINAPI DXUTResetFrameworkState();
-void    WINAPI DXUTShutdown( _In_ int nExitCode = 0 );
-void    WINAPI DXUTSetIsInGammaCorrectMode( _In_ bool bGammaCorrect );
+void    WINAPI DXUTShutdown(_In_ int nExitCode = 0);
+void    WINAPI DXUTSetIsInGammaCorrectMode(_In_ bool bGammaCorrect);
 bool    WINAPI DXUTGetMSAASwapChainCreated();
+void    WINAPI DXUTSetHeadlessMode(_In_ bool bHeadlessMode);
 
 
 //--------------------------------------------------------------------------------------
@@ -276,10 +280,10 @@ bool    WINAPI DXUTGetMSAASwapChainCreated();
 //--------------------------------------------------------------------------------------
 
 // Direct3D 11.x (These do not addref unlike typical Get* APIs)
-IDXGIFactory1*           WINAPI DXUTGetDXGIFactory(); 
+IDXGIFactory1*           WINAPI DXUTGetDXGIFactory();
 IDXGISwapChain*          WINAPI DXUTGetDXGISwapChain();
 const DXGI_SURFACE_DESC* WINAPI DXUTGetDXGIBackBufferSurfaceDesc();
-HRESULT                  WINAPI DXUTSetupD3D11Views( _In_ ID3D11DeviceContext* pd3dDeviceContext ); // Supports immediate or deferred context
+HRESULT                  WINAPI DXUTSetupD3D11Views(_In_ ID3D11DeviceContext* pd3dDeviceContext); // Supports immediate or deferred context
 D3D_FEATURE_LEVEL        WINAPI DXUTGetD3D11DeviceFeatureLevel(); // Returns the D3D11 devices current feature level
 ID3D11RenderTargetView*  WINAPI DXUTGetD3D11RenderTargetView();
 ID3D11DepthStencilView*  WINAPI DXUTGetD3D11DepthStencilView();
@@ -301,7 +305,7 @@ ID3D11DeviceContext3*	 WINAPI DXUTGetD3D11DeviceContext3();
 #endif
 
 // General
-DXUTDeviceSettings WINAPI DXUTGetDeviceSettings(); 
+DXUTDeviceSettings WINAPI DXUTGetDeviceSettings();
 HINSTANCE WINAPI DXUTGetHINSTANCE();
 HWND      WINAPI DXUTGetHWND();
 HWND      WINAPI DXUTGetHWNDFocus();
@@ -316,9 +320,10 @@ double    WINAPI DXUTGetTime();
 float     WINAPI DXUTGetElapsedTime();
 bool      WINAPI DXUTIsWindowed();
 bool	  WINAPI DXUTIsInGammaCorrectMode();
+bool	  WINAPI DXUTIsHeadlessMode();
 float     WINAPI DXUTGetFPS();
 LPCWSTR   WINAPI DXUTGetWindowTitle();
-LPCWSTR   WINAPI DXUTGetFrameStats( _In_ bool bIncludeFPS = false );
+LPCWSTR   WINAPI DXUTGetFrameStats(_In_ bool bIncludeFPS = false);
 LPCWSTR   WINAPI DXUTGetDeviceStats();
 
 bool      WINAPI DXUTIsVsyncEnabled();
@@ -328,9 +333,9 @@ bool      WINAPI DXUTIsActive();
 int       WINAPI DXUTGetExitCode();
 bool      WINAPI DXUTGetShowMsgBoxOnError();
 bool      WINAPI DXUTGetAutomation();  // Returns true if -automation parameter is used to launch the app
-bool      WINAPI DXUTIsKeyDown( _In_ BYTE vKey ); // Pass a virtual-key code, ex. VK_F1, 'A', VK_RETURN, VK_LSHIFT, etc
-bool      WINAPI DXUTWasKeyPressed( _In_ BYTE vKey );  // Like DXUTIsKeyDown() but return true only if the key was just pressed
-bool      WINAPI DXUTIsMouseButtonDown( _In_ BYTE vButton ); // Pass a virtual-key code: VK_LBUTTON, VK_RBUTTON, VK_MBUTTON, VK_XBUTTON1, VK_XBUTTON2
+bool      WINAPI DXUTIsKeyDown(_In_ BYTE vKey); // Pass a virtual-key code, ex. VK_F1, 'A', VK_RETURN, VK_LSHIFT, etc
+bool      WINAPI DXUTWasKeyPressed(_In_ BYTE vKey);  // Like DXUTIsKeyDown() but return true only if the key was just pressed
+bool      WINAPI DXUTIsMouseButtonDown(_In_ BYTE vButton); // Pass a virtual-key code: VK_LBUTTON, VK_RBUTTON, VK_MBUTTON, VK_XBUTTON1, VK_XBUTTON2
 HRESULT   WINAPI DXUTCreateState(); // Optional method to create DXUT's memory.  If its not called by the application it will be automatically called when needed
 void      WINAPI DXUTDestroyState(); // Optional method to destroy DXUT's memory.  If its not called by the application it will be automatically called after the application exits WinMain 
 

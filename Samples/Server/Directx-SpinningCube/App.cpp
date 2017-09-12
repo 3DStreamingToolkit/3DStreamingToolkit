@@ -58,10 +58,6 @@ WebRTCConfig		g_webrtcConfig;
 
 #ifndef TEST_RUNNER
 
-//--------------------------------------------------------------------------------------
-// WebRTC
-//--------------------------------------------------------------------------------------
-
 void LoadConfigs()
 {
 	// Loads server config file.
@@ -178,9 +174,6 @@ bool AppMain(BOOL stopping)
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-#ifdef NO_UI
-	ServerMainWindow wnd(server, port, true, true, true);
-#else // NO_UI
 	ServerMainWindow wnd(
 		g_webrtcConfig.server.c_str(),
 		g_webrtcConfig.port,
@@ -189,7 +182,6 @@ bool AppMain(BOOL stopping)
 		false,
 		g_serverConfig.width,
 		g_serverConfig.height);
-#endif // NO_UI
 
 	if (!g_serverConfig.system_service && !wnd.Create())
 	{
