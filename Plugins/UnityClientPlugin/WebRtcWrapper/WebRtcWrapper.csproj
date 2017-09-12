@@ -74,7 +74,9 @@
     <Compile Include="Model\Peer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Signalling\Conductor.cs" />
+    <Compile Include="Signalling\OAuth24DClient.cs" />
     <Compile Include="Signalling\Signalling.cs" />
+    <Compile Include="Signalling\TemporaryTurnClient.cs" />
     <Compile Include="Utilities\ActionCommand.cs" />
     <Compile Include="Utilities\AppPerf.cs" />
     <Compile Include="Utilities\BoolToVisConverter.cs" />

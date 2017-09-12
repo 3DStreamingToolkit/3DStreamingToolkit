@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Data.Json;
@@ -121,12 +122,12 @@ namespace WebRtcWrapper
                 });
             };
 
-            Conductor.Instance.Signaller.OnServerConnectionFailure += () =>
+            Conductor.Instance.Signaller.OnServerConnectionFailure += (Exception ex) =>
             {
                 RunOnUiThread(() =>
                 {
                     IsConnecting = false;
-                    OnStatusMessageUpdate?.Invoke("Server Connection Failure");
+                    OnStatusMessageUpdate?.Invoke("Server Connection Failure: " + ex.Message + "\n" + ex.StackTrace);
                 });
             };
 
@@ -208,8 +209,8 @@ namespace WebRtcWrapper
             };
             
             Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
-
-            IceServers = new ObservableCollection<IceServer>();
+			
+			IceServers = new ObservableCollection<IceServer>();
             NewIceServer = new IceServer();
             AudioCodecs = new ObservableCollection<CodecInfo>();
             var audioCodecList = WebRTC.GetAudioCodecs();
@@ -278,25 +279,33 @@ namespace WebRtcWrapper
             JsonValue json = JsonValue.Parse(content);
 
             // Parses server info.
-            _server = json.GetObject().GetNamedString("server");
-            int startId = 0;
-            if (_server.StartsWith("http://"))
-            {
-                startId = 7;
-            }
-            else if (_server.StartsWith("https://"))
-            {
-                startId = 8;
+            var server = json.GetObject().GetNamedString("server");
 
-                // TODO: Supports SSL
-            }
+			var parsed = new Uri(server);
 
-            _server = _server.Substring(startId);
-            _port = new ValidableIntegerString(
-                (int)json.GetObject().GetNamedNumber("port"), 0, 65535);
+			// if we don't have an explicit port in server, and we do have a port value
+			if (parsed.IsDefaultPort && json.GetObject().ContainsKey("port"))
+			{
+				// use that port value in place of the default port
+				var b = new UriBuilder(parsed);
+				b.Port = (int)json.GetObject().GetNamedNumber("port");
+				parsed = b.Uri;
+			}
 
-            _heartbeat = new ValidableIntegerString(
+			// down-convert back to a string
+			this.Uri = new ValidableNonEmptyString(parsed.ToString());
+
+            HeartBeat = new ValidableIntegerString(
                 (int)json.GetObject().GetNamedNumber("heartbeat"), 0, 65535);
+
+			// parse auth
+			if (json.GetObject().ContainsKey("authentication"))
+			{
+				var authNode = json.GetObject().GetNamedObject("authentication").GetObject();
+
+				AuthCodeUri = authNode.ContainsKey("codeUri") ? authNode.GetNamedString("codeUri") : null;
+				AuthPollUri = authNode.ContainsKey("pollUri") ? authNode.GetNamedString("pollUri") : null;
+			}
 
             var configIceServers = new ObservableCollection<IceServer>();
 
@@ -309,8 +318,19 @@ namespace WebRtcWrapper
                     uri.Substring(uri.IndexOf("turn:") + 5),
                     IceServer.ServerType.TURN);
 
-                iceServer.Credential = turnServer.GetObject().GetNamedString("username");
-                iceServer.Username = turnServer.GetObject().GetNamedString("password");
+				if (turnServer.GetObject().ContainsKey("provider"))
+				{
+					// if we do this, we need to ensure we set the username and credential
+					// in the future - we'll do this in ConnectToServer() by wiring up
+					// an event to the Conductor.TurnClient
+					TempTurnUri = turnServer.GetObject().GetNamedString("provider");
+				}
+				else
+				{
+					iceServer.Username = turnServer.GetObject().GetNamedString("username");
+					iceServer.Credential = turnServer.GetObject().GetNamedString("password");
+				}
+
                 configIceServers.Add(iceServer);
             }
 
@@ -323,28 +343,25 @@ namespace WebRtcWrapper
                     uri.Substring(uri.IndexOf("stun:") + 5),
                     IceServer.ServerType.STUN);
 
-                iceServer.Credential = stunServer.GetObject().GetNamedString("username");
-                iceServer.Username = stunServer.GetObject().GetNamedString("password");
+                iceServer.Username = stunServer.GetObject().GetNamedString("username");
+                iceServer.Credential = stunServer.GetObject().GetNamedString("password");
                 configIceServers.Add(iceServer);
             }
 
-            // Default ones.
-            configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
-            configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
+			// Default ones.
+			configIceServers.Add(new IceServer("stun.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun1.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun2.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun3.l.google.com:19302", IceServer.ServerType.STUN));
+			configIceServers.Add(new IceServer("stun4.l.google.com:19302", IceServer.ServerType.STUN));
 
-            Conductor.Instance.ConfigureIceServers(configIceServers);
+			Conductor.Instance.ConfigureIceServers(configIceServers);
             var ntpServerAddress = new ValidableNonEmptyString("time.windows.com");
             RunOnUiThread(() =>
             {
                 IceServers = configIceServers;
                 NtpServer = ntpServerAddress;
                 NtpServer = ntpServerAddress;
-                Port = _port;
-                Ip = new ValidableNonEmptyString(_server);
-                HeartBeat = _heartbeat;
                 ReevaluateHasServer();
             });
 
@@ -399,17 +416,84 @@ namespace WebRtcWrapper
                 IsConnecting = true;
                 await LoadSettings().ConfigureAwait(false);                
                 Conductor.Instance.Signaller.SetHeartbeatMs(Convert.ToInt32(HeartBeat.Value));
-                Conductor.Instance.StartLogin(Ip.Value, Port.Value, peerName);
-            });
+				Conductor.Instance.ConfigureAuth(AuthCodeUri, AuthPollUri);
+				Conductor.Instance.ConfigureTemporaryTurn(TempTurnUri);
+
+				// we need to set the temporary turn creds into the data model if we retrive them
+				if (Conductor.Instance.TurnClient != null)
+				{
+					Conductor.Instance.TurnClient.CredentialsRetrieved += (TemporaryTurnClient.TurnCredentials eventData) =>
+					{
+						var statusMessage = "Temporary turn got status: " + eventData.http_status;
+
+						if (_iceServers.Count > 0)
+						{
+							// we currently only support one manually configured ice server, so this works
+							_iceServers[0].Username = eventData.username;
+							_iceServers[0].Credential = eventData.password;
+
+							// then, we have to reconfigure the conductor iceServers 
+							Conductor.Instance.ConfigureIceServers(_iceServers);
+							
+							statusMessage += ", using " + eventData.username + ":" + eventData.password;
+						}
+						
+						if (eventData.http_status == 200)
+						{
+							statusMessage += ", starting login";
+							Conductor.Instance.StartLogin(this.Uri.Value, peerName);
+						}
+
+						OnStatusMessageUpdate?.Invoke(statusMessage);
+					};
+				}
+
+				// note: we don't support just a turnclient, so if we don't have auth, we don't get turn
+				if (Conductor.Instance.AuthClient != null)
+				{
+					Conductor.Instance.AuthClient.CodeComplete += (OAuth24DClient.CodeCompletionData eventData) =>
+					{
+						if (eventData.http_status == 200)
+						{
+							// show the user data.device_code
+							// show the user data.verification_url
+							// direct the user to enter device_code @ verification_url in a browser
+							OnStatusMessageUpdate?.Invoke(string.Format("Visit {0} - Enter '{1}'\n", eventData.verification_url, eventData.user_code));
+						}
+					};
+
+					Conductor.Instance.AuthClient.AuthenticationComplete += (OAuth24DClient.AuthCompletionData eventData) =>
+					{
+						if (eventData.http_status == 200 && Conductor.Instance.TurnClient == null)
+						{
+							OnStatusMessageUpdate?.Invoke("Authentication recieved, logging in");
+
+							Conductor.Instance.StartLogin(this.Uri.Value, peerName);
+						}
+					};
+
+					Conductor.Instance.AuthClient.Authenticate();
+				}
+				else
+				{
+					Conductor.Instance.StartLogin(this.Uri.Value, peerName);
+				}
+			});
         }
 
-        public void ConnectToServer(string host, string port, string peerName, int heartbeatMs)
+        public void ConnectToServer(string uri, string peerName, int heartbeatMs)
         {
             Task.Run(() =>
             {
                 IsConnecting = true;
-                Ip = new ValidableNonEmptyString(host);
-                Port = new ValidableIntegerString(port);
+
+				// only take the uri from this if it isn't empty
+				// otherwise we will attempt with whatever value is already set (if any)
+				if (!string.IsNullOrEmpty(uri))
+				{
+					this.Uri = new ValidableNonEmptyString(uri);
+				}
+
                 ConnectToServer(peerName, heartbeatMs);                
             });
         }
@@ -669,6 +753,24 @@ namespace WebRtcWrapper
             }
         }
 
+		public string AuthCodeUri
+		{
+			get;
+			set;
+		}
+
+		public string AuthPollUri
+		{
+			get;
+			set;
+		}
+
+		public string TempTurnUri
+		{
+			get;
+			set;
+		}
+
         private RTCPeerConnectionHealthStats _peerConnectionHealthStats;
         public RTCPeerConnectionHealthStats PeerConnectionHealthStats
         {
@@ -880,45 +982,17 @@ namespace WebRtcWrapper
                 // TODO: Notify SelectedVideoCodec                
             }
         }
-
-        private ValidableNonEmptyString _ip;
-        public ValidableNonEmptyString Ip
+		
+        public ValidableNonEmptyString Uri
         {
-            get { return _ip; }
-            set
-            {
-                _ip = value;            
-            }
+			get;
+			set;
         }
-
-        private string _server;
-        public string Server
-        {
-            get { return _server; }
-            set
-            {
-                _server = value;            
-            }
-        }
-
-        private ValidableIntegerString _port;
-        public ValidableIntegerString Port
-        {
-            get { return _port; }
-            set
-            {
-                _port = value;            
-            }
-        }
-
-        private ValidableIntegerString _heartbeat;
+		
         public ValidableIntegerString HeartBeat
         {
-            get { return _heartbeat; }
-            set
-            {
-                _heartbeat = value;             
-            }
+			get;
+			set;
         }
 
         private bool _hasServer;
@@ -1219,7 +1293,7 @@ namespace WebRtcWrapper
         #region UTILITY METHODS
         private void ReevaluateHasServer()
         {
-            HasServer = Ip != null && Ip.Valid && Port != null && Port.Valid;
+			HasServer = this.Uri.Valid;
         }
 
         protected void RunOnUiThread(Action fn)

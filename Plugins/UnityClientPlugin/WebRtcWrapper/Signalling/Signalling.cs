@@ -12,6 +12,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +32,7 @@ namespace PeerConnectionClient.Signalling
     public delegate void PeerHangupDelegate(int peer_id);
     public delegate void MessageFromPeerDelegate(int peer_id, string message);
     public delegate void MessageSentDelegate(int err);
-    public delegate void ServerConnectionFailureDelegate();
+    public delegate void ServerConnectionFailureDelegate(Exception error);
 
     /// <summary>
     /// Signaller instance is used to fire connection events.
@@ -38,53 +41,41 @@ namespace PeerConnectionClient.Signalling
     {
         // Connection events
         public event SignedInDelegate OnSignedIn;
-        public event DisconnectedDelegate OnDisconnected;
+        public event ServerConnectionFailureDelegate OnServerConnectionFailure;
+		public event DisconnectedDelegate OnDisconnected;
         public event PeerConnectedDelegate OnPeerConnected;
         public event PeerDisonnectedDelegate OnPeerDisconnected;
         public event PeerHangupDelegate OnPeerHangup;
         public event MessageFromPeerDelegate OnMessageFromPeer;
-        public event ServerConnectionFailureDelegate OnServerConnectionFailure;
 
-        /// <summary>
-        /// Creates an instance of a Signaller.
-        /// </summary>
-        public Signaller()
+		/// <summary>
+		/// The connection state.
+		/// </summary>
+		public enum State
+		{
+			NOT_CONNECTED,
+			CONNECTED
+		};
+		private State _state;
+		
+		private Uri _connectUri;
+		private string _clientName;
+		private int _myId;
+		private int _heartbeatTickMs;
+		private Timer _heartbeatTimer;
+		private HttpClient _httpClient;
+		private AuthenticationHeaderValue _authHeader;
+		private Dictionary<int, string> _peers = new Dictionary<int, string>();
+
+		/// <summary>
+		/// Creates an instance of a Signaller.
+		/// </summary>
+		public Signaller()
         {
             _state = State.NOT_CONNECTED;
             _myId = -1;
             _heartbeatTickMs = -1;
-
-            // Annoying but register empty handlers
-            // so we don't have to check for null everywhere
-            OnSignedIn += () => { };
-            OnDisconnected += () => { };
-            OnPeerConnected += (a, b) => { };
-            OnPeerDisconnected += (a) => { };
-            OnMessageFromPeer += (a, b) => { };
-            OnServerConnectionFailure += () => { };
         }
-
-        /// <summary>
-        /// The connection state.
-        /// </summary>
-        public enum State
-        {
-            NOT_CONNECTED,
-            RESOLVING, // Note: State not used
-            SIGNING_IN,
-            CONNECTED,
-            SIGNING_OUT_WAITING, // Note: State not used
-            SIGNING_OUT,
-        };
-        private State _state;
-
-        private HostName _server;
-        private string _port;
-        private string _clientName;
-        private int _myId;
-        private int _heartbeatTickMs;
-        private Timer _heartbeatTimer;
-        private Dictionary<int, string> _peers = new Dictionary<int, string>();
 
         /// <summary>
         /// Checks if connected to the server.
@@ -122,374 +113,94 @@ namespace PeerConnectionClient.Signalling
             }
         }
 
+		/// <summary>
+		/// Set the authentication header that will be set for each request
+		/// </summary>
+		/// <param name="authHeader">the value of the header</param>
+		public void SetAuthenticationHeader(AuthenticationHeaderValue authHeader)
+		{
+			_authHeader = authHeader;
+		}
+
         /// <summary>
         /// Connects to the server.
         /// </summary>
-        /// <param name="server">Host name/IP.</param>
-        /// <param name="port">Port to connect.</param>
+        /// <param name="uri">the server to connect to</param>
         /// <param name="client_name">Client name.</param>
-        public async void Connect(string server, string port, string client_name)
+        public async void Connect(string uri, string client_name)
         {
             try
             {
                 if (_state != State.NOT_CONNECTED)
                 {
-                    OnServerConnectionFailure();
+					OnServerConnectionFailure?.Invoke(new Exception("_state is invalid at start"));
                     return;
                 }
 
-                _server = new HostName(server);
-                _port = port;
+				_connectUri = new Uri(uri);
                 _clientName = client_name;
 
-                _state = State.SIGNING_IN;
-                await ControlSocketRequestAsync(string.Format(
-                    "GET /sign_in?peer_name={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
-                    client_name,
-                    _server))
-                    .ConfigureAwait(false);
+				if (_httpClient != null)
+				{
+					_httpClient.Dispose();
+				}
+				_httpClient = new HttpClient();
 
-                if (_state == State.CONNECTED)
+				_httpClient.DefaultRequestHeaders.Host = _connectUri.Host;
+
+				if (_authHeader != null)
+				{
+					_httpClient.DefaultRequestHeaders.Authorization = _authHeader;
+				}
+
+				_httpClient.BaseAddress = _connectUri;
+
+				// set this to 2 minutes, which is the azure max
+				// the value here is really fairly arbitrary, since
+				// our long polling endpoint will just reconnect if it times out
+				_httpClient.Timeout = TimeSpan.FromMinutes(2);
+
+				var res = await this._httpClient.GetAsync($"/sign_in?peer_name={client_name}");
+
+				if (res.StatusCode != HttpStatusCode.OK)
+				{
+					OnServerConnectionFailure?.Invoke(new Exception("invalid response status " + res.StatusCode));
+					return;
+				}
+
+				// set the id, from the request
+				_myId = int.Parse(res.Headers.Pragma.ToString());
+
+				var body = await res.Content.ReadAsStringAsync();
+
+				// we pass _myId as pragmaId, since they're the same value in this case
+				if (!ParseServerResponse(body, _myId))
+				{
+					OnServerConnectionFailure?.Invoke(new Exception("unable to parse response"));
+					return;
+				}
+
+				_state = State.CONNECTED;
+
+				OnSignedIn?.Invoke();
+
+                // Start the long polling loop without await
+                StartHangingGetReadLoop();
+
+				// start our heartbeat timer
+				if (_heartbeatTimer == null)
                 {
-                    // Start the long polling loop without await
-                    var task = HangingGetReadLoopAsync();
-                    if (_heartbeatTimer == null)
-                    {
-                        _heartbeatTimer = new Timer(
-                            this.HeartbeatLoopAsync, null, 0, _heartbeatTickMs);
-                    }
-                }
-                else
-                {
-                    _state = State.NOT_CONNECTED;
-                    OnServerConnectionFailure();
+                    _heartbeatTimer = new Timer(
+                        this.HeartbeatLoopAsync, null, 0, _heartbeatTickMs);
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine("[Error] Signaling: Failed to connect to server: " + ex.Message);
-            }
+				OnServerConnectionFailure?.Invoke(ex);
+			}
         }
-
-        private StreamSocket _hangingGetSocket;
-
-        #region Parsing
-        /// <summary>
-        /// Gets the integer value from the message header.
-        /// </summary>
-        /// <param name="buffer">The message.</param>
-        /// <param name="optional">Lack of an optional header is not considered an error.</param>
-        /// <param name="header">Header name.</param>
-        /// <param name="value">Header value.</param>
-        /// <returns>False if fails to find header in the message and header is not optional.</returns>
-        private static bool GetHeaderValue(string buffer, bool optional, string header, out int value)
-        {
-            try
-            {
-                int index = buffer.IndexOf(header);
-                if(index == -1)
-                {
-                    if (optional)
-                    {
-                        value = -1;
-                        return true;
-                    }
-                    throw new KeyNotFoundException();
-                }
-                index += header.Length;
-                value = buffer.Substring(index).ParseLeadingInt();
-                return true;
-            }
-            catch
-            {
-                value = -1;
-                if (!optional)
-                {
-                    Debug.WriteLine("[Error] Failed to find header <" + header + "> in buffer(" + buffer.Length + ")=<" + buffer + ">");
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
-        }
-       
-        /// <summary>
-        /// Gets the string value from the message header.
-        /// </summary>
-        /// <param name="buffer">The message.</param>
-        /// <param name="header">Header name.</param>
-        /// <param name="value">Header value.</param>
-        /// <returns>False if fails to find header in the message.</returns>
-        private static bool GetHeaderValue(string buffer, string header, out string value)
-        {
-            try
-            {
-                int startIndex = buffer.IndexOf(header);
-                if(startIndex == -1)
-                {
-                    value = null;
-                    return false;
-                }
-                startIndex += header.Length;
-                int endIndex = buffer.IndexOf("\r\n", startIndex);
-                value = buffer.Substring(startIndex, endIndex - startIndex);
-                return true;
-            }
-            catch
-            {
-                value = null;
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Parses the response from the server.
-        /// </summary>
-        /// <param name="buffer">The message.</param>
-        /// <param name="peer_id">Peer ID.</param>
-        /// <param name="eoh">End of header name position.</param>
-        /// <returns>False if fails to parse the server response.</returns>
-        private bool ParseServerResponse(string buffer, out int peer_id, out int eoh)
-        {
-            peer_id = -1;
-            eoh = -1;
-            try
-            {
-                int index = buffer.IndexOf(' ') + 1;
-                int status = int.Parse(buffer.Substring(index, 3));
-                if (status != 200)
-                {
-                    if (status == 500 && buffer.Contains("Peer most likely gone."))
-                    {
-                        Debug.WriteLine("Peer most likely gone. Closing peer connection.");
-                        //As Peer Id doesn't exist in buffer using 0
-                        OnPeerDisconnected(0);
-                        return false;
-                    }
-                    Close();
-                    OnDisconnected();
-                    _myId = -1;
-                    return false;
-                }
-
-                eoh = buffer.IndexOf("\r\n\r\n");
-                if (eoh == -1)
-                {
-                    Debug.WriteLine("[Error] Failed to parse server response (end of header not found)! Buffer(" + buffer.Length + ")=<" + buffer + ">");
-                    return false;
-                }
-
-                GetHeaderValue(buffer, true, "\r\nPragma: ", out peer_id);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("[Error] Failed to parse server response (ex=" + ex.Message + ")! Buffer(" + buffer.Length + ")=<" + buffer + ">");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Parses the given entry information (peer).
-        /// </summary>
-        /// <param name="entry">Entry info.</param>
-        /// <param name="name">Peer name.</param>
-        /// <param name="id">Peer ID.</param>
-        /// <param name="connected">Connected status of the entry (peer).</param>
-        /// <returns>False if fails to parse the entry information.</returns>
-        private static bool ParseEntry(string entry, ref string name, ref int id, ref bool connected)
-        {
-            connected = false;
-            int separator = entry.IndexOf(',');
-            if (separator != -1)
-            {
-                id = entry.Substring(separator + 1).ParseLeadingInt();
-                name = entry.Substring(0, separator);
-                separator = entry.IndexOf(',', separator + 1);
-                if (separator != -1)
-                {
-                    connected = entry.Substring(separator + 1).ParseLeadingInt() > 0 ? true : false;
-                }
-            }
-            return name.Length > 0;
-        }
-        #endregion
-
-#pragma warning disable 1998
-        /// <summary>
-        /// Helper to read the information into a buffer.
-        /// </summary>
-        private async Task<Tuple<string, int>> ReadIntoBufferAsync(StreamSocket socket)
-        {
-            DataReaderLoadOperation loadTask = null;
-            string data;
-            try
-            {
-                var reader = new DataReader(socket.InputStream);
-
-                // Set the DataReader to only wait for available data
-                reader.InputStreamOptions = InputStreamOptions.ReadAhead;
-
-                loadTask = reader.LoadAsync(0xffff);
-                bool succeeded = loadTask.AsTask().Wait(20000);
-                if (!succeeded)
-                {
-                    throw new TimeoutException("Timed out long polling, re-trying.");
-                }
-
-                var count = loadTask.GetResults();
-                if (count == 0)
-                {
-                    throw new Exception("No results loaded from reader.");
-                }
-
-                data = reader.ReadString(count);
-                if (data == null)
-                {
-                    throw new Exception("ReadString operation failed.");
-                }
-            }
-            catch (TimeoutException ex)
-            {
-                Debug.WriteLine(ex.Message);
-                if (loadTask != null && loadTask.Status == Windows.Foundation.AsyncStatus.Started)
-                {
-                    loadTask.Cancel();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("[Error] Signaling: Failed to read from socket. " + ex.Message);
-                if (loadTask != null && loadTask.Status == Windows.Foundation.AsyncStatus.Started)
-                {
-                    loadTask.Cancel();
-                }
-                return null;
-            }
-
-            int content_length = 0;
-            bool ret = false;
-            int i = data.IndexOf("\r\n\r\n");
-            if (i != -1)
-            {
-                Debug.WriteLine("Signaling: Headers received [i=" + i + " data(" + data.Length + ")"/*=" + data*/ + "]");
-                if (GetHeaderValue(data, false, "\r\nContent-Length: ", out content_length))
-                {
-                    int total_response_size = (i + 4) + content_length;
-                    if (data.Length >= total_response_size)
-                    {
-                        ret = true;
-                    }
-                    else
-                    {
-                        // We haven't received everything.  Just continue to accept data.
-                        Debug.WriteLine("[Error] Singaling: Incomplete response; expected to receive " + total_response_size + ", received" + data.Length);
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine("[Error] Signaling: No content length field specified by the server.");
-                }
-            }
-            return ret ? Tuple.Create(data, content_length) : null;
-        }
-
-#pragma warning restore 1998
-
-        /// <summary>
-        /// Sends a request to the server, waits for response and parses it.
-        /// </summary>
-        /// <param name="sendBuffer">Information to send.</param>
-        /// <returns>False if there is a failure. Otherwise returns true.</returns>
-        private async Task<bool> ControlSocketRequestAsync(string sendBuffer)
-        {
-            using (var socket = new StreamSocket())
-            {
-                // Connect to the server
-                try
-                {
-                    await socket.ConnectAsync(_server, _port)
-                        .AsTask()
-                        .ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    // This could be a connection failure like a timeout
-                    Debug.WriteLine("[Error] Signaling: Failed to connect to " + _server + ":" + _port + " : " + e.Message);
-                    return false;
-                }
-
-                // Send the request
-                await socket.WriteStringAsync(sendBuffer).ConfigureAwait(false);
-
-                // Read the response
-                var readResult = await ReadIntoBufferAsync(socket).ConfigureAwait(false);
-                if (readResult == null)
-                {
-                    return false;
-                }
-
-                string buffer = readResult.Item1;
-                int content_length = readResult.Item2;
-
-                int peer_id, eoh;
-                if (!ParseServerResponse(buffer, out peer_id, out eoh))
-                {
-                    return false;
-                }
-
-                if (_myId == -1)
-                {
-                    Debug.Assert(_state == State.SIGNING_IN);
-                    _myId = peer_id;
-                    Debug.Assert(_myId != -1);
-
-                    // The body of the response will be a list of already connected peers
-                    if (content_length > 0)
-                    {
-                        int pos = eoh + 4; // Start after the header.
-                        while (pos < buffer.Length)
-                        {
-                            int eol = buffer.IndexOf('\n', pos);
-                            if (eol == -1)
-                            {
-                                break;
-                            }
-                            int id = 0;
-                            string name = "";
-                            bool connected = false;
-                            if (ParseEntry(buffer.Substring(pos, eol - pos), ref name, ref id, ref connected) && id != _myId)
-                            {
-                                _peers[id] = name;
-                                OnPeerConnected(id, name);
-                            }
-                            pos = eol + 1;
-                        }
-                        OnSignedIn();
-                    }
-                }
-                else if (_state == State.SIGNING_OUT)
-                {
-                    Close();
-                    OnDisconnected();
-                }
-                else if (_state == State.SIGNING_OUT_WAITING)
-                {
-                    await SignOut().ConfigureAwait(false);
-                }
-
-                if (_state == State.SIGNING_IN)
-                {
-                    _state = State.CONNECTED;
-                }
-            }
-
-            return true;
-        }
-
+		
         /// <summary>
         /// triggered at an interval to send heartbeats
         /// </summary>
@@ -500,37 +211,27 @@ namespace PeerConnectionClient.Signalling
                 return;
             }
 
-            using (var heartbeatSocket = new StreamSocket())
-            {
-                try
-                {
-                    await heartbeatSocket.ConnectAsync(_server, _port)
-                        .AsTask()
-                        .ConfigureAwait(false);
+			var res = await this._httpClient.GetAsync($"/heartbeat?peer_id={_myId}");
 
-                    await heartbeatSocket.WriteStringAsync(string.Format(
-                        "GET /heartbeat?peer_id={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
-                        _myId,
-                        _server))
-                        .ConfigureAwait(false);
-
-                    var readResult = await ReadIntoBufferAsync(heartbeatSocket).ConfigureAwait(false);
-                    if (readResult != null)
-                    {
-                        int index = readResult.Item1.IndexOf(' ') + 1;
-                        int status = int.Parse(readResult.Item1.Substring(index, 3));
-                        if (status != 200)
-                        {
-                            Debug.WriteLine("[Info] Signaling: heartbeat failed: {0}", status);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("[Warning] Signaling: heartbeat exception: {0}", e.Message);
-                }
-            }
+			if (res.StatusCode != HttpStatusCode.OK)
+			{
+				Debug.WriteLine("[Info] Signaling: heartbeat failed: {0}", res.StatusCode);
+			}
         }
+
+		private void StartHangingGetReadLoop()
+		{
+			if (_state != State.CONNECTED)
+			{
+				return;
+			}
+
+			Task.Run(async () =>
+			{
+				await HangingGetReadLoopAsync();
+				StartHangingGetReadLoop();
+			});
+		}
 
         /// <summary>
         /// Long lasting loop to get notified about connected/disconnected peers.
@@ -539,85 +240,29 @@ namespace PeerConnectionClient.Signalling
         {
             while (_state != State.NOT_CONNECTED)
             {
-                using (_hangingGetSocket = new StreamSocket())
-                {
-                    try
-                    {
-                        // Connect to the server
-                        await _hangingGetSocket.ConnectAsync(_server, _port)
-                            .AsTask()
-                            .ConfigureAwait(false);
+				try
+				{
+					var res = await this._httpClient.GetAsync($"/wait?peer_id={_myId}");
 
-                        if (_hangingGetSocket == null)
-                        {
-                            return;
-                        }
+					if (res.StatusCode != HttpStatusCode.OK)
+					{
+						Debug.WriteLine("[Info] Signaling: wait failed: {0}", res.StatusCode);
+						return;
+					}
 
-                        // Send the request
-                        await _hangingGetSocket.WriteStringAsync(string.Format(
-                            "GET /wait?peer_id={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
-                            _myId,
-                            _server))
-                            .ConfigureAwait(false);
+					var body = await res.Content.ReadAsStringAsync();
+					var pragmaId = int.Parse(res.Headers.Pragma.ToString());
 
-                        // Read the response.
-                        var readResult = await ReadIntoBufferAsync(_hangingGetSocket).ConfigureAwait(false);
-                        if (readResult == null)
-                        {
-                            continue;
-                        }
-
-                        string buffer = readResult.Item1;
-                        int content_length = readResult.Item2;
-
-                        int peer_id, eoh;
-                        if (!ParseServerResponse(buffer, out peer_id, out eoh))
-                        {
-                            continue;
-                        }
-
-                        // Store the position where the body begins
-                        int pos = eoh + 4;
-
-                        if (_myId == peer_id)
-                        {
-                            // A notification about a new member or a member that just
-                            // disconnected
-                            int id = 0;
-                            string name = "";
-                            bool connected = false;
-                            if (ParseEntry(buffer.Substring(pos), ref name, ref id, ref connected))
-                            {
-                                if (connected)
-                                {
-                                    _peers[id] = name;
-                                    OnPeerConnected(id, name);
-                                }
-                                else
-                                {
-                                    _peers.Remove(id);
-                                    OnPeerDisconnected(id);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            string message = buffer.Substring(pos);
-                            if (message == "BYE")
-                            {
-                                OnPeerHangup(peer_id);
-                            }
-                            else
-                            {
-                                OnMessageFromPeer(peer_id, message);
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine("[Error] Signaling: Long-polling exception: {0}", e.Message);
-                    }
-                }
+					if (!ParseServerResponse(body, pragmaId))
+					{
+						Debug.WriteLine("[Info] Signaling: wait parsing failed");
+						return;
+					}
+				}
+				catch (Exception ex)
+				{
+					Debug.WriteLine("[ERROR] Signalling: wait threw: " + ex.Message + "\r\n" + ex.StackTrace);
+				}
             }
         }
 
@@ -627,33 +272,26 @@ namespace PeerConnectionClient.Signalling
         /// <returns>True if the user is disconnected from the server.</returns>
         public async Task<bool> SignOut()
         {
-            if (_state == State.NOT_CONNECTED || _state == State.SIGNING_OUT)
-                return true;
+			if (_state == State.NOT_CONNECTED)
+			{
+				return true;
+			}
 
-            if (_hangingGetSocket != null)
-            {
-                _hangingGetSocket.Dispose();
-                _hangingGetSocket = null;
-            }
+			var res = await this._httpClient.GetAsync($"/sign_out?peer_id={_myId}");
 
-            _state = State.SIGNING_OUT;
-
-            if (_myId != -1)
-            {
-                await ControlSocketRequestAsync(string.Format(
-                    "GET /sign_out?peer_id={0} HTTP/1.0\r\nHost: {1}\r\n\r\n",
-                    _myId,
-                    _server))
-                    .ConfigureAwait(false);
-            }
-            else
-            {
-                // Can occur if the app is closed before we finish connecting
-                return true;
-            }
+			if (res.StatusCode != HttpStatusCode.OK)
+			{
+				Debug.WriteLine("[Info] Signaling: sign_out failed: {0}", res.StatusCode);
+				return false;
+			}
 
             _myId = -1;
             _state = State.NOT_CONNECTED;
+
+			Close();
+
+			OnDisconnected?.Invoke();
+
             return true;
         }
 
@@ -662,16 +300,16 @@ namespace PeerConnectionClient.Signalling
         /// </summary>
         private void Close()
         {
-            if (_hangingGetSocket != null)
-            {
-                _hangingGetSocket.Dispose();
-                _hangingGetSocket = null;
-            }
+			if (_heartbeatTimer != null)
+			{
+				_heartbeatTimer.Dispose();
+				_heartbeatTimer = null;
+			}
 
-            if (_heartbeatTimer != null)
+			if (_httpClient != null)
             {
-                _heartbeatTimer.Dispose();
-                _heartbeatTimer = null;
+				_httpClient.Dispose();
+				_httpClient = null;
             }
 
             _peers.Clear();
@@ -698,15 +336,15 @@ namespace PeerConnectionClient.Signalling
                 return false;
             }
 
-            string buffer = string.Format(
-                "POST /message?peer_id={0}&to={1} HTTP/1.0\r\nHost: {2}\r\n" +
-                "Content-Length: {3}\r\n" +
-                "Content-Type: text/plain\r\n" +
-                "\r\n" +
-                "{4}",
-                _myId, peerId, _server, message.Length, message);
+			var res = await this._httpClient.PostAsync($"/message?peer_id={_myId}&to={peerId}", new StringContent(message));
 
-            return await ControlSocketRequestAsync(buffer).ConfigureAwait(false);
+			if (res.StatusCode != HttpStatusCode.OK)
+			{
+				Debug.WriteLine("[Info] Signaling: message failed: {0}", res.StatusCode);
+				return false;
+			}
+
+			return true;
         }
 
         /// <summary>
@@ -718,29 +356,109 @@ namespace PeerConnectionClient.Signalling
         public async Task<bool> SendToPeer(int peerId, IJsonValue json)
         {
             string message = json.Stringify();
-            return await SendToPeer(peerId, message).ConfigureAwait(false);
+			return await SendToPeer(peerId, message);
         }
-    }
+
+		/// <summary>
+		/// Parses a body and updates peers, emitting events as needed
+		/// </summary>
+		/// <param name="body">the body to parse</param>
+		/// <returns>success indicator</returns>
+		private bool ParseServerResponse(string body, int pragmaId)
+		{
+			// if pragmaId isn't us, it's not a notification it's a message
+			if (pragmaId != _myId)
+			{
+				// if the entire message is bye, they gone
+				if (body == "BYE")
+				{
+					this.OnPeerHangup?.Invoke(pragmaId);
+				}
+				// otherwise, we share the message
+				else
+				{
+					this.OnMessageFromPeer?.Invoke(pragmaId, body);
+				}
+
+				// and then we're done
+				return true;
+			}
+
+			// oh boy, new peers
+			var oldPeers = new Dictionary<int, string>(_peers);
+
+			// peer updates aren't incremental
+			_peers.Clear();
+
+			foreach (var line in body.Split('\n'))
+			{
+				var parts = line.Split(',');
+
+				if (parts.Length != 3)
+				{
+					continue;
+				}
+
+				var id = int.Parse(parts[1]);
+
+				// indicates the peer is connected
+				// and isn't us
+				if (int.Parse(parts[2]) == 1 && id != _myId)
+				{
+					_peers[id] = parts[0];
+				}
+			}
+
+			foreach (var peer in _peers)
+			{
+				if (!oldPeers.ContainsKey(peer.Key))
+				{
+					this.OnPeerConnected?.Invoke(peer.Key, peer.Value);
+				}
+				oldPeers.Remove(peer.Key);
+			}
+
+			// handles disconnects that aren't respectful (and don't send /sign_out)
+			foreach (var oldPeer in oldPeers)
+			{
+				this.OnPeerDisconnected?.Invoke(oldPeer.Key);
+			}
+
+			// and we're all good
+			return true;
+		}
+
+		/// <summary>
+		/// Parses the given entry information (peer).
+		/// </summary>
+		/// <param name="entry">Entry info.</param>
+		/// <param name="name">Peer name.</param>
+		/// <param name="id">Peer ID.</param>
+		/// <param name="connected">Connected status of the entry (peer).</param>
+		/// <returns>False if fails to parse the entry information.</returns>
+		private bool ParseEntry(string entry, ref string name, ref int id, ref bool connected)
+		{
+			connected = false;
+			int separator = entry.IndexOf(',');
+			if (separator != -1)
+			{
+				id = entry.Substring(separator + 1).ParseLeadingInt();
+				name = entry.Substring(0, separator);
+				separator = entry.IndexOf(',', separator + 1);
+				if (separator != -1)
+				{
+					connected = entry.Substring(separator + 1).ParseLeadingInt() > 0 ? true : false;
+				}
+			}
+			return name.Length > 0;
+		}
+	}
 
     /// <summary>
     /// Class providing helper functions for parsing responses and messages.
     /// </summary>
     public static class Extensions
     {
-        public static async Task WriteStringAsync(this StreamSocket socket, string str)
-        {
-            try
-            {
-                var writer = new DataWriter(socket.OutputStream);
-                writer.WriteString(str);
-                await writer.StoreAsync().AsTask().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("[Error] Singnaling: Couldn't write to socket : " + ex.Message);
-            }
-        }
-
         public static int ParseLeadingInt(this string str)
         {
             return int.Parse(Regex.Match(str, "\\d+").Value);
