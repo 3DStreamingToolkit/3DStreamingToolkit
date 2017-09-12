@@ -36,7 +36,6 @@
 #include "turn_credential_provider.h"
 #include "server_renderer.h"
 #include "webrtc.h"
-#include "structs.h"
 #include "config_parser.h"
 #include "service/render_service.h"
 #endif // TEST_RUNNER
@@ -50,8 +49,11 @@
 #pragma comment(lib, "version.lib")
 #pragma comment(lib, "usp10.lib")
 
-using namespace DirectX;
+#ifndef TEST_RUNNER
 using namespace Microsoft::WRL;
+#endif // TEST_RUNNER
+
+using namespace DirectX;
 using namespace StreamingToolkit;
 
 // Extern method from DXUT.cpp
@@ -464,12 +466,6 @@ void LoadConfigs()
 	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
 }
 
-#endif // TEST_RUNNER
-
-//--------------------------------------------------------------------------------------
-// Entry point to the program. Initializes everything and goes into a message processing 
-// loop. Idle time is used to render the scene.
-//--------------------------------------------------------------------------------------
 bool AppMain(BOOL stopping)
 {
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
@@ -555,7 +551,7 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, g_bufferRenderer));
+		&client, &wnd, &g_webrtcConfig, g_bufferRenderer));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -765,6 +761,80 @@ bool AppMain(BOOL stopping)
 	return 0;
 }
 
+//--------------------------------------------------------------------------------------
+// System service
+//--------------------------------------------------------------------------------------
+void RegisterService()
+{
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		SC_HANDLE schService = OpenService(
+			schSCManager,
+			g_serviceConfig.name.c_str(),
+			SERVICE_QUERY_STATUS);
+
+		if (schService == NULL)
+		{
+			// If the service isn't already present, install it.
+			RenderService::InstallService(
+				g_serviceConfig.name,
+				g_serviceConfig.display_name,
+				g_serviceConfig.service_account,
+				g_serviceConfig.service_password);
+		}
+
+		CloseServiceHandle(schService);
+		schService = NULL;
+
+		// Init service.
+		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
+		{
+			AppMain(*stopping);
+		};
+
+		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
+
+		// Starts the service to run the app persistently.
+		if (!CServiceBase::Run(service))
+		{
+			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+		}
+
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+}
+
+void RemoveService()
+{
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		SC_HANDLE schService = OpenService(
+			schSCManager,
+			g_serviceConfig.name.c_str(),
+			SERVICE_QUERY_STATUS);
+
+		if (schService)
+		{
+			RenderService::RemoveService(g_serviceConfig.name.c_str());
+		}
+
+		CloseServiceHandle(schService);
+		schService = NULL;
+
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+}
+
+#endif // TEST_RUNNER
+
+//--------------------------------------------------------------------------------------
+// Entry point to the program. Initializes everything and goes into a message processing 
+// loop. Idle time is used to render the scene.
+//--------------------------------------------------------------------------------------
 int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
 	// Enable run-time memory check for debug builds.
@@ -2869,72 +2939,4 @@ void CALLBACK OnD3D11DestroyDevice(void* pUserContext)
 	SAFE_RELEASE(g_pcbPSPerScene);
 	SAFE_RELEASE(g_pcbPSPerObject);
 	SAFE_RELEASE(g_pcbPSPerLight);
-}
-
-//--------------------------------------------------------------------------------------
-// System service
-//--------------------------------------------------------------------------------------
-void RegisterService()
-{
-	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-	if (schSCManager)
-	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			g_serviceConfig.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService == NULL)
-		{
-			// If the service isn't already present, install it.
-			RenderService::InstallService(
-				g_serviceConfig.name,
-				g_serviceConfig.display_name,
-				g_serviceConfig.service_account,
-				g_serviceConfig.service_password);
-		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
-
-		// Init service.
-		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
-		{
-			AppMain(*stopping);
-		};
-
-		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
-
-		// Starts the service to run the app persistently.
-		if (!CServiceBase::Run(service))
-		{
-			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
-		}
-
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
-}
-
-void RemoveService()
-{
-	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-	if (schSCManager)
-	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			g_serviceConfig.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService)
-		{
-			RenderService::RemoveService(g_serviceConfig.name.c_str());
-		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
-
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
 }

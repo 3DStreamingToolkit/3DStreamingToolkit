@@ -1,6 +1,9 @@
-#include "pch.h"
+// Windows headers
+#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#include <windows.h>
 
 #include <fstream>
+
 #include "config_parser.h"
 #include "third_party/jsoncpp/source/include/json/json.h"
 
@@ -10,11 +13,8 @@ std::string ConfigParser::GetAbsolutePath(const std::string& file_name)
 {
 	TCHAR buffer[MAX_PATH];
 	GetModuleFileName(NULL, buffer, MAX_PATH);
-	char charPath[MAX_PATH];
-	wcstombs(charPath, buffer, wcslen(buffer) + 1);
-
-	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
-	return std::string(charPath).substr(0, pos + 1) + file_name;
+	std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+	return std::string(buffer).substr(0, pos + 1) + file_name;
 }
 
 void ConfigParser::Parse(
@@ -117,6 +117,15 @@ void ConfigParser::Parse(
 			}
 		}
 
+		if (root.isMember("stunServer"))
+		{
+			auto stunServerNode = root.get("stunServer", NULL);
+			if (stunServerNode.isMember("uri"))
+			{
+				webrtc_config->stun_server.uri = stunServerNode.get("uri", NULL).asString();
+			}
+		}
+
 		if (root.isMember("server"))
 		{
 			webrtc_config->server = root.get("server", NULL).asString();
@@ -153,6 +162,16 @@ void ConfigParser::Parse(
 			if (authenticationNode.isMember("clientSecret"))
 			{
 				webrtc_config->authentication.client_secret = authenticationNode.get("clientSecret", NULL).asString();
+			}
+
+			if (authenticationNode.isMember("codeUri"))
+			{
+				webrtc_config->authentication.code_uri = authenticationNode.get("codeUri", NULL).asString();
+			}
+
+			if (authenticationNode.isMember("pollUri"))
+			{
+				webrtc_config->authentication.poll_uri = authenticationNode.get("pollUri", NULL).asString();
 			}
 		}
 	}

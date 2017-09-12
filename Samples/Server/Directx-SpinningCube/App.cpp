@@ -15,7 +15,6 @@
 #include "turn_credential_provider.h"
 #include "server_renderer.h"
 #include "webrtc.h"
-#include "structs.h"
 #include "config_parser.h"
 #include "service/render_service.h"
 #endif // TEST_RUNNER
@@ -30,8 +29,11 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "winmm.lib")
 
-using namespace DX;
+#ifndef TEST_RUNNER
 using namespace Microsoft::WRL;
+#endif // TEST_RUNNER
+
+using namespace DX;
 using namespace StreamingToolkit;
 using namespace StreamingToolkitSample;
 
@@ -67,101 +69,6 @@ void LoadConfigs()
 	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
 }
 
-#else // TEST_RUNNER
-
-//--------------------------------------------------------------------------------------
-// Called every time the application receives a message
-//--------------------------------------------------------------------------------------
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	PAINTSTRUCT ps;
-	HDC hdc;
-
-	switch (message)
-	{
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		EndPaint(hWnd, &ps);
-		break;
-
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-
-		// Note that this tutorial does not handle resizing (WM_SIZE) requests,
-		// so we created the window without the resize border.
-
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-
-	return 0;
-}
-
-//--------------------------------------------------------------------------------------
-// Registers class and creates window
-//--------------------------------------------------------------------------------------
-HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
-{
-	// Registers class.
-	WNDCLASSEX wcex = { 0 };
-	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.style = CS_HREDRAW | CS_VREDRAW;
-	wcex.lpfnWndProc = WndProc;
-	wcex.cbClsExtra = 0;
-	wcex.cbWndExtra = 0;
-	wcex.hInstance = hInstance;
-	wcex.hIcon = 0;
-	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-	wcex.lpszMenuName = nullptr;
-	wcex.lpszClassName = L"SpinningCubeClass";
-	if (!RegisterClassEx(&wcex))
-	{
-		return E_FAIL;
-	}
-
-	// Creates window.
-	RECT rc = { 0, 0, 1280, 720 };
-	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
-	g_hWnd = CreateWindow(
-		L"SpinningCubeClass",
-		L"SpinningCube",
-		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		rc.right - rc.left,
-		rc.bottom - rc.top,
-		nullptr,
-		nullptr,
-		hInstance,
-		nullptr);
-
-	if (!g_hWnd)
-	{
-		return E_FAIL;
-	}
-
-	ShowWindow(g_hWnd, nCmdShow);
-
-	return S_OK;
-}
-
-//--------------------------------------------------------------------------------------
-// Render the frame
-//--------------------------------------------------------------------------------------
-void Render()
-{
-	FrameUpdate();
-	g_deviceResources->Present();
-}
-
-#endif // TEST_RUNNER
-
-//--------------------------------------------------------------------------------------
-// Entry point to the program. Initializes everything and goes into a message processing 
-// loop. Idle time is used to render the scene.
-//--------------------------------------------------------------------------------------
 bool AppMain(BOOL stopping)
 {
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
@@ -235,7 +142,7 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, g_bufferRenderer));
+		&client, &wnd, &g_webrtcConfig, g_bufferRenderer));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -441,6 +348,170 @@ bool AppMain(BOOL stopping)
 	return 0;
 }
 
+//--------------------------------------------------------------------------------------
+// System service
+//--------------------------------------------------------------------------------------
+void RegisterService()
+{
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		SC_HANDLE schService = OpenService(
+			schSCManager,
+			g_serviceConfig.name.c_str(),
+			SERVICE_QUERY_STATUS);
+
+		if (schService == NULL)
+		{
+			// If the service isn't already present, install it.
+			RenderService::InstallService(
+				g_serviceConfig.name,
+				g_serviceConfig.display_name,
+				g_serviceConfig.service_account,
+				g_serviceConfig.service_password);
+		}
+
+		CloseServiceHandle(schService);
+		schService = NULL;
+
+		// Init service.
+		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
+		{
+			AppMain(*stopping);
+		};
+
+		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
+
+		// Starts the service to run the app persistently.
+		if (!CServiceBase::Run(service))
+		{
+			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+		}
+
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+}
+
+void RemoveService()
+{
+	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
+	if (schSCManager)
+	{
+		SC_HANDLE schService = OpenService(
+			schSCManager,
+			g_serviceConfig.name.c_str(),
+			SERVICE_QUERY_STATUS);
+
+		if (schService)
+		{
+			RenderService::RemoveService(g_serviceConfig.name.c_str());
+		}
+
+		CloseServiceHandle(schService);
+		schService = NULL;
+
+		CloseServiceHandle(schSCManager);
+		schSCManager = NULL;
+	}
+}
+
+#else // TEST_RUNNER
+
+//--------------------------------------------------------------------------------------
+// Called every time the application receives a message
+//--------------------------------------------------------------------------------------
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	PAINTSTRUCT ps;
+	HDC hdc;
+
+	switch (message)
+	{
+	case WM_PAINT:
+		hdc = BeginPaint(hWnd, &ps);
+		EndPaint(hWnd, &ps);
+		break;
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+
+		// Note that this tutorial does not handle resizing (WM_SIZE) requests,
+		// so we created the window without the resize border.
+
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+
+	return 0;
+}
+
+//--------------------------------------------------------------------------------------
+// Registers class and creates window
+//--------------------------------------------------------------------------------------
+HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
+{
+	// Registers class.
+	WNDCLASSEX wcex = { 0 };
+	wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = 0;
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = nullptr;
+	wcex.lpszClassName = L"SpinningCubeClass";
+	if (!RegisterClassEx(&wcex))
+	{
+		return E_FAIL;
+	}
+
+	// Creates window.
+	RECT rc = { 0, 0, 1280, 720 };
+	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
+	g_hWnd = CreateWindow(
+		L"SpinningCubeClass",
+		L"SpinningCube",
+		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		rc.right - rc.left,
+		rc.bottom - rc.top,
+		nullptr,
+		nullptr,
+		hInstance,
+		nullptr);
+
+	if (!g_hWnd)
+	{
+		return E_FAIL;
+	}
+
+	ShowWindow(g_hWnd, nCmdShow);
+
+	return S_OK;
+}
+
+//--------------------------------------------------------------------------------------
+// Render the frame
+//--------------------------------------------------------------------------------------
+void Render()
+{
+	g_cubeRenderer->Update();
+	g_cubeRenderer->Render();
+	g_deviceResources->Present();
+}
+
+#endif // TEST_RUNNER
+
+//--------------------------------------------------------------------------------------
+// Entry point to the program. Initializes everything and goes into a message processing 
+// loop. Idle time is used to render the scene.
+//--------------------------------------------------------------------------------------
 int WINAPI wWinMain(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -524,72 +595,4 @@ int WINAPI wWinMain(
 		return 0;
 	}
 #endif // TEST_RUNNER
-}
-
-//--------------------------------------------------------------------------------------
-// System service
-//--------------------------------------------------------------------------------------
-void RegisterService()
-{
-	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-	if (schSCManager)
-	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			g_serviceConfig.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService == NULL)
-		{
-			// If the service isn't already present, install it.
-			RenderService::InstallService(
-				g_serviceConfig.name,
-				g_serviceConfig.display_name,
-				g_serviceConfig.service_account,
-				g_serviceConfig.service_password);
-		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
-
-		// Init service.
-		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
-		{
-			AppMain(*stopping);
-		};
-
-		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
-
-		// Starts the service to run the app persistently.
-		if (!CServiceBase::Run(service))
-		{
-			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
-		}
-
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
-}
-
-void RemoveService()
-{
-	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-	if (schSCManager)
-	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			g_serviceConfig.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService)
-		{
-			RenderService::RemoveService(g_serviceConfig.name.c_str());
-		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
-
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
 }

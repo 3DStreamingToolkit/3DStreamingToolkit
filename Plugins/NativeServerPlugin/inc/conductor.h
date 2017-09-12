@@ -21,6 +21,7 @@
 #include "peer_connection_client.h"
 #include "input_data_channel_observer.h"
 #include "main_window.h"
+#include "config_parser.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 
@@ -42,6 +43,7 @@ public:
 	Conductor(
 		PeerConnectionClient* client,
 		MainWindow* main_window,
+		StreamingToolkit::WebRTCConfig* webrtc_config,
 		StreamingToolkit::BufferRenderer* buffer_renderer);
 
 	bool connection_active() const;
@@ -157,6 +159,7 @@ protected:
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 	std::unique_ptr<StreamingToolkit::InputDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;
+	StreamingToolkit::WebRTCConfig* webrtc_config_;
 	StreamingToolkit::InputDataHandler* input_data_handler_;
 	StreamingToolkit::BufferRenderer* buffer_renderer_;
 	std::deque<std::string*> pending_messages_;

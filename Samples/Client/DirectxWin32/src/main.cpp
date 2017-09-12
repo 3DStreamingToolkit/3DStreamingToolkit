@@ -13,6 +13,7 @@
 #include "win32_data_channel_handler.h"
 #include "oauth24d_provider.h"
 #include "turn_credential_provider.h"
+#include "config_parser.h"
 
 //--------------------------------------------------------------------------------------
 // Required app libs
@@ -27,30 +28,41 @@
 #pragma comment(lib, "winmm.lib")
 
 //--------------------------------------------------------------------------------------
-// Global Methods
+// Global vars
 //--------------------------------------------------------------------------------------
-std::string GetAbsolutePath(std::string fileName)
-{
-	TCHAR buffer[MAX_PATH];
-	GetModuleFileName(NULL, buffer, MAX_PATH);
-	char charPath[MAX_PATH];
-	wcstombs(charPath, buffer, wcslen(buffer) + 1);
+using namespace StreamingToolkit;
 
-	std::string::size_type pos = std::string(charPath).find_last_of("\\/");
-	return std::string(charPath).substr(0, pos + 1) + fileName;
-}
+WebRTCConfig	g_webrtcConfig;
 
 //--------------------------------------------------------------------------------------
-// WebRTC
+// Entry point to the program. Initializes everything and goes into a message processing 
+// loop. Idle time is used to render the scene.
 //--------------------------------------------------------------------------------------
-int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* authPollUri, char* turnUri)
+int WINAPI wWinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR lpCmdLine,
+	_In_ int nCmdShow)
 {
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
+
+	// Loads webrtc config file.
+	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
+
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
-	ClientMainWindow wnd(server, port, FLAG_autoconnect, FLAG_autocall, false, 1280, 720);
-	
+	ClientMainWindow wnd(
+		g_webrtcConfig.server.c_str(),
+		g_webrtcConfig.port,
+		FLAG_autoconnect,
+		FLAG_autocall,
+		false,
+		1280,
+		720);
+
 	if (!wnd.Create())
 	{
 		RTC_NOTREACHED();
@@ -60,12 +72,11 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	rtc::InitializeSSL();
 
 	std::unique_ptr<OAuth24DProvider> oauth;
-	if (strcmp(authCodeUri, FLAG_authCodeUri) != 0 &&
-		strcmp(authPollUri, FLAG_authPollUri) != 0 &&
-		!std::string(authCodeUri).empty() &&
-		!std::string(authPollUri).empty())
+	if (!g_webrtcConfig.authentication.code_uri.empty() &&
+		!g_webrtcConfig.authentication.poll_uri.empty())
 	{
-		oauth.reset(new OAuth24DProvider(authCodeUri, authPollUri));
+		oauth.reset(new OAuth24DProvider(
+			g_webrtcConfig.authentication.code_uri, g_webrtcConfig.authentication.poll_uri));
 	}
 	else
 	{
@@ -77,22 +88,23 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	std::unique_ptr<TurnCredentialProvider> turn;
 
 	if (oauth.get() != nullptr &&
-		strcmp(turnUri, FLAG_turnUri) != 0 &&
-		!std::string(turnUri).empty())
+		g_webrtcConfig.turn_server.provider != FLAG_turnUri &&
+		!g_webrtcConfig.turn_server.provider.empty())
 	{
-		turn.reset(new TurnCredentialProvider(turnUri));
+		turn.reset(new TurnCredentialProvider(g_webrtcConfig.turn_server.provider));
 	}
 
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(&client, &wnd));
+		new rtc::RefCountedObject<Conductor>(&client, &wnd, &g_webrtcConfig));
+
 	Win32DataChannelHandler dcHandler(conductor.get());
 
 	wnd.SignalClientWindowMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
 	wnd.SignalDataChannelMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
 
 	// set our client heartbeat interval
-	client.SetHeartbeatMs(heartbeat);
+	client.SetHeartbeatMs(g_webrtcConfig.heartbeat);
 
 	// create (but not necessarily use) async callbacks
 	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& data)
@@ -167,14 +179,14 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 
 	// if we have real auth values, indicate that we'll try and connect
 	if (oauth.get() != nullptr)
-	{	
+	{
 		oauth->SignalCodeComplete.connect(&codeComplete, &OAuth24DProvider::CodeCompleteCallback::Handle);
 		oauth->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 
 		wnd.SetConnectButtonState(false);
 		wnd.SetAuthCode(L"Connecting");
 		wnd.SetAuthUri(L"Connecting");
-		
+
 		// redraw the ui that shows the code only if we're currently in that ui
 		if (wnd.current_ui() == ClientMainWindow::UI::CONNECT_TO_SERVER)
 		{
@@ -214,94 +226,4 @@ int InitWebRTC(char* server, int port, int heartbeat, char* authCodeUri, char* a
 	rtc::CleanupSSL();
 
 	return 0;
-}
-
-//--------------------------------------------------------------------------------------
-// Entry point to the program. Initializes everything and goes into a message processing 
-// loop. Idle time is used to render the scene.
-//--------------------------------------------------------------------------------------
-int WINAPI wWinMain(
-	_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPWSTR lpCmdLine,
-	_In_ int nCmdShow)
-{
-	UNREFERENCED_PARAMETER(hPrevInstance);
-	UNREFERENCED_PARAMETER(lpCmdLine);
-
-	int nArgs;
-	char server[1024];
-	strcpy(server, FLAG_server);
-	char authCodeUri[1024];
-	strcpy(authCodeUri, FLAG_authCodeUri);
-	char authPollUri[1024];
-	strcpy(authPollUri, FLAG_authPollUri);
-	char turnUri[1024];
-	strcpy(turnUri, FLAG_turnUri);
-	int port = FLAG_port;
-	int heartbeat = FLAG_heartbeat;
-	LPWSTR* szArglist = CommandLineToArgvW(lpCmdLine, &nArgs);
-
-	// Try parsing command line arguments.
-	if (szArglist && nArgs == 2)
-	{
-		wcstombs(server, szArglist[0], sizeof(server));
-		port = _wtoi(szArglist[1]);
-	}
-	else // Try parsing config file.
-	{
-		std::string configFilePath = GetAbsolutePath("webrtcConfig.json");
-		std::ifstream configFile(configFilePath);
-		Json::Reader reader;
-		Json::Value root = NULL;
-		if (configFile.good())
-		{
-			reader.parse(configFile, root, true);
-			if (root.isMember("server"))
-			{
-				strcpy(server, root.get("server", FLAG_server).asCString());
-			}
-
-			if (root.isMember("port"))
-			{
-				port = root.get("port", FLAG_port).asInt();
-			}
-
-			if (root.isMember("heartbeat"))
-			{
-				heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
-			}
-
-			if (root.isMember("turnServer"))
-			{
-				auto turnWrapper = root.get("turnServer", NULL);
-				if (turnWrapper != NULL)
-				{
-					if (turnWrapper.isMember("provider"))
-					{
-						strcpy(turnUri, turnWrapper.get("provider", FLAG_turnUri).asCString());
-					}
-				}
-			}
-
-			if (root.isMember("authentication"))
-			{
-				auto authenticationWrapper = root.get("authentication", NULL);
-				if (authenticationWrapper != NULL)
-				{
-					if (authenticationWrapper.isMember("codeUri"))
-					{
-						strcpy(authCodeUri, authenticationWrapper.get("codeUri", FLAG_authCodeUri).asCString());
-					}
-
-					if (authenticationWrapper.isMember("pollUri"))
-					{
-						strcpy(authPollUri, authenticationWrapper.get("pollUri", FLAG_authPollUri).asCString());
-					}
-				}
-			}
-		}
-	}
-
-	return InitWebRTC(server, port, heartbeat, authCodeUri, authPollUri, turnUri);
 }

@@ -1,12 +1,17 @@
 #include "pch.h"
 #include "CubeRenderer.h"
 #include "DirectXHelper.h"
+#ifndef TEST_RUNNER
 #include "config_parser.h"
+#endif // TEST_RUNNER
 
 using namespace DirectX;
 using namespace DX;
-using namespace StreamingToolkit;
 using namespace StreamingToolkitSample;
+
+#ifndef TEST_RUNNER
+using namespace StreamingToolkit;
+#endif // TEST_RUNNER
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
 static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
@@ -99,11 +104,14 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
+#ifndef TEST_RUNNER
 	errno_t error = fopen_s(
 		&vertexShaderFile,
 		ConfigParser::GetAbsolutePath("VertexShader.cso").c_str(),
 		"rb");
-
+#else // TEST_RUNNER
+	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+#endif // TEST_RUNNER
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -136,10 +144,14 @@ void CubeRenderer::InitPipeline()
 
 	// Creates the pixel shader.
 	FILE* pixelShaderFile = nullptr;
+#ifndef TEST_RUNNER
 	error = fopen_s(
 		&pixelShaderFile,
 		ConfigParser::GetAbsolutePath("PixelShader.cso").c_str(),
 		"rb");
+#else // TEST_RUNNER
+	error = fopen_s(&pixelShaderFile, "PixelShader.cso", "rb");
+#endif // TEST_RUNNER
 
 	fseek(pixelShaderFile, 0, SEEK_END);
 	int pixelShaderFileSize = ftell(pixelShaderFile);

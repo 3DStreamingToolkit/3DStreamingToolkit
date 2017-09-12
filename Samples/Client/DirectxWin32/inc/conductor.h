@@ -20,6 +20,7 @@
 #include "peer_connection_client.h"
 #include "main_window.h"
 #include "data_channel_handler.h"
+#include "config_parser.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 
@@ -49,7 +50,10 @@ public:
 		STREAM_REMOVED,
 	};
 
-	Conductor(PeerConnectionClient* client, MainWindow* main_window);
+	Conductor(
+		PeerConnectionClient* client,
+		MainWindow* main_window,
+		StreamingToolkit::WebRTCConfig* webrtc_config);
 
 	bool connection_active() const;
 
@@ -153,6 +157,7 @@ protected:
 	PeerConnectionClient* client_;
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 	MainWindow* main_window_;
+	StreamingToolkit::WebRTCConfig* webrtc_config_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
 		active_streams_;

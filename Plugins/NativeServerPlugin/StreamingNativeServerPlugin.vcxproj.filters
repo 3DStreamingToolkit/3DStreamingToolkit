@@ -52,9 +52,6 @@
     <ClCompile Include="src\service_base.cpp">
       <Filter>Source\service</Filter>
     </ClCompile>
-    <ClCompile Include="src\config_parser.cpp">
-      <Filter>Source\StreamingToolkit</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -90,12 +87,6 @@
     </ClInclude>
     <ClInclude Include="inc\service\thread_pool.h">
       <Filter>Headers\service</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\structs.h">
-      <Filter>Headers\StreamingToolkit</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\config_parser.h">
-      <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

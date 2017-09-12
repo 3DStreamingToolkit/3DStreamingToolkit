@@ -68,11 +68,13 @@ using namespace StreamingToolkit;
 Conductor::Conductor(
 	PeerConnectionClient* client,
 	MainWindow* main_window,
+	WebRTCConfig* webrtc_config,
 	BufferRenderer* buffer_renderer) :
 		peer_id_(-1),
 		loopback_(false),
 		client_(client),
 		main_window_(main_window),
+		webrtc_config_(webrtc_config),
 		buffer_renderer_(buffer_renderer),
 		input_data_handler_(nullptr)
 {
@@ -191,79 +193,58 @@ bool Conductor::CreatePeerConnection(bool dtls)
 
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 
-	// Try parsing config file.
-	std::string configFilePath = ExePath("webrtcConfig.json");
-	std::ifstream configFile(configFilePath);
-	Json::Reader reader;
-	Json::Value root = NULL;
-
-	if (configFile.good())
+	if (!webrtc_config_->ice_configuration.empty())
 	{
-		reader.parse(configFile, root, true);
-		if (root.isMember("iceConfiguration"))
+		if (webrtc_config_->ice_configuration == "relay")
 		{
-			Json::Value iceConfig = root.get("iceConfiguration", NULL);
-			if (iceConfig == "relay") 
+			webrtc::PeerConnectionInterface::IceServer turnServer;
+			turnServer.uri = "";
+			turnServer.username = "";
+			turnServer.password = "";
+
+			if (!webrtc_config_->turn_server.uri.empty())
 			{
-				webrtc::PeerConnectionInterface::IceServer turnServer;
-				turnServer.uri = "";
-				turnServer.username = "";
-				turnServer.password = "";
+				turnServer.uri = webrtc_config_->turn_server.uri;
+				turnServer.username = webrtc_config_->turn_server.username;
+				turnServer.password = webrtc_config_->turn_server.password;
+			}
 
-				if (root.isMember("turnServer"))
+			// if we're given explicit turn creds at runtime, steamroll any config values
+			if (!turn_username_.empty() && !turn_password_.empty())
+			{
+				turnServer.username = turn_username_;
+				turnServer.password = turn_password_;
+			}
+
+			turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+			config.type = webrtc::PeerConnectionInterface::kRelay;
+			config.servers.push_back(turnServer);
+		}
+		else
+		{
+			if (webrtc_config_->ice_configuration == "stun")
+			{
+				webrtc::PeerConnectionInterface::IceServer stunServer;
+				stunServer.uri = "";
+				if (!webrtc_config_->stun_server.uri.empty())
 				{
-					Json::Value jsonTurnServer = root.get("turnServer", NULL);
-					if (!jsonTurnServer.isNull())
-					{
-						turnServer.uri = jsonTurnServer["uri"].asString();
-						turnServer.username = jsonTurnServer["username"].asString();
-						turnServer.password = jsonTurnServer["password"].asString();
-					}
+					stunServer.urls.push_back(webrtc_config_->stun_server.uri);
+					config.servers.push_back(stunServer);
 				}
-
-				// steamroll config values if explicit values are given
-				if (!turn_username_.empty() && !turn_password_.empty())
-				{
-					turnServer.username = turn_username_;
-					turnServer.password = turn_password_;
-				}
-
-				turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
-				config.type = webrtc::PeerConnectionInterface::kRelay;
-				config.servers.push_back(turnServer);
 			}
 			else
 			{
-				if (iceConfig == "stun")
-				{
-					webrtc::PeerConnectionInterface::IceServer stunServer;
-					stunServer.uri = "";
-
-
-					if (root.isMember("stunServer"))
-					{
-						Json::Value jsonTurnServer = root.get("stunServer", NULL);
-						if (!jsonTurnServer.isNull())
-						{
-							stunServer.urls.push_back(jsonTurnServer["uri"].asString());
-							config.servers.push_back(stunServer);
-						}
-					}
-				}
-				else
-				{
-					webrtc::PeerConnectionInterface::IceServer stunServer;
-					stunServer.urls.push_back(GetPeerConnectionString());
-					config.servers.push_back(stunServer);
-				}
-			}	
+				webrtc::PeerConnectionInterface::IceServer stunServer;
+				stunServer.urls.push_back(GetPeerConnectionString());
+				config.servers.push_back(stunServer);
+			}
 		}
 	}
 
 	webrtc::FakeConstraints constraints;
-	if (dtls) 
+	if (dtls)
 	{
-		constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,"true");
+		constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
 	}
 	else
 	{

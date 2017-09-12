@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.4
+VisualStudioVersion = 15.0.26430.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StreamingNativeServerPlugin", "Plugins\NativeServerPlugin\StreamingNativeServerPlugin.vcxproj", "{6BC9C817-FD14-4540-A9C0-63CF16F770A6}"
 EndProject
@@ -68,6 +68,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Authentication", "Libraries\Authentication\Authentication.vcxproj", "{0BF47A53-06E2-4102-B789-C36F46D95DC7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UserInterface", "Libraries\UserInterface\UserInterface.vcxproj", "{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConfigParser", "Libraries\ConfigParser\ConfigParser.vcxproj", "{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -369,6 +371,18 @@ Global
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}.Release|x64.Build.0 = Release|x64
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}.Release|x86.ActiveCfg = Release|Win32
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}.Release|x86.Build.0 = Release|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x64.ActiveCfg = Debug|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x64.Build.0 = Debug|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x86.ActiveCfg = Debug|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x86.Build.0 = Debug|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Profile|x64.ActiveCfg = Release|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Profile|x64.Build.0 = Release|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Profile|x86.ActiveCfg = Release|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Profile|x86.Build.0 = Release|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x64.ActiveCfg = Release|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x64.Build.0 = Release|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x86.ActiveCfg = Release|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -402,5 +416,6 @@ Global
 		{61B333C2-C4F7-4CC1-A9BF-83F6D95588EB} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
 		{0BF47A53-06E2-4102-B789-C36F46D95DC7} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
 	EndGlobalSection
 EndGlobal
