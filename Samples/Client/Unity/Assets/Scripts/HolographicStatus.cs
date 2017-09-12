@@ -12,13 +12,13 @@ public class HolographicStatus : MonoBehaviour
 	public Text RightStatus;
 
 	[Tooltip("The time in seconds a status message is shown")]
-	public float FlashTimeout = 2f;
+	public float FlashTimeout = 30f;
 
 	[Tooltip("should the status fade out? otherwise it'll just disappear immediately")]
 	public bool FadeOut = true;
 
 	[Tooltip("The time in seconds it takes to fade the object out (if FadeOut is true)")]
-	public float FadeTimeout = 2f;
+	public float FadeTimeout = 5f;
 
 	private Queue<string> statusQueue = new Queue<string>();
 	private float currentMessageTime = 0f;

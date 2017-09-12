@@ -210,6 +210,31 @@ Prefab:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 1304715564}
+    - target: {fileID: 114119599789412686, guid: 5609f3b3a40f1db42b110e1c441d45cc,
+        type: 2}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114119599789412686, guid: 5609f3b3a40f1db42b110e1c441d45cc,
+        type: 2}
+      propertyPath: m_FontData.m_FontSize
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 114119599789412686, guid: 5609f3b3a40f1db42b110e1c441d45cc,
+        type: 2}
+      propertyPath: m_FontData.m_MinSize
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 114119599789412686, guid: 5609f3b3a40f1db42b110e1c441d45cc,
+        type: 2}
+      propertyPath: m_FontData.m_MaxSize
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 114119599789412686, guid: 5609f3b3a40f1db42b110e1c441d45cc,
+        type: 2}
+      propertyPath: m_FontData.m_Alignment
+      value: 6
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 5609f3b3a40f1db42b110e1c441d45cc, type: 2}
   m_IsPrefabParent: 0
@@ -908,6 +933,35 @@ Prefab:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 1264895378}
+    - target: {fileID: 1735305189634160, guid: 2886981e38be5ac40bee2f8cc0e981f6, type: 2}
+      propertyPath: m_Layer
+      value: 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 114840952828475832, guid: 2886981e38be5ac40bee2f8cc0e981f6,
+        type: 2}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 114840952828475832, guid: 2886981e38be5ac40bee2f8cc0e981f6,
+        type: 2}
+      propertyPath: m_FontData.m_FontSize
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 114840952828475832, guid: 2886981e38be5ac40bee2f8cc0e981f6,
+        type: 2}
+      propertyPath: m_FontData.m_MinSize
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 114840952828475832, guid: 2886981e38be5ac40bee2f8cc0e981f6,
+        type: 2}
+      propertyPath: m_FontData.m_Alignment
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 114840952828475832, guid: 2886981e38be5ac40bee2f8cc0e981f6,
+        type: 2}
+      propertyPath: m_FontData.m_MaxSize
+      value: 60
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 2886981e38be5ac40bee2f8cc0e981f6, type: 2}
   m_IsPrefabParent: 0
@@ -2381,6 +2435,11 @@ Prefab:
         type: 2}
       propertyPath: m_CullingMask.m_Bits
       value: 9472
+      objectReference: {fileID: 0}
+    - target: {fileID: 20383063039662506, guid: 45f8508dedb3115499915c972189c04a,
+        type: 2}
+      propertyPath: m_OcclusionCulling
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 45f8508dedb3115499915c972189c04a, type: 2}
