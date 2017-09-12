@@ -24,6 +24,7 @@
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/win32socketserver.h"
+#include "webrtc/base/logging.h"
 
 #include "turn_credential_provider.h"
 #include "server_authentication_provider.h"
@@ -60,6 +61,26 @@ using namespace Toolkit3DLibrary;
 
 void(__stdcall*s_onInputUpdate)(const char *msg);
 void(__stdcall*s_onLog)(const int level, const char *msg);
+
+static struct FsLogStream : rtc::LogSink
+{
+	FsLogStream() : m_nativeLog("StreamingUnityServerPlugin.log", std::ios_base::app)
+	{
+		rtc::LogMessage::AddLogToStream(this, rtc::LoggingSeverity::LS_VERBOSE);
+	}
+
+	~FsLogStream()
+	{
+		rtc::LogMessage::RemoveLogToStream(this);
+	}
+
+	std::ofstream m_nativeLog;
+	
+	virtual void OnLogMessage(const std::string& message) override
+	{
+		m_nativeLog << message;
+	}
+} s_fsLogger;
 
 #define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
 
@@ -312,7 +333,7 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 
 	if (s_Context)
 	{
-		ULOG(INFO, "s_Context is ~NULL");
+		ULOG(INFO, "s_Context is not NULL");
 
 		if (s_frameBuffer == nullptr)
 		{
@@ -370,7 +391,7 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
 
 
-extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
 	ULOG(INFO, __FUNCTION__);
 
@@ -383,7 +404,7 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 	ULOG(INFO, "Console open...")
 #endif
 
-		s_UnityInterfaces = unityInterfaces;
+	s_UnityInterfaces = unityInterfaces;
 	s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
 	s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
