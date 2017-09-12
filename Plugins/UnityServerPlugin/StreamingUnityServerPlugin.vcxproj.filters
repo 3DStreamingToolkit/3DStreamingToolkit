@@ -22,4 +22,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="StreamingUnityServerPlugin.def">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
