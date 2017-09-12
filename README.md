@@ -6,6 +6,8 @@ A toolkit for creating 3D experiences that are traditionally out of reach on low
 
 ## What is this?
 
+**Problem:** The world is becoming increasingly mobile, but the demand for high-fidelity 3D content is only growing. We needed a scalable approach to make this sort of content available on low-powered, low-bandwidth devices.
+
 The 3DToolkit project's purpose is to provide an approach for developing 3D server applications that stream frames to other devices over the network. Specifically:
 
 1. Server-side libraries for remotely rendering 3D scenes
@@ -13,10 +15,9 @@ The 3DToolkit project's purpose is to provide an approach for developing 3D serv
 3. Low-latency audio and video streams using WebRTC
 4. High-performance video encoding and decoding using NVEncode
 
-Why? Because the world is becoming increasingly mobile, but the demand for high-fidelity 3D content is only growing. We needed a scalable approach to make this sort of content available on low-powered, low-bandwidth devices.
-
-![high level architecture](./readme_data/hl-arch.png)
-Here's a high-level diagram of the components we've built, and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged.
+![WebRTC applied to 3D Streaming](http://avevawebrtc.azurewebsites.net/images//WebRTCStreaming.png)
+[comment]: <> (![high level architecture](./readme_data/hl-arch.png)
+Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3dtoolkit/wiki/What-is-3DToolkit#webrtc-httpwebrtcorg). 
 
 ## How to build
 
@@ -26,7 +27,7 @@ These steps will ensure your development environment is configured properly, and
 
 ### Prerequisites 
 
-> Note: If you are using Visual Studio 2017, ensure you have installed the Visual Studio 2015 Update 3 as well, and please do not update our projects when prompted to do so.
+> Note: If you are using Visual Studio 2017, ensure you have installed the Visual Studio 2015 Update 3 as well, and please **_do not_** update our projects when prompted to do so.
 
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016 (see [which version of Windows you have](https://binged.it/2xgQqRI)) 
 + [Visual Studio 2015 Update 3](https://www.visualstudio.com/en-us/news/releasenotes/vs2015-update3-vs)
@@ -58,13 +59,13 @@ If you're seeing errors, check out the [troubleshooting guide](https://github.co
 
 ## Build output
 
-After you've built the solution, you'll likely want to start a sample server implementation, and a sample client implementation. These are applications that we've build to demonstrate the behaviors the toolkit provides.
+After you've built the solution, you'll likely want to start one sample server implementation, and one sample client implementation. These are applications that we've build to demonstrate the behaviors the toolkit provides.
 
 > Note: We advise you to try `Spinning Cube` and `Win32Client` to begin, as these are the simpliest sample implementations.
 
-Here's a table illustrating where each sample implementation will be built to. To run one, navigate to that location and start the `exe`.
+Here's a table illustrating where each sample implementation will be built to. To run one server and one client, navigate to that location and start the `exe`.
 
-> Note: the following table describes the location under `Build\<Platform>\<Configuration>\` where a sample can be found. To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build).
+> Note: the following table describes the location under `Build\<Platform>\<Configuration>\` where a sample can be found. To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x86`.
 
 <table>
 <tr>
@@ -95,7 +96,7 @@ Here's a table illustrating where each sample implementation will be built to. T
 
 Once you start both a server and client implementation, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
 
-## Specifics
+## Next Steps
 
 These resources will be critical to your success in configuring and scaling applications.
 
@@ -107,7 +108,7 @@ These resources will be critical to your success in configuring and scaling appl
 
 + [General Wiki](https://github.com/CatalystCode/3dtoolkit/wiki)
 + [Building WebRTC from source](https://github.com/CatalystCode/3dtoolkit/wiki/Building-WebRTC-from-source)
-+ [Tyler's talk about our 3DToolkit](#todo-link)
++ [Live 3DToolkit Overview Talk](#todo-link)
 + [WebRTC Homepage](https://webrtc.org/)
 + [NVEncode Homepage](https://developer.nvidia.com/nvidia-video-codec-sdk)
 
