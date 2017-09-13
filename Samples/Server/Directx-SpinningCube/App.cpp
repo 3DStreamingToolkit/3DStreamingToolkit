@@ -243,6 +243,13 @@ bool AppMain(BOOL stopping)
 			{
 				wnd.SetAuthCode(L"OK");
 			}
+
+			// For system service, automatically connect to the signaling server
+			// after successful authentication.
+			if (g_serverConfig.system_service)
+			{
+				conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
+			}
 		}
 	});
 
@@ -263,6 +270,11 @@ bool AppMain(BOOL stopping)
 		authProvider.reset(new ServerAuthenticationProvider(authInfo));
 
 		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
+	}
+	else if (g_serverConfig.system_service)
+	{
+		// For system service, automatically connect to the signaling server.
+		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
 	}
 
 	// configure turn, if needed
