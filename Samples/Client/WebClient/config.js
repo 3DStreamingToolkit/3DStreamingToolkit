@@ -1,8 +1,8 @@
 var pcConfigStatic = {
     "iceServers": [{
-        "url": "turn:turnserveruri:5349",
+        "urls": "turn:turnserveruri:5349",
         "username": "username",
-        "password": "password",
+        "credential": "password",
         "credentialType": "password"
     }],
     "iceTransportPolicy": "relay"
@@ -10,7 +10,7 @@ var pcConfigStatic = {
 
 var pcConfigDynamic = {
     "iceServers": [{
-        "url": "turn:turnserveruri:5349",
+        "urls": "turn:turnserveruri:5349",
         "credentialType": "password"
     }],
     "iceTransportPolicy": "relay"

@@ -29,6 +29,11 @@ A toolkit for building powerful stereoscopic 3d experiences that run on the clou
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016
 + Visual Studio 2015 Update 3
 + Windows 10 SDK - 10.0.14393.795
++ NVidia video card driver:
+   * Windows: Driver version 375.86  or higher
+   * Linux:   Driver version 375.20  or higher
+   * CUDA 7.5 Toolkit (optional)
++ [Azure SDK 3.0.1](https://www.microsoft.com/web/handlers/webpi.ashx/getinstaller/VWDOrVs2015AzurePack.appids) for Visual Studio 2015 (Optional, but required to use the Server Azure Deployment projects)
 + [WDK](https://msdn.microsoft.com/en-us/library/windows/hardware/ff557573.aspx) - If building WebRTC Library from source (note: this is likely not the case, and is only necessary if you're planning to modify our dependency library, WebRTC)
 
 ## Installing Prebuilt Dependencies
