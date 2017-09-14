@@ -2,7 +2,7 @@
 
 A toolkit for creating 3D experiences that are traditionally out of reach on low-powered devices. :muscle: :eye: :cloud:
 
-![example](./readme_data/example.gif)
+![example](./3dstreamclientserver.gif)
 
 ## What is this?
 
