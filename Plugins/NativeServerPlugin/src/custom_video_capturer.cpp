@@ -166,22 +166,43 @@ namespace StreamingToolkit
 		rtc::CritScope cs(&lock_);
 		if (sending_) 
 		{
+			rtc::scoped_refptr<webrtc::I420Buffer> buffer;
+			void* pFrameBuffer = nullptr;
+			ID3D11Texture2D* texture = nullptr;
 			int width = 0;
 			int height = 0;
-			buffer_renderer_->GetDimension(&width, &height);
-			rtc::scoped_refptr<webrtc::I420Buffer> buffer = webrtc::I420Buffer::Create(width, height);
 
+			// Updates buffer renderer.
+			buffer_renderer_->Render();
+
+			// Captures buffer renderer.
 			if (use_software_encoder_)
 			{
-				void* pFrameBuffer = nullptr;
 				int frameSizeInBytes = 0;
-
-				buffer_renderer_->Render();
 				buffer_renderer_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-
 				if (frameSizeInBytes == 0)
+				{
 					return;
+				}
+			}
+			else
+			{
+				texture = buffer_renderer_->Capture();
+				if (!texture)
+				{
+					return;
+				}
 
+				texture->AddRef();
+			}
+
+			// Creates video frame buffer.
+			buffer_renderer_->GetDimension(&width, &height);
+			buffer = webrtc::I420Buffer::Create(width, height);
+
+			// For software encoder, converting to supported video format.
+			if (use_software_encoder_)
+			{
 				libyuv::ABGRToI420(
 					(uint8_t*)pFrameBuffer,
 					width * 4,
@@ -195,17 +216,15 @@ namespace StreamingToolkit
 					height);
 			}
 
+			// Updates time stamp.
 			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-			auto frame = webrtc::VideoFrame(
-				buffer, fake_rotation_,
-				timeStamp);
+			// Creates video frame.
+			auto frame = webrtc::VideoFrame(buffer, fake_rotation_, timeStamp);
 
+			// For hardware encoder, setting the video frame texture.
 			if (!use_software_encoder_)
 			{
-				buffer_renderer_->Render();
-				ID3D11Texture2D* texture = buffer_renderer_->Capture();
-				texture->AddRef();
 				frame.SetID3D11Texture2D(texture);
 			}
 

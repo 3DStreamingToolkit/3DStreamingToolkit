@@ -13,7 +13,6 @@ namespace DX
 
 		void										SetWindow(HWND);
 		void										Present();
-		void										Resize(int width, int height);
 		void										SetStereo(bool enabled);
 
 		// The size of the render target, in pixels.
@@ -48,5 +47,6 @@ namespace DX
 		HRESULT										CreateDeviceResources();
 		HRESULT										CreateWindowSizeDependentResources(HWND);
 		void										CleanupResources();
+		void										Resize(int width, int height);
 	};
 }

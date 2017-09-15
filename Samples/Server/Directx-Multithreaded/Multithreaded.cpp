@@ -522,13 +522,14 @@ bool AppMain(BOOL stopping)
 		DXUTRender3DEnvironment();
 	});
 
-	ComPtr<ID3D11Texture2D> frameBuffer;
+	ID3D11Texture2D* frameBuffer = nullptr;
 	if (!g_serverConfig.system_service)
 	{
 		// Gets the frame buffer from the swap chain.
-		HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(0,
+		HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
+			0,
 			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+			reinterpret_cast<void**>(&frameBuffer));
 	}
 
 	// Initializes the buffer renderer.
@@ -537,7 +538,10 @@ bool AppMain(BOOL stopping)
 		g_serverConfig.height,
 		DXUTGetD3D11Device(),
 		frameRenderFunc,
-		frameBuffer.Get());
+		frameBuffer);
+
+	// Makes sure to release the frame buffer reference.
+	SAFE_RELEASE(frameBuffer);
 
 	// For system service, we render to buffer instead of swap chain.
 	if (g_serverConfig.system_service)
@@ -577,13 +581,34 @@ bool AppMain(BOOL stopping)
 					return;
 				}
 
+				g_bufferRenderer->Release();
 				g_CameraResources.SetStereo(isStereo);
 				DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
 				int width = deviceSettings.d3d11.sd.BufferDesc.Width;
 				int height = deviceSettings.d3d11.sd.BufferDesc.Height;
 				int newWidth = isStereo ? width << 1 : width >> 1;
-				SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
 				DXUTResizeDXGIBuffers(newWidth, height, false);
+				if (!g_serverConfig.system_service)
+				{
+					ID3D11Texture2D* frameBuffer = nullptr;
+					SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+
+					// Gets the frame buffer from the swap chain.
+					HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
+						0,
+						__uuidof(ID3D11Texture2D),
+						reinterpret_cast<void**>(&frameBuffer));
+
+					g_bufferRenderer->Resize(frameBuffer);
+
+					// Makes sure to release the frame buffer reference.
+					SAFE_RELEASE(frameBuffer);
+				}
+				else
+				{
+					g_bufferRenderer->Resize(newWidth, height);
+					DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
+				}
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{

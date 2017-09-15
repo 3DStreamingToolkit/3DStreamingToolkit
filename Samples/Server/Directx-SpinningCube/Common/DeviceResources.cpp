@@ -219,22 +219,18 @@ void DeviceResources::Resize(int width, int height)
 	SAFE_RELEASE(m_d3dRenderTargetView);
 
 	// Resizes the swapchain buffers.
-	HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_UNKNOWN, 0);
-	if (SUCCEEDED(hr))
+	if (m_swapChain)
 	{
-		// Re-creates the render target view.
-		ID3D11Texture2D* frameBuffer = nullptr;
-		hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
+		HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_UNKNOWN, 0);
 		if (SUCCEEDED(hr))
 		{
-			hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
-			SAFE_RELEASE(frameBuffer);
-
+			// Re-creates the render target view.
+			ID3D11Texture2D* frameBuffer = nullptr;
+			hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
 			if (SUCCEEDED(hr))
 			{
-				// Updates the new output size.
-				m_outputSize.cx = width;
-				m_outputSize.cy = height;
+				hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
+				SAFE_RELEASE(frameBuffer);
 			}
 		}
 	}

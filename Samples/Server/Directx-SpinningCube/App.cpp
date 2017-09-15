@@ -6,6 +6,7 @@
 
 #include "DeviceResources.h"
 #include "CubeRenderer.h"
+#include "macros.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -119,13 +120,14 @@ bool AppMain(BOOL stopping)
 		}
 	});
 
-	ComPtr<ID3D11Texture2D> frameBuffer;
+	ID3D11Texture2D* frameBuffer = nullptr;
 	if (!g_serverConfig.system_service)
 	{
 		// Gets the frame buffer from the swap chain.
-		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(0,
+		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
+			0,
 			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+			reinterpret_cast<void**>(&frameBuffer));
 	}
 
 	// Initializes the buffer renderer.
@@ -134,7 +136,10 @@ bool AppMain(BOOL stopping)
 		g_serverConfig.height,
 		g_deviceResources->GetD3DDevice(),
 		frameRenderFunc,
-		frameBuffer.Get());
+		frameBuffer);
+
+	// Makes sure to release the frame buffer reference.
+	SAFE_RELEASE(frameBuffer);
 
 	rtc::InitializeSSL();
 
@@ -163,8 +168,38 @@ bool AppMain(BOOL stopping)
 			if (strcmp(type, "stereo-rendering") == 0)
 			{
 				getline(datastream, token, ',');
-				int stereo = stoi(token);
-				g_deviceResources->SetStereo(stereo == 1);
+				bool isStereo = stoi(token) == 1;
+				if (isStereo == g_deviceResources->IsStereo())
+				{
+					return;
+				}
+
+				// Releases the current frame buffer.
+				g_bufferRenderer->Release();
+
+				// Resizes the swap chain.
+				g_deviceResources->SetStereo(isStereo);
+				
+				// Updates the new frame buffer.
+				if (!g_serverConfig.system_service)
+				{
+					ID3D11Texture2D* frameBuffer = nullptr;
+					HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
+						0,
+						__uuidof(ID3D11Texture2D),
+						reinterpret_cast<void**>(&frameBuffer));
+
+					g_bufferRenderer->Resize(frameBuffer);
+
+					// Makes sure to release the frame buffer reference.
+					SAFE_RELEASE(frameBuffer);
+				}
+				else
+				{
+					SIZE size = g_deviceResources->GetOutputSize();
+					g_bufferRenderer->Resize(size.cx, size.cy);
+				}
+
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{

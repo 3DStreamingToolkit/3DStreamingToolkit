@@ -3739,8 +3739,12 @@ void DXUTResizeDXGIBuffers(UINT Width, UINT Height, BOOL bFullScreen)
 	GetDXUTState().SetD3D11DepthStencilView(nullptr);
 
 	// Release our old render target view
-	auto pRTV = GetDXUTState().GetD3D11RenderTargetView();
-	SAFE_RELEASE(pRTV);
+	if (!GetDXUTState().GetHeadlessMode())
+	{
+		auto pRTV = GetDXUTState().GetD3D11RenderTargetView();
+		SAFE_RELEASE(pRTV);
+	}
+
 	GetDXUTState().SetD3D11RenderTargetView(nullptr);
 
 	// Alternate between 0 and DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH when resizing buffers.

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <wrl\client.h>
+#include <wrl\wrappers\corewrappers.h>
 #include <d3d11_4.h>
 #include <functional>
 
@@ -26,10 +27,14 @@ namespace StreamingToolkit
 		ID3D11Texture2D* Capture(int* width = nullptr, int* height = nullptr);
 		void Capture(void** buffer, int* size, int* width, int* height);
 		void Render();
+		void Release();
+		void Resize(ID3D11Texture2D* frame_buffer);
+		void Resize(int width, int height);
 
 	private:
 		void UpdateStagingBuffer();
 
+		Microsoft::WRL::Wrappers::CriticalSection buffer_lock_;
 		int width_;
 		int height_;
 		std::function<void()> frame_render_func_;
