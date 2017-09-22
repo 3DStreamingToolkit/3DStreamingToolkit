@@ -448,7 +448,7 @@ namespace PeerConnectionClient.Signalling
         {
             _peerSendDataChannel?.Send(new StringDataChannelMessage(msg));
 
-            return _peerReceiveDataChannel != null;
+            return _peerSendDataChannel != null;
         }
 
         private void PeerSendDataChannelOnClose()
