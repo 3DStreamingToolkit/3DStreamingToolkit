@@ -21,6 +21,10 @@ public class StreamActivity extends AppCompatActivity {
         setContentView(R.layout.activity_stream);
     }
 
+    private abstract class peerObserver implements DataChannel.Observer {
+
+    }
+
     ArrayList<String> otherPeers = new ArrayList<>();
     int myId = -1;
     int heartBeatTimer;
