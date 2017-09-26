@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="AppCallbacks.cpp" />
+    <ClCompile Include="Common\DeviceResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\VideoRenderer.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\CameraResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="HolographicAppMain.cpp" />
+    <ClCompile Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEngine.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEnginePlayer.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaHelpers.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AppCallbacks.h" />
+    <ClInclude Include="Common\DeviceResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DirectXHelper.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\StepTimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\VideoRenderer.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ShaderStructures.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\CameraResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="HolographicAppMain.h" />
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\d3dmanagerlock.hxx">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEngine.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaEnginePlayer.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaHelpers.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{7333c327-c574-4e4d-a22a-f6d89e277639}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{4230e590-b26b-4fdb-a561-cf05f4186900}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{166f04bb-d849-4120-8f48-f4ecd93cdacd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MediaEngine">
+      <UniqueIdentifier>{d8e1b0d8-e303-473e-aff3-c5814effe8b7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\PixelShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\VPRTVertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\GeometryShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\VertexShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>

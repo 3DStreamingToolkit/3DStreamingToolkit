@@ -1,0 +1,4 @@
+target 'SwiftClient' do
+    use_frameworks!
+    pod 'WebRTC', '~> 60.10.18252'
+end

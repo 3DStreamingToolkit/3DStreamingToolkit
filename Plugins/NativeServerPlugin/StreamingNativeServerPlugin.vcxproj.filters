@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{fc03c18e-3374-4407-8529-83c32d24ddf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{9842d50a-0500-4f58-9a77-aa5cc85a2907}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="src\conductor.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\defaults.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\custom_video_capturer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\video_helper.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\default_data_channel_observer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="inc\conductor.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\defaults.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\flagdefs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\macros.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\pch.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\custom_video_capturer.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\video_helper.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\default_data_channel_observer.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\plugindefs.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="nvEncConfig.json" />
+    <None Include="webrtcConfig.json" />
+    <None Include="exports.props" />
+    <None Include="webrtcConfigStunTemplate.json" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{cd55c6f2-de59-415f-a843-8f413d9a60b0}</ProjectGuid>
+    <Keyword>DynamicLibrary</Keyword>
+    <RootNamespace>TexturesUWP</RootNamespace>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <AppContainerApplication>true</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.14393.0</WindowsTargetPlatformMinVersion>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <GenerateManifest>false</GenerateManifest>
+    <IgnoreImportLibrary>false</IgnoreImportLibrary>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\$(MSBuildProjectName)</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\$(MSBuildProjectName)</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(IntDir);$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\inc;$(ProjectDir)..\..\..\Libraries\UnityPluginAPI\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>$(VCInstallDir)vcpackages;$(WindowsSDKDir)UnionMetadata;</AdditionalUsingDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\libs\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libyuv_win10_x86.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib</AdditionalOptions>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
+
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\TexturesUWP$(TargetExt)"
+      ENDLOCAL
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(IntDir);$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\inc;$(ProjectDir)..\..\..\Libraries\UnityPluginAPI\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>$(VCInstallDir)vcpackages;$(WindowsSDKDir)UnionMetadata;</AdditionalUsingDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\libs\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libyuv_win10_x86.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalManifestDependencies>
+      </AdditionalManifestDependencies>
+      <AdditionalOptions>/nodefaultlib:vccorlib /nodefaultlib:msvcrt vccorlib.lib msvcrt.lib</AdditionalOptions>
+    </Link>
+    <PostBuildEvent>
+      <Command>
+      SETLOCAL
+      set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\..\Samples\Client\Unity\Assets\
+
+      echo Target Plugin Path is %TARGET_PLUGIN_PATH%
+
+      mkdir "%TARGET_PLUGIN_PATH%Plugins"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA"
+      mkdir "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)"
+
+      copy /Y "$(TargetPath)" "%TARGET_PLUGIN_PATH%Plugins\WSA\$(PlatformShortName)\TexturesUWP$(TargetExt)"
+      ENDLOCAL
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(IntDir);$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\inc;$(ProjectDir)..\..\..\Libraries\UnityPluginAPI\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>$(VCInstallDir)vcpackages;$(WindowsSDKDir)UnionMetadata;</AdditionalUsingDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalDependencies>libyuv_win10_x64.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\libs\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/nodefaultlib:vccorlibd /nodefaultlib:msvcrtd vccorlibd.lib msvcrtd.lib</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(IntDir);$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\inc;$(ProjectDir)..\..\..\Libraries\UnityPluginAPI\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalUsingDirectories>$(VCInstallDir)vcpackages;$(WindowsSDKDir)UnionMetadata;</AdditionalUsingDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+      <ModuleDefinitionFile>TexturesUWP.def</ModuleDefinitionFile>
+      <AdditionalDependencies>libyuv_win10_x64.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\Libraries\WebRTCUWP\libyuv\libs\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalOptions>/nodefaultlib:vccorlib /nodefaultlib:msvcrt vccorlib.lib msvcrt.lib</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="defs.h" />
+    <ClInclude Include="libyuv\basic_types.h" />
+    <ClInclude Include="libyuv\compare.h" />
+    <ClInclude Include="libyuv\compare_row.h" />
+    <ClInclude Include="libyuv\convert.h" />
+    <ClInclude Include="libyuv\convert_argb.h" />
+    <ClInclude Include="libyuv\convert_from.h" />
+    <ClInclude Include="libyuv\convert_from_argb.h" />
+    <ClInclude Include="libyuv\cpu_id.h" />
+    <ClInclude Include="libyuv\libyuv.h" />
+    <ClInclude Include="libyuv\mjpeg_decoder.h" />
+    <ClInclude Include="libyuv\planar_functions.h" />
+    <ClInclude Include="libyuv\rotate.h" />
+    <ClInclude Include="libyuv\rotate_argb.h" />
+    <ClInclude Include="libyuv\rotate_row.h" />
+    <ClInclude Include="libyuv\row.h" />
+    <ClInclude Include="libyuv\scale.h" />
+    <ClInclude Include="libyuv\scale_argb.h" />
+    <ClInclude Include="libyuv\scale_row.h" />
+    <ClInclude Include="libyuv\version.h" />
+    <ClInclude Include="libyuv\video_common.h" />
+    <ClInclude Include="macros.h" />
+    <ClInclude Include="TexturesUWP.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityEventQueue.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityGraphics.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D11.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D12.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsD3D9.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityGraphicsMetal.h" />
+    <ClInclude Include="UnityPluginAPI\IUnityInterface.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="TexturesUWP.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TexturesUWP.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
