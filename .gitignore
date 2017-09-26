@@ -258,3 +258,6 @@ paket-files/
 *.log
 *.cso
 *.zip
+
+# Mac Files
+.DS_Store
