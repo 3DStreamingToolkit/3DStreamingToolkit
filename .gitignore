@@ -260,6 +260,7 @@ paket-files/
 *.zip
 
 # Xcode - Swift
+# Github's gitignore for Swift: https://github.com/github/gitignore/blob/master/Swift.gitignore
 
 ## Build generated
 build/
