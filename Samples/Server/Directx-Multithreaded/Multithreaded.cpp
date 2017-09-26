@@ -467,7 +467,8 @@ void InputUpdate(const std::string& message)
 		strcpy(body, msg.get("body", "").asCString());
 		std::istringstream datastream(body);
 		std::string token;
-		if (strcmp(type, "stereo-rendering") == 0)
+		// TODO(bengreenier): do not check in, testing only
+		/*if (strcmp(type, "stereo-rendering") == 0)
 		{
 			getline(datastream, token, ',');
 			bool isStereo = stoi(token) == 1;
@@ -484,7 +485,7 @@ void InputUpdate(const std::string& message)
 			SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
 			DXUTResizeDXGIBuffers(newWidth, height, false);
 		}
-		else if (strcmp(type, "camera-transform-lookat") == 0)
+		else*/ if (strcmp(type, "camera-transform-lookat") == 0)
 		{
 			// Eye point.
 			getline(datastream, token, ',');

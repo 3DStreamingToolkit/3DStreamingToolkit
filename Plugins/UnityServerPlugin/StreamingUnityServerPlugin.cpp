@@ -131,6 +131,8 @@ void InitWebRTC()
 {
 	ULOG(INFO, __FUNCTION__);
 
+	Sleep(5 * 1000);
+
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
@@ -333,8 +335,6 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 
 	if (s_Context)
 	{
-		ULOG(INFO, "s_Context is not NULL");
-
 		if (s_frameBuffer == nullptr)
 		{
 			ID3D11RenderTargetView* rtv(nullptr);
