@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -15,8 +16,14 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class ConnectActivity extends AppCompatActivity {
     public static final String SERVER_LIST = "com.microsoft.a3dtoolkitandroid.LIST";
+    public static final String SERVER_SERVER = "com.microsoft.a3dtoolkitandroid.SERVER";
+    public static final String SERVER_PORT = "com.microsoft.a3dtoolkitandroid.PORT";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,24 +56,38 @@ public class ConnectActivity extends AppCompatActivity {
             // Instantiate the RequestQueue.
             RequestQueue queue = Volley.newRequestQueue(this);
             String url = server + "/sign_in?peer_name=" + port;
+            intent.putExtra(SERVER_SERVER, server);
+            intent.putExtra(SERVER_PORT, port);
 
             // Request a string response from the server
-            StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                    new Response.Listener<String>() {
+            StringRequest getRequest = new StringRequest(Request.Method.GET, url,
+                    new Response.Listener<String>()
+                    {
                         @Override
                         public void onResponse(String response) {
+                            // response
                             intent.putExtra(SERVER_LIST, response);
                             startActivity(intent);
                         }
-                    }, new Response.ErrorListener() {
+                    },
+                    new Response.ErrorListener()
+                    {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            builder.setTitle("Error")
+                                    .setMessage("Sorry request did not work!");
+                        }
+                    }
+            ) {
                 @Override
-                public void onErrorResponse(VolleyError error) {
-                    builder.setTitle("Error")
-                            .setMessage("Sorry request did not work!");
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String>  params = new HashMap<>();
+                    params.put("Peer-Type", "Client");
+                    return params;
                 }
-            });
+            };
             // Add the request to the RequestQueue.
-            queue.add(stringRequest);
+            queue.add(getRequest);
 
             //show the alert
             AlertDialog alertDialog = builder.create();

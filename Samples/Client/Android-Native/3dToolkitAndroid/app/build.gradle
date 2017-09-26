@@ -29,4 +29,5 @@ dependencies {
     compile 'com.android.volley:volley:1.0.0'
     testCompile 'junit:junit:4.12'
     compile files('libs/libjingle_peerconnection.jar')
+    compile files('libs/autobanh.jar')
 }
