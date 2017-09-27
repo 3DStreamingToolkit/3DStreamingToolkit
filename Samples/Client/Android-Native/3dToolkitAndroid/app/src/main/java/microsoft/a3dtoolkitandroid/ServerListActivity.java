@@ -205,16 +205,19 @@ public class ServerListActivity extends AppCompatActivity {
 
                     @Override
                     public void onSetSuccess() {
+                        Log.d(LOG, "joinPeer: onSetSuccess2");
 
                     }
 
                     @Override
                     public void onCreateFailure(String s) {
+                        Log.d(LOG, "joinPeer: onCreateFailure2: " + s);
 
                     }
 
                     @Override
                     public void onSetFailure(String s) {
+                        Log.d(LOG, "joinPeer: onSetFailure2: " + s);
 
                     }
                 }, sessionDescriptionH264);

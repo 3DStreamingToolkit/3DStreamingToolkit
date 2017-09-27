@@ -5,7 +5,7 @@ android {
     buildToolsVersion "26.0.1"
     defaultConfig {
         applicationId "microsoft.a3dtoolkitandroid"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -28,6 +28,6 @@ dependencies {
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     compile 'com.android.volley:volley:1.0.0'
     testCompile 'junit:junit:4.12'
-    compile files('libs/libjingle_peerconnection.jar')
+    compile 'org.webrtc:google-webrtc:1.0.19742'
     compile files('libs/autobanh.jar')
 }
