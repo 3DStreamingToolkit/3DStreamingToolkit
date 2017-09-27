@@ -90,11 +90,11 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup>
-      <ClCompile>
-    <AdditionalIncludeDirectories>$(ProjectDir)..\..\Libraries\UnityPluginAPI\inc;$(ProjectDir)..\NativeServerPlugin\inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>    
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\Libraries\UnityPluginAPI\inc;$(ProjectDir)..\NativeServerPlugin\inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib</AdditionalLibraryDirectories>     
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -112,6 +112,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
+      <ModuleDefinitionFile>.\StreamingUnityServerPlugin.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -148,6 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
+      <ModuleDefinitionFile>.\StreamingUnityServerPlugin.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -166,7 +168,7 @@
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       ENDLOCAL
-      </Command>   
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -189,6 +191,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
+      <ModuleDefinitionFile>.\StreamingUnityServerPlugin.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -228,6 +231,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
+      <ModuleDefinitionFile>.\StreamingUnityServerPlugin.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -263,6 +267,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="StreamingUnityServerPlugin.def" />
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\NativeServerPlugin\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
