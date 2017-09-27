@@ -126,22 +126,27 @@ public class ServerListActivity extends AppCompatActivity {
         startHangingGet();
         startHeartBeat();
         updatePeerList();
-//
-//        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
+
+
+
+        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
+
+
+
 //                final String item = (String) parent.getItemAtPosition(position);
 //
 //                String serverName = getServerName(item);
 //                nextIntent.putExtra(SERVER_NAME, serverName);
 //
 //                startActivity(nextIntent);
-//            }
-//        });
+            }
+        });
 
-        //show the alert
-        AlertDialog alertDialog = builder.create();
-        alertDialog.show();
+//        //show the alert
+//        AlertDialog alertDialog = builder.create();
+//        alertDialog.show();
     }
 
 
@@ -372,6 +377,7 @@ public class ServerListActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(CustomStringRequest.ResponseM result) {
                         //From here you will get headers
+                        Log.d(LOG, "startHangingGet: onResponse");
                         String peer_id_string = result.headers.get("Pragma");
                         int peer_id = parseInt(peer_id_string);
                         JSONObject response = result.response;
@@ -398,6 +404,9 @@ public class ServerListActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
+                        if (error.toString().equals("com.android.volley.TimeoutError")){
+                            startHangingGet();
+                        }
                         builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 });

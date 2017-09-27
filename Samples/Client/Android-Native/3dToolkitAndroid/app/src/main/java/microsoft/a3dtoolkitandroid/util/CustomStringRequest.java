@@ -30,6 +30,7 @@ public class CustomStringRequest extends Request<CustomStringRequest.ResponseM> 
 
     @Override
     protected void deliverResponse(ResponseM response) {
+        Log.d("ServerListLog", "deliverResponse: " + response.toString());
         this.mListener.onResponse(response);
     }
 
