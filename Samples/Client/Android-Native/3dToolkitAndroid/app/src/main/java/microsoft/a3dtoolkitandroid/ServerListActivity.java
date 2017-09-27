@@ -69,6 +69,7 @@ public class ServerListActivity extends AppCompatActivity {
     private PeerConnectionFactory peerConnectionFactory;
     private RtcListener mListener;
     private DataChannel inputChannel;
+    private ArrayAdapter adapter;
 
     /**
      * Implement this interface to be notified of events.
@@ -121,7 +122,7 @@ public class ServerListActivity extends AppCompatActivity {
                 otherPeers.put(parseInt(parsed[1]), parsed[0]);
             }
         }
-        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, peers);
+        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, peers);
         listview.setAdapter(adapter);
 
         startHangingGet();
@@ -431,6 +432,7 @@ public class ServerListActivity extends AppCompatActivity {
         try {
             for (Map.Entry<Integer, String> peer : otherPeers.entrySet()) {
                 peers.add(peer.getValue());
+                adapter.notifyDataSetChanged();
             }
 
         } catch (Throwable error) {
