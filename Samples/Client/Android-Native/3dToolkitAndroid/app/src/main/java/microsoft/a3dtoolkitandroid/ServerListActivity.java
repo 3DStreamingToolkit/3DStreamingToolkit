@@ -114,12 +114,12 @@ public class ServerListActivity extends AppCompatActivity {
                 otherPeers.put(parseInt(parsed[1]), parsed[0]);
             }
         }
+        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, peers);
+        listview.setAdapter(adapter);
+
         startHangingGet();
         startHeartBeat();
         updatePeerList();
-
-//        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, peers);
-//        listview.setAdapter(adapter);
 //
 //        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 //            @Override
@@ -148,6 +148,7 @@ public class ServerListActivity extends AppCompatActivity {
 
     private void createPeerConnection(int peer_id) {
         try {
+            Log.d("LOG", "createPeerConnection: ");
             MediaConstraints defaultPeerConnectionConstraints = new MediaConstraints();
             defaultPeerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
@@ -352,6 +353,9 @@ public class ServerListActivity extends AppCompatActivity {
         updatePeerList();
     }
 
+    /**
+     *
+     */
     private void startHangingGet() {
         CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
                 new Response.Listener<CustomStringRequest.ResponseM>() {
@@ -383,6 +387,9 @@ public class ServerListActivity extends AppCompatActivity {
         queue.add(stringRequest);
     }
 
+    /**
+     * Sends heartBeat request to server at a regular interval to maintain peerlist
+     */
     private void startHeartBeat() {
         new Timer().scheduleAtFixedRate(new TimerTask(){
             @Override
@@ -401,6 +408,12 @@ public class ServerListActivity extends AppCompatActivity {
         },0, heartbeatIntervalInMs);
     }
 
+    /**
+     * Adds a http request to volley queue.
+     * @param String url: http url
+     * @param int method: etc Request.Method.GET or Request.Method.POST
+     * @param Response.Listener<String> listener: custom listener for responses
+     */
     private void addRequest(String url, int method, Response.Listener<String> listener){
         // Request a string response from the server
         StringRequest getRequest = new StringRequest(method, url, listener,

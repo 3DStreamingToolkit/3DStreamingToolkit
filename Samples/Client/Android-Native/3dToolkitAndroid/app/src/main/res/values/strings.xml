@@ -11,20 +11,6 @@
     <string name="port">Port:</string>
     <string name="server">Server:</string>
     <string name="http_3dtoolkit_signaling_server_azurewebsites_net">http://3dtoolkit-signaling-server.azurewebsites.net</string>
-    <string name="missing_url">FATAL ERROR: Missing URL to connect to.</string>
-    <string name="channel_error_title">Connection error</string>
-    <string name="connecting_to">Connecting to: %1$s</string>
-    <string name="pref_speakerphone_key">a</string>
-    <string name="pref_speakerphone_default">as</string>
-    <string name="muted">a</string>
-    <string name="format_description">a</string>
-    <string name="ok">ok</string>
-    <string name="disconnect_call" />
-    <string name="switch_camera" />
-    <string name="toggle_mic" />
-    <string name="capture_format_change_text" />
-    <string name="toggle_debug">Toggle debug view</string>
-    <string name="disconnect_call">Disconnect Call</string>
 
     <string name="room_description"> Please enter a room name. Room names are shared with everyone, so think of something unique and send it to a friend. </string>
 
