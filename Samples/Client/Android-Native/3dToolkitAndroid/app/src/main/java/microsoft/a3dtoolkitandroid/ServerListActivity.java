@@ -342,6 +342,7 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     private void updatePeerList() {
+        Log.d(LOG, "updatePeerList: ");
         try {
             for (Map.Entry<Integer, String> peer : otherPeers.entrySet()) {
                 peers.add(peer.getValue());
@@ -352,9 +353,9 @@ public class ServerListActivity extends AppCompatActivity {
         }
     }
 
-    private void handleServerNotification(JSONObject data) {
-        Log.d(LOG, "Server notification: " + data);
-        String[] parsed = data.toString().split(",");
+    private void handleServerNotification(String server) {
+        Log.d(LOG, "handleServerNotification: " + server);
+        String[] parsed = server.trim().split("\\s*,\\s*");;
         if (parseInt(parsed[2]) != 0) {
             otherPeers.put(parseInt(parsed[1]), parsed[0]);
         }
@@ -366,16 +367,23 @@ public class ServerListActivity extends AppCompatActivity {
      */
     private void startHangingGet() {
         Log.d(LOG, "Start Hanging Get Start");
-        JsonObjectRequest obreq = new JsonObjectRequest(Request.Method.GET, server + "/wait?peer_id=" + myID, null,
-                new Response.Listener<JSONObject>() {
+        CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
+                new Response.Listener<CustomStringRequest.ResponseM>() {
                     @Override
-                    public void onResponse(JSONObject response) {
-                        int peer_id = parseInt("3");
+                    public void onResponse(CustomStringRequest.ResponseM result) {
+                        //From here you will get headers
+                        String peer_id_string = result.headers.get("Pragma");
+                        int peer_id = parseInt(peer_id_string);
+                        JSONObject response = result.response;
 
                         Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
                         if (peer_id == myID) {
                             Log.d(LOG, "startHangingGet: peer if = myif");
-                            handleServerNotification(response);
+                            try {
+                                handleServerNotification(response.getString("Server"));
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
                         } else {
                             try {
                                 Log.d(LOG, "startHangingGet: handlePeerMessage");
@@ -386,50 +394,14 @@ public class ServerListActivity extends AppCompatActivity {
                         }
                     }
                 },
-                // The final parameter overrides the method onErrorResponse() and passes VolleyError
-                //as a parameter
                 new Response.ErrorListener() {
                     @Override
-                    // Handles errors that occur due to Volley
                     public void onErrorResponse(VolleyError error) {
-                        Log.e(ERROR, "startHangingGet:Error");
+                        Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
+                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
-                }
-        );
-        // Add the request to the RequestQueue.
-        queue.add(obreq);
-
-//        CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
-//                new Response.Listener<CustomStringRequest.ResponseM>() {
-//                    @Override
-//                    public void onResponse(CustomStringRequest.ResponseM result) {
-//                        //From here you will get headers
-//                        String peer_id_string = result.headers.get("Pragma");
-//                        int peer_id = parseInt(peer_id_string);
-//                        JSONObject response = result.response;
-//
-//                        Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
-//                        if (peer_id == myID) {
-//                            Log.d(LOG, "startHangingGet: peer if = myif");
-//                            handleServerNotification(response);
-//                        } else {
-//                            try {
-//                                Log.d(LOG, "startHangingGet: handlePeerMessage");
-//                                handlePeerMessage(peer_id, response);
-//                            } catch (JSONException e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                    }
-//                },
-//                new Response.ErrorListener() {
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//                        Log.d(ERROR, "startHangingGet: ERROR");
-//                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
-//                    }
-//                });
-//        queue.add(stringRequest);
+                });
+        queue.add(stringRequest);
 
         Log.d(LOG, "Start Hanging Get END");
     }
@@ -438,6 +410,7 @@ public class ServerListActivity extends AppCompatActivity {
      * Sends heartBeat request to server at a regular interval to maintain peerlist
      */
     private void startHeartBeat() {
+        Log.d(LOG, "startHeartBeat: ");
         new Timer().scheduleAtFixedRate(new TimerTask(){
             @Override
             public void run(){
