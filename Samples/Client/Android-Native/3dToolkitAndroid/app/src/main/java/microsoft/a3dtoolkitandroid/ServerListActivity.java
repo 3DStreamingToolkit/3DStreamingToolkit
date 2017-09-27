@@ -68,6 +68,7 @@ public class ServerListActivity extends AppCompatActivity {
     private PeerConnection pc;
     private PeerConnectionFactory peerConnectionFactory;
     private RtcListener mListener;
+    private DataChannel inputChannel;
 
     /**
      * Implement this interface to be notified of events.
@@ -127,20 +128,19 @@ public class ServerListActivity extends AppCompatActivity {
         startHeartBeat();
         updatePeerList();
 
-
-
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
-
-
-
-//                final String item = (String) parent.getItemAtPosition(position);
-//
-//                String serverName = getServerName(item);
-//                nextIntent.putExtra(SERVER_NAME, serverName);
-//
-//                startActivity(nextIntent);
+                String item = (String) parent.getItemAtPosition(position);
+                Log.d(LOG, "onItemClick: item = " + item);
+                String serverName = item.split(",")[0].trim();
+                Log.d(LOG, "onItemClick: serverName = " + serverName);
+                for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()){
+                    if(serverEntry.getValue().equals(serverName)){
+                        Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
+                        joinPeer(serverEntry.getKey());
+                    }
+                }
             }
         });
 
@@ -155,6 +155,86 @@ public class ServerListActivity extends AppCompatActivity {
         int indexOfAt = serverUrl.indexOf('@');
         String serverName = serverUrl.substring(renderingServerPrefixLength, indexOfAt);
         return serverName;
+    }
+
+    /**
+     * Joins server selected from list
+     * @param peerId: Choosen peerID to connect to
+     */
+    private void joinPeer(final int peerId) {
+        Log.d(LOG, "joinPeer: ");
+
+        createPeerConnection(peerId);
+
+        inputChannel = pc.createDataChannel("inputDataChannel", new DataChannel.Init());
+        inputChannel.registerObserver(new DataChannel.Observer() {
+            @Override
+            public void onBufferedAmountChange(long l) {
+
+            }
+
+            @Override
+            public void onStateChange() {
+
+            }
+
+            @Override
+            public void onMessage(DataChannel.Buffer buffer) {
+
+            }
+        });
+
+        MediaConstraints offerOptions = new MediaConstraints();
+        offerOptions.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
+        offerOptions.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
+
+        pc.createOffer(new SdpObserver() {
+            @Override
+            public void onCreateSuccess(SessionDescription sessionDescription) {
+                Log.d(LOG, "joinPeer: onCreateSuccess1");
+
+                SessionDescription sessionDescriptionH264 = new SessionDescription(sessionDescription.type, sessionDescription.description.replace("96 98 100 102", "100 96 98 102"));
+                pc.setLocalDescription(new SdpObserver() {
+                    @Override
+                    public void onCreateSuccess(SessionDescription sessionDescription) {
+                        Log.d(LOG, "joinPeer: onCreateSuccess2");
+
+                        sendToPeer(peerId, sessionDescription);
+                    }
+
+                    @Override
+                    public void onSetSuccess() {
+
+                    }
+
+                    @Override
+                    public void onCreateFailure(String s) {
+
+                    }
+
+                    @Override
+                    public void onSetFailure(String s) {
+
+                    }
+                }, sessionDescriptionH264);
+            }
+
+            @Override
+            public void onSetSuccess() {
+
+            }
+
+            @Override
+            public void onCreateFailure(String s) {
+
+            }
+
+            @Override
+            public void onSetFailure(String s) {
+
+            }
+        }, offerOptions);
+
     }
 
     private void createPeerConnection(int peer_id) {
