@@ -131,8 +131,6 @@ void InitWebRTC()
 {
 	ULOG(INFO, __FUNCTION__);
 
-	Sleep(5 * 1000);
-
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
