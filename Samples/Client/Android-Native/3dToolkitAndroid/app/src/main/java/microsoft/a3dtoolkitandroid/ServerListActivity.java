@@ -52,9 +52,11 @@ import static java.lang.Integer.parseInt;
 public class ServerListActivity extends AppCompatActivity {
 
     public static final String SERVER_NAME = "com.microsoft.a3dtoolkitandroid.SERVER_NAME";
+    private static final String LOG = "ServerListLog";
+    private static final String ERROR = "ServerListLogError";
     private final int heartbeatIntervalInMs = 5000;
     private Intent intent;
-    RequestQueue queue = Volley.newRequestQueue(this);
+    RequestQueue queue;
     private HashMap<Integer, String> otherPeers = new HashMap<>();
     private List<String> peers;
     private int myID;
@@ -91,6 +93,8 @@ public class ServerListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server_list);
         final ListView listview = (ListView) findViewById(R.id.ServerListView);
 
+        queue = Volley.newRequestQueue(this);
+
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
         port = intent.getStringExtra(ConnectActivity.SERVER_PORT);
@@ -106,10 +110,10 @@ public class ServerListActivity extends AppCompatActivity {
         String response = intent.getStringExtra(ConnectActivity.SERVER_LIST);
         peers = new ArrayList<>(Arrays.asList(response.split("\n")));
         myID = parseInt(peers.remove(0).split(",")[1]);
-        Log.d("Logging", "My ID: " + myID);
+        Log.d(LOG, "My ID: " + myID);
         for (int i = 0; i < peers.size(); ++i) {
             if (peers.get(i).length() > 0) {
-                Log.d("Logging", "Peer " + i + ": " + peers.get(i));
+                Log.d(LOG, "Peer " + i + ": " + peers.get(i));
                 String[] parsed = peers.get(i).split(",");
                 otherPeers.put(parseInt(parsed[1]), parsed[0]);
             }
@@ -148,7 +152,7 @@ public class ServerListActivity extends AppCompatActivity {
 
     private void createPeerConnection(int peer_id) {
         try {
-            Log.d("LOG", "createPeerConnection: ");
+            Log.d(LOG, "createPeerConnection: ");
             MediaConstraints defaultPeerConnectionConstraints = new MediaConstraints();
             defaultPeerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
@@ -218,19 +222,19 @@ public class ServerListActivity extends AppCompatActivity {
 
             pc = peerConnectionFactory.createPeerConnection(iceServerList, defaultPeerConnectionConstraints, observer);
         } catch (Throwable error) {
-            Log.d("ERROR", "Failed to create PeerConnection, exception: " + error.toString());
+            Log.d(ERROR, "Failed to create PeerConnection, exception: " + error.toString());
         }
     }
 
     private void sendToPeer(int peer_id, SessionDescription data) {
         try {
-            Log.d("LOG", peer_id + " Send " + data);
+            Log.d(LOG, peer_id + " Send " + data);
             if (myID == -1) {
-                Log.d("ERROR", "sendToPeer: Not Connected");
+                Log.d(ERROR, "sendToPeer: Not Connected");
                 return;
             }
             if (peer_id == myID) {
-                Log.d("ERROR", "sendToPeer: Can't send a message to oneself :)");
+                Log.d(ERROR, "sendToPeer: Can't send a message to oneself :)");
                 return;
             }
 
@@ -244,8 +248,8 @@ public class ServerListActivity extends AppCompatActivity {
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-                            builder.setTitle("Error").setMessage("SendToPeer Failure!");
-                            Log.d("ERROR", "onErrorResponse: SendToPeer");
+                            builder.setTitle(ERROR).setMessage("SendToPeer Failure!");
+                            Log.d(ERROR, "onErrorResponse: SendToPeer");
                         }
                     }){
                 @Override
@@ -259,13 +263,14 @@ public class ServerListActivity extends AppCompatActivity {
             // Add the request to the RequestQueue.
             queue.add(getRequest);
         } catch (Throwable e) {
-            Log.d("ERROR", "send to peer error: " + e.toString());
+            Log.d(ERROR, "send to peer error: " + e.toString());
         }
     }
 
     private void handlePeerMessage(final int peer_id, JSONObject data) throws JSONException {
+        Log.d(LOG, "handlePeerMessage: START");
         messageCounter++;
-        Log.d("LOG", "Message from '" + otherPeers.get(peer_id) + ":" + data);
+        Log.d(LOG, "handlePeerMessage: Message from '" + otherPeers.get(peer_id) + ":" + data);
         final SdpObserver localObsever = new SdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
@@ -279,7 +284,7 @@ public class ServerListActivity extends AppCompatActivity {
 
             @Override
             public void onCreateFailure(String s) {
-                Log.d("ERROR", "Set local description failure: " + s);
+                Log.d(ERROR, "Set local description failure: " + s);
             }
 
             @Override
@@ -291,7 +296,7 @@ public class ServerListActivity extends AppCompatActivity {
         SdpObserver remoteObserver = new SdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
-                Log.d("LOG", "Create answer:" + sessionDescription.toString());
+                Log.d(LOG, "Create answer:" + sessionDescription.toString());
                 pc.setLocalDescription(localObsever, sessionDescription);
                 sendToPeer(peer_id, sessionDescription);
             }
@@ -303,7 +308,7 @@ public class ServerListActivity extends AppCompatActivity {
 
             @Override
             public void onCreateFailure(String s) {
-                Log.d("ERROR", "Create answer error: " + s);
+                Log.d(ERROR, "Create answer error: " + s);
             }
 
             @Override
@@ -323,14 +328,15 @@ public class ServerListActivity extends AppCompatActivity {
             pc.createAnswer(remoteObserver, mediaConstraints);
         }
         else if (data.getInt("answer") != -1) {
-            Log.d("LOG", "Got answer " + data);
+            Log.d(LOG, "Got answer " + data);
             pc.setRemoteDescription(remoteObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
         }
         else {
-            Log.d("LOG", "Adding ICE candiate " + data);
+            Log.d(LOG, "Adding ICE candiate " + data);
             IceCandidate candidate = new IceCandidate(data.getString("sdpMid"), data.getInt("sdpMLineIndex"), data.getString("candidate"));
             pc.addIceCandidate(candidate);
         }
+        Log.d(LOG, "handlePeerMessage: END");
     }
 
     private void updatePeerList() {
@@ -340,12 +346,12 @@ public class ServerListActivity extends AppCompatActivity {
             }
 
         } catch (Throwable error) {
-            Log.d("ERROR", error.toString());
+            Log.d(ERROR, error.toString());
         }
     }
 
     private void handleServerNotification(JSONObject data) {
-        Log.d("LOG", "Server notification: " + data);
+        Log.d(LOG, "Server notification: " + data);
         String[] parsed = data.toString().split(",");
         if (parseInt(parsed[2]) != 0) {
             otherPeers.put(parseInt(parsed[1]), parsed[0]);
@@ -357,6 +363,7 @@ public class ServerListActivity extends AppCompatActivity {
      *
      */
     private void startHangingGet() {
+        Log.d(LOG, "Start Hanging Get Start");
         CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
                 new Response.Listener<CustomStringRequest.ResponseM>() {
                     @Override
@@ -366,11 +373,13 @@ public class ServerListActivity extends AppCompatActivity {
                         int peer_id = parseInt(peer_id_string);
                         JSONObject response = result.response;
 
-                        Log.d("LOG", "Message from:" + peer_id + ':' + response);
+                        Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
                         if (peer_id == myID) {
+                            Log.d(LOG, "startHangingGet: peer if = myif");
                             handleServerNotification(response);
                         } else {
                             try {
+                                Log.d(LOG, "startHangingGet: handlePeerMessage");
                                 handlePeerMessage(peer_id, response);
                             } catch (JSONException e) {
                                 e.printStackTrace();
@@ -381,9 +390,11 @@ public class ServerListActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        builder.setTitle("Error").setMessage("Sorry request did not work!");
+                        Log.d(ERROR, "startHangingGet: ERROR");
+                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 });
+        Log.d(LOG, "Start Hanging Get END");
         queue.add(stringRequest);
     }
 
@@ -402,7 +413,7 @@ public class ServerListActivity extends AppCompatActivity {
                         }
                     });
                 } catch (Throwable error) {
-                    Log.d("ERROR", error.toString());
+                    Log.d(ERROR, error.toString());
                 }
             }
         },0, heartbeatIntervalInMs);
@@ -420,7 +431,7 @@ public class ServerListActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        builder.setTitle("Error").setMessage("Sorry request did not work!");
+                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 }){
             @Override
