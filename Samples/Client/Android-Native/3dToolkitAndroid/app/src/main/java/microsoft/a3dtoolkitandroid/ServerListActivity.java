@@ -21,9 +21,11 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
@@ -364,14 +366,11 @@ public class ServerListActivity extends AppCompatActivity {
      */
     private void startHangingGet() {
         Log.d(LOG, "Start Hanging Get Start");
-        CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
-                new Response.Listener<CustomStringRequest.ResponseM>() {
+        JsonObjectRequest obreq = new JsonObjectRequest(Request.Method.GET, server + "/wait?peer_id=" + myID, null,
+                new Response.Listener<JSONObject>() {
                     @Override
-                    public void onResponse(CustomStringRequest.ResponseM result) {
-                        //From here you will get headers
-                        String peer_id_string = result.headers.get("Pragma");
-                        int peer_id = parseInt(peer_id_string);
-                        JSONObject response = result.response;
+                    public void onResponse(JSONObject response) {
+                        int peer_id = parseInt("3");
 
                         Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
                         if (peer_id == myID) {
@@ -387,15 +386,52 @@ public class ServerListActivity extends AppCompatActivity {
                         }
                     }
                 },
+                // The final parameter overrides the method onErrorResponse() and passes VolleyError
+                //as a parameter
                 new Response.ErrorListener() {
                     @Override
+                    // Handles errors that occur due to Volley
                     public void onErrorResponse(VolleyError error) {
-                        Log.d(ERROR, "startHangingGet: ERROR");
-                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
+                        Log.e(ERROR, "startHangingGet:Error");
                     }
-                });
+                }
+        );
+        // Add the request to the RequestQueue.
+        queue.add(obreq);
+
+//        CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
+//                new Response.Listener<CustomStringRequest.ResponseM>() {
+//                    @Override
+//                    public void onResponse(CustomStringRequest.ResponseM result) {
+//                        //From here you will get headers
+//                        String peer_id_string = result.headers.get("Pragma");
+//                        int peer_id = parseInt(peer_id_string);
+//                        JSONObject response = result.response;
+//
+//                        Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
+//                        if (peer_id == myID) {
+//                            Log.d(LOG, "startHangingGet: peer if = myif");
+//                            handleServerNotification(response);
+//                        } else {
+//                            try {
+//                                Log.d(LOG, "startHangingGet: handlePeerMessage");
+//                                handlePeerMessage(peer_id, response);
+//                            } catch (JSONException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }
+//                },
+//                new Response.ErrorListener() {
+//                    @Override
+//                    public void onErrorResponse(VolleyError error) {
+//                        Log.d(ERROR, "startHangingGet: ERROR");
+//                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
+//                    }
+//                });
+//        queue.add(stringRequest);
+
         Log.d(LOG, "Start Hanging Get END");
-        queue.add(stringRequest);
     }
 
     /**
