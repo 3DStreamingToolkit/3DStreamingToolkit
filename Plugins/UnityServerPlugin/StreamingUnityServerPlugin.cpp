@@ -62,6 +62,7 @@ using namespace Toolkit3DLibrary;
 void(__stdcall*s_onInputUpdate)(const char *msg);
 void(__stdcall*s_onLog)(const int level, const char *msg);
 
+#ifdef DEBUG
 static struct FsLogStream : rtc::LogSink
 {
 	FsLogStream() : m_nativeLog("StreamingUnityServerPlugin.log", std::ios_base::app)
@@ -81,6 +82,7 @@ static struct FsLogStream : rtc::LogSink
 		m_nativeLog << message;
 	}
 } s_fsLogger;
+#endif
 
 #define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
 

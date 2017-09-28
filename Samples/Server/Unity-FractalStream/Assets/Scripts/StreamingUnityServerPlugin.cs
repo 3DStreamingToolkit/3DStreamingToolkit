@@ -31,28 +31,28 @@ namespace Microsoft.Toolkit.ThreeD
         #region Dll Imports
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-	[DllImport ("__Internal")]
+        [DllImport ("__Internal")]
 #else
         [DllImport(PluginName)]
 #endif
         private static extern IntPtr GetRenderEventFunc();
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-	[DllImport ("__Internal")]
+        [DllImport ("__Internal")]
 #else
         [DllImport(PluginName)]
 #endif
         private static extern void SetInputDataCallback(IntPtr cb);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-	[DllImport ("__Internal")]
+        [DllImport ("__Internal")]
 #else
         [DllImport(PluginName)]
 #endif
         private static extern void SetLogCallback(IntPtr cb);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-	[DllImport ("__Internal")]
+        [DllImport ("__Internal")]
 #else
         [DllImport(PluginName)]
         private static extern void Close();

@@ -12,14 +12,15 @@ namespace Microsoft.Toolkit.ThreeD
     /// </summary>
     /// <remarks>
     /// Adding this component requires an <c>nvEncConfig.json</c> and <c>webrtcConfig.json</c> in the run directory
+    /// To see debug information from this component, add a <see cref="WebRTCServerDebug"/> to the same object
     /// </remarks>
     [RequireComponent(typeof(Camera))]
     public class WebRTCServer : MonoBehaviour
     {
         /// <summary>
-        /// Internal instance that maintains the native lifecycle and communication
+        /// Instance that represents the underlying native plugin that powers the webrtc experience
         /// </summary>
-        private StreamingUnityServerPlugin plugin = null;
+        public StreamingUnityServerPlugin Plugin = null;
 
         /// <summary>
         /// The location to be placed at as determined by client control
@@ -42,9 +43,9 @@ namespace Microsoft.Toolkit.ThreeD
         private bool isClosing = false;
         
         /// <summary>
-        /// Unity engine object Start() hook
+        /// Unity engine object Awake() hook
         /// </summary>
-        private void Start()
+        private void Awake()
         {
             // make sure that the render window continues to render when the game window does not have focus
             Application.runInBackground = true;
@@ -79,17 +80,18 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         public void Open()
         {
-            if (plugin != null)
+            if (Plugin != null)
             {
                 Close();
             }
 
             // Create the plugin
-            plugin = new StreamingUnityServerPlugin(this.GetComponent<Camera>());
+            Plugin = new StreamingUnityServerPlugin(this.GetComponent<Camera>());
 
-            // hook it's events
-            plugin.Input += OnInputData;
-            plugin.Log += OnLogData;
+            // hook it's input event
+            // note: if you wish to capture debug data, see the <see cref="StreamingUnityServerDebug"/> behaviour
+            Plugin.Input += OnInputData;
+
         }
 
         /// <summary>
@@ -97,10 +99,10 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         public void Close()
         {
-            if (!isClosing && plugin != null)
+            if (!isClosing && Plugin != null)
             {
-                plugin.Dispose();
-                plugin = null;
+                Plugin.Dispose();
+                Plugin = null;
             }
         }
 
@@ -164,16 +166,6 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 Debug.LogWarning("InputUpdate threw " + ex.Message + "\r\n" + ex.StackTrace);
             }
-        }
-
-        /// <summary>
-        /// Handles log data and writes it to the debug console
-        /// </summary>
-        /// <param name="logLevel">severity level</param>
-        /// <param name="logData">log data</param>
-        private void OnLogData(int logLevel, string logData)
-        {
-            Debug.Log("[" + logLevel + "]: " + logData);
         }
     }
 }
