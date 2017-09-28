@@ -24,6 +24,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.facebook.stetho.Stetho;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,6 +39,7 @@ import org.webrtc.RtpReceiver;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,6 +96,7 @@ public class ServerListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Stetho.initializeWithDefaults(this);
         setContentView(R.layout.activity_server_list);
         final ListView listview = (ListView) findViewById(R.id.ServerListView);
 
@@ -111,6 +114,7 @@ public class ServerListActivity extends AppCompatActivity {
             builder = new AlertDialog.Builder(this);
         }
 
+        // Initialize list from sign in response
         String response = intent.getStringExtra(ConnectActivity.SERVER_LIST);
         peers = new ArrayList<>(Arrays.asList(response.split("\n")));
         myID = parseInt(peers.remove(0).split(",")[1]);
@@ -129,6 +133,7 @@ public class ServerListActivity extends AppCompatActivity {
         startHeartBeat();
         updatePeerList();
 
+        // creates a click listener for the peer list
         listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
@@ -159,7 +164,7 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     /**
-     * Joins server selected from list
+     * Joins server selected from list of peers
      * @param peerId: Choosen peerID to connect to
      */
     private void joinPeer(final int peerId) {
@@ -191,22 +196,22 @@ public class ServerListActivity extends AppCompatActivity {
 
         pc.createOffer(new SdpObserver() {
             @Override
-            public void onCreateSuccess(SessionDescription sessionDescription) {
+            public void onCreateSuccess(final SessionDescription sessionDescription) {
                 Log.d(LOG, "joinPeer: onCreateSuccess1");
 
-                SessionDescription sessionDescriptionH264 = new SessionDescription(sessionDescription.type, sessionDescription.description.replace("96 98 100 102", "100 96 98 102"));
+                final SessionDescription sessionDescriptionH264 = new SessionDescription(sessionDescription.type, sessionDescription.description.replace("96 98 100 102", "100 96 98 102"));
                 pc.setLocalDescription(new SdpObserver() {
                     @Override
                     public void onCreateSuccess(SessionDescription sessionDescription) {
                         Log.d(LOG, "joinPeer: onCreateSuccess2");
 
-                        sendToPeer(peerId, sessionDescription);
+
                     }
 
                     @Override
                     public void onSetSuccess() {
                         Log.d(LOG, "joinPeer: onSetSuccess2");
-
+                        sendToPeer(peerId, sessionDescriptionH264.description);
                     }
 
                     @Override
@@ -241,6 +246,10 @@ public class ServerListActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * Creates a peer connection using the ICE server and media constraints specified
+     * @param peer_id (int): server ID
+     */
     private void createPeerConnection(int peer_id) {
         try {
             Log.d(LOG, "createPeerConnection: ");
@@ -312,14 +321,21 @@ public class ServerListActivity extends AppCompatActivity {
             peerConnectionFactory = new PeerConnectionFactory();
 
             pc = peerConnectionFactory.createPeerConnection(iceServerList, defaultPeerConnectionConstraints, observer);
+            Log.d(LOG, "createPeerConnection: PeerConnection = " + pc.toString());
+
         } catch (Throwable error) {
             Log.d(ERROR, "Failed to create PeerConnection, exception: " + error.toString());
         }
     }
 
-    private void sendToPeer(int peer_id, SessionDescription data) {
+    /**
+     * Sends sdp offer to server
+     * @param peer_id (int): server ID
+     * @param sdp (String): sdp description
+     */
+    private void sendToPeer(int peer_id, final String sdp) {
         try {
-            Log.d(LOG, peer_id + " Send " + data);
+            Log.d(LOG, "sendToPeer(): " + peer_id + " Send " + sdp);
             if (myID == -1) {
                 Log.d(ERROR, "sendToPeer: Not Connected");
                 return;
@@ -329,28 +345,75 @@ public class ServerListActivity extends AppCompatActivity {
                 return;
             }
 
+
+//            //create json object with parameters
+//            HashMap<String, String> params = new HashMap<>();
+//            params.put("type", "offer");
+//            params.put("sdp", sdp);
+
+//            JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + myID + "&to=" + peer_id, new JSONObject(params),
+//                    new Response.Listener<JSONObject>() {
+//                        @Override
+//                        public void onResponse(JSONObject response) {
+//                            //Process os success response
+//                        }
+//                    }, new Response.ErrorListener() {
+//                        @Override
+//                        public void onErrorResponse(VolleyError error) {
+//                            Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+//                        }
+//                    }) {
+//                        @Override
+//                        public Map<String, String> getHeaders() throws AuthFailureError {
+//                            Map<String, String> headerParams = new HashMap<>();
+//                            headerParams.put("Peer-Type", "Client");
+//                            return headerParams;
+//                        }
+//                    };
+
+
+
+//            //create json object to send to peer
+//            JSONObject jsonBody = new JSONObject();
+//            jsonBody.put("type", "offer");
+//            jsonBody.put("sdp", sdp);
+//            final String mRequestBody = jsonBody.toString();
+//            Log.d(LOG, "sendToPeer: jsonBody = " + mRequestBody);
+//
+//
             // Request a string response from the server
-            StringRequest getRequest = new StringRequest(Request.Method.POST, server + "/message?peer_id=" + myID + "&to=" + peer_id, new Response.Listener<String>(){
-                @Override
-                public void onResponse(String response) {
-                    // we don't really care what the response looks like here, so we don't observe it
-                }
-            },
-                    new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            builder.setTitle(ERROR).setMessage("SendToPeer Failure!");
-                            Log.d(ERROR, "onErrorResponse: SendToPeer");
-                        }
-                    }){
-                @Override
-                public Map<String, String> getHeaders() throws AuthFailureError {
-                    Map<String, String>  params = new HashMap<>();
-                    params.put("Peer-Type", "Client");
-                    params.put("Content-Type", "text/plain");
-                    return params;
-                }
+            StringRequest getRequest = new StringRequest(Request.Method.POST, server + "/message?peer_id=" + myID + "&to=" + peer_id,
+                new Response.Listener<String>(){
+                    @Override
+                    public void onResponse(String response) {
+                        // we don't really care what the response looks like here, so we don't observe it
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        builder.setTitle(ERROR).setMessage("SendToPeer Failure!");
+                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+                    }
+                }){
+                    @Override
+                    public Map<String, String> getHeaders() throws AuthFailureError {
+                        Map<String, String>  params = new HashMap<>();
+                        params.put("Peer-Type", "Client");
+    //                    params.put("Content-Type", "text/plain");
+                        return params;
+                    }
+                    @Override
+                    protected Map<String, String> getParams() {
+                        Map<String, String>  params = new HashMap<String, String>();
+                        params.put("type", "offer");
+                        params.put("sdp", sdp);
+
+                        return params;
+                    }
             };
+
+
             // Add the request to the RequestQueue.
             queue.add(getRequest);
         } catch (Throwable e) {
@@ -358,10 +421,18 @@ public class ServerListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Handles messages from the server (offer, answer, adding ICE candidate).
+     * @param peer_id: id of peer
+     * @param data: JSON response from server
+     * @throws JSONException
+     */
     private void handlePeerMessage(final int peer_id, JSONObject data) throws JSONException {
         Log.d(LOG, "handlePeerMessage: START");
         messageCounter++;
         Log.d(LOG, "handlePeerMessage: Message from '" + otherPeers.get(peer_id) + ":" + data);
+
+        // observer for local callback functions
         final SdpObserver localObsever = new SdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
@@ -384,12 +455,13 @@ public class ServerListActivity extends AppCompatActivity {
             }
         };
 
+        // observer for remote callback functions
         SdpObserver remoteObserver = new SdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
                 Log.d(LOG, "Create answer:" + sessionDescription.toString());
                 pc.setLocalDescription(localObsever, sessionDescription);
-                sendToPeer(peer_id, sessionDescription);
+                sendToPeer(peer_id, sessionDescription.description);
             }
 
             @Override
@@ -409,6 +481,7 @@ public class ServerListActivity extends AppCompatActivity {
         };
 
         if (data.getInt("offer") != -1) {
+
             createPeerConnection(peer_id);
 
             MediaConstraints mediaConstraints = new MediaConstraints();
@@ -430,6 +503,9 @@ public class ServerListActivity extends AppCompatActivity {
         Log.d(LOG, "handlePeerMessage: END");
     }
 
+    /**
+     * Updates the peer list adapter with any new entries
+     */
     private void updatePeerList() {
         Log.d(LOG, "updatePeerList: ");
         try {
@@ -443,6 +519,11 @@ public class ServerListActivity extends AppCompatActivity {
         }
     }
 
+
+    /**
+     * Handles adding new servers to the list of servers
+     * @param server: e.g. "renderingserver_phcherne@PHCHERNE-PR04,941,1"
+     */
     private void handleServerNotification(String server) {
         Log.d(LOG, "handleServerNotification: " + server);
         String[] parsed = server.trim().split("\\s*,\\s*");;
@@ -453,10 +534,12 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     /**
-     *
+     * Handles adding new servers to list of severs and handles peer messages with the server (offer, answer, adding ICE candidate).
+     * Loops on request timeout.
      */
     private void startHangingGet() {
         Log.d(LOG, "Start Hanging Get Start");
+        // Created a custom request class to access headers of responses.
         CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
                 new Response.Listener<CustomStringRequest.ResponseM>() {
                     @Override
@@ -469,6 +552,7 @@ public class ServerListActivity extends AppCompatActivity {
 
                         Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
                         if (peer_id == myID) {
+                            // Update the list of peers
                             Log.d(LOG, "startHangingGet: peer if = myif");
                             try {
                                 handleServerNotification(response.getString("Server"));
@@ -476,6 +560,7 @@ public class ServerListActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                         } else {
+                            // Handle other messages from server
                             try {
                                 Log.d(LOG, "startHangingGet: handlePeerMessage");
                                 handlePeerMessage(peer_id, response);
@@ -491,8 +576,9 @@ public class ServerListActivity extends AppCompatActivity {
                         Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
                         if (error.toString().equals("com.android.volley.TimeoutError")){
                             startHangingGet();
+                        } else {
+                            builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                         }
-                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 });
         queue.add(stringRequest);
