@@ -1,6 +1,6 @@
 # 3D Toolkit
 
-A toolkit for creating 3D experiences that are traditionally out of reach on low-powered devices. :muscle: :eye: :cloud:
+A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. :muscle: :eye: :cloud:
 
 ![example](./3dstreamclientserver.gif)
 
@@ -22,7 +22,7 @@ Here's a high-level diagram of the components we've built (in green), and how th
 
 ## How to build
 
-> If you don't wish to build the application yourself, you can download our latest build [here](https://github.com/CatalystCode/3dtoolkit/releases/latest).
+> If you don't wish to build the toolkit yourself, you can download our latest build [here](https://github.com/CatalystCode/3dtoolkit/releases/latest).
 
 These steps will ensure your development environment is configured properly, and then they'll walk you through the process of building our code.
 
@@ -68,33 +68,6 @@ Here's a table illustrating where each sample implementation will be built to. T
 
 > Note: the following table describes the location under `Build\<Platform>\<Configuration>\` where a sample can be found. To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x86`.
 
-<table>
-<tr>
-<th>Sample Type</th>
-<th>Sample Name</th>
-<th>Location</th>
-<th>Exe</th>
-</tr>
-<tr>
-<td>Server</td>
-<td>Spinning Cube</td>
-<td>SpinningCubeServer</td>
-<td>`SpinningCubeServer.exe`</td>
-</tr>
-<tr>
-<td>Server</td>
-<td>MultiThreaded</td>
-<td>MultiThreadedServer</td>
-<td>`MultiThreadedServer.exe`</td>
-</tr>
-<tr>
-<td>Client</td>
-<td>Win32Client</td>
-<td>Client</td>
-<td>`StreamingDirectXClient.exe`</td>
-</tr>
-</table>
-
 Once you start both a server and client implementation, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
 
 ## Next Steps
@@ -109,7 +82,6 @@ These resources will be critical to your success in configuring and scaling appl
 
 + [General Wiki](https://github.com/CatalystCode/3dtoolkit/wiki)
 + [Building WebRTC from source](https://github.com/CatalystCode/3dtoolkit/wiki/Building-WebRTC-from-source)
-+ [Live 3DToolkit Overview Talk](#todo-link)
 + [WebRTC Homepage](https://webrtc.org/)
 + [NVEncode Homepage](https://developer.nvidia.com/nvidia-video-codec-sdk)
 
