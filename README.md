@@ -1,6 +1,6 @@
-# 3D Toolkit
+# 3D Toolkit :muscle: :eye: :cloud:
 
-A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. :muscle: :eye: :cloud:
+A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. 
 
 ![example](./3dstreamclientserver.gif)
 
