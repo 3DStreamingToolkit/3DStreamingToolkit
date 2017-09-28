@@ -427,13 +427,19 @@ void RegisterService()
 			AppMain(*stopping);
 		};
 
-		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
+		// TODO: In order to start the service, it cannot be in the same location as 
+		// the running exe.  For auto-running of the service,  the app needs to be 
+		// stopped first, then service started externally.  Alternatively, running
+		// this app from one location, then copying all pertinent files to another
+		// location and then registering and running will work correctly.
 
-		// Starts the service to run the app persistently.
-		if (!CServiceBase::Run(service))
-		{
-			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
-		}
+		//RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
+
+		//// Starts the service to run the app persistently.
+		//if (!CServiceBase::Run(service))
+		//{
+		//	wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+		//}
 
 		CloseServiceHandle(schSCManager);
 		schSCManager = NULL;

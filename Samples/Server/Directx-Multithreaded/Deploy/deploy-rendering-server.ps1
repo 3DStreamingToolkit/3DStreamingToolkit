@@ -1,4 +1,4 @@
-$gpuDriverVersion = "377.35" 
+$gpuDriverVersion = "385.08" 
 $gpuDriverSuffix = "-tesla-desktop-winserver2016-international-whql.exe"
 $gpuDriverBaseUri = "http://us.download.nvidia.com/Windows/Quadro_Certified/"
 
