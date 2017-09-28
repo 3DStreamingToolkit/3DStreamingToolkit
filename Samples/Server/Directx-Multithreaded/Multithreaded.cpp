@@ -467,6 +467,7 @@ void InputUpdate(const std::string& message)
 		strcpy(body, msg.get("body", "").asCString());
 		std::istringstream datastream(body);
 		std::string token;
+		
 		if (strcmp(type, "stereo-rendering") == 0)
 		{
 			getline(datastream, token, ',');
