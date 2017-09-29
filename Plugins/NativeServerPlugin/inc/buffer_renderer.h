@@ -13,6 +13,9 @@
 
 namespace StreamingToolkit
 {
+	// The BufferRenderer class provides methods to capture frame buffer
+	// from swap chain. If the frame buffer parameter is null in constructor,
+	// a buffer will be created so that it can be used for rendering.
     class BufferRenderer
     {
 	public:

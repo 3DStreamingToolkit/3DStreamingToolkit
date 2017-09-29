@@ -139,16 +139,16 @@ protected:
 
 	void OnFailure(const std::string& error) override;
 
-private:
-	void SendMessageToPeer(void* data);
-
-	void NewStreamAdded(void* data);
-
-	void StreamRemoved(void* data);
-
 protected:
 	// Send a message to the remote peer.
 	void SendMessage(const std::string& json_object);
+
+private:
+	void SendMessageToPeer(std::string* msg);
+
+	void NewStreamAdded(webrtc::MediaStreamInterface* stream);
+
+	void StreamRemoved(webrtc::MediaStreamInterface* stream);
 
 	int peer_id_;
 	bool loopback_;

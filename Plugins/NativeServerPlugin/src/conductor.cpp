@@ -693,19 +693,26 @@ void Conductor::UIThreadCallback(int msg_id, void* data)
 
 		case SEND_MESSAGE_TO_PEER:
 		{
-			SendMessageToPeer(data);
+			std::string* msg = reinterpret_cast<std::string*>(data);
+			SendMessageToPeer(msg);
 			break;
 		}
 
 		case NEW_STREAM_ADDED:
 		{
-			NewStreamAdded(data);
+			webrtc::MediaStreamInterface* stream = 
+				reinterpret_cast<webrtc::MediaStreamInterface*>(data);
+
+			NewStreamAdded(stream);
 			break;
 		}
 
 		case STREAM_REMOVED:
 		{
-			StreamRemoved(data);
+			webrtc::MediaStreamInterface* stream =
+				reinterpret_cast<webrtc::MediaStreamInterface*>(data);
+
+			StreamRemoved(stream);
 			break;
 		}
 
@@ -761,11 +768,8 @@ void Conductor::SendMessage(const std::string& json_object)
 	}
 }
 
-void Conductor::NewStreamAdded(void* data)
+void Conductor::NewStreamAdded(webrtc::MediaStreamInterface* stream)
 {
-	webrtc::MediaStreamInterface* stream =
-		reinterpret_cast<webrtc::MediaStreamInterface*>(data);
-
 	webrtc::VideoTrackVector tracks = stream->GetVideoTracks();
 
 	// Only render the first track.
@@ -778,19 +782,15 @@ void Conductor::NewStreamAdded(void* data)
 	stream->Release();
 }
 
-void Conductor::StreamRemoved(void* data)
+void Conductor::StreamRemoved(webrtc::MediaStreamInterface* stream)
 {
 	// Remote peer stopped sending a stream.
-	webrtc::MediaStreamInterface* stream =
-		reinterpret_cast<webrtc::MediaStreamInterface*>(data);
-
 	stream->Release();
 }
 
-void Conductor::SendMessageToPeer(void* data)
+void Conductor::SendMessageToPeer(std::string* msg)
 {
 	LOG(INFO) << "SEND_MESSAGE_TO_PEER";
-	std::string* msg = reinterpret_cast<std::string*>(data);
 
 	if (msg)
 	{

@@ -23,7 +23,9 @@
 
 #include "service/service_base.h"
 
-
+// The RenderService class implements the CServiceBase class for main service
+// functions: install, remove, start and stop. This allows the app to render 
+// properly while running as a system service.
 class RenderService : public CServiceBase
 {
 public:
