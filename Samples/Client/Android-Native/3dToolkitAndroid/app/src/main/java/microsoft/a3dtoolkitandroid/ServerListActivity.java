@@ -2,21 +2,19 @@ package microsoft.a3dtoolkitandroid;
 
 
 import android.content.Intent;
-import android.graphics.Bitmap;
+import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.ArrayMap;
 import android.util.Log;
+import android.view.Surface;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -25,11 +23,12 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.facebook.stetho.Stetho;
+import com.facebook.stetho.okhttp3.StethoInterceptor;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -38,9 +37,10 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpReceiver;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoRenderer;
+import org.webrtc.VideoTrack;
 
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,6 +50,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
+import microsoft.a3dtoolkitandroid.util.OkHttpStack;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
 
 import static java.lang.Integer.parseInt;
 
@@ -60,7 +63,7 @@ public class ServerListActivity extends AppCompatActivity {
     private static final String ERROR = "ServerListLogError";
     private final int heartbeatIntervalInMs = 5000;
     private Intent intent;
-    RequestQueue queue;
+    private RequestQueue requestQueue;
     private HashMap<Integer, String> otherPeers = new HashMap<>();
     private List<String> peers;
     private int myID;
@@ -72,6 +75,80 @@ public class ServerListActivity extends AppCompatActivity {
     private RtcListener mListener;
     private DataChannel inputChannel;
     private ArrayAdapter adapter;
+    private VideoTrack remoteVideoTrack;
+    private SurfaceViewRenderer fullscreenRenderer;
+    private final EglBase rootEglBase = new EglBase() {
+        @Override
+        public void createSurface(Surface surface) {
+
+        }
+
+        @Override
+        public void createSurface(SurfaceTexture surfaceTexture) {
+
+        }
+
+        @Override
+        public void createDummyPbufferSurface() {
+
+        }
+
+        @Override
+        public void createPbufferSurface(int i, int i1) {
+
+        }
+
+        @Override
+        public Context getEglBaseContext() {
+            return null;
+        }
+
+        @Override
+        public boolean hasSurface() {
+            return false;
+        }
+
+        @Override
+        public int surfaceWidth() {
+            return 0;
+        }
+
+        @Override
+        public int surfaceHeight() {
+            return 0;
+        }
+
+        @Override
+        public void releaseSurface() {
+
+        }
+
+        @Override
+        public void release() {
+
+        }
+
+        @Override
+        public void makeCurrent() {
+
+        }
+
+        @Override
+        public void detachCurrent() {
+
+        }
+
+        @Override
+        public void swapBuffers() {
+
+        }
+
+        @Override
+        public void swapBuffers(long l) {
+
+        }
+    };
+
 
     /**
      * Implement this interface to be notified of events.
@@ -99,8 +176,8 @@ public class ServerListActivity extends AppCompatActivity {
         Stetho.initializeWithDefaults(this);
         setContentView(R.layout.activity_server_list);
         final ListView listview = (ListView) findViewById(R.id.ServerListView);
-
-        queue = Volley.newRequestQueue(this);
+        fullscreenRenderer = (SurfaceViewRenderer) findViewById(R.id.fullscreen_video_view);
+        fullscreenRenderer.init(rootEglBase.getEglBaseContext(), null);
 
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
@@ -144,6 +221,7 @@ public class ServerListActivity extends AppCompatActivity {
                 for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()){
                     if(serverEntry.getValue().equals(serverName)){
                         Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
+                        fullscreenRenderer.setVisibility(View.VISIBLE);
                         joinPeer(serverEntry.getKey());
                     }
                 }
@@ -153,14 +231,6 @@ public class ServerListActivity extends AppCompatActivity {
 //        //show the alert
 //        AlertDialog alertDialog = builder.create();
 //        alertDialog.show();
-    }
-
-
-    private String getServerName(String serverUrl) {
-        int renderingServerPrefixLength = "renderingserver_".length();
-        int indexOfAt = serverUrl.indexOf('@');
-        String serverName = serverUrl.substring(renderingServerPrefixLength, indexOfAt);
-        return serverName;
     }
 
     /**
@@ -204,8 +274,6 @@ public class ServerListActivity extends AppCompatActivity {
                     @Override
                     public void onCreateSuccess(SessionDescription sessionDescription) {
                         Log.d(LOG, "joinPeer: onCreateSuccess2");
-
-
                     }
 
                     @Override
@@ -263,56 +331,77 @@ public class ServerListActivity extends AppCompatActivity {
             PeerConnection.Observer observer = new PeerConnection.Observer() {
                 @Override
                 public void onSignalingChange(PeerConnection.SignalingState signalingState) {
-
+                    Log.d(LOG, "createPeerConnection: onSignalingChange");
                 }
 
                 @Override
                 public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
+                    Log.d(LOG, "createPeerConnection: onIceConnectionChange");
 
                 }
 
                 @Override
                 public void onIceConnectionReceivingChange(boolean b) {
+                    Log.d(LOG, "createPeerConnection: onIceConnectionReceivingChange");
 
                 }
 
                 @Override
                 public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
+                    Log.d(LOG, "createPeerConnection: onIceGatheringChange");
 
                 }
 
                 @Override
                 public void onIceCandidate(IceCandidate iceCandidate) {
+                    Log.d(LOG, "createPeerConnection: onIceCandidate");
 
                 }
 
                 @Override
                 public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
+                    Log.d(LOG, "createPeerConnection: onIceCandidatesRemoved");
 
                 }
 
                 @Override
                 public void onAddStream(MediaStream mediaStream) {
-
+                    Log.d(LOG, "createPeerConnection: onAddStream = " + mediaStream.toString());
+                    if (pc == null) {
+                        return;
+                    }
+                    if (mediaStream.audioTracks.size() > 1 || mediaStream.videoTracks.size() > 1) {
+                        Log.d(ERROR, "Weird-looking stream: " + mediaStream);
+                        return;
+                    }
+                    if (mediaStream.videoTracks.size() == 1) {
+                        remoteVideoTrack = mediaStream.videoTracks.get(0);
+                        remoteVideoTrack.setEnabled(true);
+                        remoteVideoTrack.addRenderer(new VideoRenderer(fullscreenRenderer));
+                    }
                 }
 
                 @Override
                 public void onRemoveStream(MediaStream mediaStream) {
+                    Log.d(LOG, "createPeerConnection: onRemoveStream");
 
                 }
 
                 @Override
                 public void onDataChannel(DataChannel dataChannel) {
+                    Log.d(LOG, "createPeerConnection: onDataChannel");
 
                 }
 
                 @Override
                 public void onRenegotiationNeeded() {
+                    Log.d(LOG, "createPeerConnection: onRenegotiationNeeded");
 
                 }
 
                 @Override
                 public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
+                    Log.d(LOG, "createPeerConnection: onAddTrack");
 
                 }
             };
@@ -346,76 +435,38 @@ public class ServerListActivity extends AppCompatActivity {
             }
 
 
-//            //create json object with parameters
-//            HashMap<String, String> params = new HashMap<>();
-//            params.put("type", "offer");
-//            params.put("sdp", sdp);
+            //create json object with parameters
+            HashMap<String, String> params = new HashMap<>();
+            params.put("type", "offer");
+            params.put("sdp", sdp);
 
-//            JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + myID + "&to=" + peer_id, new JSONObject(params),
-//                    new Response.Listener<JSONObject>() {
-//                        @Override
-//                        public void onResponse(JSONObject response) {
-//                            //Process os success response
-//                        }
-//                    }, new Response.ErrorListener() {
-//                        @Override
-//                        public void onErrorResponse(VolleyError error) {
-//                            Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
-//                        }
-//                    }) {
-//                        @Override
-//                        public Map<String, String> getHeaders() throws AuthFailureError {
-//                            Map<String, String> headerParams = new HashMap<>();
-//                            headerParams.put("Peer-Type", "Client");
-//                            return headerParams;
-//                        }
-//                    };
-
-
-
-//            //create json object to send to peer
-//            JSONObject jsonBody = new JSONObject();
-//            jsonBody.put("type", "offer");
-//            jsonBody.put("sdp", sdp);
-//            final String mRequestBody = jsonBody.toString();
-//            Log.d(LOG, "sendToPeer: jsonBody = " + mRequestBody);
-//
-//
-            // Request a string response from the server
-            StringRequest getRequest = new StringRequest(Request.Method.POST, server + "/message?peer_id=" + myID + "&to=" + peer_id,
-                new Response.Listener<String>(){
-                    @Override
-                    public void onResponse(String response) {
-                        // we don't really care what the response looks like here, so we don't observe it
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        builder.setTitle(ERROR).setMessage("SendToPeer Failure!");
-                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
-                    }
-                }){
-                    @Override
-                    public Map<String, String> getHeaders() throws AuthFailureError {
-                        Map<String, String>  params = new HashMap<>();
-                        params.put("Peer-Type", "Client");
-    //                    params.put("Content-Type", "text/plain");
-                        return params;
-                    }
-                    @Override
-                    protected Map<String, String> getParams() {
-                        Map<String, String>  params = new HashMap<String, String>();
-                        params.put("type", "offer");
-                        params.put("sdp", sdp);
-
-                        return params;
-                    }
-            };
-
+            JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + myID + "&to=" + peer_id, new JSONObject(params),
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d(LOG, "sendToPeer(): Response = " + response.toString());
+                            //Process os success response
+                        }
+                    }, new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+                        }
+                    }) {
+                        @Override
+                        public Map<String, String> getHeaders() throws AuthFailureError {
+                            Map<String, String> headerParams = new HashMap<>();
+                            headerParams.put("Peer-Type", "Client");
+                            return headerParams;
+                        }
+                        @Override
+                        public String getBodyContentType() {
+                            return "text/plain";
+                        }
+                    };
 
             // Add the request to the RequestQueue.
-            queue.add(getRequest);
+            getVolleyRequestQueue().add(getRequest);
         } catch (Throwable e) {
             Log.d(ERROR, "send to peer error: " + e.toString());
         }
@@ -480,7 +531,7 @@ public class ServerListActivity extends AppCompatActivity {
             }
         };
 
-        if (data.getInt("offer") != -1) {
+        if (data.getString("type").equals("offer")) {
 
             createPeerConnection(peer_id);
 
@@ -491,9 +542,9 @@ public class ServerListActivity extends AppCompatActivity {
             pc.setRemoteDescription(remoteObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
             pc.createAnswer(remoteObserver, mediaConstraints);
         }
-        else if (data.getInt("answer") != -1) {
+        else if (data.getString("type").equals("answer")) {
             Log.d(LOG, "Got answer " + data);
-            pc.setRemoteDescription(remoteObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
+            pc.setRemoteDescription(remoteObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
         }
         else {
             Log.d(LOG, "Adding ICE candiate " + data);
@@ -581,7 +632,7 @@ public class ServerListActivity extends AppCompatActivity {
                         }
                     }
                 });
-        queue.add(stringRequest);
+        getVolleyRequestQueue().add(stringRequest);
 
         Log.d(LOG, "Start Hanging Get END");
     }
@@ -609,10 +660,10 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     /**
-     * Adds a http request to volley queue.
-     * @param String url: http url
-     * @param int method: etc Request.Method.GET or Request.Method.POST
-     * @param Response.Listener<String> listener: custom listener for responses
+     * Adds a http request to volley requestQueue.
+     * @param url (String): http url
+     * @param method (int): etc Request.Method.GET or Request.Method.POST
+     * @param listener (Response.Listener<String>): custom listener for responses
      */
     private void addRequest(String url, int method, Response.Listener<String> listener){
         // Request a string response from the server
@@ -631,6 +682,17 @@ public class ServerListActivity extends AppCompatActivity {
             }
         };
         // Add the request to the RequestQueue.
-        queue.add(getRequest);
+        getVolleyRequestQueue().add(getRequest);
+    }
+
+    public RequestQueue getVolleyRequestQueue() {
+        if (requestQueue == null) {
+            ArrayList<Interceptor> interceptors = new ArrayList<>();
+            interceptors.add(new StethoInterceptor());
+            requestQueue = Volley.newRequestQueue
+                    (this, new OkHttpStack(interceptors));
+        }
+
+        return requestQueue;
     }
 }
