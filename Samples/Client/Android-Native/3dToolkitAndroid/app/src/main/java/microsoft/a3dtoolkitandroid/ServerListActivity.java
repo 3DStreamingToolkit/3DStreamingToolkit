@@ -243,7 +243,7 @@ public class ServerListActivity extends AppCompatActivity {
             MediaConstraints defaultPeerConnectionConstraints = new MediaConstraints();
             defaultPeerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
-            PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "3Dtoolkit072017", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
+            PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserver3dstreaming.centralus.cloudapp.azure.com:5349", "user", "3Dtoolkit072017", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
             List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
             iceServerList.add(iceServer);
 
@@ -323,6 +323,7 @@ public class ServerListActivity extends AppCompatActivity {
                 @Override
                 public void onDataChannel(DataChannel dataChannel) {
                     Log.d(LOG, "createPeerConnection: onDataChannel");
+                    inputChannel = dataChannel;
 
                 }
 
@@ -417,18 +418,21 @@ public class ServerListActivity extends AppCompatActivity {
         final SdpObserver localObsever = new SdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
+                Log.d(LOG, "handlePeerMessage:  localObsever onCreateSuccess " + sessionDescription.description);
 
             }
 
             @Override
             public void onSetSuccess() {
+                Log.d(LOG, "handlePeerMessage:  localObsever onSetSuccess ");
 
             }
 
             @Override
             public void onCreateFailure(String s) {
-                Log.d(ERROR, "Set local description failure: " + s);
+                Log.d(ERROR, "handlePeerMessage:  localObsever onCreateFailure " + s);
             }
+
 
             @Override
             public void onSetFailure(String s) {
@@ -440,7 +444,7 @@ public class ServerListActivity extends AppCompatActivity {
         SdpObserver remoteObserver = new SdpObserver() {
             @Override
             public void onCreateSuccess(SessionDescription sessionDescription) {
-                Log.d(LOG, "Create answer:" + sessionDescription.toString());
+                Log.d(LOG, "handlePeerMessage: remoteObserver onCreateSuccess:" + sessionDescription.description);
                 pc.setLocalDescription(localObsever, sessionDescription);
                 //create json object with parameters
                 HashMap<String, String> params = new HashMap<>();
@@ -466,22 +470,22 @@ public class ServerListActivity extends AppCompatActivity {
         };
 
         if (data.getString("type").equals("offer")) {
-
+            Log.d(LOG, "handlePeerMessage: Got offer " + data);
             createPeerConnection(peer_id);
 
             MediaConstraints mediaConstraints = new MediaConstraints();
             mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
             mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
 
-            pc.setRemoteDescription(remoteObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
+            pc.setRemoteDescription(localObsever, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
             pc.createAnswer(remoteObserver, mediaConstraints);
         }
         else if (data.getString("type").equals("answer")) {
-            Log.d(LOG, "Got answer " + data);
-            pc.setRemoteDescription(remoteObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
+            Log.d(LOG, "handlePeerMessage: Got answer " + data);
+            pc.setRemoteDescription(localObsever, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
         }
         else {
-            Log.d(LOG, "Adding ICE candiate " + data);
+            Log.d(LOG, "handlePeerMessage: Adding ICE candiate " + data);
             IceCandidate candidate = new IceCandidate(data.getString("sdpMid"), data.getInt("sdpMLineIndex"), data.getString("candidate"));
             pc.addIceCandidate(candidate);
         }
