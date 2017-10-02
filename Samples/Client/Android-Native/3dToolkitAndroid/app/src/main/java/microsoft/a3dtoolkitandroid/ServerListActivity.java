@@ -36,7 +36,6 @@ import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RtpReceiver;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
-import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoTrack;
 
@@ -51,6 +50,7 @@ import java.util.TimerTask;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.EglBase;
 import microsoft.a3dtoolkitandroid.util.OkHttpStack;
+import microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 

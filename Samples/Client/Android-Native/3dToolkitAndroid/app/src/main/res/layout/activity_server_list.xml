@@ -13,7 +13,7 @@
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="8dp" />
 
-    <org.webrtc.SurfaceViewRenderer
+    <microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer
         android:id="@+id/fullscreen_video_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
