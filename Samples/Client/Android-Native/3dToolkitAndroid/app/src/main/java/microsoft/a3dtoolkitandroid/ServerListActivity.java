@@ -243,7 +243,7 @@ public class ServerListActivity extends AppCompatActivity {
             MediaConstraints defaultPeerConnectionConstraints = new MediaConstraints();
             defaultPeerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
-            PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserver3dstreaming.centralus.cloudapp.azure.com:5349", "user", "3Dtoolkit072017", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
+            PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "password", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
             List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
             iceServerList.add(iceServer);
 
