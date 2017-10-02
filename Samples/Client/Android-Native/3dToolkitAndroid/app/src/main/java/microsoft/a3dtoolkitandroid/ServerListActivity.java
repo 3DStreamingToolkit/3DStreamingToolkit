@@ -195,7 +195,10 @@ public class ServerListActivity extends AppCompatActivity {
                     @Override
                     public void onSetSuccess() {
                         Log.d(LOG, "joinPeer: onSetSuccess2");
-                        sendToPeer(peerId, sessionDescriptionH264.description);
+                        HashMap<String, String> params = new HashMap<>();
+                        params.put("type", "offer");
+                        params.put("sdp", sessionDescriptionH264.description);
+                        sendToPeer(peerId, params);
                     }
 
                     @Override
@@ -244,7 +247,7 @@ public class ServerListActivity extends AppCompatActivity {
             List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
             iceServerList.add(iceServer);
 
-            PeerConnection.Observer observer = new PeerConnection.Observer() {
+            PeerConnection.Observer peerConnectionObserver = new PeerConnection.Observer() {
                 @Override
                 public void onSignalingChange(PeerConnection.SignalingState signalingState) {
                     Log.d(LOG, "createPeerConnection: onSignalingChange");
@@ -271,7 +274,11 @@ public class ServerListActivity extends AppCompatActivity {
                 @Override
                 public void onIceCandidate(IceCandidate iceCandidate) {
                     Log.d(LOG, "createPeerConnection: onIceCandidate");
-
+                    HashMap<String, String> params = new HashMap<>();
+                    params.put("sdpMLineIndex", String.valueOf(iceCandidate.sdpMLineIndex));
+                    params.put("sdpMid", iceCandidate.sdpMid);
+                    params.put("candidate", iceCandidate.sdp);
+                    sendToPeer(peer_id, params);
                 }
 
                 @Override
@@ -337,7 +344,7 @@ public class ServerListActivity extends AppCompatActivity {
             PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
             peerConnectionFactory = new PeerConnectionFactory();
 
-            pc = peerConnectionFactory.createPeerConnection(iceServerList, defaultPeerConnectionConstraints, observer);
+            pc = peerConnectionFactory.createPeerConnection(iceServerList, defaultPeerConnectionConstraints, peerConnectionObserver);
             Log.d(LOG, "createPeerConnection: PeerConnection = " + pc.toString());
 
         } catch (Throwable error) {
@@ -348,11 +355,11 @@ public class ServerListActivity extends AppCompatActivity {
     /**
      * Sends sdp offer to server
      * @param peer_id (int): server ID
-     * @param sdp (String): sdp description
+     * @param params (HashMap<String, String></String,>): json post data
      */
-    private void sendToPeer(int peer_id, final String sdp) {
+    private void sendToPeer(int peer_id, HashMap<String, String> params) {
         try {
-            Log.d(LOG, "sendToPeer(): " + peer_id + " Send " + sdp);
+            Log.d(LOG, "sendToPeer(): " + peer_id + " Send " + params.toString());
             if (myID == -1) {
                 Log.d(ERROR, "sendToPeer: Not Connected");
                 return;
@@ -362,11 +369,6 @@ public class ServerListActivity extends AppCompatActivity {
                 return;
             }
 
-
-            //create json object with parameters
-            HashMap<String, String> params = new HashMap<>();
-            params.put("type", "offer");
-            params.put("sdp", sdp);
 
             JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + myID + "&to=" + peer_id, new JSONObject(params),
                     new Response.Listener<JSONObject>() {
@@ -440,7 +442,11 @@ public class ServerListActivity extends AppCompatActivity {
             public void onCreateSuccess(SessionDescription sessionDescription) {
                 Log.d(LOG, "Create answer:" + sessionDescription.toString());
                 pc.setLocalDescription(localObsever, sessionDescription);
-                sendToPeer(peer_id, sessionDescription.description);
+                //create json object with parameters
+                HashMap<String, String> params = new HashMap<>();
+                params.put("type", "offer");
+                params.put("sdp", sessionDescription.description);
+                sendToPeer(peer_id, params);
             }
 
             @Override
