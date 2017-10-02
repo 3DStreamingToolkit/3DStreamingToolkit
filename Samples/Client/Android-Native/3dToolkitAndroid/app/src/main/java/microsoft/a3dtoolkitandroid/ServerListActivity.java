@@ -28,7 +28,6 @@ import com.facebook.stetho.okhttp3.StethoInterceptor;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
-import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
@@ -50,6 +49,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
+import microsoft.a3dtoolkitandroid.util.EglBase;
 import microsoft.a3dtoolkitandroid.util.OkHttpStack;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -76,77 +76,7 @@ public class ServerListActivity extends AppCompatActivity {
     private ArrayAdapter adapter;
     private VideoTrack remoteVideoTrack;
     private SurfaceViewRenderer fullscreenRenderer;
-    private final EglBase rootEglBase = new EglBase() {
-        @Override
-        public void createSurface(Surface surface) {
-
-        }
-
-        @Override
-        public void createSurface(SurfaceTexture surfaceTexture) {
-
-        }
-
-        @Override
-        public void createDummyPbufferSurface() {
-
-        }
-
-        @Override
-        public void createPbufferSurface(int i, int i1) {
-
-        }
-
-        @Override
-        public Context getEglBaseContext() {
-            return null;
-        }
-
-        @Override
-        public boolean hasSurface() {
-            return false;
-        }
-
-        @Override
-        public int surfaceWidth() {
-            return 0;
-        }
-
-        @Override
-        public int surfaceHeight() {
-            return 0;
-        }
-
-        @Override
-        public void releaseSurface() {
-
-        }
-
-        @Override
-        public void release() {
-
-        }
-
-        @Override
-        public void makeCurrent() {
-
-        }
-
-        @Override
-        public void detachCurrent() {
-
-        }
-
-        @Override
-        public void swapBuffers() {
-
-        }
-
-        @Override
-        public void swapBuffers(long l) {
-
-        }
-    };
+    private final EglBase rootEglBase = EglBase.create();
 
     //alert dialog
     private AlertDialog.Builder builder;
@@ -158,6 +88,8 @@ public class ServerListActivity extends AppCompatActivity {
         Stetho.initializeWithDefaults(this);
         setContentView(R.layout.activity_server_list);
         final ListView listview = (ListView) findViewById(R.id.ServerListView);
+
+        //create surface renderer and initialize it
         fullscreenRenderer = (SurfaceViewRenderer) findViewById(R.id.fullscreen_video_view);
         fullscreenRenderer.init(rootEglBase.getEglBaseContext(), null);
 

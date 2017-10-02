@@ -59,7 +59,7 @@ public class EglBase {
     private EGLDisplay eglDisplay;
     private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
     // EGL wrapper for an actual EGLContext.
-    public static class Context {
+    public static class Context extends org.webrtc.EglBase.Context {
         private final EGLContext eglContext;
         public Context(EGLContext eglContext) {
             this.eglContext = eglContext;
