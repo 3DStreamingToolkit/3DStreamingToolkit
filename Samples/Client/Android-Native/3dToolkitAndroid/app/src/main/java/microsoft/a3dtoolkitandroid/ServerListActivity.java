@@ -72,7 +72,6 @@ public class ServerListActivity extends AppCompatActivity {
     private int messageCounter = 0;
     private PeerConnection pc;
     private PeerConnectionFactory peerConnectionFactory;
-    private RtcListener mListener;
     private DataChannel inputChannel;
     private ArrayAdapter adapter;
     private VideoTrack remoteVideoTrack;
@@ -148,23 +147,6 @@ public class ServerListActivity extends AppCompatActivity {
 
         }
     };
-
-
-    /**
-     * Implement this interface to be notified of events.
-     */
-    public interface RtcListener{
-        void onCallReady(String callId);
-
-        void onStatusChanged(String newStatus);
-
-        void onLocalStream(MediaStream localStream);
-
-        void onAddRemoteStream(MediaStream remoteStream, int endPoint);
-
-        void onRemoveRemoteStream(int endPoint);
-    }
-
 
     //alert dialog
     private AlertDialog.Builder builder;
@@ -406,6 +388,8 @@ public class ServerListActivity extends AppCompatActivity {
                 }
             };
 
+            //Initialize PeerConnectionFactory globals.
+            //Params are context, initAudio, initVideo and videoCodecHwAcceleration
             PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
             peerConnectionFactory = new PeerConnectionFactory();
 
