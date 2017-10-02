@@ -46,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.EglBase;
@@ -183,7 +185,7 @@ public class ServerListActivity extends AppCompatActivity {
             public void onCreateSuccess(final SessionDescription sessionDescription) {
                 Log.d(LOG, "joinPeer: onCreateSuccess1");
 
-                final SessionDescription sessionDescriptionH264 = new SessionDescription(sessionDescription.type, sessionDescription.description.replace("96 98 100 102", "100 96 98 102"));
+                final SessionDescription sessionDescriptionH264 = new SessionDescription(sessionDescription.type, preferCodec(sessionDescription.description, "H264" , false));
                 pc.setLocalDescription(new SdpObserver() {
                     @Override
                     public void onCreateSuccess(SessionDescription sessionDescription) {
@@ -290,8 +292,18 @@ public class ServerListActivity extends AppCompatActivity {
                     }
                     if (mediaStream.videoTracks.size() == 1) {
                         remoteVideoTrack = mediaStream.videoTracks.get(0);
-                        remoteVideoTrack.setEnabled(true);
-                        remoteVideoTrack.addRenderer(new VideoRenderer(fullscreenRenderer));
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    remoteVideoTrack.setEnabled(true);
+                                    remoteVideoTrack.addRenderer(new VideoRenderer(fullscreenRenderer));
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+
                     }
                 }
 
@@ -610,5 +622,61 @@ public class ServerListActivity extends AppCompatActivity {
         }
 
         return requestQueue;
+    }
+
+    private static String preferCodec(String sdpDescription, String codec, boolean isAudio) {
+        String[] lines = sdpDescription.split("\r\n");
+        int mLineIndex = -1;
+        String codecRtpMap = null;
+        // a=rtpmap:<payload type> <encoding name>/<clock rate> [/<encoding parameters>]
+        String regex = "^a=rtpmap:(\\d+) " + codec + "(/\\d+)+[\r]?$";
+        Pattern codecPattern = Pattern.compile(regex);
+        String mediaDescription = "m=video ";
+        if (isAudio) {
+            mediaDescription = "m=audio ";
+        }
+        for (int i = 0; (i < lines.length) && (mLineIndex == -1 || codecRtpMap == null); i++) {
+            if (lines[i].startsWith(mediaDescription)) {
+                mLineIndex = i;
+                continue;
+            }
+            Matcher codecMatcher = codecPattern.matcher(lines[i]);
+            if (codecMatcher.matches()) {
+                codecRtpMap = codecMatcher.group(1);
+            }
+        }
+        if (mLineIndex == -1) {
+            Log.w(LOG, "No " + mediaDescription + " line, so can't prefer " + codec);
+            return sdpDescription;
+        }
+        if (codecRtpMap == null) {
+            Log.w(LOG, "No rtpmap for " + codec);
+            return sdpDescription;
+        }
+        Log.d(LOG, "Found " + codec + " rtpmap " + codecRtpMap + ", prefer at " + lines[mLineIndex]);
+        String[] origMLineParts = lines[mLineIndex].split(" ");
+        if (origMLineParts.length > 3) {
+            StringBuilder newMLine = new StringBuilder();
+            int origPartIndex = 0;
+            // Format is: m=<media> <port> <proto> <fmt> ...
+            newMLine.append(origMLineParts[origPartIndex++]).append(" ");
+            newMLine.append(origMLineParts[origPartIndex++]).append(" ");
+            newMLine.append(origMLineParts[origPartIndex++]).append(" ");
+            newMLine.append(codecRtpMap);
+            for (; origPartIndex < origMLineParts.length; origPartIndex++) {
+                if (!origMLineParts[origPartIndex].equals(codecRtpMap)) {
+                    newMLine.append(" ").append(origMLineParts[origPartIndex]);
+                }
+            }
+            lines[mLineIndex] = newMLine.toString();
+            Log.d(LOG, "Change media description: " + lines[mLineIndex]);
+        } else {
+            Log.e(LOG, "Wrong SDP media description format: " + lines[mLineIndex]);
+        }
+        StringBuilder newSdpDescription = new StringBuilder();
+        for (String line : lines) {
+            newSdpDescription.append(line).append("\r\n");
+        }
+        return newSdpDescription.toString();
     }
 }
