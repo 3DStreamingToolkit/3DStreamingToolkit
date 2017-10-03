@@ -32,7 +32,6 @@ import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
-import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
@@ -44,7 +43,6 @@ import org.webrtc.voiceengine.WebRtcAudioUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -104,7 +102,7 @@ public class PeerConnectionClient {
     private Timer statsTimer;
     private VideoRenderer.Callbacks localRender;
     private List<VideoRenderer.Callbacks> remoteRenders;
-    private AppRTCClient.SignalingParameters signalingParameters;
+    private RTCClient.SignalingParameters signalingParameters;
     private MediaConstraints pcConstraints;
     private int videoWidth;
     private int videoHeight;
@@ -329,7 +327,7 @@ public class PeerConnectionClient {
 
     public void createPeerConnection(final EglBase.Context renderEGLContext,
                                      final VideoRenderer.Callbacks localRender, final List<VideoRenderer.Callbacks> remoteRenders,
-                                     final VideoCapturer videoCapturer, final AppRTCClient.SignalingParameters signalingParameters) {
+                                     final VideoCapturer videoCapturer, final RTCClient.SignalingParameters signalingParameters) {
         if (peerConnectionParameters == null) {
             Log.e(TAG, "Creating peer connection without initializing factory.");
             return;

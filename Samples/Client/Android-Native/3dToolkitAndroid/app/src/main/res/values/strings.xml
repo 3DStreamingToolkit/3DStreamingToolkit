@@ -6,11 +6,11 @@
     <string name="title_activity_serverList">Server List</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
-    <string name="_80">80</string>
+    <string name="name">Anonymous</string>
     <string name="connect">Connect</string>
     <string name="port">Port:</string>
     <string name="server">Server:</string>
-    <string name="http_3dtoolkit_signaling_server_azurewebsites_net">http://3dtoolkit-signaling-server.azurewebsites.net</string>
+    <string name="url">https://3dtoolkit-signaling-server.azurewebsites.net:443</string>
 
     <string name="room_description"> Please enter a room name. Room names are shared with everyone, so think of something unique and send it to a friend. </string>
 

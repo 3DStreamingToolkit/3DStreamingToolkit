@@ -17,21 +17,19 @@ import org.webrtc.SessionDescription;
 import java.util.List;
 
 /**
- * AppRTCClient is the interface representing an AppRTC client.
+ * RTCClient is the interface representing a client.
  */
-public interface AppRTCClient {
-    /**
-     * Struct holding the connection parameters of an AppRTC room.
-     */
-    class RoomConnectionParameters {
-        public final String roomUrl;
-        public final String roomId;
-        public final boolean loopback;
+public interface RTCClient {
 
-        public RoomConnectionParameters(String roomUrl, String roomId, boolean loopback) {
-            this.roomUrl = roomUrl;
-            this.roomId = roomId;
-            this.loopback = loopback;
+    /**
+     * Struct holding the connection parameters of an 3D Toolkit server.
+     */
+    class ConnectionParameters {
+        public final String server;
+        public final String myID;
+        public ConnectionParameters(String server, String myID) {
+            this.server = server;
+            this.myID = myID;
         }
     }
 
@@ -40,7 +38,7 @@ public interface AppRTCClient {
      * parameters. Once connection is established onConnectedToRoom()
      * callback with room parameters is invoked.
      */
-    void connectToRoom(RoomConnectionParameters connectionParameters);
+    void connect(ConnectionParameters connectionParameters);
 
     /**
      * Send offer SDP to the other participant.
@@ -62,17 +60,12 @@ public interface AppRTCClient {
      */
     void sendLocalIceCandidateRemovals(final IceCandidate[] candidates);
 
-    /**
-     * Disconnect from room.
-     */
-    void disconnectFromRoom();
 
     /**
      * Struct holding the signaling parameters of an AppRTC room.
      */
     class SignalingParameters {
         public final List<PeerConnection.IceServer> iceServers;
-        public final boolean initiator;
         public final String clientId;
         public final String wssUrl;
         public final String wssPostUrl;
@@ -83,7 +76,6 @@ public interface AppRTCClient {
                                    String clientId, String wssUrl, String wssPostUrl, SessionDescription offerSdp,
                                    List<IceCandidate> iceCandidates) {
             this.iceServers = iceServers;
-            this.initiator = initiator;
             this.clientId = clientId;
             this.wssUrl = wssUrl;
             this.wssPostUrl = wssPostUrl;
@@ -98,11 +90,12 @@ public interface AppRTCClient {
      * <p>Methods are guaranteed to be invoked on the UI thread of |activity|.
      */
     interface   SignalingEvents {
+
         /**
          * Callback fired once the room's signaling parameters
          * SignalingParameters are extracted.
          */
-        void onConnectedToRoom(final SignalingParameters params);
+        void onConnected(final SignalingParameters params);
 
         /**
          * Callback fired once remote SDP is received.

@@ -43,4 +43,6 @@ dependencies {
     compile 'com.facebook.stetho:stetho-okhttp3:1.5.0'
     compile 'org.apache.httpcomponents:httpcore:4.4.7'
     compile project(':libwebrtc')
+    compile 'com.google.code.gson:gson:2.7'
+
 }

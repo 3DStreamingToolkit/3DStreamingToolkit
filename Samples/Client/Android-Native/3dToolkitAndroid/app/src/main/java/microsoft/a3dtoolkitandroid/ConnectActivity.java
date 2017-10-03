@@ -61,23 +61,13 @@ public class ConnectActivity extends AppCompatActivity {
 
             // Request a string response from the server
             StringRequest getRequest = new StringRequest(Request.Method.GET, url,
-                    new Response.Listener<String>()
-                    {
-                        @Override
-                        public void onResponse(String response) {
-                            // response
-                            intent.putExtra(SERVER_LIST, response);
-                            startActivity(intent);
-                        }
+                    response -> {
+                        // response
+                        intent.putExtra(SERVER_LIST, response);
+                        startActivity(intent);
                     },
-                    new Response.ErrorListener()
-                    {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            builder.setTitle("Error")
-                                    .setMessage("Sorry request did not work!");
-                        }
-                    }
+                    error -> builder.setTitle("Error")
+                            .setMessage("Sorry request did not work!")
             ) {
                 @Override
                 public Map<String, String> getHeaders() throws AuthFailureError {

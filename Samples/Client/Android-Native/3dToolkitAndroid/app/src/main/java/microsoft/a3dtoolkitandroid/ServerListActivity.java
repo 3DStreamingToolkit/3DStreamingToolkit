@@ -2,15 +2,14 @@ package microsoft.a3dtoolkitandroid;
 
 
 import android.content.Intent;
-import android.graphics.SurfaceTexture;
+import android.databinding.DataBindingUtil;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Surface;
 import android.view.View;
-import android.widget.AdapterView;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -29,6 +28,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
+import org.webrtc.Logging;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
@@ -39,9 +39,12 @@ import org.webrtc.SessionDescription;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoTrack;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -49,14 +52,20 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import microsoft.a3dtoolkitandroid.databinding.ActivityServerListBinding;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.EglBase;
+import microsoft.a3dtoolkitandroid.util.GenericRequest;
 import microsoft.a3dtoolkitandroid.util.OkHttpStack;
 import microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer;
 import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
 
 import static java.lang.Integer.parseInt;
+import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_HEIGHT;
+import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_WIDTH;
+import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_X;
+import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_Y;
+import static microsoft.a3dtoolkitandroid.util.RendererCommon.ScalingType.SCALE_ASPECT_FILL;
 
 public class ServerListActivity extends AppCompatActivity {
 
@@ -69,16 +78,30 @@ public class ServerListActivity extends AppCompatActivity {
     private HashMap<Integer, String> otherPeers = new HashMap<>();
     private List<String> peers;
     private int myID;
+    private int peer_id;
     private String server;
     private String port;
     private int messageCounter = 0;
-    private PeerConnection pc;
+    private PeerConnection peerConnection;
     private PeerConnectionFactory peerConnectionFactory;
     private DataChannel inputChannel;
     private ArrayAdapter adapter;
     private VideoTrack remoteVideoTrack;
     private SurfaceViewRenderer fullscreenRenderer;
     private final EglBase rootEglBase = EglBase.create();
+    private final PeerConnectionObserver peerConnectionObserver = new PeerConnectionObserver();
+    private final SDPObserver sdpObserver = new SDPObserver();
+
+    // Queued remote ICE candidates are consumed only after both local and
+    // remote descriptions are set. Similarly local ICE candidates are sent to
+    // remote peer after both local and remote description are set.
+    private LinkedList<IceCandidate> queuedRemoteCandidates;
+    private MediaConstraints sdpMediaConstraints;
+    private MediaConstraints peerConnectionConstraints;
+    private ActivityServerListBinding binding;
+    private final List<VideoRenderer.Callbacks> remoteRenderers = new ArrayList<>();
+    private SessionDescription localSdp; // either offer or answer SDP
+
 
     //alert dialog
     private AlertDialog.Builder builder;
@@ -92,14 +115,18 @@ public class ServerListActivity extends AppCompatActivity {
         final ListView listview = (ListView) findViewById(R.id.ServerListView);
 
         //create surface renderer and initialize it
-        fullscreenRenderer = (SurfaceViewRenderer) findViewById(R.id.fullscreen_video_view);
+        fullscreenRenderer = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
         fullscreenRenderer.init(rootEglBase.getEglBaseContext(), null);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        createMediaConstraintsInternal();
 
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
         port = intent.getStringExtra(ConnectActivity.SERVER_PORT);
-
-        final Intent nextIntent = new Intent(this, StreamActivity.class);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
@@ -127,38 +154,47 @@ public class ServerListActivity extends AppCompatActivity {
         updatePeerList();
 
         // creates a click listener for the peer list
-        listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, final View view, int position, long id) {
-                String item = (String) parent.getItemAtPosition(position);
-                Log.d(LOG, "onItemClick: item = " + item);
-                String serverName = item.split(",")[0].trim();
-                Log.d(LOG, "onItemClick: serverName = " + serverName);
-                for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()){
-                    if(serverEntry.getValue().equals(serverName)){
-                        Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
-                        fullscreenRenderer.setVisibility(View.VISIBLE);
-                        joinPeer(serverEntry.getKey());
-                    }
+        listview.setOnItemClickListener((parent, view, position, id) -> {
+            String item = (String) parent.getItemAtPosition(position);
+            Log.d(LOG, "onItemClick: item = " + item);
+            String serverName = item.split(",")[0].trim();
+            Log.d(LOG, "onItemClick: serverName = " + serverName);
+            for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()){
+                if(serverEntry.getValue().equals(serverName)){
+                    Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
+                    peer_id = serverEntry.getKey();
+                    fullscreenRenderer.setVisibility(View.VISIBLE);
+//                    binding = DataBindingUtil.setContentView(this, R.layout.activity_server_list);
+//                    remoteRenderers.add(binding.remoteVideoView);
+                    joinPeer();
                 }
             }
         });
 
-//        //show the alert
-//        AlertDialog alertDialog = builder.create();
-//        alertDialog.show();
+    }
+
+    private void createMediaConstraintsInternal() {
+        // Create peer connection constraints.
+        peerConnectionConstraints = new MediaConstraints();
+
+        // Enable DTLS for normal calls and disable for loopback calls.
+        peerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+
+        //Create SDP constraints.
+        sdpMediaConstraints = new MediaConstraints();
+        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
+        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
     }
 
     /**
      * Joins server selected from list of peers
-     * @param peerId: Choosen peerID to connect to
      */
-    private void joinPeer(final int peerId) {
+    private void joinPeer() {
         Log.d(LOG, "joinPeer: ");
 
-        createPeerConnection(peerId);
+        createPeerConnection();
 
-        inputChannel = pc.createDataChannel("inputDataChannel", new DataChannel.Init());
+        inputChannel = peerConnection.createDataChannel("inputDataChannel", new DataChannel.Init());
         inputChannel.registerObserver(new DataChannel.Observer() {
             @Override
             public void onBufferedAmountChange(long l) {
@@ -176,191 +212,62 @@ public class ServerListActivity extends AppCompatActivity {
             }
         });
 
-        MediaConstraints offerOptions = new MediaConstraints();
-        offerOptions.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
-        offerOptions.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
-
-        pc.createOffer(new SdpObserver() {
-            @Override
-            public void onCreateSuccess(final SessionDescription sessionDescription) {
-                Log.d(LOG, "joinPeer: onCreateSuccess1");
-
-                final SessionDescription sessionDescriptionH264 = new SessionDescription(sessionDescription.type, preferCodec(sessionDescription.description, "H264" , false));
-                pc.setLocalDescription(new SdpObserver() {
-                    @Override
-                    public void onCreateSuccess(SessionDescription sessionDescription) {
-                        Log.d(LOG, "joinPeer: onCreateSuccess2");
-                    }
-
-                    @Override
-                    public void onSetSuccess() {
-                        Log.d(LOG, "joinPeer: onSetSuccess2");
-                        HashMap<String, String> params = new HashMap<>();
-                        params.put("type", "offer");
-                        params.put("sdp", sessionDescriptionH264.description);
-                        sendToPeer(peerId, params);
-                    }
-
-                    @Override
-                    public void onCreateFailure(String s) {
-                        Log.d(LOG, "joinPeer: onCreateFailure2: " + s);
-
-                    }
-
-                    @Override
-                    public void onSetFailure(String s) {
-                        Log.d(LOG, "joinPeer: onSetFailure2: " + s);
-
-                    }
-                }, sessionDescriptionH264);
-            }
-
-            @Override
-            public void onSetSuccess() {
-
-            }
-
-            @Override
-            public void onCreateFailure(String s) {
-
-            }
-
-            @Override
-            public void onSetFailure(String s) {
-
-            }
-        }, offerOptions);
-
+        createOffer();
     }
 
     /**
      * Creates a peer connection using the ICE server and media constraints specified
-     * @param peer_id (int): server ID
      */
-    private void createPeerConnection(int peer_id) {
-        try {
-            Log.d(LOG, "createPeerConnection: ");
-            MediaConstraints defaultPeerConnectionConstraints = new MediaConstraints();
-            defaultPeerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+    private void createPeerConnection() {
+        Log.d(LOG, "createPeerConnection: ");
+        
+        //Initialize PeerConnectionFactory globals.
+        //Params are context, initAudio, initVideo and videoCodecHwAcceleration
+        PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
+        peerConnectionFactory = new PeerConnectionFactory();
 
-            PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "password", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
-            List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
-            iceServerList.add(iceServer);
+        createPeerConnectionInternal();
 
-            PeerConnection.Observer peerConnectionObserver = new PeerConnection.Observer() {
-                @Override
-                public void onSignalingChange(PeerConnection.SignalingState signalingState) {
-                    Log.d(LOG, "createPeerConnection: onSignalingChange");
-                }
+        Log.d(LOG, "createPeerConnection: PeerConnection = " + peerConnection.toString());
+    }
 
-                @Override
-                public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
-                    Log.d(LOG, "createPeerConnection: onIceConnectionChange");
-
-                }
-
-                @Override
-                public void onIceConnectionReceivingChange(boolean b) {
-                    Log.d(LOG, "createPeerConnection: onIceConnectionReceivingChange");
-
-                }
-
-                @Override
-                public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
-                    Log.d(LOG, "createPeerConnection: onIceGatheringChange");
-
-                }
-
-                @Override
-                public void onIceCandidate(IceCandidate iceCandidate) {
-                    Log.d(LOG, "createPeerConnection: onIceCandidate");
-                    HashMap<String, String> params = new HashMap<>();
-                    params.put("sdpMLineIndex", String.valueOf(iceCandidate.sdpMLineIndex));
-                    params.put("sdpMid", iceCandidate.sdpMid);
-                    params.put("candidate", iceCandidate.sdp);
-                    sendToPeer(peer_id, params);
-                }
-
-                @Override
-                public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
-                    Log.d(LOG, "createPeerConnection: onIceCandidatesRemoved");
-
-                }
-
-                @Override
-                public void onAddStream(MediaStream mediaStream) {
-                    Log.d(LOG, "createPeerConnection: onAddStream = " + mediaStream.toString());
-                    if (pc == null) {
-                        return;
-                    }
-                    if (mediaStream.audioTracks.size() > 1 || mediaStream.videoTracks.size() > 1) {
-                        Log.d(ERROR, "Weird-looking stream: " + mediaStream);
-                        return;
-                    }
-                    if (mediaStream.videoTracks.size() == 1) {
-                        remoteVideoTrack = mediaStream.videoTracks.get(0);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    remoteVideoTrack.setEnabled(true);
-                                    remoteVideoTrack.addRenderer(new VideoRenderer(fullscreenRenderer));
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-
-                    }
-                }
-
-                @Override
-                public void onRemoveStream(MediaStream mediaStream) {
-                    Log.d(LOG, "createPeerConnection: onRemoveStream");
-
-                }
-
-                @Override
-                public void onDataChannel(DataChannel dataChannel) {
-                    Log.d(LOG, "createPeerConnection: onDataChannel");
-                    inputChannel = dataChannel;
-
-                }
-
-                @Override
-                public void onRenegotiationNeeded() {
-                    Log.d(LOG, "createPeerConnection: onRenegotiationNeeded");
-
-                }
-
-                @Override
-                public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
-                    Log.d(LOG, "createPeerConnection: onAddTrack");
-
-                }
-            };
-
-            //Initialize PeerConnectionFactory globals.
-            //Params are context, initAudio, initVideo and videoCodecHwAcceleration
-            PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
-            peerConnectionFactory = new PeerConnectionFactory();
-
-            pc = peerConnectionFactory.createPeerConnection(iceServerList, defaultPeerConnectionConstraints, peerConnectionObserver);
-            Log.d(LOG, "createPeerConnection: PeerConnection = " + pc.toString());
-
-        } catch (Throwable error) {
-            Log.d(ERROR, "Failed to create PeerConnection, exception: " + error.toString());
+    private void createPeerConnectionInternal() {
+        if (peerConnectionFactory == null) {
+            Log.e(LOG, "Peerconnection factory is not created");
+            return;
         }
+        Log.d(LOG, "Create peer connection.");
+
+        Log.d(LOG, "PCConstraints: " + peerConnectionConstraints.toString());
+        queuedRemoteCandidates = new LinkedList<>();
+
+        PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "3Dtoolkit072017", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
+        List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
+        iceServerList.add(iceServer);
+
+        PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServerList);
+        // TCP candidates are only useful when connecting to a server that supports
+        // ICE-TCP.
+        rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+
+
+        peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
+
+        // Set default WebRTC tracing and INFO libjingle logging.
+        // NOTE: this _must_ happen while |factory| is alive!
+        Logging.enableTracing("logcat:", EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT));
+        Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO);
+
+        Log.d(LOG, "Peer connection created.");
     }
 
     /**
      * Sends sdp offer to server
-     * @param peer_id (int): server ID
      * @param params (HashMap<String, String></String,>): json post data
      */
-    private void sendToPeer(int peer_id, HashMap<String, String> params) {
+    private void sendToPeer(HashMap<String, String> params) {
         try {
-            Log.d(LOG, "sendToPeer(): " + peer_id + " Send " + params.toString());
+            Log.d(LOG, "sendToPeer(): " + peer_id + " Send ");
             if (myID == -1) {
                 Log.d(ERROR, "sendToPeer: Not Connected");
                 return;
@@ -370,20 +277,23 @@ public class ServerListActivity extends AppCompatActivity {
                 return;
             }
 
+//            Map<String, String> headerParams = new HashMap<>();
+//            headerParams.put("Peer-Type", "Client");
+//
+//            GenericRequest<String> getRequest = new GenericRequest<>(Request.Method.POST ,server + "/message?peer_id=" + myID + "&to=" + peer_id, String.class, params,
+//                    response -> {
+//                        Log.d(LOG, "sendToPeer(): Response = " + response);
+//                    }, error -> {
+//                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+//                    }, headerParams, true, true);
 
             JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + myID + "&to=" + peer_id, new JSONObject(params),
-                    new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            Log.d(LOG, "sendToPeer(): Response = " + response.toString());
-                            //Process os success response
-                        }
-                    }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
-                        }
-                    }) {
+                    response -> {
+                        Log.d(LOG, "sendToPeer(): Response = " + response.toString());
+                        //Process os success response
+                    }, error -> {
+                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+                    }){
                         @Override
                         public Map<String, String> getHeaders() throws AuthFailureError {
                             Map<String, String> headerParams = new HashMap<>();
@@ -395,6 +305,7 @@ public class ServerListActivity extends AppCompatActivity {
                             return "text/plain";
                         }
                     };
+
 
             // Add the request to the RequestQueue.
             getVolleyRequestQueue().add(getRequest);
@@ -414,80 +325,21 @@ public class ServerListActivity extends AppCompatActivity {
         messageCounter++;
         Log.d(LOG, "handlePeerMessage: Message from '" + otherPeers.get(peer_id) + ":" + data);
 
-        // observer for local callback functions
-        final SdpObserver localObsever = new SdpObserver() {
-            @Override
-            public void onCreateSuccess(SessionDescription sessionDescription) {
-                Log.d(LOG, "handlePeerMessage:  localObsever onCreateSuccess " + sessionDescription.description);
-
-            }
-
-            @Override
-            public void onSetSuccess() {
-                Log.d(LOG, "handlePeerMessage:  localObsever onSetSuccess ");
-
-            }
-
-            @Override
-            public void onCreateFailure(String s) {
-                Log.d(ERROR, "handlePeerMessage:  localObsever onCreateFailure " + s);
-            }
-
-
-            @Override
-            public void onSetFailure(String s) {
-
-            }
-        };
-
-        // observer for remote callback functions
-        SdpObserver remoteObserver = new SdpObserver() {
-            @Override
-            public void onCreateSuccess(SessionDescription sessionDescription) {
-                Log.d(LOG, "handlePeerMessage: remoteObserver onCreateSuccess:" + sessionDescription.description);
-                pc.setLocalDescription(localObsever, sessionDescription);
-                //create json object with parameters
-                HashMap<String, String> params = new HashMap<>();
-                params.put("type", "offer");
-                params.put("sdp", sessionDescription.description);
-                sendToPeer(peer_id, params);
-            }
-
-            @Override
-            public void onSetSuccess() {
-
-            }
-
-            @Override
-            public void onCreateFailure(String s) {
-                Log.d(ERROR, "Create answer error: " + s);
-            }
-
-            @Override
-            public void onSetFailure(String s) {
-
-            }
-        };
-
         if (data.getString("type").equals("offer")) {
             Log.d(LOG, "handlePeerMessage: Got offer " + data);
-            createPeerConnection(peer_id);
+            createPeerConnection();
 
-            MediaConstraints mediaConstraints = new MediaConstraints();
-            mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
-            mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
-
-            pc.setRemoteDescription(localObsever, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
-            pc.createAnswer(remoteObserver, mediaConstraints);
+            peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
+            createAnswer();
         }
         else if (data.getString("type").equals("answer")) {
             Log.d(LOG, "handlePeerMessage: Got answer " + data);
-            pc.setRemoteDescription(localObsever, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
+            peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
         }
         else {
             Log.d(LOG, "handlePeerMessage: Adding ICE candiate " + data);
             IceCandidate candidate = new IceCandidate(data.getString("sdpMid"), data.getInt("sdpMLineIndex"), data.getString("candidate"));
-            pc.addIceCandidate(candidate);
+            peerConnection.addIceCandidate(candidate);
         }
         Log.d(LOG, "handlePeerMessage: END");
     }
@@ -530,44 +382,38 @@ public class ServerListActivity extends AppCompatActivity {
         Log.d(LOG, "Start Hanging Get Start");
         // Created a custom request class to access headers of responses.
         CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
-                new Response.Listener<CustomStringRequest.ResponseM>() {
-                    @Override
-                    public void onResponse(CustomStringRequest.ResponseM result) {
-                        //From here you will get headers
-                        Log.d(LOG, "startHangingGet: onResponse");
-                        String peer_id_string = result.headers.get("Pragma");
-                        int peer_id = parseInt(peer_id_string);
-                        JSONObject response = result.response;
+                result -> {
+                    //From here you will get headers
+                    Log.d(LOG, "startHangingGet: onResponse");
+                    String peer_id_string = result.headers.get("Pragma");
+                    int peer_id = parseInt(peer_id_string);
+                    JSONObject response = result.response;
 
-                        Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
-                        if (peer_id == myID) {
-                            // Update the list of peers
-                            Log.d(LOG, "startHangingGet: peer if = myif");
-                            try {
-                                handleServerNotification(response.getString("Server"));
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            // Handle other messages from server
-                            try {
-                                Log.d(LOG, "startHangingGet: handlePeerMessage");
-                                handlePeerMessage(peer_id, response);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
+                    Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
+                    if (peer_id == myID) {
+                        // Update the list of peers
+                        Log.d(LOG, "startHangingGet: peer if = myif");
+                        try {
+                            handleServerNotification(response.getString("Server"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        // Handle other messages from server
+                        try {
+                            Log.d(LOG, "startHangingGet: handlePeerMessage");
+                            handlePeerMessage(peer_id, response);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
                     }
                 },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
-                        if (error.toString().equals("com.android.volley.TimeoutError")){
-                            startHangingGet();
-                        } else {
-                            builder.setTitle(ERROR).setMessage("Sorry request did not work!");
-                        }
+                error -> {
+                    Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
+                    if (error.toString().equals("com.android.volley.TimeoutError")){
+                        startHangingGet();
+                    } else {
+                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 });
         getVolleyRequestQueue().add(stringRequest);
@@ -584,17 +430,63 @@ public class ServerListActivity extends AppCompatActivity {
             @Override
             public void run(){
                 try {
-                    addRequest(server + "/heartbeat?peer_id=" + myID, Request.Method.GET, new Response.Listener<String>(){
-                        @Override
-                        public void onResponse(String response) {
-                            // we don't really care what the response looks like here, so we don't observe it
-                        }
-                    });
+                    addRequest(server + "/heartbeat?peer_id=" + myID, Request.Method.GET, response -> {});
                 } catch (Throwable error) {
                     Log.d(ERROR, error.toString());
                 }
             }
         },0, heartbeatIntervalInMs);
+    }
+
+    public void createOffer() {
+        Log.d(LOG, "PC Create OFFER");
+        peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
+    }
+
+    public void createAnswer() {
+        Log.d(LOG, "PC create ANSWER");
+        peerConnection.createAnswer(sdpObserver, sdpMediaConstraints);
+    }
+
+    public void addRemoteIceCandidate(final IceCandidate candidate) {
+        if (peerConnection != null) {
+            if (queuedRemoteCandidates != null) {
+                queuedRemoteCandidates.add(candidate);
+            } else {
+                peerConnection.addIceCandidate(candidate);
+            }
+        }
+    }
+
+    public void removeRemoteIceCandidates(final IceCandidate[] candidates) {
+        if (peerConnection == null) {
+            return;
+        }
+        // Drain the queued remote candidates if there is any so that
+        // they are processed in the proper order.
+        drainCandidates();
+        peerConnection.removeIceCandidates(candidates);
+    }
+
+    public void setRemoteDescription(final SessionDescription sdp) {
+        if (peerConnection == null) {
+            return;
+        }
+        String sdpDescription = sdp.description;
+        sdpDescription = preferCodec(sdpDescription, "H264", false);
+        Log.d(LOG, "Set remote SDP.");
+        SessionDescription sdpRemote = new SessionDescription(sdp.type, sdpDescription);
+        peerConnection.setRemoteDescription(sdpObserver, sdpRemote);
+    }
+
+    private void drainCandidates() {
+        if (queuedRemoteCandidates != null) {
+            Log.d(LOG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
+            for (IceCandidate candidate : queuedRemoteCandidates) {
+                peerConnection.addIceCandidate(candidate);
+            }
+            queuedRemoteCandidates = null;
+        }
     }
 
     /**
@@ -688,5 +580,175 @@ public class ServerListActivity extends AppCompatActivity {
             newSdpDescription.append(line).append("\r\n");
         }
         return newSdpDescription.toString();
+    }
+
+    private void updateVideoView() {
+//        binding.remoteVideoLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+//        binding.remoteVideoView.setScalingType(SCALE_ASPECT_FILL);
+//        binding.remoteVideoView.setMirror(false);
+//        binding.remoteVideoView.requestLayout();
+    }
+
+    // Implementation detail: observe ICE & stream changes and react accordingly.
+    private class PeerConnectionObserver implements PeerConnection.Observer {
+        @Override
+        public void onIceCandidate(final IceCandidate iceCandidate) {
+            Log.d(LOG, "onIceCandidate: " + iceCandidate.toString());
+            HashMap<String, String> params = new HashMap<>();
+            params.put("sdpMLineIndex", String.valueOf(iceCandidate.sdpMLineIndex));
+            params.put("sdpMid", iceCandidate.sdpMid);
+            params.put("candidate", iceCandidate.sdp);
+            sendToPeer(params);
+        }
+
+        @Override
+        public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
+            Log.d(LOG, "onIceCandidatesRemoved: " + Arrays.toString(candidates));
+
+        }
+
+        @Override
+        public void onSignalingChange(PeerConnection.SignalingState newState) {
+            Log.d(LOG, "SignalingState: " + newState);
+        }
+
+        @Override
+        public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
+            if (newState == PeerConnection.IceConnectionState.CONNECTED) {
+                Log.d(LOG, "onIceConnectionChange: " + newState);
+                updateVideoView();
+            } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
+                Log.d(LOG, "onIceConnectionChange: " + newState);
+            } else if (newState == PeerConnection.IceConnectionState.FAILED) {
+                Log.d(ERROR,"ICE connection failed.");
+            }
+        }
+
+        @Override
+        public void onIceGatheringChange(PeerConnection.IceGatheringState newState) {
+            Log.d(LOG, "IceGatheringState: " + newState);
+        }
+
+        @Override
+        public void onIceConnectionReceivingChange(boolean receiving) {
+            Log.d(LOG, "IceConnectionReceiving changed to " + receiving);
+        }
+
+        @Override
+        public void onAddStream(final MediaStream stream) {
+            Log.d(LOG, "onAddStream: " + stream.toString());
+            if (peerConnection == null) {
+                return;
+            }
+            if (stream.audioTracks.size() > 1 || stream.videoTracks.size() > 1) {
+                Log.d(ERROR,"Weird-looking stream: " + stream);
+                return;
+            }
+            if (stream.videoTracks.size() == 1) {
+                remoteVideoTrack = stream.videoTracks.get(0);
+                remoteVideoTrack.setEnabled(true);
+                remoteVideoTrack.addRenderer(new VideoRenderer(fullscreenRenderer));
+            }
+        }
+
+        @Override
+        public void onRemoveStream(final MediaStream stream) {
+            remoteVideoTrack = null;
+        }
+
+        @Override
+        public void onDataChannel(final DataChannel dc) {
+            Log.d(LOG, "New Data channel " + dc.label());
+
+            dc.registerObserver(new DataChannel.Observer() {
+                public void onBufferedAmountChange(long previousAmount) {
+                    Log.d(LOG, "Data channel buffered amount changed: " + dc.label() + ": " + dc.state());
+                }
+
+                @Override
+                public void onStateChange() {
+                    Log.d(LOG, "Data channel state changed: " + dc.label() + ": " + dc.state());
+                }
+
+                @Override
+                public void onMessage(final DataChannel.Buffer buffer) {
+                    if (buffer.binary) {
+                        Log.d(LOG, "Received binary msg over " + dc);
+                        return;
+                    }
+                    ByteBuffer data = buffer.data;
+                    final byte[] bytes = new byte[data.capacity()];
+                    data.get(bytes);
+                    String strData = new String(bytes);
+                    Log.d(LOG, "Got msg: " + strData + " over " + dc);
+                }
+            });
+            inputChannel = dc;
+        }
+
+        @Override
+        public void onRenegotiationNeeded() {
+            // No need to do anything; Client follows a pre-agreed-upon
+            // signaling/negotiation protocol.
+        }
+
+        @Override
+        public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
+
+        }
+    }
+
+
+    // Implementation detail: handle offer creation/signaling and answer setting,
+    // as well as adding remote ICE candidates once the answer SDP is set.
+    private class SDPObserver implements SdpObserver {
+        @Override
+        public void onCreateSuccess(final SessionDescription origSdp) {
+            if (localSdp != null) {
+                Log.d(ERROR,"Multiple SDP create.");
+                return;
+            }
+            String sdpDescription = origSdp.description;
+            sdpDescription = preferCodec(sdpDescription, "H264", false);
+            final SessionDescription sdp = new SessionDescription(origSdp.type, sdpDescription);
+            localSdp = sdp;
+
+            if (peerConnection != null) {
+                Log.d(LOG, "Set local SDP from " + sdp.type);
+                peerConnection.setLocalDescription(sdpObserver, sdp);
+            }
+        }
+
+        @Override
+        public void onSetSuccess() {
+            if (peerConnection == null) {
+                return;
+            }
+            // For offering peer connection we first create offer and set
+            // local SDP, then after receiving answer set remote SDP.
+            if (peerConnection.getRemoteDescription() == null) {
+                // We've just set our local SDP so time to send it.
+                Log.d(LOG, "Local SDP set succesfully");
+                HashMap<String, String> params = new HashMap<>();
+                params.put("type", "offer");
+                params.put("sdp", localSdp.description);
+                sendToPeer(params);
+            } else {
+                // We've just set remote description, so drain remote
+                // and send local ICE candidates.
+                Log.d(LOG, "Remote SDP set succesfully");
+                drainCandidates();
+            }
+        }
+
+        @Override
+        public void onCreateFailure(final String error) {
+            Log.d(ERROR,"createSDP error: " + error);
+        }
+
+        @Override
+        public void onSetFailure(final String error) {
+            Log.d(ERROR,"setSDP error: " + error);
+        }
     }
 }
