@@ -74,7 +74,7 @@ public class ServerListActivity extends AppCompatActivity {
     private int myID = -1;
     private int peer_id;
     private String server;
-    private String port;
+    private String name;
     private int messageCounter = 0;
     private PeerConnection peerConnection;
     private PeerConnectionFactory peerConnectionFactory;
@@ -120,7 +120,7 @@ public class ServerListActivity extends AppCompatActivity {
 
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
-        port = intent.getStringExtra(ConnectActivity.NAME);
+        name = intent.getStringExtra(ConnectActivity.NAME);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
@@ -723,7 +723,7 @@ public class ServerListActivity extends AppCompatActivity {
                     // Sending answer message.
                     HashMap<String, String> params = new HashMap<>();
                     params.put("type", "answer");
-                    params.put("sdp", origSdp.description);
+                    params.put("sdp", sdp.description);
                     sendToPeer(params);
 
                     // Enable fullscreenRenderer for video playback.
@@ -731,7 +731,6 @@ public class ServerListActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             try {
-                                fullscreenRenderer.setVisibility(View.VISIBLE);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
