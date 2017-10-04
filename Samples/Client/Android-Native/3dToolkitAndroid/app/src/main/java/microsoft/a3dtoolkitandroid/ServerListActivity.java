@@ -159,8 +159,8 @@ public class ServerListActivity extends AppCompatActivity {
             Log.d(LOG, "onItemClick: item = " + item);
             String serverName = item.split(",")[0].trim();
             Log.d(LOG, "onItemClick: serverName = " + serverName);
-            for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()){
-                if(serverEntry.getValue().equals(serverName)){
+            for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()) {
+                if (serverEntry.getValue().equals(serverName)) {
                     Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
                     peer_id = serverEntry.getKey();
                     fullscreenRenderer.setVisibility(View.VISIBLE);
@@ -220,7 +220,7 @@ public class ServerListActivity extends AppCompatActivity {
      */
     private void createPeerConnection() {
         Log.d(LOG, "createPeerConnection: ");
-        
+
         //Initialize PeerConnectionFactory globals.
         //Params are context, initAudio, initVideo and videoCodecHwAcceleration
         PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
@@ -241,14 +241,18 @@ public class ServerListActivity extends AppCompatActivity {
         Log.d(LOG, "PCConstraints: " + peerConnectionConstraints.toString());
         queuedRemoteCandidates = new LinkedList<>();
 
-        PeerConnection.IceServer iceServer = new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "3Dtoolkit072017", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK);
         List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
-        iceServerList.add(iceServer);
+        iceServerList.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
+        iceServerList.add(new PeerConnection.IceServer("stun:stun1.l.google.com:19302"));
+        iceServerList.add(new PeerConnection.IceServer("stun:stun2.l.google.com:19302"));
+        iceServerList.add(new PeerConnection.IceServer("stun:stun3.l.google.com:19302"));
+        iceServerList.add(new PeerConnection.IceServer("stun:stun4.l.google.com:19302"));
+        //iceServerList.add(new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "password", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK));
 
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServerList);
         // TCP candidates are only useful when connecting to a server that supports
         // ICE-TCP.
-        rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+        rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
 
 
         peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
@@ -263,6 +267,7 @@ public class ServerListActivity extends AppCompatActivity {
 
     /**
      * Sends sdp offer to server
+     *
      * @param params (HashMap<String, String></String,>): json post data
      */
     private void sendToPeer(HashMap<String, String> params) {
@@ -292,19 +297,20 @@ public class ServerListActivity extends AppCompatActivity {
                         Log.d(LOG, "sendToPeer(): Response = " + response.toString());
                         //Process os success response
                     }, error -> {
-                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
-                    }){
-                        @Override
-                        public Map<String, String> getHeaders() throws AuthFailureError {
-                            Map<String, String> headerParams = new HashMap<>();
-                            headerParams.put("Peer-Type", "Client");
-                            return headerParams;
-                        }
-                        @Override
-                        public String getBodyContentType() {
-                            return "text/plain";
-                        }
-                    };
+                Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+            }) {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> headerParams = new HashMap<>();
+                    headerParams.put("Peer-Type", "Client");
+                    return headerParams;
+                }
+
+                @Override
+                public String getBodyContentType() {
+                    return "text/plain";
+                }
+            };
 
 
             // Add the request to the RequestQueue.
@@ -316,8 +322,9 @@ public class ServerListActivity extends AppCompatActivity {
 
     /**
      * Handles messages from the server (offer, answer, adding ICE candidate).
+     *
      * @param peer_id: id of peer
-     * @param data: JSON response from server
+     * @param data:    JSON response from server
      * @throws JSONException
      */
     private void handlePeerMessage(final int peer_id, JSONObject data) throws JSONException {
@@ -327,16 +334,14 @@ public class ServerListActivity extends AppCompatActivity {
 
         if (data.getString("type").equals("offer")) {
             Log.d(LOG, "handlePeerMessage: Got offer " + data);
+            this.peer_id = peer_id;
             createPeerConnection();
-
             peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
             createAnswer();
-        }
-        else if (data.getString("type").equals("answer")) {
+        } else if (data.getString("type").equals("answer")) {
             Log.d(LOG, "handlePeerMessage: Got answer " + data);
             peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
-        }
-        else {
+        } else {
             Log.d(LOG, "handlePeerMessage: Adding ICE candiate " + data);
             IceCandidate candidate = new IceCandidate(data.getString("sdpMid"), data.getInt("sdpMLineIndex"), data.getString("candidate"));
             peerConnection.addIceCandidate(candidate);
@@ -363,11 +368,13 @@ public class ServerListActivity extends AppCompatActivity {
 
     /**
      * Handles adding new servers to the list of servers
+     *
      * @param server: e.g. "renderingserver_phcherne@PHCHERNE-PR04,941,1"
      */
     private void handleServerNotification(String server) {
         Log.d(LOG, "handleServerNotification: " + server);
-        String[] parsed = server.trim().split("\\s*,\\s*");;
+        String[] parsed = server.trim().split("\\s*,\\s*");
+        ;
         if (parseInt(parsed[2]) != 0) {
             otherPeers.put(parseInt(parsed[1]), parsed[0]);
         }
@@ -410,7 +417,7 @@ public class ServerListActivity extends AppCompatActivity {
                 },
                 error -> {
                     Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
-                    if (error.toString().equals("com.android.volley.TimeoutError")){
+                    if (error.toString().equals("com.android.volley.TimeoutError")) {
                         startHangingGet();
                     } else {
                         builder.setTitle(ERROR).setMessage("Sorry request did not work!");
@@ -426,16 +433,17 @@ public class ServerListActivity extends AppCompatActivity {
      */
     private void startHeartBeat() {
         Log.d(LOG, "startHeartBeat: ");
-        new Timer().scheduleAtFixedRate(new TimerTask(){
+        new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
-            public void run(){
+            public void run() {
                 try {
-                    addRequest(server + "/heartbeat?peer_id=" + myID, Request.Method.GET, response -> {});
+                    addRequest(server + "/heartbeat?peer_id=" + myID, Request.Method.GET, response -> {
+                    });
                 } catch (Throwable error) {
                     Log.d(ERROR, error.toString());
                 }
             }
-        },0, heartbeatIntervalInMs);
+        }, 0, heartbeatIntervalInMs);
     }
 
     public void createOffer() {
@@ -491,11 +499,12 @@ public class ServerListActivity extends AppCompatActivity {
 
     /**
      * Adds a http request to volley requestQueue.
-     * @param url (String): http url
-     * @param method (int): etc Request.Method.GET or Request.Method.POST
+     *
+     * @param url      (String): http url
+     * @param method   (int): etc Request.Method.GET or Request.Method.POST
      * @param listener (Response.Listener<String>): custom listener for responses
      */
-    private void addRequest(String url, int method, Response.Listener<String> listener){
+    private void addRequest(String url, int method, Response.Listener<String> listener) {
         // Request a string response from the server
         StringRequest getRequest = new StringRequest(method, url, listener,
                 new Response.ErrorListener() {
@@ -503,10 +512,10 @@ public class ServerListActivity extends AppCompatActivity {
                     public void onErrorResponse(VolleyError error) {
                         builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
-                }){
+                }) {
             @Override
             public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String>  params = new HashMap<>();
+                Map<String, String> params = new HashMap<>();
                 params.put("Peer-Type", "Client");
                 return params;
             }
@@ -620,7 +629,7 @@ public class ServerListActivity extends AppCompatActivity {
             } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
                 Log.d(LOG, "onIceConnectionChange: " + newState);
             } else if (newState == PeerConnection.IceConnectionState.FAILED) {
-                Log.d(ERROR,"ICE connection failed.");
+                Log.d(ERROR, "ICE connection failed.");
             }
         }
 
@@ -641,7 +650,7 @@ public class ServerListActivity extends AppCompatActivity {
                 return;
             }
             if (stream.audioTracks.size() > 1 || stream.videoTracks.size() > 1) {
-                Log.d(ERROR,"Weird-looking stream: " + stream);
+                Log.d(ERROR, "Weird-looking stream: " + stream);
                 return;
             }
             if (stream.videoTracks.size() == 1) {
@@ -705,7 +714,7 @@ public class ServerListActivity extends AppCompatActivity {
         @Override
         public void onCreateSuccess(final SessionDescription origSdp) {
             if (localSdp != null) {
-                Log.d(ERROR,"Multiple SDP create.");
+                Log.d(ERROR, "Multiple SDP create.");
                 return;
             }
             String sdpDescription = origSdp.description;
@@ -716,14 +725,35 @@ public class ServerListActivity extends AppCompatActivity {
             if (peerConnection != null) {
                 Log.d(LOG, "Set local SDP from " + sdp.type);
                 peerConnection.setLocalDescription(sdpObserver, sdp);
+                if (origSdp.type == SessionDescription.Type.ANSWER)
+                {
+                    // Sending answer message.
+                    HashMap<String, String> params = new HashMap<>();
+                    params.put("type", "answer");
+                    params.put("sdp", origSdp.description);
+                    sendToPeer(params);
+
+                    // Enable fullscreenRenderer for video playback.
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                fullscreenRenderer.setVisibility(View.VISIBLE);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                }
             }
         }
 
         @Override
         public void onSetSuccess() {
-            if (peerConnection == null) {
+            if (peerConnection == null || localSdp == null) {
                 return;
             }
+
             // For offering peer connection we first create offer and set
             // local SDP, then after receiving answer set remote SDP.
             if (peerConnection.getRemoteDescription() == null) {
@@ -743,12 +773,12 @@ public class ServerListActivity extends AppCompatActivity {
 
         @Override
         public void onCreateFailure(final String error) {
-            Log.d(ERROR,"createSDP error: " + error);
+            Log.d(ERROR, "createSDP error: " + error);
         }
 
         @Override
         public void onSetFailure(final String error) {
-            Log.d(ERROR,"setSDP error: " + error);
+            Log.d(ERROR, "setSDP error: " + error);
         }
     }
 }
