@@ -457,22 +457,16 @@ inline bool IsRenderDeferred()
 
 #ifndef TEST_RUNNER
 
-void LoadConfigs()
-{
-	// Loads server config file.
-	ConfigParser::Parse("serverConfig.json", &g_serverConfig, &g_serviceConfig);
-
-	// Loads webrtc config file.
-	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
-}
-
 bool AppMain(BOOL stopping)
 {
+	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
+	auto serverConfig = GlobalObject<ServerConfig>::Get();
+
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
-	authInfo.authority = g_webrtcConfig.authentication.authority;
-	authInfo.resource = g_webrtcConfig.authentication.resource;
-	authInfo.clientId = g_webrtcConfig.authentication.client_id;
-	authInfo.clientSecret = g_webrtcConfig.authentication.client_secret;
+	authInfo.authority = webrtcConfig->authentication.authority;
+	authInfo.resource = webrtcConfig->authentication.resource;
+	authInfo.clientId = webrtcConfig->authentication.client_id;
+	authInfo.clientSecret = webrtcConfig->authentication.client_secret;
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -484,10 +478,10 @@ bool AppMain(BOOL stopping)
 		FLAG_autoconnect,
 		FLAG_autocall,
 		false,
-		g_serverConfig.width,
-		g_serverConfig.height);
+		serverConfig->server_config.width,
+		serverConfig->server_config.height);
 
-	if (!g_serverConfig.system_service)
+	if (!serverConfig->server_config.system_service)
 	{
 		if (!wnd.Create())
 		{
@@ -507,14 +501,14 @@ bool AppMain(BOOL stopping)
 	DXUTCreateDevice(
 		D3D_FEATURE_LEVEL_11_0,
 		true,
-		g_serverConfig.width,
-		g_serverConfig.height);
+		serverConfig->server_config.width,
+		serverConfig->server_config.height);
 
 	// Resizes swapchain's buffer to match the supported video frame size: 1280x720...
-	DXUTResizeDXGIBuffers(g_serverConfig.width, g_serverConfig.height, false);
+	DXUTResizeDXGIBuffers(serverConfig->server_config.width, serverConfig->server_config.height, false);
 
 	// Initializes viewport for left and right cameras.
-	g_CameraResources.SetViewport(g_serverConfig.width, g_serverConfig.height);
+	g_CameraResources.SetViewport(serverConfig->server_config.width, serverConfig->server_config.height);
 
 	// Render loop.
 	std::function<void()> frameRenderFunc = ([&]
@@ -523,7 +517,7 @@ bool AppMain(BOOL stopping)
 	});
 
 	ID3D11Texture2D* frameBuffer = nullptr;
-	if (!g_serverConfig.system_service)
+	if (!serverConfig->server_config.system_service)
 	{
 		// Gets the frame buffer from the swap chain.
 		HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
@@ -534,8 +528,8 @@ bool AppMain(BOOL stopping)
 
 	// Initializes the buffer renderer.
 	g_bufferRenderer = new BufferRenderer(
-		g_serverConfig.width,
-		g_serverConfig.height,
+		serverConfig->server_config.width,
+		serverConfig->server_config.height,
 		DXUTGetD3D11Device(),
 		frameRenderFunc,
 		frameBuffer);
@@ -544,7 +538,7 @@ bool AppMain(BOOL stopping)
 	SAFE_RELEASE(frameBuffer);
 
 	// For system service, we render to buffer instead of swap chain.
-	if (g_serverConfig.system_service)
+	if (serverConfig->server_config.system_service)
 	{
 		DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
 	}
@@ -588,7 +582,7 @@ bool AppMain(BOOL stopping)
 				int height = deviceSettings.d3d11.sd.BufferDesc.Height;
 				int newWidth = isStereo ? width << 1 : width >> 1;
 				DXUTResizeDXGIBuffers(newWidth, height, false);
-				if (!g_serverConfig.system_service)
+				if (!serverConfig->server_config.system_service)
 				{
 					ID3D11Texture2D* frameBuffer = nullptr;
 					SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
@@ -694,7 +688,7 @@ bool AppMain(BOOL stopping)
 
 			// For system service, automatically connect to the signaling server
 			// after successful authentication.
-			if (g_serverConfig.system_service)
+			if (serverConfig->server_config.system_service)
 			{
 				conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
 			}
@@ -719,7 +713,7 @@ bool AppMain(BOOL stopping)
 
 		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 	}
-	else if (g_serverConfig.system_service)
+	else if (serverConfig->server_config.system_service)
 	{
 		// For system service, automatically connect to the signaling server.
 		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
@@ -772,7 +766,7 @@ bool AppMain(BOOL stopping)
 	while (!stopping && (gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 	{
 		// For system service, ignore window and swap chain.
-		if (g_serverConfig.system_service)
+		if (serverConfig->server_config.system_service)
 		{
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
@@ -913,10 +907,10 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
 	return DXUTGetExitCode();
 #else // TEST_RUNNER
-	// Loads all config files.
-	LoadConfigs();
+	// this must occur before any config access
+	ConfigParser::ConfigureConfigFactories();
 
-	if (!g_serverConfig.system_service)
+	if (!GlobalObject<ServerConfig>::Get()->server_config.system_service)
 	{
 		// If the app isn't defined as a system service, remove it if present.
 		RemoveService();
