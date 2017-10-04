@@ -11,24 +11,29 @@ import android.widget.EditText;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import microsoft.a3dtoolkitandroid.util.Config;
+
 public class ConnectActivity extends AppCompatActivity {
     public static final String SERVER_LIST = "com.microsoft.a3dtoolkitandroid.LIST";
     public static final String SERVER_SERVER = "com.microsoft.a3dtoolkitandroid.SERVER";
-    public static final String SERVER_PORT = "com.microsoft.a3dtoolkitandroid.PORT";
+    public static final String NAME = "com.microsoft.a3dtoolkitandroid.PORT";
+
+    private String server;
+    private String name;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
+        EditText editText = (EditText)findViewById(R.id.server);
+        editText.setText(Config.signalingServer);
     }
 
     /**
@@ -37,8 +42,8 @@ public class ConnectActivity extends AppCompatActivity {
      */
     public void connect(View view) {
         final Intent intent = new Intent(this, ServerListActivity.class);
-        final String server = ((EditText) findViewById(R.id.server)).getText().toString().toLowerCase();
-        String port = ((EditText) findViewById(R.id.port)).getText().toString().toLowerCase();
+        server = ((EditText) findViewById(R.id.server)).getText().toString().toLowerCase();
+        name = ((EditText) findViewById(R.id.port)).getText().toString().toLowerCase();
 
         //alert dialog
         final AlertDialog.Builder builder;
@@ -49,15 +54,15 @@ public class ConnectActivity extends AppCompatActivity {
         }
 
         //check for empty
-        if (server.length() == 0 || port.length() == 0) {
+        if (server.length() == 0 || name.length() == 0) {
             builder.setTitle("Missing Info")
                     .setMessage(server.length() == 0 ? "Please fill server" : "Please fill port");
         } else {
             // Instantiate the RequestQueue.
             RequestQueue queue = Volley.newRequestQueue(this);
-            String url = server + "/sign_in?peer_name=" + port;
+            String url = server + "/sign_in?peer_name=" + name;
             intent.putExtra(SERVER_SERVER, server);
-            intent.putExtra(SERVER_PORT, port);
+            intent.putExtra(NAME, name);
 
             // Request a string response from the server
             StringRequest getRequest = new StringRequest(Request.Method.GET, url,

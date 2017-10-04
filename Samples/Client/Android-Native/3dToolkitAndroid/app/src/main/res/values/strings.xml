@@ -10,7 +10,7 @@
     <string name="connect">Connect</string>
     <string name="port">Port:</string>
     <string name="server">Server:</string>
-    <string name="url">https://3dtoolkit-signaling-server.azurewebsites.net:443</string>
+    <string name="url">http://localhost:3001</string>
 
     <string name="room_description"> Please enter a room name. Room names are shared with everyone, so think of something unique and send it to a friend. </string>
 

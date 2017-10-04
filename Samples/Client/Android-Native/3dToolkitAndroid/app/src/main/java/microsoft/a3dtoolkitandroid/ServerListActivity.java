@@ -2,7 +2,6 @@ package microsoft.a3dtoolkitandroid;
 
 
 import android.content.Intent;
-import android.databinding.DataBindingUtil;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
@@ -53,19 +52,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import microsoft.a3dtoolkitandroid.databinding.ActivityServerListBinding;
+import microsoft.a3dtoolkitandroid.util.Config;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.EglBase;
-import microsoft.a3dtoolkitandroid.util.GenericRequest;
 import microsoft.a3dtoolkitandroid.util.OkHttpStack;
 import microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer;
 import okhttp3.Interceptor;
 
 import static java.lang.Integer.parseInt;
-import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_HEIGHT;
-import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_WIDTH;
-import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_X;
-import static microsoft.a3dtoolkitandroid.util.Constants.REMOTE_Y;
-import static microsoft.a3dtoolkitandroid.util.RendererCommon.ScalingType.SCALE_ASPECT_FILL;
 
 public class ServerListActivity extends AppCompatActivity {
 
@@ -77,7 +71,7 @@ public class ServerListActivity extends AppCompatActivity {
     private RequestQueue requestQueue;
     private HashMap<Integer, String> otherPeers = new HashMap<>();
     private List<String> peers;
-    private int myID;
+    private int myID = -1;
     private int peer_id;
     private String server;
     private String port;
@@ -126,7 +120,7 @@ public class ServerListActivity extends AppCompatActivity {
 
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
-        port = intent.getStringExtra(ConnectActivity.SERVER_PORT);
+        port = intent.getStringExtra(ConnectActivity.NAME);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
@@ -242,17 +236,12 @@ public class ServerListActivity extends AppCompatActivity {
         queuedRemoteCandidates = new LinkedList<>();
 
         List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
-        iceServerList.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302"));
-        iceServerList.add(new PeerConnection.IceServer("stun:stun1.l.google.com:19302"));
-        iceServerList.add(new PeerConnection.IceServer("stun:stun2.l.google.com:19302"));
-        iceServerList.add(new PeerConnection.IceServer("stun:stun3.l.google.com:19302"));
-        iceServerList.add(new PeerConnection.IceServer("stun:stun4.l.google.com:19302"));
-        //iceServerList.add(new PeerConnection.IceServer("turn:turnserveruri:5349", "user", "password", PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK));
+        iceServerList.add(new PeerConnection.IceServer(Config.turnServer, Config.username, Config.credential, Config.tlsCertPolicy));
 
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServerList);
         // TCP candidates are only useful when connecting to a server that supports
         // ICE-TCP.
-        rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
+        rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
 
 
         peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
@@ -328,19 +317,20 @@ public class ServerListActivity extends AppCompatActivity {
      * @throws JSONException
      */
     private void handlePeerMessage(final int peer_id, JSONObject data) throws JSONException {
-        Log.d(LOG, "handlePeerMessage: START");
         messageCounter++;
         Log.d(LOG, "handlePeerMessage: Message from '" + otherPeers.get(peer_id) + ":" + data);
 
-        if (data.getString("type").equals("offer")) {
-            Log.d(LOG, "handlePeerMessage: Got offer " + data);
-            this.peer_id = peer_id;
-            createPeerConnection();
-            peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
-            createAnswer();
-        } else if (data.getString("type").equals("answer")) {
-            Log.d(LOG, "handlePeerMessage: Got answer " + data);
-            peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
+        if (data.has("type")) {
+            if (data.getString("type").equals("offer")) {
+                Log.d(LOG, "handlePeerMessage: Got offer " + data);
+                this.peer_id = peer_id;
+                createPeerConnection();
+                peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
+                createAnswer();
+            } else if (data.getString("type").equals("answer")) {
+                Log.d(LOG, "handlePeerMessage: Got answer " + data);
+                peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
+            }
         } else {
             Log.d(LOG, "handlePeerMessage: Adding ICE candiate " + data);
             IceCandidate candidate = new IceCandidate(data.getString("sdpMid"), data.getInt("sdpMLineIndex"), data.getString("candidate"));
@@ -386,7 +376,6 @@ public class ServerListActivity extends AppCompatActivity {
      * Loops on request timeout.
      */
     private void startHangingGet() {
-        Log.d(LOG, "Start Hanging Get Start");
         // Created a custom request class to access headers of responses.
         CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
                 result -> {
@@ -413,6 +402,10 @@ public class ServerListActivity extends AppCompatActivity {
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
+                    }
+
+                    if (myID != -1){
+                        startHangingGet();
                     }
                 },
                 error -> {
