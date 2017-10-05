@@ -1,11 +1,15 @@
 package microsoft.a3dtoolkitandroid;
 
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.view.GestureDetectorCompat;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
@@ -114,6 +118,111 @@ public class ServerListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server_list);
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
+        setGestureListener();
+    }
+
+    private void setGestureListener(){
+        View view = findViewById(R.id.remote_video_view);
+        view.setOnTouchListener((View v, MotionEvent event) -> {
+            v.performClick();
+            int action = MotionEventCompat.getActionMasked(event);
+
+            switch(action) {
+                case (MotionEvent.ACTION_DOWN) :
+                    Log.d(LOG,"Action was DOWN");
+                    isFingerDown = true;
+                    fingerDownX = event.getRawX();
+                    fingerDownY = event.getRawY();
+
+                    downPitch = navPitch;
+                    downHeading = navHeading;
+                    downLocation[0] = navLocation[0];
+                    downLocation[1] = navLocation[1];
+                    downLocation[2] = navLocation[2];
+                    return true;
+                case (MotionEvent.ACTION_MOVE) :
+                    Log.d(LOG,"Action was MOVE");
+                    if (isFingerDown) {
+                        int pointerCount = event.getPointerCount();
+
+                        if(pointerCount == 1){
+                            // location of first finger
+                            MotionEvent.PointerCoords pointerCoords = new MotionEvent.PointerCoords();
+                            event.getPointerCoords(0,pointerCoords);
+
+                            double dx = pointerCoords.x - fingerDownX;
+                            double dy = pointerCoords.y - fingerDownY;
+
+                            double dpitch = 0.005 * dy;
+                            double dheading = 0.005 * dx;
+
+                            navHeading = downHeading - dheading;
+                            navPitch = downPitch + dpitch;
+
+                            Matrix locTransform =  mat.MatrixMultiply(mat.MatrixRotateY(navHeading), mat.MatrixRotateZ(navPitch));
+                            navTransform = mat.MatrixMultiply(mat.MatrixTranslate(navLocation), locTransform);
+
+                            sendTransform();
+                        } else if(pointerCount == 2){
+                            // location of second finger
+                            MotionEvent.PointerCoords pointerCoords = new MotionEvent.PointerCoords();
+                            event.getPointerCoords(1,pointerCoords);
+
+                            double dy = pointerCoords.y - fingerDownY;
+
+                            double dist = -dy;
+
+                            navLocation[0] = downLocation[0] + dist * navTransform.get(0,0);
+                            navLocation[1] = downLocation[1] + dist * navTransform.get(0,1);
+                            navLocation[2] = downLocation[2] + dist * navTransform.get(0,2);
+
+                            navTransform.set(3,0, navLocation[0]);
+                            navTransform.set(3,1, navLocation[1]);
+                            navTransform.set(3,2, navLocation[2]);
+
+                            sendTransform();
+                        }
+                    }
+                    return true;
+                case (MotionEvent.ACTION_UP) :
+                    Log.d(LOG,"Action was UP");
+                    isFingerDown = false;
+                    return true;
+                case (MotionEvent.ACTION_CANCEL) :
+                    Log.d(LOG,"Action was CANCEL");
+                    return true;
+                case (MotionEvent.ACTION_OUTSIDE) :
+                    Log.d(LOG,"Movement occurred outside bounds " +
+                            "of current screen element");
+                    return true;
+                default :
+                    return super.onTouchEvent(event);
+            }
+        });
+    }
+
+    private void sendTransform() {
+        if (inputChannel != null) {
+            double[] eye = {navTransform.get(3,0), navTransform.get(3,1), navTransform.get(3,2)};
+            double[] lookat = {navTransform.get(3,0) + navTransform.get(0,0), navTransform.get(3,1) + navTransform.get(0,1), navTransform.get(3,2) + navTransform.get(0,2)};
+            double[] up = {navTransform.get(1,0), navTransform.get(1,1), navTransform.get(1,2)};
+
+            String data = eye[0] + ", " + eye[1] + ", " + eye[2] + ", " +
+                    lookat[0] + ", " + lookat[1] + ", " + lookat[2] + ", " +
+                    up[0] + ", " + up[1] + ", " + up[2];
+
+            JSONObject jsonObject = new JSONObject();
+            try {
+                jsonObject.put("type", "camera-transform-lookat");
+                jsonObject.put("body", data);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            ByteBuffer byteBuffer = ByteBuffer.wrap(jsonObject.toString().getBytes());
+            DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, false);
+            inputChannel.send(buffer);
+        }
     }
 
     /**
