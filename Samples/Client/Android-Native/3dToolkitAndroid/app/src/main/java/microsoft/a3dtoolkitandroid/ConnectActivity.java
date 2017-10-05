@@ -22,7 +22,7 @@ import microsoft.a3dtoolkitandroid.util.Config;
 public class ConnectActivity extends AppCompatActivity {
     public static final String SERVER_LIST = "com.microsoft.a3dtoolkitandroid.LIST";
     public static final String SERVER_SERVER = "com.microsoft.a3dtoolkitandroid.SERVER";
-    public static final String NAME = "com.microsoft.a3dtoolkitandroid.PORT";
+    public static final String NAME = "com.microsoft.a3dtoolkitandroid.NAME";
 
     private String server;
     private String name;
@@ -56,7 +56,7 @@ public class ConnectActivity extends AppCompatActivity {
         //check for empty
         if (server.length() == 0 || name.length() == 0) {
             builder.setTitle("Missing Info")
-                    .setMessage(server.length() == 0 ? "Please fill server" : "Please fill port");
+                    .setMessage(server.length() == 0 ? "Please fill server" : "Please fill name");
         } else {
             // Instantiate the RequestQueue.
             RequestQueue queue = Volley.newRequestQueue(this);

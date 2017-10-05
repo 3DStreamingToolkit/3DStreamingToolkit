@@ -10,6 +10,8 @@ import com.android.volley.toolbox.JsonRequest;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import org.json.JSONObject;
+
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +27,7 @@ public class GenericRequest<T> extends JsonRequest<T> {
     private boolean isBodyContentText = false;
     // Used for request which do not return anything from the server
     private boolean muteRequest = false;
+    public static Map<String, String> header;
 
     /**
      * Basically, this is the constructor which is called by the others.
@@ -185,6 +188,7 @@ public class GenericRequest<T> extends JsonRequest<T> {
 
     @Override
     protected Response<T> parseNetworkResponse(NetworkResponse response) {
+
         // The magic of the mute request happens here
         if (muteRequest) {
             if (response.statusCode >= 200 && response.statusCode <= 299) {
@@ -196,6 +200,7 @@ public class GenericRequest<T> extends JsonRequest<T> {
                 // If it's not muted; we just need to create our POJO from the returned JSON and handle correctly the errors
                 String json = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
                 T parsedObject = gson.fromJson(json, clazz);
+                header = response.headers;
                 return Response.success(parsedObject, HttpHeaderParser.parseCacheHeaders(response));
             } catch (UnsupportedEncodingException e) {
                 return Response.error(new ParseError(e));
@@ -221,4 +226,5 @@ public class GenericRequest<T> extends JsonRequest<T> {
         // Add headers, for auth for example
         // ...
     }
+
 }

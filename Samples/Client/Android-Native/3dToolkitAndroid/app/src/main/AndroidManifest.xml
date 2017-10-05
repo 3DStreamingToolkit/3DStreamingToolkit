@@ -22,17 +22,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".StreamActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="@string/title_activity_stream"
-            android:parentActivityName=".ServerListActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="microsoft.a3dtoolkitandroid.ServerListActivity" />
-        </activity>
-        <activity
             android:name=".ServerListActivity"
             android:label="@string/title_activity_serverList"
+            android:screenOrientation="fullUser"
+            android:configChanges="orientation|smallestScreenSize|screenSize|screenLayout"
             >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

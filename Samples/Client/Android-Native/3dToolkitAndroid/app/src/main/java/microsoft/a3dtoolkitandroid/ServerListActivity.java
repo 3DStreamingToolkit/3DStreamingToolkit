@@ -2,7 +2,6 @@ package microsoft.a3dtoolkitandroid;
 
 
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -16,7 +15,6 @@ import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
-import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -51,7 +49,6 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import microsoft.a3dtoolkitandroid.databinding.ActivityServerListBinding;
 import microsoft.a3dtoolkitandroid.util.Config;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.EglBase;
@@ -63,7 +60,6 @@ import static java.lang.Integer.parseInt;
 
 public class ServerListActivity extends AppCompatActivity {
 
-    public static final String SERVER_NAME = "com.microsoft.a3dtoolkitandroid.SERVER_NAME";
     private static final String LOG = "ServerListLog";
     private static final String ERROR = "ServerListLogError";
     private final int heartbeatIntervalInMs = 5000;
@@ -71,17 +67,15 @@ public class ServerListActivity extends AppCompatActivity {
     private RequestQueue requestQueue;
     private HashMap<Integer, String> otherPeers = new HashMap<>();
     private List<String> peers;
-    private int myID = -1;
-    private int peer_id;
+    private int my_id = -1;
+    private int peer_id = -1;
     private String server;
-    private String name;
-    private int messageCounter = 0;
     private PeerConnection peerConnection;
     private PeerConnectionFactory peerConnectionFactory;
     private DataChannel inputChannel;
     private ArrayAdapter adapter;
     private VideoTrack remoteVideoTrack;
-    private SurfaceViewRenderer fullscreenRenderer;
+    private SurfaceViewRenderer remoteVideoRenderer;
     private final EglBase rootEglBase = EglBase.create();
     private final PeerConnectionObserver peerConnectionObserver = new PeerConnectionObserver();
     private final SDPObserver sdpObserver = new SDPObserver();
@@ -92,9 +86,13 @@ public class ServerListActivity extends AppCompatActivity {
     private LinkedList<IceCandidate> queuedRemoteCandidates;
     private MediaConstraints sdpMediaConstraints;
     private MediaConstraints peerConnectionConstraints;
-    private ActivityServerListBinding binding;
-    private final List<VideoRenderer.Callbacks> remoteRenderers = new ArrayList<>();
     private SessionDescription localSdp; // either offer or answer SDP
+    private boolean isInitiator;
+    private boolean activityRunning;
+    public final int videoWidth = 1280;
+    public final int videoHeight = 720;
+    public final int videoFps = 30;
+
 
 
     //alert dialog
@@ -106,36 +104,32 @@ public class ServerListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Stetho.initializeWithDefaults(this);
         setContentView(R.layout.activity_server_list);
-        final ListView listview = (ListView) findViewById(R.id.ServerListView);
-
-        //create surface renderer and initialize it
-        fullscreenRenderer = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
-        fullscreenRenderer.init(rootEglBase.getEglBaseContext(), null);
-
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        createMediaConstraintsInternal();
-
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
-        name = intent.getStringExtra(ConnectActivity.NAME);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
-        } else {
-            builder = new AlertDialog.Builder(this);
-        }
+        // initialize media
+        createMediaConstraints();
 
+        // loop sending out heartbeat signals and loop hanging get to receive server responses
+        startHangingGet();
+        startHeartBeat();
+
+        // Set up server list
+        setUpListView();
+
+    }
+
+    /**
+     * Sets up the server list view and click listener
+     */
+    private void setUpListView(){
         // Initialize list from sign in response
+        final ListView listview = (ListView) findViewById(R.id.ServerListView);
         String response = intent.getStringExtra(ConnectActivity.SERVER_LIST);
         peers = new ArrayList<>(Arrays.asList(response.split("\n")));
-        myID = parseInt(peers.remove(0).split(",")[1]);
-        Log.d(LOG, "My ID: " + myID);
+        my_id = parseInt(peers.remove(0).split(",")[1]);
         for (int i = 0; i < peers.size(); ++i) {
             if (peers.get(i).length() > 0) {
-                Log.d(LOG, "Peer " + i + ": " + peers.get(i));
                 String[] parsed = peers.get(i).split(",");
                 otherPeers.put(parseInt(parsed[1]), parsed[0]);
             }
@@ -143,31 +137,35 @@ public class ServerListActivity extends AppCompatActivity {
         adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, peers);
         listview.setAdapter(adapter);
 
-        startHangingGet();
-        startHeartBeat();
-        updatePeerList();
-
         // creates a click listener for the peer list
         listview.setOnItemClickListener((parent, view, position, id) -> {
             String item = (String) parent.getItemAtPosition(position);
-            Log.d(LOG, "onItemClick: item = " + item);
             String serverName = item.split(",")[0].trim();
-            Log.d(LOG, "onItemClick: serverName = " + serverName);
             for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()) {
                 if (serverEntry.getValue().equals(serverName)) {
+                    //join peer when server is chosen
                     Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
                     peer_id = serverEntry.getKey();
-                    fullscreenRenderer.setVisibility(View.VISIBLE);
-//                    binding = DataBindingUtil.setContentView(this, R.layout.activity_server_list);
-//                    remoteRenderers.add(binding.remoteVideoView);
                     joinPeer();
                 }
             }
         });
-
     }
 
-    private void createMediaConstraintsInternal() {
+    /**
+     * Sets up peer connection constraints and sdp constraints for connection
+     */
+    private void createMediaConstraints() {
+        //Android flags for video UI
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+
+        //create video renderer and initialize it
+        remoteVideoRenderer = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
+        remoteVideoRenderer.init(rootEglBase.getEglBaseContext(), null);
+
         // Create peer connection constraints.
         peerConnectionConstraints = new MediaConstraints();
 
@@ -185,9 +183,8 @@ public class ServerListActivity extends AppCompatActivity {
      */
     private void joinPeer() {
         Log.d(LOG, "joinPeer: ");
-
+        isInitiator = true;
         createPeerConnection();
-
         inputChannel = peerConnection.createDataChannel("inputDataChannel", new DataChannel.Init());
         inputChannel.registerObserver(new DataChannel.Observer() {
             @Override
@@ -205,7 +202,6 @@ public class ServerListActivity extends AppCompatActivity {
 
             }
         });
-
         createOffer();
     }
 
@@ -213,34 +209,28 @@ public class ServerListActivity extends AppCompatActivity {
      * Creates a peer connection using the ICE server and media constraints specified
      */
     private void createPeerConnection() {
-        Log.d(LOG, "createPeerConnection: ");
+        Log.d(LOG, "Create peer connection.");
+        remoteVideoRenderer.setVisibility(View.VISIBLE);
 
         //Initialize PeerConnectionFactory globals.
         //Params are context, initAudio, initVideo and videoCodecHwAcceleration
         PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
         peerConnectionFactory = new PeerConnectionFactory();
 
-        createPeerConnectionInternal();
-
-        Log.d(LOG, "createPeerConnection: PeerConnection = " + peerConnection.toString());
-    }
-
-    private void createPeerConnectionInternal() {
         if (peerConnectionFactory == null) {
             Log.e(LOG, "Peerconnection factory is not created");
             return;
         }
-        Log.d(LOG, "Create peer connection.");
 
-        Log.d(LOG, "PCConstraints: " + peerConnectionConstraints.toString());
+        Log.d(LOG, "peer connection constraints: " + peerConnectionConstraints.toString());
         queuedRemoteCandidates = new LinkedList<>();
 
+        // add initial ICE Server from Config File
         List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
         iceServerList.add(new PeerConnection.IceServer(Config.turnServer, Config.username, Config.credential, Config.tlsCertPolicy));
 
+        // TCP candidates are only useful when connecting to a server that supports ICE-TCP.
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServerList);
-        // TCP candidates are only useful when connecting to a server that supports
-        // ICE-TCP.
         rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
 
 
@@ -255,18 +245,18 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     /**
-     * Sends sdp offer to server
+     * Sends POST request to server with JSON data represented as a Map<String, String>.
      *
-     * @param params (HashMap<String, String></String,>): json post data
+     * @param params (HashMap<String, String></String,>): json post data to send to server
      */
     private void sendToPeer(HashMap<String, String> params) {
         try {
             Log.d(LOG, "sendToPeer(): " + peer_id + " Send ");
-            if (myID == -1) {
+            if (my_id == -1) {
                 Log.d(ERROR, "sendToPeer: Not Connected");
                 return;
             }
-            if (peer_id == myID) {
+            if (peer_id == my_id) {
                 Log.d(ERROR, "sendToPeer: Can't send a message to oneself :)");
                 return;
             }
@@ -274,14 +264,14 @@ public class ServerListActivity extends AppCompatActivity {
 //            Map<String, String> headerParams = new HashMap<>();
 //            headerParams.put("Peer-Type", "Client");
 //
-//            GenericRequest<String> getRequest = new GenericRequest<>(Request.Method.POST ,server + "/message?peer_id=" + myID + "&to=" + peer_id, String.class, params,
+//            GenericRequest<String> getRequest = new GenericRequest<>(Request.Method.POST ,server + "/message?peer_id=" + my_id + "&to=" + peer_id, String.class, params,
 //                    response -> {
 //                        Log.d(LOG, "sendToPeer(): Response = " + response);
 //                    }, error -> {
 //                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
 //                    }, headerParams, true, true);
 
-            JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + myID + "&to=" + peer_id, new JSONObject(params),
+            JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + my_id + "&to=" + peer_id, new JSONObject(params),
                     response -> {
                         Log.d(LOG, "sendToPeer(): Response = " + response.toString());
                         //Process os success response
@@ -301,7 +291,6 @@ public class ServerListActivity extends AppCompatActivity {
                 }
             };
 
-
             // Add the request to the RequestQueue.
             getVolleyRequestQueue().add(getRequest);
         } catch (Throwable e) {
@@ -312,23 +301,23 @@ public class ServerListActivity extends AppCompatActivity {
     /**
      * Handles messages from the server (offer, answer, adding ICE candidate).
      *
-     * @param peer_id: id of peer
-     * @param data:    JSON response from server
+     * @param data: JSON response from server
      * @throws JSONException
      */
-    private void handlePeerMessage(final int peer_id, JSONObject data) throws JSONException {
-        messageCounter++;
+    private void handlePeerMessage(JSONObject data) throws JSONException {
         Log.d(LOG, "handlePeerMessage: Message from '" + otherPeers.get(peer_id) + ":" + data);
 
+        //first check if the json object has a field "type"
         if (data.has("type")) {
             if (data.getString("type").equals("offer")) {
                 Log.d(LOG, "handlePeerMessage: Got offer " + data);
-                this.peer_id = peer_id;
+                isInitiator = false;
                 createPeerConnection();
                 peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
                 createAnswer();
             } else if (data.getString("type").equals("answer")) {
                 Log.d(LOG, "handlePeerMessage: Got answer " + data);
+                isInitiator = true;
                 peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
             }
         } else {
@@ -376,43 +365,52 @@ public class ServerListActivity extends AppCompatActivity {
      * Loops on request timeout.
      */
     private void startHangingGet() {
+        // stop hanging get if activity is closed
+        if (!activityRunning){
+            return;
+        }
         // Created a custom request class to access headers of responses.
-        CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + myID,
+        CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + my_id,
                 result -> {
-                    //From here you will get headers
+                    //If peer_id has not been set then set it
                     Log.d(LOG, "startHangingGet: onResponse");
-                    String peer_id_string = result.headers.get("Pragma");
-                    int peer_id = parseInt(peer_id_string);
-                    JSONObject response = result.response;
 
+                    String get_id_string = result.headers.get("Pragma");
+                    int get_id = parseInt(get_id_string);
+
+                    JSONObject response = result.response;
                     Log.d(LOG, "startHangingGet: Message from:" + peer_id + ':' + response);
-                    if (peer_id == myID) {
+                    // if the ID returned is equal to my_id then it is message from a server notifying it's presence
+                    if (get_id == my_id) {
                         // Update the list of peers
-                        Log.d(LOG, "startHangingGet: peer if = myif");
+                        Log.d(LOG, "New Server = " + response);
                         try {
                             handleServerNotification(response.getString("Server"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     } else {
-                        // Handle other messages from server
+                        // Handle other messages from server and set peer_id
+                        peer_id = get_id;
                         try {
-                            Log.d(LOG, "startHangingGet: handlePeerMessage");
-                            handlePeerMessage(peer_id, response);
+                            Log.d(LOG, "Hanging Get: message from server = " + response);
+                            handlePeerMessage(response);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
 
-                    if (myID != -1){
+                    // keep looping hanging get to wait for any message from the server
+                    if (my_id != -1){
                         startHangingGet();
                     }
                 },
                 error -> {
-                    Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
+                    // keep looping on request timeout
                     if (error.toString().equals("com.android.volley.TimeoutError")) {
                         startHangingGet();
                     } else {
+                        Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
                         builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 });
@@ -422,7 +420,7 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     /**
-     * Sends heartBeat request to server at a regular interval to maintain peerlist
+     * Sends heartBeat request to server at a regular interval
      */
     private void startHeartBeat() {
         Log.d(LOG, "startHeartBeat: ");
@@ -430,7 +428,7 @@ public class ServerListActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    addRequest(server + "/heartbeat?peer_id=" + myID, Request.Method.GET, response -> {
+                    addRequest(server + "/heartbeat?peer_id=" + my_id, Request.Method.GET, response -> {
                     });
                 } catch (Throwable error) {
                     Log.d(ERROR, error.toString());
@@ -439,11 +437,13 @@ public class ServerListActivity extends AppCompatActivity {
         }, 0, heartbeatIntervalInMs);
     }
 
+    // Create SDP Offer to send to server to initiate connection
     public void createOffer() {
         Log.d(LOG, "PC Create OFFER");
         peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
     }
 
+    // Create SDP Answer to send to server if server initiates connection
     public void createAnswer() {
         Log.d(LOG, "PC create ANSWER");
         peerConnection.createAnswer(sdpObserver, sdpMediaConstraints);
@@ -480,6 +480,7 @@ public class ServerListActivity extends AppCompatActivity {
         peerConnection.setRemoteDescription(sdpObserver, sdpRemote);
     }
 
+    // Add any queued remote candidates to peer connection
     private void drainCandidates() {
         if (queuedRemoteCandidates != null) {
             Log.d(LOG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
@@ -488,6 +489,49 @@ public class ServerListActivity extends AppCompatActivity {
             }
             queuedRemoteCandidates = null;
         }
+    }
+
+    // Disconnect from remote resources, dispose of local resources, and exit.
+    private void disconnect() {
+        Log.d(LOG, "Disconnecting.");
+        activityRunning = false;
+        if (remoteVideoRenderer != null) {
+            remoteVideoRenderer.release();
+            remoteVideoRenderer = null;
+        }
+        if (peerConnection != null) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        if (peerConnectionFactory != null) {
+            peerConnectionFactory.dispose();
+            peerConnectionFactory = null;
+        }
+        rootEglBase.release();
+        PeerConnectionFactory.stopInternalTracingCapture();
+        PeerConnectionFactory.shutdownInternalTracer();
+        finish();
+    }
+
+    // Activity interfaces
+    @Override
+    public void onStop() {
+        super.onStop();
+        activityRunning = false;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        activityRunning = true;
+    }
+
+    @Override
+    protected void onDestroy() {
+        Thread.setDefaultUncaughtExceptionHandler(null);
+        disconnect();
+        activityRunning = false;
+        super.onDestroy();
     }
 
     /**
@@ -500,23 +544,24 @@ public class ServerListActivity extends AppCompatActivity {
     private void addRequest(String url, int method, Response.Listener<String> listener) {
         // Request a string response from the server
         StringRequest getRequest = new StringRequest(method, url, listener,
-                new Response.ErrorListener() {
+                error -> {
+                    builder.setTitle(ERROR).setMessage("Sorry request did not work!");
+                }){
                     @Override
-                    public void onErrorResponse(VolleyError error) {
-                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
+                    public Map<String, String> getHeaders() throws AuthFailureError {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("Peer-Type", "Client");
+                        return params;
                     }
-                }) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Map<String, String> params = new HashMap<>();
-                params.put("Peer-Type", "Client");
-                return params;
-            }
-        };
+                };
         // Add the request to the RequestQueue.
         getVolleyRequestQueue().add(getRequest);
     }
 
+    /**
+     * Returns the request queue or creates one if null
+     * @return Volley request queue to add requests to
+     */
     public RequestQueue getVolleyRequestQueue() {
         if (requestQueue == null) {
             ArrayList<Interceptor> interceptors = new ArrayList<>();
@@ -528,6 +573,14 @@ public class ServerListActivity extends AppCompatActivity {
         return requestQueue;
     }
 
+
+    /**
+     * Changes a SDP description to prefer the given video or audio codec and returns a new description string
+     * @param sdpDescription: original SDP description
+     * @param codec: Codec name to switch to
+     * @param isAudio: Is codec an audio codec?
+     * @return updated SDP description string
+     */
     private static String preferCodec(String sdpDescription, String codec, boolean isAudio) {
         String[] lines = sdpDescription.split("\r\n");
         int mLineIndex = -1;
@@ -584,15 +637,11 @@ public class ServerListActivity extends AppCompatActivity {
         return newSdpDescription.toString();
     }
 
-    private void updateVideoView() {
-//        binding.remoteVideoLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-//        binding.remoteVideoView.setScalingType(SCALE_ASPECT_FILL);
-//        binding.remoteVideoView.setMirror(false);
-//        binding.remoteVideoView.requestLayout();
-    }
-
-    // Implementation detail: observe ICE & stream changes and react accordingly.
+    /**
+     * Implementation detail: observe ICE & stream changes and react accordingly.
+     */
     private class PeerConnectionObserver implements PeerConnection.Observer {
+        // Send Ice candidate to the server.
         @Override
         public void onIceCandidate(final IceCandidate iceCandidate) {
             Log.d(LOG, "onIceCandidate: " + iceCandidate.toString());
@@ -618,7 +667,6 @@ public class ServerListActivity extends AppCompatActivity {
         public void onIceConnectionChange(final PeerConnection.IceConnectionState newState) {
             if (newState == PeerConnection.IceConnectionState.CONNECTED) {
                 Log.d(LOG, "onIceConnectionChange: " + newState);
-                updateVideoView();
             } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
                 Log.d(LOG, "onIceConnectionChange: " + newState);
             } else if (newState == PeerConnection.IceConnectionState.FAILED) {
@@ -639,6 +687,7 @@ public class ServerListActivity extends AppCompatActivity {
         @Override
         public void onAddStream(final MediaStream stream) {
             Log.d(LOG, "onAddStream: " + stream.toString());
+            //set the video renderer to visible
             if (peerConnection == null) {
                 return;
             }
@@ -647,9 +696,10 @@ public class ServerListActivity extends AppCompatActivity {
                 return;
             }
             if (stream.videoTracks.size() == 1) {
+                //add the video renderer to returned streams video track to display video stream
                 remoteVideoTrack = stream.videoTracks.get(0);
                 remoteVideoTrack.setEnabled(true);
-                remoteVideoTrack.addRenderer(new VideoRenderer(fullscreenRenderer));
+                remoteVideoTrack.addRenderer(new VideoRenderer(remoteVideoRenderer));
             }
         }
 
@@ -690,8 +740,7 @@ public class ServerListActivity extends AppCompatActivity {
 
         @Override
         public void onRenegotiationNeeded() {
-            // No need to do anything; Client follows a pre-agreed-upon
-            // signaling/negotiation protocol.
+            // No need to do anything; Client follows a pre-agreed-upon signaling/negotiation protocol.
         }
 
         @Override
@@ -701,8 +750,10 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
 
-    // Implementation detail: handle offer creation/signaling and answer setting,
-    // as well as adding remote ICE candidates once the answer SDP is set.
+    /**
+     * Implementation detail: handle offer creation/signaling and answer setting,
+     * as well as adding remote ICE candidates once the answer SDP is set.
+     */
     private class SDPObserver implements SdpObserver {
         @Override
         public void onCreateSuccess(final SessionDescription origSdp) {
@@ -716,27 +767,8 @@ public class ServerListActivity extends AppCompatActivity {
             localSdp = sdp;
 
             if (peerConnection != null) {
-                Log.d(LOG, "Set local SDP from " + sdp.type);
+                Log.d(LOG, "Setting local SDP from " + sdp.type);
                 peerConnection.setLocalDescription(sdpObserver, sdp);
-                if (origSdp.type == SessionDescription.Type.ANSWER)
-                {
-                    // Sending answer message.
-                    HashMap<String, String> params = new HashMap<>();
-                    params.put("type", "answer");
-                    params.put("sdp", sdp.description);
-                    sendToPeer(params);
-
-                    // Enable fullscreenRenderer for video playback.
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                }
             }
         }
 
@@ -745,22 +777,41 @@ public class ServerListActivity extends AppCompatActivity {
             if (peerConnection == null || localSdp == null) {
                 return;
             }
-
-            // For offering peer connection we first create offer and set
-            // local SDP, then after receiving answer set remote SDP.
-            if (peerConnection.getRemoteDescription() == null) {
-                // We've just set our local SDP so time to send it.
-                Log.d(LOG, "Local SDP set succesfully");
-                HashMap<String, String> params = new HashMap<>();
-                params.put("type", "offer");
-                params.put("sdp", localSdp.description);
-                sendToPeer(params);
+            if (isInitiator) {
+                // For offering peer connection we first create offer and set
+                // local SDP, then after receiving answer set remote SDP.
+                if (peerConnection.getRemoteDescription() == null) {
+                    // We've just set our local SDP so time to send it.
+                    Log.d(LOG, "Local SDP set succesfully -> sending offer");
+                    HashMap<String, String> params = new HashMap<>();
+                    params.put("type", "offer");
+                    params.put("sdp", localSdp.description);
+                    sendToPeer(params);
+                } else {
+                    // We've just set remote description, so drain remote
+                    // and send local ICE candidates.
+                    Log.d(LOG, "Remote SDP set succesfully");
+                    drainCandidates();
+                }
             } else {
-                // We've just set remote description, so drain remote
-                // and send local ICE candidates.
-                Log.d(LOG, "Remote SDP set succesfully");
-                drainCandidates();
+                // For answering peer connection we set remote SDP and then
+                // create answer and set local SDP.
+                if (peerConnection.getLocalDescription() != null) {
+                    // We've just set our local SDP so time to send it, drain
+                    // remote and send local ICE candidates.
+                    Log.d(LOG, "Local SDP set succesfully -> sending answer");
+                    HashMap<String, String> params = new HashMap<>();
+                    params.put("type", "answer");
+                    params.put("sdp", localSdp.description);
+                    sendToPeer(params);
+                    drainCandidates();
+                } else {
+                    // We've just set remote SDP - do nothing for now -
+                    // answer will be created soon.
+                    Log.d(LOG, "Remote SDP set succesfully");
+                }
             }
+
         }
 
         @Override

@@ -1,32 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:tools="http://schemas.android.com/tools">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:keepScreenOn="true"
-        android:layout_height="match_parent">
+<!-- tools:ignore is needed because lint thinks this can be replaced with a merge. Replacing this
+     with a merge causes the fullscreen SurfaceView not to be centered. -->
+<FrameLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+tools:ignore="MergeRootFrame">
 
-        <ListView
-            android:id="@+id/ServerListView"
-            android:layout_width="368dp"
-            android:layout_height="495dp"
-            tools:layout_editor_absoluteX="8dp"
-            tools:layout_editor_absoluteY="8dp" />
+    <ListView
+        android:id="@+id/ServerListView"
+        android:layout_width="368dp"
+        android:layout_height="495dp"
+        tools:layout_editor_absoluteX="8dp"
+        tools:layout_editor_absoluteY="8dp" />
 
-        <microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer
-            android:id="@+id/remote_video_view"
-            android:layout_width="368dp"
-            android:layout_height="495dp"
-            android:visibility="invisible"/>
+    <microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer
+        android:id="@+id/remote_video_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="invisible" />
 
-        <!--<microsoft.a3dtoolkitandroid.view.PercentFrameLayout-->
-            <!--android:id="@+id/remote_video_layout"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="match_parent">-->
+</FrameLayout>
 
-            <!---->
-        <!--</microsoft.a3dtoolkitandroid.view.PercentFrameLayout>-->
-
-    </RelativeLayout>
-
-</layout>
