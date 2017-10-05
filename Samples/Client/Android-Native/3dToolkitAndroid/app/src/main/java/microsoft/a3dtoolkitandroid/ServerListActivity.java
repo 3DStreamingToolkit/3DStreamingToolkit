@@ -3,7 +3,7 @@ package microsoft.a3dtoolkitandroid;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -15,7 +15,6 @@ import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.facebook.stetho.Stetho;
@@ -49,19 +48,22 @@ import java.util.TimerTask;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import Jama.Matrix;
 import microsoft.a3dtoolkitandroid.util.Config;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
-import microsoft.a3dtoolkitandroid.util.EglBase;
+import microsoft.a3dtoolkitandroid.util.MatrixMath;
+import microsoft.a3dtoolkitandroid.util.renderer.EglBase;
+import microsoft.a3dtoolkitandroid.util.GenericRequest;
 import microsoft.a3dtoolkitandroid.util.OkHttpStack;
-import microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer;
+import microsoft.a3dtoolkitandroid.util.renderer.SurfaceViewRenderer;
 import okhttp3.Interceptor;
 
 import static java.lang.Integer.parseInt;
 
 public class ServerListActivity extends AppCompatActivity {
 
-    private static final String LOG = "ServerListLog";
-    private static final String ERROR = "ServerListLogError";
+    public static final String LOG = "ServerListLog";
+    public static final String ERROR = "ServerListLogError";
     private final int heartbeatIntervalInMs = 5000;
     private Intent intent;
     private RequestQueue requestQueue;
@@ -75,8 +77,6 @@ public class ServerListActivity extends AppCompatActivity {
     private DataChannel inputChannel;
     private ArrayAdapter adapter;
     private VideoTrack remoteVideoTrack;
-    private SurfaceViewRenderer remoteVideoRenderer;
-    private final EglBase rootEglBase = EglBase.create();
     private final PeerConnectionObserver peerConnectionObserver = new PeerConnectionObserver();
     private final SDPObserver sdpObserver = new SDPObserver();
 
@@ -89,14 +89,22 @@ public class ServerListActivity extends AppCompatActivity {
     private SessionDescription localSdp; // either offer or answer SDP
     private boolean isInitiator;
     private boolean activityRunning;
-    public final int videoWidth = 1280;
-    public final int videoHeight = 720;
-    public final int videoFps = 30;
+    private SurfaceViewRenderer remoteVideoRenderer;
+    private final EglBase rootEglBase = EglBase.create();
 
-
-
-    //alert dialog
-    private AlertDialog.Builder builder;
+    //For Gesture Control
+    double navHeading = 0;
+    double navPitch = 0;
+    double[] navLocation = { 0, 0, 0 };
+    boolean isFingerDown = false;
+    double fingerDownX;
+    double fingerDownY;
+    double downPitch = 0;
+    double downHeading = 0;
+    double[] downLocation = { 0, 0, 0 };
+    MatrixMath mat = new MatrixMath();
+    Matrix navTransform;
+    private GestureDetectorCompat mDetector;
 
 
     @Override
@@ -106,6 +114,13 @@ public class ServerListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server_list);
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
+    }
+
+    /**
+     * Starts the setup process for connecting to a client.
+     */
+    private void startUpActivity(){
+        activityRunning = true;
 
         // initialize media
         createMediaConstraints();
@@ -116,7 +131,6 @@ public class ServerListActivity extends AppCompatActivity {
 
         // Set up server list
         setUpListView();
-
     }
 
     /**
@@ -251,7 +265,7 @@ public class ServerListActivity extends AppCompatActivity {
      */
     private void sendToPeer(HashMap<String, String> params) {
         try {
-            Log.d(LOG, "sendToPeer(): " + peer_id + " Send ");
+            Log.d(LOG, "sendToPeer(): " + peer_id + " Send " + params.toString());
             if (my_id == -1) {
                 Log.d(ERROR, "sendToPeer: Not Connected");
                 return;
@@ -261,35 +275,15 @@ public class ServerListActivity extends AppCompatActivity {
                 return;
             }
 
-//            Map<String, String> headerParams = new HashMap<>();
-//            headerParams.put("Peer-Type", "Client");
-//
-//            GenericRequest<String> getRequest = new GenericRequest<>(Request.Method.POST ,server + "/message?peer_id=" + my_id + "&to=" + peer_id, String.class, params,
-//                    response -> {
-//                        Log.d(LOG, "sendToPeer(): Response = " + response);
-//                    }, error -> {
-//                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
-//                    }, headerParams, true, true);
+            Map<String, String> headerParams = new HashMap<>();
+            headerParams.put("Peer-Type", "Client");
 
-            JsonObjectRequest getRequest = new JsonObjectRequest(server + "/message?peer_id=" + my_id + "&to=" + peer_id, new JSONObject(params),
+            GenericRequest<String> getRequest = new GenericRequest<>(Request.Method.POST ,server + "/message?peer_id=" + my_id + "&to=" + peer_id, String.class, params,
                     response -> {
-                        Log.d(LOG, "sendToPeer(): Response = " + response.toString());
-                        //Process os success response
+                        Log.d(LOG, "sendToPeer(): Response = " + response);
                     }, error -> {
-                Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
-            }) {
-                @Override
-                public Map<String, String> getHeaders() throws AuthFailureError {
-                    Map<String, String> headerParams = new HashMap<>();
-                    headerParams.put("Peer-Type", "Client");
-                    return headerParams;
-                }
-
-                @Override
-                public String getBodyContentType() {
-                    return "text/plain";
-                }
-            };
+                        Log.d(ERROR, "onErrorResponse: SendToPeer = " + error);
+                    }, headerParams, true, true);
 
             // Add the request to the RequestQueue.
             getVolleyRequestQueue().add(getRequest);
@@ -411,7 +405,6 @@ public class ServerListActivity extends AppCompatActivity {
                         startHangingGet();
                     } else {
                         Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
-                        builder.setTitle(ERROR).setMessage("Sorry request did not work!");
                     }
                 });
         getVolleyRequestQueue().add(stringRequest);
@@ -449,37 +442,6 @@ public class ServerListActivity extends AppCompatActivity {
         peerConnection.createAnswer(sdpObserver, sdpMediaConstraints);
     }
 
-    public void addRemoteIceCandidate(final IceCandidate candidate) {
-        if (peerConnection != null) {
-            if (queuedRemoteCandidates != null) {
-                queuedRemoteCandidates.add(candidate);
-            } else {
-                peerConnection.addIceCandidate(candidate);
-            }
-        }
-    }
-
-    public void removeRemoteIceCandidates(final IceCandidate[] candidates) {
-        if (peerConnection == null) {
-            return;
-        }
-        // Drain the queued remote candidates if there is any so that
-        // they are processed in the proper order.
-        drainCandidates();
-        peerConnection.removeIceCandidates(candidates);
-    }
-
-    public void setRemoteDescription(final SessionDescription sdp) {
-        if (peerConnection == null) {
-            return;
-        }
-        String sdpDescription = sdp.description;
-        sdpDescription = preferCodec(sdpDescription, "H264", false);
-        Log.d(LOG, "Set remote SDP.");
-        SessionDescription sdpRemote = new SessionDescription(sdp.type, sdpDescription);
-        peerConnection.setRemoteDescription(sdpObserver, sdpRemote);
-    }
-
     // Add any queued remote candidates to peer connection
     private void drainCandidates() {
         if (queuedRemoteCandidates != null) {
@@ -501,13 +463,16 @@ public class ServerListActivity extends AppCompatActivity {
         }
         if (peerConnection != null) {
             peerConnection.close();
+            peerConnection.dispose();
             peerConnection = null;
         }
         if (peerConnectionFactory != null) {
             peerConnectionFactory.dispose();
             peerConnectionFactory = null;
         }
-        rootEglBase.release();
+        if(rootEglBase != null){
+            rootEglBase.release();
+        }
         PeerConnectionFactory.stopInternalTracingCapture();
         PeerConnectionFactory.shutdownInternalTracer();
         finish();
@@ -516,14 +481,15 @@ public class ServerListActivity extends AppCompatActivity {
     // Activity interfaces
     @Override
     public void onStop() {
-        super.onStop();
         activityRunning = false;
+        disconnect();
+        super.onStop();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        activityRunning = true;
+        startUpActivity();
     }
 
     @Override
@@ -545,7 +511,7 @@ public class ServerListActivity extends AppCompatActivity {
         // Request a string response from the server
         StringRequest getRequest = new StringRequest(method, url, listener,
                 error -> {
-                    builder.setTitle(ERROR).setMessage("Sorry request did not work!");
+                    Log.d(ERROR, "Sorry request did not work!");
                 }){
                     @Override
                     public Map<String, String> getHeaders() throws AuthFailureError {

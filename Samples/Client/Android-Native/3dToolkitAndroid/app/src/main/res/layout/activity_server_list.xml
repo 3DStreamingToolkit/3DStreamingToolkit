@@ -16,12 +16,13 @@ tools:ignore="MergeRootFrame">
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="8dp" />
 
-    <microsoft.a3dtoolkitandroid.util.SurfaceViewRenderer
+    <microsoft.a3dtoolkitandroid.util.renderer.SurfaceViewRenderer
         android:id="@+id/remote_video_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="invisible" />
+        android:visibility="gone"/>
+
 
 </FrameLayout>
 

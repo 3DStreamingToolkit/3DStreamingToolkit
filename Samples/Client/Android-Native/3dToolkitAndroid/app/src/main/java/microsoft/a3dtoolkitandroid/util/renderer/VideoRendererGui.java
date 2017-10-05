@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package microsoft.a3dtoolkitandroid.util;
+package microsoft.a3dtoolkitandroid.util.renderer;
 
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
