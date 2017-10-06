@@ -2,7 +2,7 @@
 
 #include "DeviceResources.h"
 
-namespace Toolkit3DSample
+namespace StreamingToolkitSample
 {
 	// Constant buffer used to send model matrix to the vertex shader.
 	struct ModelConstantBuffer
@@ -37,6 +37,7 @@ namespace Toolkit3DSample
 		void									InitConstantBuffers(bool isStereo);
 		void									Update();
 		void									Render();
+		void									Render(ID3D11RenderTargetView* renderTargetView);
 		void									UpdateView(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
 		void									UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
 

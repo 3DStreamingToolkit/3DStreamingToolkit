@@ -15,10 +15,12 @@
 #include "IUnityGraphics.h"
 #include "IUnityInterface.h"
 
-#include "video_helper.h"
+#include "buffer_renderer.h"
 #include "conductor.h"
 #include "server_main_window.h"
 #include "flagdefs.h"
+#include "config_parser.h"
+
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
@@ -57,7 +59,7 @@
 #pragma comment(lib, "protobuf_full.lib")
 
 using namespace Microsoft::WRL;
-using namespace Toolkit3DLibrary;
+using namespace StreamingToolkit;
 
 void(__stdcall*s_onInputUpdate)(const char *msg);
 void(__stdcall*s_onLog)(const int level, const char *msg);
@@ -96,10 +98,9 @@ static ComPtr<ID3D11DeviceContext> s_Context;
 
 static rtc::scoped_refptr<Conductor> s_conductor = nullptr;
 
-VideoHelper*				g_videoHelper = nullptr;
+static BufferRenderer*		s_bufferRenderer = nullptr;
 static ID3D11Texture2D*		s_frameBuffer = nullptr;
-static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
-
+static WebRTCConfig			s_webrtcConfig;
 
 ServerMainWindow *wnd;
 std::thread *messageThread;
@@ -110,28 +111,18 @@ uint32_t s_port = 3000;
 bool s_closing = false;
 
 
-void FrameUpdate()
-{
-	ULOG(INFO, __FUNCTION__);
-}
-
-// Handles input from client.
-void InputUpdate(const std::string& message)
-{
-	ULOG(INFO, __FUNCTION__);
-
-	if (s_onInputUpdate)
-	{
-		ULOG(INFO, message.c_str());
-
-		(*s_onInputUpdate)(message.c_str());
-	}
-}
-
-
 void InitWebRTC()
 {
 	ULOG(INFO, __FUNCTION__);
+
+	// Loads webrtc config file.
+	ConfigParser::Parse("webrtcConfig.json", &s_webrtcConfig);
+
+	ServerAuthenticationProvider::ServerAuthInfo authInfo;
+	authInfo.authority = s_webrtcConfig.authentication.authority;
+	authInfo.resource = s_webrtcConfig.authentication.resource;
+	authInfo.clientId = s_webrtcConfig.authentication.client_id;
+	authInfo.clientSecret = s_webrtcConfig.authentication.client_secret;
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -142,80 +133,40 @@ void InitWebRTC()
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	
-	wnd = new ServerMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
-		true, 1280, 720);
-	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
+	wnd = new ServerMainWindow(
+		FLAG_server,
+		FLAG_port,
+		FLAG_autoconnect,
+		FLAG_autocall,
+		true,
+		1280,
+		720);
 
 	wnd->Create();
 
-	// Try parsing config file.
-	std::string configFilePath = webrtc::ExePath("webrtcConfig.json");
-	std::ifstream webrtcConfigFile(configFilePath);
-	Json::Reader reader;
-	Json::Value root = NULL;
-	char server[1024];
-	//int port = 443;
-	int heartbeat = 5000;
-	std::string turnCredentialUri;
-	ServerAuthenticationProvider::ServerAuthInfo authInfo;
+	s_server = s_webrtcConfig.server;
+	s_port = s_webrtcConfig.port;
+	client.SetHeartbeatMs(s_webrtcConfig.heartbeat);
 
-	if (webrtcConfigFile.good())
+	s_conductor = new rtc::RefCountedObject<Conductor>(
+		&client,
+		wnd,
+		&s_webrtcConfig,
+		s_bufferRenderer);
+
+	InputDataHandler inputHandler([&](const std::string& message)
 	{
-		reader.parse(webrtcConfigFile, root, true);
-		if (root.isMember("server"))
+		ULOG(INFO, __FUNCTION__);
+
+		if (s_onInputUpdate)
 		{
-			strcpy(server, root.get("server", FLAG_server).asCString());
+			ULOG(INFO, message.c_str());
 
-			s_server = server;
+			(*s_onInputUpdate)(message.c_str());
 		}
+	});
 
-		if (root.isMember("port"))
-		{
-			s_port = root.get("port", FLAG_port).asInt();
-		}
-
-		if (root.isMember("heartbeat"))
-		{
-			heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
-		}
-
-		if (root.isMember("turnServer"))
-		{
-			auto turnNode = root.get("turnServer", NULL);
-
-			if (turnNode.isMember("provider"))
-			{
-				turnCredentialUri = turnNode.get("provider", "").asString();
-			}
-		}
-
-		if (root.isMember("authentication"))
-		{
-			auto authenticationNode = root.get("authentication", NULL);
-
-			if (authenticationNode.isMember("authority"))
-			{
-				authInfo.authority = authenticationNode.get("authority", "").asString();
-			}
-
-			if (authenticationNode.isMember("resource"))
-			{
-				authInfo.resource = authenticationNode.get("resource", "").asString();
-			}
-
-			if (authenticationNode.isMember("clientId"))
-			{
-				authInfo.clientId = authenticationNode.get("clientId", "").asString();
-			}
-
-			if (authenticationNode.isMember("clientSecret"))
-			{
-				authInfo.clientSecret = authenticationNode.get("clientSecret", "").asString();
-			}
-		}
-	}
-
-	client.SetHeartbeatMs(heartbeat);
+	s_conductor->SetInputDataHandler(&inputHandler);
 
 	// configure callbacks (which may or may not be used)
 	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data)
@@ -264,9 +215,9 @@ void InitWebRTC()
 	}
 
 	// configure turn, if needed
-	if (!turnCredentialUri.empty())
+	if (!s_webrtcConfig.turn_server.provider.empty())
 	{
-		turnProvider.reset(new TurnCredentialProvider(turnCredentialUri));
+		turnProvider.reset(new TurnCredentialProvider(s_webrtcConfig.turn_server.provider));
 
 		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
 	}
@@ -347,11 +298,19 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				rtv->GetResource(reinterpret_cast<ID3D11Resource**>(&s_frameBuffer));
 				rtv->Release();
 
-				D3D11_TEXTURE2D_DESC desc;
+				// Render loop.
+				std::function<void()> frameRenderFunc = ([&]
+				{
+					ULOG(INFO, __FUNCTION__);
+				});
 
-				s_frameBuffer->GetDesc(&desc);
-
-				g_videoHelper->Initialize(s_frameBuffer, desc.Format, desc.Width, desc.Height);
+				// Initializes the buffer renderer.
+				s_bufferRenderer = new BufferRenderer(
+					1280,
+					720,
+					s_Device.Get(),
+					frameRenderFunc,
+					s_frameBuffer);
 
 				s_frameBuffer->Release();
 
@@ -369,23 +328,23 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
 	switch (eventType)
 	{
-	case kUnityGfxDeviceEventInitialize:
-	{
-		s_DeviceType = s_Graphics->GetRenderer();
-		s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
-		s_Device->GetImmediateContext(&s_Context);
+		case kUnityGfxDeviceEventInitialize:
+		{
+			s_DeviceType = s_Graphics->GetRenderer();
+			s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
+			s_Device->GetImmediateContext(&s_Context);
 
-		break;
-	}
+			break;
+		}
 
-	case kUnityGfxDeviceEventShutdown:
-	{
-		s_Context.Reset();
-		s_Device.Reset();
-		s_DeviceType = kUnityGfxRendererNull;
+		case kUnityGfxDeviceEventShutdown:
+		{
+			s_Context.Reset();
+			s_Device.Reset();
+			s_DeviceType = kUnityGfxRendererNull;
 
-		break;
-	}
+			break;
+		}
 	}
 }
 
@@ -410,9 +369,6 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 
 	// Run OnGraphicsDeviceEvent(initialize) manually on plugin load
 	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
-
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(s_Device.Get(), s_Context.Get());
 }
 
 extern "C" __declspec(dllexport) void Close()
