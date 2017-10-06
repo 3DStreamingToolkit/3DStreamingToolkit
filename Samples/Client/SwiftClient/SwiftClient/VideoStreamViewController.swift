@@ -5,6 +5,7 @@ import WebRTC
 class VideoStreamViewController: UIViewController {
     @IBOutlet weak var connectDisconnectButton: UIButton!
     @IBOutlet weak var pickerView: UIPickerView!
+    var mathMatrix = MathMatrix()
     var request: URLSessionDataTask!
     var hangingGet: URLSessionDataTask!
     var otherPeers = [Int: String]()
@@ -24,10 +25,11 @@ class VideoStreamViewController: UIViewController {
     var peerListDisplay = [VideoStreamViewController.peerListDisplayInitialMessage]
     @IBOutlet weak var renderView: RTCEAGLVideoView!
     var videoStream: RTCMediaStream!
+    var remoteVideoTrack: RTCVideoTrack!
     var inputChannel: RTCDataChannel!
     lazy var navTransform: [CGFloat] = {
         [unowned self] in
-        self.matCreate()
+        self.mathMatrix.matCreate()
         }()
     var navHeading: CGFloat = 0.0
     var navPitch: CGFloat = 0.0
@@ -179,8 +181,8 @@ class VideoStreamViewController: UIViewController {
         prevNavPitch = navPitch
         navHeading = prevNavHeading - dheading
         navPitch = prevNavPitch + dpitch
-        let locTransform =  matMultiply(a: matRotateY(rad: navHeading), b: matRotateZ(rad: navPitch))
-        navTransform = matMultiply(a: matTranslate(v: navLocation), b: locTransform)
+        let locTransform =  mathMatrix.matMultiply(a: mathMatrix.matRotateY(rad: navHeading), b: mathMatrix.matRotateZ(rad: navPitch))
+        navTransform = mathMatrix.matMultiply(a: mathMatrix.matTranslate(v: navLocation), b: locTransform)
         sendTransform()
     }
     
@@ -265,8 +267,8 @@ class VideoStreamViewController: UIViewController {
             let dheading = 0.005 * dx
             navHeading = downHeading - dheading
             navPitch = downPitch + dpitch
-            let locTransform =  matMultiply(a: matRotateY(rad: navHeading), b: matRotateZ(rad: navPitch))
-            navTransform = matMultiply(a: matTranslate(v: navLocation), b: locTransform)
+            let locTransform =  mathMatrix.matMultiply(a: mathMatrix.matRotateY(rad: navHeading), b: mathMatrix.matRotateZ(rad: navPitch))
+            navTransform = mathMatrix.matMultiply(a: mathMatrix.matTranslate(v: navLocation), b: locTransform)
             sendTransform()
         }
         if recognizer.numberOfTouches == 2 {
@@ -503,6 +505,25 @@ class VideoStreamViewController: UIViewController {
         task.resume()
     }
     
+    func resetLocationInformation () {
+        twoFingersWereUsed = false
+        navHeading = 0.0
+        navPitch = 0.0
+        navLocation = [0.0, 0.0, 0.0]
+        fingerDownX = 0
+        fingerDownY = 0
+        downPitch = 0.0
+        downHeading = 0.0
+        downLocation = [0.0, 0.0, 0.0]
+        motionManager = CMMotionManager()
+        prevNavHeading = 0.0
+        prevNavPitch = 0.0
+        yaw = 0.0
+        pitch = 0.0
+        prevYaw = 0.0
+        prevPitch = 0.0
+    }
+    
     func disconnectAsync(completionHandler: ((Error?) -> Void)?) {
         if myId != -1 {
             let urlString = URL(string: "\(server)/sign_out?peer_id=\(myId!)")!
@@ -519,13 +540,33 @@ class VideoStreamViewController: UIViewController {
                     self.heartBeatTimerIsRunning = false
                     self.heartBeatTimer.invalidate()
                 }
-                if self.renderView != nil && self.videoStream != nil {
-                    self.videoStream.videoTracks.last?.remove(self.renderView)
+                
+                if self.renderView != nil && self.videoStream != nil && self.remoteVideoTrack != nil {
+                    DispatchQueue.main.async {
+                        self.videoStream.removeVideoTrack(self.remoteVideoTrack)
+                        self.remoteVideoTrack.remove(self.renderView)
+                        self.remoteVideoTrack = nil
+                        self.renderView.renderFrame(nil)
+                        self.videoStream = nil
+                    }
                 }
-
+                
+                if self.inputChannel != nil {
+                    self.inputChannel.close()
+                    self.inputChannel = nil
+                }
+                
+                if self.peerConnection != nil {
+                    self.peerConnection.close()
+                    self.peerConnection = nil
+                }
+                
+                self.resetLocationInformation()
+            
+                self.otherPeers = [:]
+                self.updatePeerList()
+                
                 DispatchQueue.main.async {
-                    self.otherPeers = [:]
-                    self.updatePeerList()
                     if self.pickerView != nil {
                         self.pickerView.isUserInteractionEnabled = false
                     }
@@ -605,8 +646,9 @@ extension VideoStreamViewController : RTCPeerConnectionDelegate {
     
     func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {
         videoStream = stream
-        if renderView != nil && stream.videoTracks.last != nil {
-            videoStream.videoTracks.last?.add(renderView)
+        if renderView != nil && videoStream.videoTracks.last != nil {
+            remoteVideoTrack = videoStream.videoTracks.last
+            remoteVideoTrack.add(renderView)
         }
     }
     
@@ -622,109 +664,5 @@ extension VideoStreamViewController : RTCPeerConnectionDelegate {
     func peerConnection(_ peerConnection: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {
         inputChannel = dataChannel
         inputChannel.delegate = self
-    }
-}
-
-extension VideoStreamViewController {
-    //  This source was inspired by http://glmatrix.net/docs/mat4.js.html and the
-    //  following notice / credit is due. The code has been slightly modified
-    //  to work in Swift 3
-    
-    /* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
-     Permission is hereby granted, free of charge, to any person obtaining a copy
-     of this software and associated documentation files (the "Software"), to deal
-     in the Software without restriction, including without limitation the rights
-     to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     copies of the Software, and to permit persons to whom the Software is
-     furnished to do so, subject to the following conditions:
-     The above copyright notice and this permission notice shall be included in
-     all copies or substantial portions of the Software.
-     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-     THE SOFTWARE. */
-    
-    func matCreate() -> [CGFloat] {
-        let out: [CGFloat] = [1.0, 0.0, 0.0, 0.0,   0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0]
-        return out
-    }
-    
-    func matClone(a: [CGFloat]) -> [CGFloat] {
-        var out: [CGFloat] = [1.0, 0.0, 0.0, 0.0,   0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0]
-        out[0] = a[0]
-        out[1] = a[1]
-        out[2] = a[2]
-        out[3] = a[3]
-        out[4] = a[4]
-        out[5] = a[5]
-        out[6] = a[6]
-        out[7] = a[7]
-        out[8] = a[8]
-        out[9] = a[9]
-        out[10] = a[10]
-        out[11] = a[11]
-        out[12] = a[12]
-        out[13] = a[13]
-        out[14] = a[14]
-        out[15] = a[15]
-        return out
-    }
-    
-    func matMultiply(a: [CGFloat], b: [CGFloat]) -> [CGFloat] {
-        var out: [CGFloat] = [0.0, 0.0, 0.0, 0.0,   0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0,  0.0, 0.0, 0.0, 0.0]
-        let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3]
-        let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7]
-        let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11]
-        let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15]
-        var b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3]
-        out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30
-        out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31
-        out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32
-        out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33
-        b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7]
-        out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30
-        out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31
-        out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32
-        out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33
-        b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11]
-        out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30
-        out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31
-        out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32
-        out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33
-        b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15]
-        out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30
-        out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31
-        out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32
-        out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33
-        return out
-    }
-    
-    func matTranslate(v: [CGFloat]) -> [CGFloat] {
-        let out = [1.0, 0.0, 0.0, 0.0,   0.0, 1.0, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  v[0], v[1], v[2], 1.0]
-        return out
-    }
-    
-    func matRotateX(rad: CGFloat) -> [CGFloat] {
-        let s = sin(rad)
-        let c = cos(rad)
-        let out = [1.0, 0.0, 0.0, 0.0,   0.0, c, s, 0.0,  0.0, -s, c, 0.0,  0.0, 0.0, 0.0, 1.0]
-        return out
-    }
-    
-    func matRotateY(rad: CGFloat) -> [CGFloat] {
-        let s = sin(rad)
-        let c = cos(rad)
-        let out = [c, 0.0, -s, 0.0,   0.0, 1.0, 0.0, 0.0,  s, 0.0, c, 0.0,  0.0, 0.0, 0.0, 1.0]
-        return out
-    }
-    
-    func matRotateZ(rad: CGFloat) -> [CGFloat] {
-        let s = sin(rad)
-        let c = cos(rad)
-        let out = [c, s, 0.0, 0.0,   -s, c, 0.0, 0.0,  0.0, 0.0, 1.0, 0.0,  0.0, 0.0, 0.0, 1.0]
-        return out
     }
 }

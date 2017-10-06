@@ -11,6 +11,7 @@
 		8757A31F1F8440C500D1BC6E /* server_offer.txt in Resources */ = {isa = PBXBuildFile; fileRef = 8757A31D1F8440C500D1BC6E /* server_offer.txt */; };
 		8757A3211F84415500D1BC6E /* server_answer.txt in Resources */ = {isa = PBXBuildFile; fileRef = 8757A3201F84415500D1BC6E /* server_answer.txt */; };
 		8757A3221F84415500D1BC6E /* server_answer.txt in Resources */ = {isa = PBXBuildFile; fileRef = 8757A3201F84415500D1BC6E /* server_answer.txt */; };
+		87A318AD1F87BCEC00B2F789 /* MathMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A318AC1F87BCEC00B2F789 /* MathMatrix.swift */; };
 		87A729F91F785E3D0004E558 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A729F81F785E3D0004E558 /* AppDelegate.swift */; };
 		87A729FB1F785E3D0004E558 /* VideoStreamViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87A729FA1F785E3D0004E558 /* VideoStreamViewController.swift */; };
 		87A729FE1F785E3D0004E558 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 87A729FC1F785E3D0004E558 /* Main.storyboard */; };
@@ -48,6 +49,7 @@
 		75E700D33E632B627F84152F /* Pods-SwiftClientTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftClientTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftClientTests/Pods-SwiftClientTests.debug.xcconfig"; sourceTree = "<group>"; };
 		8757A31D1F8440C500D1BC6E /* server_offer.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = server_offer.txt; sourceTree = "<group>"; };
 		8757A3201F84415500D1BC6E /* server_answer.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = server_answer.txt; sourceTree = "<group>"; };
+		87A318AC1F87BCEC00B2F789 /* MathMatrix.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MathMatrix.swift; sourceTree = "<group>"; };
 		87A729F51F785E3D0004E558 /* SwiftClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		87A729F81F785E3D0004E558 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		87A729FA1F785E3D0004E558 /* VideoStreamViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStreamViewController.swift; sourceTree = "<group>"; };
@@ -128,6 +130,7 @@
 			children = (
 				87A729F81F785E3D0004E558 /* AppDelegate.swift */,
 				87A729FA1F785E3D0004E558 /* VideoStreamViewController.swift */,
+				87A318AC1F87BCEC00B2F789 /* MathMatrix.swift */,
 				87A729FC1F785E3D0004E558 /* Main.storyboard */,
 				87A729FF1F785E3D0004E558 /* Assets.xcassets */,
 				87A72A011F785E3D0004E558 /* LaunchScreen.storyboard */,
@@ -430,6 +433,7 @@
 			files = (
 				87A729FB1F785E3D0004E558 /* VideoStreamViewController.swift in Sources */,
 				87A729F91F785E3D0004E558 /* AppDelegate.swift in Sources */,
+				87A318AD1F87BCEC00B2F789 /* MathMatrix.swift in Sources */,
 				87C6EA6D1F78728A009099C4 /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
