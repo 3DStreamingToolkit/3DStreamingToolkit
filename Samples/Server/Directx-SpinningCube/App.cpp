@@ -41,8 +41,7 @@ using namespace StreamingToolkitSample;
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
-void RegisterService();
-void RemoveService();
+void StartRenderService();
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -398,71 +397,24 @@ bool AppMain(BOOL stopping)
 //--------------------------------------------------------------------------------------
 // System service
 //--------------------------------------------------------------------------------------
-void RegisterService()
+void StartRenderService()
 {
 	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
 	if (schSCManager)
 	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			g_serviceConfig.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService == NULL)
-		{
-			// If the service isn't already present, install it.
-			RenderService::InstallService(
-				g_serviceConfig.name,
-				g_serviceConfig.display_name,
-				g_serviceConfig.service_account,
-				g_serviceConfig.service_password);
-		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
-
-		// Init service.
+		// Init service's main function.
 		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
 		{
 			AppMain(*stopping);
 		};
 
-		// TODO: In order to start the service, it cannot be in the same location as 
-		// the running exe.  For auto-running of the service,  the app needs to be 
-		// stopped first, then service started externally.  Alternatively, running
-		// this app from one location, then copying all pertinent files to another
-		// location and then registering and running will work correctly.
+		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
 
-		//RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
-
-		//// Starts the service to run the app persistently.
-		//if (!CServiceBase::Run(service))
-		//{
-		//	wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
-		//}
-
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
-}
-
-void RemoveService()
-{
-	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-	if (schSCManager)
-	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			g_serviceConfig.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService)
+		// Starts the service to run the app persistently.
+		if (!CServiceBase::Run(service))
 		{
-			RenderService::RemoveService(g_serviceConfig.name.c_str());
+			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
 		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
 
 		CloseServiceHandle(schSCManager);
 		schSCManager = NULL;
@@ -636,15 +588,11 @@ int WINAPI wWinMain(
 
 	if (!g_serverConfig.system_service)
 	{
-		// If the app isn't defined as a system service, remove it if present.
-		RemoveService();
-
-		// Starts the app main.
 		return AppMain(FALSE);
 	}
 	else
 	{
-		RegisterService();
+		StartRenderService();
 		return 0;
 	}
 #endif // TEST_RUNNER
