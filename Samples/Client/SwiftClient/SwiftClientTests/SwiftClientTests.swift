@@ -29,7 +29,6 @@ class SwiftClientTests: XCTestCase {
             XCTAssertNotNil(data)
             XCTAssertNotNil(response)
             XCTAssertEqual(response!.statusCode, 200)
-            self.videoStreamVC.myId = 1000 // populate to avoid crashing from not calling connectAsync
             signInExpectation.fulfill()
             self.dispatchGroup.leave()
         }
@@ -244,7 +243,6 @@ class SwiftClientTests: XCTestCase {
         dispatchGroup.enter()
         let startHeartBeatAsyncExpectation = expectation(description: "heartBeatExpectation")
         videoStreamVC.signInAsync { (data, response, error) in
-            self.videoStreamVC.myId = 1000 // populate to avoid crashing from not calling connectAsync
             self.videoStreamVC.startHeartBeatAsync(completionHandler: { error in
                 XCTAssertNil(error)
                 startHeartBeatAsyncExpectation.fulfill()

@@ -5,32 +5,28 @@ import WebRTC
 class VideoStreamViewController: UIViewController {
     @IBOutlet weak var connectDisconnectButton: UIButton!
     @IBOutlet weak var pickerView: UIPickerView!
-    var mathMatrix = MathMatrix()
-    var request: URLSessionDataTask!
-    var hangingGet: URLSessionDataTask!
-    var otherPeers = [Int: String]()
-    var myId: Int!
-    var heartBeatTimer: Timer!
-    var heartBeatTimerIsRunning = false
-    let heartbeatIntervalInSecs = 5
-    let server = Config.signalingServer
-    let localName = "ios_client"
-    var peerConnection: RTCPeerConnection!
-    var peerConnectionFactory = RTCPeerConnectionFactory()
-    var newIceCandidatePeerId = -1
+    @IBOutlet weak var renderView: RTCEAGLVideoView!
     static let peerListDisplayInitialMessage = "Select peer to join"
     static let connectButtonTitle = "Connect"
     static let disconnectButtonTitle = "Disconnect"
     static let connectDisconnectButtonErrorInstructions = "Error: Please restart app"
+    let heartbeatIntervalInSecs = 5
+    let server = Config.signalingServer
+    let localName = "ios_client"
+    var mathMatrix = MathMatrix()
+    var request: URLSessionDataTask!
+    var hangingGet: URLSessionDataTask!
+    var otherPeers = [Int: String]()
+    var myId = -1
+    var heartBeatTimer: Timer!
+    var heartBeatTimerIsRunning = false
+    var peerConnection: RTCPeerConnection!
+    var peerConnectionFactory = RTCPeerConnectionFactory()
+    var newIceCandidatePeerId = -1
     var peerListDisplay = [VideoStreamViewController.peerListDisplayInitialMessage]
-    @IBOutlet weak var renderView: RTCEAGLVideoView!
     var videoStream: RTCMediaStream!
     var remoteVideoTrack: RTCVideoTrack!
     var inputChannel: RTCDataChannel!
-    lazy var navTransform: [CGFloat] = {
-        [unowned self] in
-        self.mathMatrix.matCreate()
-        }()
     var navHeading: CGFloat = 0.0
     var navPitch: CGFloat = 0.0
     var navLocation: [CGFloat] = [0.0, 0.0, 0.0]
@@ -47,6 +43,10 @@ class VideoStreamViewController: UIViewController {
     var pitch: CGFloat = 0.0
     var prevYaw: CGFloat = 0.0
     var prevPitch: CGFloat = 0.0
+    lazy var navTransform: [CGFloat] = {
+        [unowned self] in
+        self.mathMatrix.matCreate()
+        }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -93,15 +93,15 @@ class VideoStreamViewController: UIViewController {
                 self.initIdsFromPeerList(data: data)
                 self.updatePeerList()
                 self.pollServerAsync(completionHandler: nil)
-                self.startHeartBeatAsync(completionHandler: { (error) in
+                self.startHeartBeatAsync(completionHandler: { (err) in
                     if let completionHandler = completionHandler {
-                        completionHandler(error)
+                        completionHandler(err)
                     }
                 })
             } else {
                 self.disconnectAsync(completionHandler: { (err) in
                     if let completionHandler = completionHandler {
-                        completionHandler(error)
+                        completionHandler(error ?? err)
                     }
                 })
             }
@@ -411,7 +411,7 @@ class VideoStreamViewController: UIViewController {
     }
     
     func pollServerAsync(completionHandler: ((Error?) -> Void)?) {
-        let urlString = URL(string: "\(server)/wait?peer_id=\(myId!)")!
+        let urlString = URL(string: "\(server)/wait?peer_id=\(myId)")!
         let urlRequest = URLRequest(url: urlString)
         let hangingGet = URLSession.shared.dataTask(with: urlRequest, completionHandler: { (data, response, error) in
             if let response = response as? HTTPURLResponse, let data = data, response.statusCode == 200 {
@@ -456,7 +456,7 @@ class VideoStreamViewController: UIViewController {
             self.heartBeatTimerIsRunning = true
             }
         }
-        let url = URL(string: "\(server)/heartbeat?peer_id=\(myId!)")!
+        let url = URL(string: "\(server)/heartbeat?peer_id=\(myId)")!
         let urlRequest = URLRequest(url: url)
         let heartbeatGet = URLSession.shared.dataTask(with: urlRequest) { (data, response, error) in
             if let completionHandler = completionHandler {
@@ -492,7 +492,7 @@ class VideoStreamViewController: UIViewController {
             }
             return
         }
-        let urlString = URL(string: "\(server)/message?peer_id=\(myId!)&to=\(peerId)")!
+        let urlString = URL(string: "\(server)/message?peer_id=\(myId)&to=\(peerId)")!
         var urlRequest = URLRequest(url: urlString)
         urlRequest.httpMethod = "POST"
         urlRequest.httpBody = data
@@ -515,7 +515,6 @@ class VideoStreamViewController: UIViewController {
         downPitch = 0.0
         downHeading = 0.0
         downLocation = [0.0, 0.0, 0.0]
-        motionManager = CMMotionManager()
         prevNavHeading = 0.0
         prevNavPitch = 0.0
         yaw = 0.0
@@ -526,7 +525,7 @@ class VideoStreamViewController: UIViewController {
     
     func disconnectAsync(completionHandler: ((Error?) -> Void)?) {
         if myId != -1 {
-            let urlString = URL(string: "\(server)/sign_out?peer_id=\(myId!)")!
+            let urlString = URL(string: "\(server)/sign_out?peer_id=\(myId)")!
             let urlRequest = URLRequest(url: urlString)
             let task = URLSession.shared.dataTask(with: urlRequest, completionHandler: { (_, _, error) in
                 self.myId = -1
@@ -540,7 +539,6 @@ class VideoStreamViewController: UIViewController {
                     self.heartBeatTimerIsRunning = false
                     self.heartBeatTimer.invalidate()
                 }
-                
                 if self.renderView != nil && self.videoStream != nil && self.remoteVideoTrack != nil {
                     DispatchQueue.main.async {
                         self.videoStream.removeVideoTrack(self.remoteVideoTrack)
@@ -550,22 +548,17 @@ class VideoStreamViewController: UIViewController {
                         self.videoStream = nil
                     }
                 }
-                
                 if self.inputChannel != nil {
                     self.inputChannel.close()
                     self.inputChannel = nil
                 }
-                
                 if self.peerConnection != nil {
                     self.peerConnection.close()
                     self.peerConnection = nil
                 }
-                
                 self.resetLocationInformation()
-            
                 self.otherPeers = [:]
                 self.updatePeerList()
-                
                 DispatchQueue.main.async {
                     if self.pickerView != nil {
                         self.pickerView.isUserInteractionEnabled = false
