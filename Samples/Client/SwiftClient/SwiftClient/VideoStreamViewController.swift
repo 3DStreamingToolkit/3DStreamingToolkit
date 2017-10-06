@@ -124,7 +124,7 @@ class VideoStreamViewController: UIViewController {
     func createOfferAsync(completionHandler: @escaping (Data, Error?) -> Void) {
         let offerOptions = RTCMediaConstraints(mandatoryConstraints: ["OfferToReceiveAudio": "false","OfferToReceiveVideo": "true"], optionalConstraints: nil)
         peerConnection.offer(for: offerOptions) { (sdp, error) in
-            let sdpH264 = sdp!.sdp.replacingOccurrences(of: "96 98 100 102", with: "100 96 98 102")
+            let sdpH264 = sdp!.sdp.replacingOccurrences(of: "96 98 100 101", with: "101 96 98 100")
             let offer = RTCSessionDescription(type: .offer, sdp: sdpH264)
             self.peerConnection.setLocalDescription(offer, completionHandler: { (error) in
                 let jsonData = [
