@@ -28,6 +28,9 @@
     <Filter Include="Config">
       <UniqueIdentifier>{92ea109f-11f9-4448-b937-6b299ef6e133}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scripts">
+      <UniqueIdentifier>{8f207088-9b36-4d7d-bc5b-c0f56a02666c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -102,6 +105,18 @@
     </None>
     <None Include="serverConfig.json">
       <Filter>Config</Filter>
+    </None>
+    <None Include="serviceDelete.ps1">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="serviceRegister.ps1">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="serviceStart.ps1">
+      <Filter>Scripts</Filter>
+    </None>
+    <None Include="serviceStop.ps1">
+      <Filter>Scripts</Filter>
     </None>
   </ItemGroup>
 </Project>

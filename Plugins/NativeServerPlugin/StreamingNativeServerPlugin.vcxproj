@@ -215,6 +215,18 @@
     <None Include="webrtcConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="serviceRegister.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serviceStart.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serviceStop.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serviceDelete.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>	
     <None Include="webrtcConfigStunTemplate.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

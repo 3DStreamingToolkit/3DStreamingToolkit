@@ -811,6 +811,12 @@ void StartRenderService()
 		if (!CServiceBase::Run(service))
 		{
 			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+			MessageBox(
+				NULL,
+				L"Service needs to be initialized using PowerShell scripts.",
+				L"Error",
+				MB_ICONERROR
+			);
 		}
 
 		CloseServiceHandle(schSCManager);
