@@ -3,17 +3,22 @@ package microsoft.a3dtoolkitandroid;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
-import microsoft.a3dtoolkitandroid.dummy.DummyContent;
-import microsoft.a3dtoolkitandroid.dummy.DummyContent.DummyItem;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static java.lang.Integer.parseInt;
+import static microsoft.a3dtoolkitandroid.ServerListActivity.LOG;
 
 /**
  * A fragment representing a list of Items.
@@ -22,12 +27,47 @@ import java.util.List;
  * interface.
  */
 public class ServerListFragment extends Fragment {
-
-    // TODO: Customize parameter argument names
-    private static final String ARG_COLUMN_COUNT = "column-count";
-    // TODO: Customize parameters
-    private int mColumnCount = 1;
     private OnListFragmentInteractionListener mListener;
+    ServerListRecyclerViewAdapter adapter;
+    RecyclerView recyclerView;
+    public List<ServerItem> servers = new ArrayList<>();
+    public Map<Integer, ServerItem> serverMap = new HashMap<>();
+
+    public void initializeList(String originalList){
+        Log.d(LOG, "initializeList: " + originalList);
+        // split the string into a list of servers
+        List<String> peers = new ArrayList<>(Arrays.asList(originalList.split("\n")));
+
+        // remove the first one and add it as myID
+        mListener.addMyID(parseInt(peers.remove(0).split(",")[1]));
+
+        // add the rest of the servers to the adapter for display
+        for (int i = 0; i < peers.size(); ++i) {
+            if (peers.get(i).length() > 0) {
+                String[] parsed = peers.get(i).split(",");
+                addServer(parseInt(parsed[1]), parsed[0]);
+            }
+        }
+        Log.d(LOG, "initializeList: serverlist = " + servers.toString());
+
+        adapter = new ServerListRecyclerViewAdapter(getActivity());
+        recyclerView.setAdapter(adapter);
+    }
+
+    /**
+     * Updates the peer list adapter with any new entries
+     */
+    public void addPeerList(int serverID, String serverName) {
+        Log.d(LOG, "updatePeerList: ");
+        addServer(serverID, serverName);
+        adapter.notifyDataSetChanged();
+    }
+
+    public void addServer(int serverID, String serverName) {
+        ServerItem item = new ServerItem(serverID, serverName);
+        servers.add(item);
+        serverMap.put(item.id, item);
+    }
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -36,12 +76,9 @@ public class ServerListFragment extends Fragment {
     public ServerListFragment() {
     }
 
-    // TODO: Customize parameter initialization
-    @SuppressWarnings("unused")
-    public static ServerListFragment newInstance(int columnCount) {
+    public static ServerListFragment newInstance() {
         ServerListFragment fragment = new ServerListFragment();
         Bundle args = new Bundle();
-        args.putInt(ARG_COLUMN_COUNT, columnCount);
         fragment.setArguments(args);
         return fragment;
     }
@@ -49,11 +86,10 @@ public class ServerListFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        if (getArguments() != null) {
-            mColumnCount = getArguments().getInt(ARG_COLUMN_COUNT);
-        }
+        getActivity().getIntent();
     }
+
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,13 +99,8 @@ public class ServerListFragment extends Fragment {
         // Set the adapter
         if (view instanceof RecyclerView) {
             Context context = view.getContext();
-            RecyclerView recyclerView = (RecyclerView) view;
-            if (mColumnCount <= 1) {
-                recyclerView.setLayoutManager(new LinearLayoutManager(context));
-            } else {
-                recyclerView.setLayoutManager(new GridLayoutManager(context, mColumnCount));
-            }
-            recyclerView.setAdapter(new ServerListRecyclerViewAdapter(DummyContent.ITEMS, mListener));
+            recyclerView = (RecyclerView) view;
+            recyclerView.setLayoutManager(new LinearLayoutManager(context));
         }
         return view;
     }
@@ -92,6 +123,76 @@ public class ServerListFragment extends Fragment {
         mListener = null;
     }
 
+    class ServerListRecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
+
+        private LayoutInflater mLayoutInflater;
+
+        ServerListRecyclerViewAdapter(Context context) {
+            mLayoutInflater = LayoutInflater.from(context);
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            return new ViewHolder(mLayoutInflater
+                    .inflate(R.layout.fragment_server_item, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(final ViewHolder holder, int position) {
+            holder.mItem = servers.get(position);
+            holder.mTextView.setText(holder.mItem.serverName);
+            Log.d(LOG, "onBindViewHolder: " + holder.itemView);
+
+            holder.itemView.setOnClickListener(v -> {
+                Log.d(LOG, "onBindViewHolder: on click " + mListener);
+                if (mListener != null) {
+                    // Notify the active callbacks interface (the activity, if the
+                    // fragment is attached to one) that an item has been selected.
+                    mListener.onServerClicked(holder.mItem.id);
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return servers.size();
+        }
+
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder {
+        private final TextView mTextView;
+        private ServerItem mItem;
+
+        private ViewHolder(View itemView) {
+            super(itemView);
+            mTextView = (TextView) itemView.findViewById(R.id.name);
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + " '" + mTextView.getText() + "'";
+        }
+    }
+
+    /**
+     * A item representing a server and its ID.
+     */
+    public class ServerItem {
+        public final int id;
+        public final String serverName;
+
+        public ServerItem(int id, String serverName) {
+            this.id = id;
+            this.serverName = serverName;
+        }
+
+        @Override
+        public String toString() {
+            return serverName;
+        }
+    }
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -103,7 +204,7 @@ public class ServerListFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnListFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onListFragmentInteraction(DummyItem item);
+        void onServerClicked(int server);
+        void addMyID(int myID);
     }
 }

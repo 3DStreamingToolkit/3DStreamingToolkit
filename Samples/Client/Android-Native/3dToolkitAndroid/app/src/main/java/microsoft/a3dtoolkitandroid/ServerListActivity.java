@@ -1,14 +1,14 @@
 package microsoft.a3dtoolkitandroid;
 
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -64,7 +64,7 @@ import okhttp3.Interceptor;
 
 import static java.lang.Integer.parseInt;
 
-public class ServerListActivity extends AppCompatActivity {
+public class ServerListActivity extends AppCompatActivity implements ServerListFragment.OnListFragmentInteractionListener{
 
     public static final String LOG = "ServerListLog";
     public static final String ERROR = "ServerListLogError";
@@ -96,6 +96,10 @@ public class ServerListActivity extends AppCompatActivity {
     private SurfaceViewRenderer remoteVideoRenderer;
     private final EglBase rootEglBase = EglBase.create();
 
+    //Fragment variables
+    FragmentManager fragmentManager;
+    ServerListFragment serverListFragment;
+
     //For Gesture Control
     double navHeading = 0;
     double navPitch = 0;
@@ -108,7 +112,6 @@ public class ServerListActivity extends AppCompatActivity {
     double[] downLocation = { 0, 0, 0 };
     MatrixMath mat = new MatrixMath();
     Matrix navTransform;
-    private GestureDetectorCompat mDetector;
 
 
     @Override
@@ -118,6 +121,7 @@ public class ServerListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_server_list);
         intent = getIntent();
         server = intent.getStringExtra(ConnectActivity.SERVER_SERVER);
+        fragmentManager = getSupportFragmentManager();
         setGestureListener();
     }
 
@@ -246,33 +250,38 @@ public class ServerListActivity extends AppCompatActivity {
      * Sets up the server list view and click listener
      */
     private void setUpListView(){
-        // Initialize list from sign in response
-        final ListView listview = (ListView) findViewById(R.id.ServerListView);
-        String response = intent.getStringExtra(ConnectActivity.SERVER_LIST);
-        peers = new ArrayList<>(Arrays.asList(response.split("\n")));
-        my_id = parseInt(peers.remove(0).split(",")[1]);
-        for (int i = 0; i < peers.size(); ++i) {
-            if (peers.get(i).length() > 0) {
-                String[] parsed = peers.get(i).split(",");
-                otherPeers.put(parseInt(parsed[1]), parsed[0]);
-            }
-        }
-        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, peers);
-        listview.setAdapter(adapter);
+        // get the string response from the login request in the Connect Activity
+        String stringList = intent.getStringExtra(ConnectActivity.SERVER_LIST);
 
-        // creates a click listener for the peer list
-        listview.setOnItemClickListener((parent, view, position, id) -> {
-            String item = (String) parent.getItemAtPosition(position);
-            String serverName = item.split(",")[0].trim();
-            for (Map.Entry<Integer, String> serverEntry : otherPeers.entrySet()) {
-                if (serverEntry.getValue().equals(serverName)) {
-                    //join peer when server is chosen
-                    Log.d(LOG, "onItemClick: PeerID = " + serverEntry.getKey());
-                    peer_id = serverEntry.getKey();
-                    joinPeer();
-                }
-            }
-        });
+        // initialize list fragment with server list string
+        fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction()
+                .add(R.id.server_list_fragment_container, ServerListFragment.newInstance(), "ServerListFragment")
+                .commit();
+        fragmentManager.executePendingTransactions();
+        serverListFragment = (ServerListFragment) fragmentManager.findFragmentByTag("ServerListFragment");
+        serverListFragment.initializeList(stringList);
+    }
+
+    /**
+     * Action for when a server is clicked from the list
+     */
+    @Override
+    public void onServerClicked(int server) {
+        Log.d(LOG, "onItemClick: PeerID = " + server);
+        peer_id = server;
+
+        //join peer when server is chosen
+        joinPeer();
+    }
+
+    /**
+     * Sets myID when the server list is initialized
+     */
+    @Override
+    public void addMyID(int myID) {
+        Log.d(LOG, "addMyID: myID = " + myID);
+        my_id = myID;
     }
 
     /**
@@ -334,6 +343,7 @@ public class ServerListActivity extends AppCompatActivity {
     private void createPeerConnection() {
         Log.d(LOG, "Create peer connection.");
         remoteVideoRenderer.setVisibility(View.VISIBLE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
         //Initialize PeerConnectionFactory globals.
         //Params are context, initAudio, initVideo and videoCodecHwAcceleration
@@ -432,23 +442,6 @@ public class ServerListActivity extends AppCompatActivity {
     }
 
     /**
-     * Updates the peer list adapter with any new entries
-     */
-    private void updatePeerList() {
-        Log.d(LOG, "updatePeerList: ");
-        try {
-            for (Map.Entry<Integer, String> peer : otherPeers.entrySet()) {
-                peers.add(peer.getValue());
-                adapter.notifyDataSetChanged();
-            }
-
-        } catch (Throwable error) {
-            Log.d(ERROR, error.toString());
-        }
-    }
-
-
-    /**
      * Handles adding new servers to the list of servers
      *
      * @param server: e.g. "renderingserver_phcherne@PHCHERNE-PR04,941,1"
@@ -456,11 +449,9 @@ public class ServerListActivity extends AppCompatActivity {
     private void handleServerNotification(String server) {
         Log.d(LOG, "handleServerNotification: " + server);
         String[] parsed = server.trim().split("\\s*,\\s*");
-        ;
-        if (parseInt(parsed[2]) != 0) {
-            otherPeers.put(parseInt(parsed[1]), parsed[0]);
+        if (parseInt(parsed[2]) != 0 && serverListFragment != null) {
+            serverListFragment.addPeerList(parseInt(parsed[1]), parsed[0]);
         }
-        updatePeerList();
     }
 
     /**
@@ -581,6 +572,10 @@ public class ServerListActivity extends AppCompatActivity {
         }
         if(rootEglBase != null){
             rootEglBase.release();
+        }
+        if(serverListFragment != null){
+            serverListFragment.onDestroy();
+            serverListFragment = null;
         }
         PeerConnectionFactory.stopInternalTracingCapture();
         PeerConnectionFactory.shutdownInternalTracer();
