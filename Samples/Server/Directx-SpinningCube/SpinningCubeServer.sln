@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Authentication", "..\..\..\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UserInterface", "..\..\..\Libraries\UserInterface\UserInterface.vcxproj", "{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConfigParser", "..\..\..\Libraries\ConfigParser\ConfigParser.vcxproj", "{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -63,6 +65,14 @@ Global
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}.Release|x64.Build.0 = Release|x64
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}.Release|x86.ActiveCfg = Release|Win32
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}.Release|x86.Build.0 = Release|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x64.ActiveCfg = Debug|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x64.Build.0 = Debug|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x86.ActiveCfg = Debug|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Debug|x86.Build.0 = Debug|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x64.ActiveCfg = Release|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x64.Build.0 = Release|x64
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x86.ActiveCfg = Release|Win32
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,5 +81,6 @@ Global
 		{88348D78-A949-4FF8-8A0A-2934744D89D2} = {2B86BD1E-370B-4828-9BD7-29148D95D379}
 		{0BF47A53-06E2-4102-B789-C36F46D95DC7} = {2B86BD1E-370B-4828-9BD7-29148D95D379}
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE} = {2B86BD1E-370B-4828-9BD7-29148D95D379}
+		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82} = {2B86BD1E-370B-4828-9BD7-29148D95D379}
 	EndGlobalSection
 EndGlobal

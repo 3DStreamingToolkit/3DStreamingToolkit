@@ -1,4 +1,4 @@
-$gpuDriverVersion = "377.35" 
+$gpuDriverVersion = "385.08" 
 $gpuDriverSuffix = "-tesla-desktop-winserver2016-international-whql.exe"
 $gpuDriverBaseUri = "http://us.download.nvidia.com/Windows/Quadro_Certified/"
 
@@ -44,16 +44,35 @@ if((Test-Path ((Get-ScriptDirectory)+"\"+$gpuDriverVersion+$gpuDriverSuffix)) -e
 
 cd (Split-Path -Path $PathToExecutable)
 
-# $service = Get-Service -Name "RenderService" -ErrorAction SilentlyContinue
+New-NetFirewallRule -DisplayName "3DStreamingServer" `
+                    -Action Allow `
+                    -Description "Ports Requireed for 3dstreaming" `
+                    -Direction Inbound `
+                    -Enabled True `
+                    -EdgeTraversalPolicy Allow `
+                    -Protocol TCP `
+                    -LocalPort 80,443,3478,5349,19302 `
+                    -Program "($PathToExecutable + "\" + $ExeName)"
 
-# if($service.Length -eq 0) {
+New-NetFirewallRule -DisplayName "3DStreamingServer" `
+                    -Action Allow `
+                    -Description "Ports Requireed for 3dstreaming" `
+                    -Direction Inbound `
+                    -Enabled True `
+                    -EdgeTraversalPolicy Allow `
+                    -Protocol UDP `
+                    -LocalPort 80,443,3478,5349,19302 `
+                    -Program ($PathToExecutable + "\" + $ExeName)
 
-    # Disabling service setup because app currently isn't registerested to system service callbacks
-    # New-Service -Name "RenderService" -BinaryPathName ($PathToExecutable + "\" + $ExeName) -StartupType Automatic
-    # Start-Service -Name "RenderService"
+$service = Get-Service -Name "RenderService" -ErrorAction SilentlyContinue
+
+if($service.Length -eq 0) {
+
+    New-Service -Name "RenderService" -BinaryPathName ($PathToExecutable + "\" + $ExeName) -StartupType Automatic
+    Start-Service -Name "RenderService"
 
     # Temporarily just booting the app
-    & ($PathToExecutable + "\" + $ExeName)
-# }
+    # & ($PathToExecutable + "\" + $ExeName)
+}
 
-# Restart-Computer
+Restart-Computer

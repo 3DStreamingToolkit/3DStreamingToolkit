@@ -173,12 +173,18 @@ bool ServerMainWindow::PreTranslateMessage(MSG* msg)
 
 void ServerMainWindow::SetAuthCode(const std::wstring& str)
 {
-	::SetWindowText(auth_code_, str.c_str());
+	if (IsWindow())
+	{
+		::SetWindowText(auth_code_, str.c_str());
+	}
 }
 
 void ServerMainWindow::SetAuthUri(const std::wstring& str)
 {
-	::SetWindowText(auth_uri_, str.c_str());
+	if (IsWindow())
+	{
+		::SetWindowText(auth_uri_, str.c_str());
+	}
 }
 
 void ServerMainWindow::OnPaint()

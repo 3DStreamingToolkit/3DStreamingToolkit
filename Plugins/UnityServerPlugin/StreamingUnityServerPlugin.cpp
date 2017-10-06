@@ -15,16 +15,23 @@
 #include "IUnityGraphics.h"
 #include "IUnityInterface.h"
 
-#include "video_helper.h"
+#include "buffer_renderer.h"
 #include "conductor.h"
 #include "server_main_window.h"
 #include "flagdefs.h"
-#include "peer_connection_client.h"
+#include "config_parser.h"
+
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #include "webrtc/base/checks.h"
 #include "webrtc/base/ssladapter.h"
 #include "webrtc/base/win32socketinit.h"
 #include "webrtc/base/win32socketserver.h"
+#include "webrtc/base/logging.h"
+
+#include "turn_credential_provider.h"
+#include "server_authentication_provider.h"
+#include "peer_connection_client.h"
+
 
 #pragma warning( disable : 4100 )
 #pragma comment(lib, "ws2_32.lib") 
@@ -52,10 +59,32 @@
 #pragma comment(lib, "protobuf_full.lib")
 
 using namespace Microsoft::WRL;
-using namespace Toolkit3DLibrary;
+using namespace StreamingToolkit;
 
 void(__stdcall*s_onInputUpdate)(const char *msg);
 void(__stdcall*s_onLog)(const int level, const char *msg);
+
+#ifdef DEBUG
+static struct FsLogStream : rtc::LogSink
+{
+	FsLogStream() : m_nativeLog("StreamingUnityServerPlugin.log", std::ios_base::app)
+	{
+		rtc::LogMessage::AddLogToStream(this, rtc::LoggingSeverity::LS_VERBOSE);
+	}
+
+	~FsLogStream()
+	{
+		rtc::LogMessage::RemoveLogToStream(this);
+	}
+
+	std::ofstream m_nativeLog;
+	
+	virtual void OnLogMessage(const std::string& message) override
+	{
+		m_nativeLog << message;
+	}
+} s_fsLogger;
+#endif
 
 #define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
 
@@ -69,10 +98,9 @@ static ComPtr<ID3D11DeviceContext> s_Context;
 
 static rtc::scoped_refptr<Conductor> s_conductor = nullptr;
 
-VideoHelper*				g_videoHelper = nullptr;
+static BufferRenderer*		s_bufferRenderer = nullptr;
 static ID3D11Texture2D*		s_frameBuffer = nullptr;
-static ID3D11Texture2D*		s_frameBufferCopy = nullptr;
-
+static WebRTCConfig			s_webrtcConfig;
 
 ServerMainWindow *wnd;
 std::thread *messageThread;
@@ -83,28 +111,18 @@ uint32_t s_port = 3000;
 bool s_closing = false;
 
 
-void FrameUpdate()
-{
-	ULOG(INFO, __FUNCTION__);
-}
-
-// Handles input from client.
-void InputUpdate(const std::string& message)
-{
-	ULOG(INFO, __FUNCTION__);
-
-	if (s_onInputUpdate)
-	{
-		ULOG(INFO, message.c_str());
-
-		(*s_onInputUpdate)(message.c_str());
-	}
-}
-
-
 void InitWebRTC()
 {
 	ULOG(INFO, __FUNCTION__);
+
+	// Loads webrtc config file.
+	ConfigParser::Parse("webrtcConfig.json", &s_webrtcConfig);
+
+	ServerAuthenticationProvider::ServerAuthInfo authInfo;
+	authInfo.authority = s_webrtcConfig.authentication.authority;
+	authInfo.resource = s_webrtcConfig.authentication.resource;
+	authInfo.clientId = s_webrtcConfig.authentication.client_id;
+	authInfo.clientSecret = s_webrtcConfig.authentication.client_secret;
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -112,51 +130,133 @@ void InitWebRTC()
 	rtc::InitializeSSL();
 
 	PeerConnectionClient client;
-
-	wnd = new ServerMainWindow(FLAG_server, FLAG_port, FLAG_autoconnect, FLAG_autocall,
-		true, 1280, 720);
+	std::shared_ptr<ServerAuthenticationProvider> authProvider;
+	std::shared_ptr<TurnCredentialProvider> turnProvider;
+	
+	wnd = new ServerMainWindow(
+		FLAG_server,
+		FLAG_port,
+		FLAG_autoconnect,
+		FLAG_autocall,
+		true,
+		1280,
+		720);
 
 	wnd->Create();
 
-	// Try parsing config file.
-	std::string configFilePath = webrtc::ExePath("webrtcConfig.json");
-	std::ifstream webrtcConfigFile(configFilePath);
-	Json::Reader reader;
-	Json::Value root = NULL;
-	char server[1024];
-	//int port = 443;
-	int heartbeat = 5000;
+	s_server = s_webrtcConfig.server;
+	s_port = s_webrtcConfig.port;
+	client.SetHeartbeatMs(s_webrtcConfig.heartbeat);
 
-	if (webrtcConfigFile.good())
+	s_conductor = new rtc::RefCountedObject<Conductor>(
+		&client,
+		wnd,
+		&s_webrtcConfig,
+		s_bufferRenderer);
+
+	InputDataHandler inputHandler([&](const std::string& message)
 	{
-		reader.parse(webrtcConfigFile, root, true);
-		if (root.isMember("server"))
-		{
-			strcpy(server, root.get("server", FLAG_server).asCString());
+		ULOG(INFO, __FUNCTION__);
 
-			s_server = server;
-		}
-
-		if (root.isMember("port"))
+		if (s_onInputUpdate)
 		{
-			s_port = root.get("port", FLAG_port).asInt();
-		}
+			ULOG(INFO, message.c_str());
 
-		if (root.isMember("heartbeat"))
-		{
-			heartbeat = root.get("heartbeat", FLAG_heartbeat).asInt();
+			(*s_onInputUpdate)(message.c_str());
 		}
+	});
+
+	s_conductor->SetInputDataHandler(&inputHandler);
+
+	// configure callbacks (which may or may not be used)
+	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data)
+	{
+		if (data.successFlag)
+		{
+			client.SetAuthorizationHeader("Bearer " + data.accessToken);
+
+			// indicate to the user auth is complete and login (only if turn isn't in play)
+			if (turnProvider.get() == nullptr)
+			{
+				wnd->SetAuthCode(L"OK");
+
+				// login
+				if (s_conductor != nullptr)
+				{
+					((MainWindowCallback*)s_conductor)->StartLogin(s_server, s_port);
+				}
+			}
+		}
+	});
+
+	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
+	{
+		if (creds.successFlag)
+		{
+			// indicate to the user turn is done
+			wnd->SetAuthCode(L"OK");
+
+			// login
+			if (s_conductor != nullptr)
+			{
+				s_conductor->SetTurnCredentials(creds.username, creds.password);
+			
+				((MainWindowCallback*)s_conductor)->StartLogin(s_server, s_port);
+			}
+		}
+	});
+
+	// configure auth, if needed
+	if (!authInfo.authority.empty())
+	{
+		authProvider.reset(new ServerAuthenticationProvider(authInfo));
+
+		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 	}
 
-	client.SetHeartbeatMs(heartbeat);
-
-	s_conductor = new rtc::RefCountedObject<Conductor>(&client, wnd, &FrameUpdate, &InputUpdate, g_videoHelper);
-
-	if (s_conductor != nullptr)
+	// configure turn, if needed
+	if (!s_webrtcConfig.turn_server.provider.empty())
 	{
-		MainWindowCallback *callback = s_conductor;
+		turnProvider.reset(new TurnCredentialProvider(s_webrtcConfig.turn_server.provider));
 
-		callback->StartLogin(s_server, s_port);
+		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
+	}
+
+	// let the user know what we're doing
+	if (turnProvider.get() != nullptr || authProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			wnd->SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
+		}
+
+		wnd->SetAuthCode(L"Loading");
+	}
+	else
+	{
+		wnd->SetAuthCode(L"Not configured");
+		wnd->SetAuthUri(L"Not configured");
+	}
+
+	// start auth or turn or login
+	if (turnProvider.get() != nullptr)
+	{
+		if (authProvider.get() != nullptr)
+		{
+			turnProvider->SetAuthenticationProvider(authProvider.get());
+		}
+
+		// under the hood, this will trigger authProvider->Authenticate() if it exists
+		turnProvider->RequestCredentials();
+	}
+	else if (authProvider.get() != nullptr)
+	{
+		authProvider->Authenticate();
+	}
+	else
+	{
+		// login
+		((MainWindowCallback*)s_conductor)->StartLogin(s_server, s_port);
 	}
 
 	// Main loop.
@@ -186,8 +286,6 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 
 	if (s_Context)
 	{
-		ULOG(INFO, "s_Context is ~NULL");
-
 		if (s_frameBuffer == nullptr)
 		{
 			ID3D11RenderTargetView* rtv(nullptr);
@@ -200,11 +298,19 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				rtv->GetResource(reinterpret_cast<ID3D11Resource**>(&s_frameBuffer));
 				rtv->Release();
 
-				D3D11_TEXTURE2D_DESC desc;
+				// Render loop.
+				std::function<void()> frameRenderFunc = ([&]
+				{
+					ULOG(INFO, __FUNCTION__);
+				});
 
-				s_frameBuffer->GetDesc(&desc);
-
-				g_videoHelper->Initialize(s_frameBuffer, desc.Format, desc.Width, desc.Height);
+				// Initializes the buffer renderer.
+				s_bufferRenderer = new BufferRenderer(
+					1280,
+					720,
+					s_Device.Get(),
+					frameRenderFunc,
+					s_frameBuffer);
 
 				s_frameBuffer->Release();
 
@@ -222,29 +328,29 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
 	switch (eventType)
 	{
-	case kUnityGfxDeviceEventInitialize:
-	{
-		s_DeviceType = s_Graphics->GetRenderer();
-		s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
-		s_Device->GetImmediateContext(&s_Context);
+		case kUnityGfxDeviceEventInitialize:
+		{
+			s_DeviceType = s_Graphics->GetRenderer();
+			s_Device = s_UnityInterfaces->Get<IUnityGraphicsD3D11>()->GetDevice();
+			s_Device->GetImmediateContext(&s_Context);
 
-		break;
-	}
+			break;
+		}
 
-	case kUnityGfxDeviceEventShutdown:
-	{
-		s_Context.Reset();
-		s_Device.Reset();
-		s_DeviceType = kUnityGfxRendererNull;
+		case kUnityGfxDeviceEventShutdown:
+		{
+			s_Context.Reset();
+			s_Device.Reset();
+			s_DeviceType = kUnityGfxRendererNull;
 
-		break;
-	}
+			break;
+		}
 	}
 }
 
 
 
-extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
+extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
 	ULOG(INFO, __FUNCTION__);
 
@@ -257,15 +363,12 @@ extern "C" void	UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnit
 	ULOG(INFO, "Console open...")
 #endif
 
-		s_UnityInterfaces = unityInterfaces;
+	s_UnityInterfaces = unityInterfaces;
 	s_Graphics = s_UnityInterfaces->Get<IUnityGraphics>();
 	s_Graphics->RegisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 	// Run OnGraphicsDeviceEvent(initialize) manually on plugin load
 	OnGraphicsDeviceEvent(kUnityGfxDeviceEventInitialize);
-
-	// Creates and initializes the video helper library.
-	g_videoHelper = new VideoHelper(s_Device.Get(), s_Context.Get());
 }
 
 extern "C" __declspec(dllexport) void Close()

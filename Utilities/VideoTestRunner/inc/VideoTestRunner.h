@@ -6,7 +6,7 @@
 #include "nvCPUOPSys.h"
 #include "NvHWEncoder.h"
 
-namespace Toolkit3DLibrary
+namespace StreamingToolkit
 {
 	template<class T>
 	class CNvQueue

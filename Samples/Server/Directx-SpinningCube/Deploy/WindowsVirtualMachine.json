@@ -211,6 +211,19 @@
             }
           },
           {
+            "name": "STUN",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "19302",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 1030,
+              "direction": "Inbound"
+            }
+          },
+          {
             "name": "turnRelayInsecure",
             "properties": {
               "protocol": "*",
