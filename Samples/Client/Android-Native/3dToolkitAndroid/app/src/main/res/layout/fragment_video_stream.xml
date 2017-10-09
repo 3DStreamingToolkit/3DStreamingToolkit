@@ -5,7 +5,7 @@
     tools:context="microsoft.a3dtoolkitandroid.VideoStreamFragment"
     tools:ignore="MergeRootFrame">
 
-    <microsoft.a3dtoolkitandroid.util.renderer.SurfaceViewRenderer
+    <microsoft.a3dtoolkitandroid.view.VideoRendererWithControls
         android:id="@+id/remote_video_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

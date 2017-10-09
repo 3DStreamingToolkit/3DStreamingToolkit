@@ -1,7 +1,5 @@
 package microsoft.a3dtoolkitandroid.util;
 
-import android.util.Log;
-
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Request;
@@ -30,31 +28,23 @@ public class CustomStringRequest extends Request<CustomStringRequest.ResponseM> 
 
     @Override
     protected void deliverResponse(ResponseM response) {
-        Log.d("ServerListLog", "deliverResponse: " + response.toString());
         this.mListener.onResponse(response);
     }
 
     @Override
     protected Response<ResponseM> parseNetworkResponse(NetworkResponse response) {
-        Log.d("ServerListLog", "parseNetworkResponse: " + response.toString());
-
         JSONObject parsed;
         try {
             String jsonString = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
-            Log.d("ServerListLog", "parseNetworkResponse: jsonString = " + jsonString);
             if (jsonString.charAt(0) == '{'){
-                Log.d("ServerListLog", "parseNetworkResponse: jsonString starts with {" + jsonString);
                 parsed = new JSONObject(jsonString);
             } else{
-                Log.d("ServerListLog", "parseNetworkResponse: jsonString DOES NOT starts with {" + jsonString);
                 parsed = new JSONObject();
                 parsed.put("Server", jsonString);
             }
         } catch (UnsupportedEncodingException e) {
-            Log.d("ServerListLogError", "parseNetworkResponse: UnsupportedEncodingException = " + e.toString());
             parsed = new JSONObject();
         } catch (JSONException je) {
-            Log.d("ServerListLogError", "parseNetworkResponse: JSONException = " + je.toString());
             return Response.error(new ParseError(je));
         }
 

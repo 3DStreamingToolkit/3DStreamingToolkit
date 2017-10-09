@@ -3,17 +3,13 @@ package microsoft.a3dtoolkitandroid.util;
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
-import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonRequest;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
-import org.json.JSONObject;
-
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -27,7 +23,7 @@ public class GenericRequest<T> extends JsonRequest<T> {
     private boolean isBodyContentText = false;
     // Used for request which do not return anything from the server
     private boolean muteRequest = false;
-    public static Map<String, String> header;
+    public static Map<String, String> responseHeader;
 
     /**
      * Basically, this is the constructor which is called by the others.
@@ -54,80 +50,6 @@ public class GenericRequest<T> extends JsonRequest<T> {
     }
 
     /**
-     * Method to be called if you want to send some objects to your server via body in JSON of the request (with headers and not muted)
-     *
-     * @param method:        HTTP Method
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param toBeSent:      Object which will be transformed in JSON via Gson and sent to the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     * @param headers:       Added headers
-     */
-    public GenericRequest(int method, String url, Class<T> classtype, Object toBeSent,
-                          Response.Listener<T> listener, Response.ErrorListener errorListener, Map<String, String> headers) {
-        this(method, classtype, url, new Gson().toJson(toBeSent), listener,
-                errorListener, headers);
-    }
-
-    /**
-     * Method to be called if you want to send some objects to your server via body in JSON of the request (without header and not muted)
-     *
-     * @param method:        HTTP Method
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param toBeSent:      Object which will be transformed in JSON via Gson and sent to the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     */
-    public GenericRequest(int method, String url, Class<T> classtype, Object toBeSent,
-                          Response.Listener<T> listener, Response.ErrorListener errorListener) {
-        this(method, classtype, url, new Gson().toJson(toBeSent), listener,
-                errorListener, new HashMap<String, String>());
-    }
-
-    /**
-     * Method to be called if you want to send something to the server but not with a JSON, just with a defined String (without header and not muted)
-     *
-     * @param method:        HTTP Method
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param requestBody:   String to be sent to the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     */
-    public GenericRequest(int method, String url, Class<T> classtype, String requestBody,
-                          Response.Listener<T> listener, Response.ErrorListener errorListener) {
-        this(method, classtype, url, requestBody, listener,
-                errorListener, new HashMap<String, String>());
-    }
-
-    /**
-     * Method to be called if you want to GET something from the server and receive the POJO directly after the call (no JSON). (Without header)
-     *
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     */
-    public GenericRequest(String url, Class<T> classtype, Response.Listener<T> listener, Response.ErrorListener errorListener) {
-        this(Request.Method.GET, url, classtype, "", listener, errorListener);
-    }
-
-    /**
-     * Method to be called if you want to GET something from the server and receive the POJO directly after the call (no JSON). (With headers)
-     *
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     * @param headers:       Added headers
-     */
-    public GenericRequest(String url, Class<T> classtype, Response.Listener<T> listener, Response.ErrorListener errorListener, Map<String, String> headers) {
-        this(Request.Method.GET, classtype, url, "", listener, errorListener, headers);
-    }
-
-    /**
      * Method to be called if you want to send some objects to your server via body in JSON of the request (with headers and muted)
      *
      * @param method:        HTTP Method
@@ -147,45 +69,6 @@ public class GenericRequest<T> extends JsonRequest<T> {
         this.isBodyContentText = isBodyContentText;
     }
 
-    /**
-     * Method to be called if you want to send some objects to your server via body in JSON of the request (without header and muted)
-     *
-     * @param method:        HTTP Method
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param toBeSent:      Object which will be transformed in JSON via Gson and sent to the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     * @param mute:          Muted (put it to true, to make sense)
-     */
-    public GenericRequest(int method, String url, Class<T> classtype, Object toBeSent,
-                          Response.Listener<T> listener, Response.ErrorListener errorListener, boolean mute) {
-        this(method, classtype, url, new Gson().toJson(toBeSent), listener,
-                errorListener, new HashMap<String, String>());
-        this.muteRequest = mute;
-
-    }
-
-    /**
-     * Method to be called if you want to send something to the server but not with a JSON, just with a defined String (without header and not muted)
-     *
-     * @param method:        HTTP Method
-     * @param url:           URL to be called
-     * @param classtype:     Classtype to parse the JSON returned from the server
-     * @param requestBody:   String to be sent to the server
-     * @param listener:      Listener of the request
-     * @param errorListener: Error handler of the request
-     * @param mute:          Muted (put it to true, to make sense)
-     */
-    public GenericRequest(int method, String url, Class<T> classtype, String requestBody,
-                          Response.Listener<T> listener, Response.ErrorListener errorListener, boolean mute) {
-        this(method, classtype, url, requestBody, listener,
-                errorListener, new HashMap<String, String>());
-        this.muteRequest = mute;
-
-    }
-
-
     @Override
     protected Response<T> parseNetworkResponse(NetworkResponse response) {
 
@@ -200,7 +83,7 @@ public class GenericRequest<T> extends JsonRequest<T> {
                 // If it's not muted; we just need to create our POJO from the returned JSON and handle correctly the errors
                 String json = new String(response.data, HttpHeaderParser.parseCharset(response.headers));
                 T parsedObject = gson.fromJson(json, clazz);
-                header = response.headers;
+                responseHeader = response.headers;
                 return Response.success(parsedObject, HttpHeaderParser.parseCacheHeaders(response));
             } catch (UnsupportedEncodingException e) {
                 return Response.error(new ParseError(e));
