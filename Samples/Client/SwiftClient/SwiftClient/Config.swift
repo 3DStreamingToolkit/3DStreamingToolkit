@@ -4,5 +4,5 @@ struct Config {
     static let turnServer = "YOUR TURN SERVER"
     static let username = "YOUR USERNAME"
     static let credential = "YOUR CREDENTIAL"
-    static let tlsCertPolicy = "YOUR RTCTlsCertPolicy (REPLACE THIS STRING WITH A RTCTlsCertPolicy, NOT ANOTHER STRING)"
+    static let tlsCertPolicy = RTCTlsCertPolicy.secure
 }
