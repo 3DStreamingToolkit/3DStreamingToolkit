@@ -1,7 +1,7 @@
 use_frameworks!
 
 def install_pods
-    pod 'WebRTC', '~> 60.10.18252'
+    pod 'WebRTC', '~> 58.17.16937'
 end
 
 target 'SwiftClient' do
