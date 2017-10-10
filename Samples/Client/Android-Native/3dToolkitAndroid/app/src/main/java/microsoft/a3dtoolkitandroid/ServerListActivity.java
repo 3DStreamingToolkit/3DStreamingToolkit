@@ -1,6 +1,7 @@
 package microsoft.a3dtoolkitandroid;
 
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
@@ -47,6 +48,7 @@ import microsoft.a3dtoolkitandroid.view.VideoRendererWithControls;
 import static java.lang.Integer.parseInt;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.addRequest;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.getVolleyRequestQueue;
+import static microsoft.a3dtoolkitandroid.util.HelperFunctions.logAndToast;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.preferCodec;
 
 public class ServerListActivity extends AppCompatActivity implements
@@ -104,7 +106,6 @@ public class ServerListActivity extends AppCompatActivity implements
      */
     @Override
     public void addMyID(int myID) {
-        Log.d(LOG, "addMyID: myID = " + myID);
         my_id = myID;
     }
 
@@ -184,7 +185,6 @@ public class ServerListActivity extends AppCompatActivity implements
      * Joins server selected from list of peers
      */
     private void joinPeer() {
-        Log.d(LOG, "joinPeer: ");
         isInitiator = true;
         createPeerConnection();
         inputChannel = peerConnection.createDataChannel("inputDataChannel", new DataChannel.Init());
@@ -211,6 +211,7 @@ public class ServerListActivity extends AppCompatActivity implements
      * Creates a peer connection using the ICE server and media constraints specified
      */
     private void createPeerConnection() {
+        // show the video renderer and set the screen to landscape
         remoteVideoRenderer.setVisibility(View.VISIBLE);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
@@ -220,7 +221,7 @@ public class ServerListActivity extends AppCompatActivity implements
         peerConnectionFactory = new PeerConnectionFactory();
 
         if (peerConnectionFactory == null) {
-            Log.e(ERROR, "Peerconnection factory is not created");
+            logAndToast(this, "Peerconnection factory is not created");
             return;
         }
 
@@ -249,11 +250,11 @@ public class ServerListActivity extends AppCompatActivity implements
     private void sendToPeer(HashMap<String, String> params) {
         try {
             if (my_id == -1) {
-                Log.d(ERROR, "sendToPeer: Not Connected");
+                logAndToast(this, "sendToPeer: Not Connected");
                 return;
             }
             if (peer_id == my_id) {
-                Log.d(ERROR, "sendToPeer: Can't send a message to oneself :)");
+                logAndToast(this, "sendToPeer: Can't send a message to oneself :)");
                 return;
             }
 
@@ -262,12 +263,12 @@ public class ServerListActivity extends AppCompatActivity implements
 
             GenericRequest<String> getRequest = new GenericRequest<>(Request.Method.POST ,server + "/message?peer_id=" + my_id + "&to=" + peer_id, String.class, params,
                     response -> {
-                    }, error -> Log.d(ERROR, "onErrorResponse: SendToPeer = " + error), headerParams, true, true);
+                    }, error -> logAndToast(this, "onErrorResponse: SendToPeer = " + error), headerParams, true, true);
 
             // Add the request to the RequestQueue.
             getVolleyRequestQueue(this).add(getRequest);
         } catch (Throwable e) {
-            Log.d(ERROR, "send to peer error: " + e.toString());
+            logAndToast(this, "send to peer error: " + e.toString());
         }
     }
 
@@ -354,7 +355,7 @@ public class ServerListActivity extends AppCompatActivity implements
                     if (error.toString().equals("com.android.volley.TimeoutError")) {
                         startHangingGet();
                     } else {
-                        Log.d(ERROR, "startHangingGet: ERROR" + error.toString());
+                        logAndToast(this, "startHangingGet: ERROR" + error.toString());
                     }
                 });
         getVolleyRequestQueue(this).add(stringRequest);
@@ -369,13 +370,14 @@ public class ServerListActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 try {
-                    addRequest(server + "/heartbeat?peer_id=" + my_id, Request.Method.GET, getBaseContext(), response -> {});
+                    addRequest(server + "/heartbeat?peer_id=" + my_id, Request.Method.GET, ServerListActivity.this, response -> {});
                 } catch (Throwable error) {
-                    Log.d(ERROR, error.toString());
+                    logAndToast(ServerListActivity.this, error.toString());
                 }
             }
         }, 0, heartbeatIntervalInMs);
     }
+
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     private void disconnect() {
@@ -398,7 +400,7 @@ public class ServerListActivity extends AppCompatActivity implements
             try {
                 rootEglBase.release();
             } catch (RuntimeException e){
-                Log.d(ERROR, e.toString());
+                logAndToast(this, e.toString());
             }
         }
         if(serverListFragment != null){
@@ -435,7 +437,7 @@ public class ServerListActivity extends AppCompatActivity implements
     /**
      * Implementation detail: observe ICE & stream changes and react accordingly.
      */
-    private class PeerConnectionObserver implements PeerConnection.Observer {
+    public class PeerConnectionObserver implements PeerConnection.Observer {
         // Send Ice candidate to the server.
         @Override
         public void onIceCandidate(final IceCandidate iceCandidate) {
@@ -464,7 +466,7 @@ public class ServerListActivity extends AppCompatActivity implements
             } else if (newState == PeerConnection.IceConnectionState.DISCONNECTED) {
                 Log.d(LOG, "onIceConnectionChange: " + newState);
             } else if (newState == PeerConnection.IceConnectionState.FAILED) {
-                Log.d(ERROR, "ICE connection failed.");
+                logAndToast(ServerListActivity.this, "ICE connection failed.");
             }
         }
 
@@ -480,13 +482,12 @@ public class ServerListActivity extends AppCompatActivity implements
 
         @Override
         public void onAddStream(final MediaStream stream) {
-            Log.d(LOG, "onAddStream: " + stream.toString());
             //set the video renderer to visible
             if (peerConnection == null) {
                 return;
             }
             if (stream.audioTracks.size() > 1 || stream.videoTracks.size() > 1) {
-                Log.d(ERROR, "Weird-looking stream: " + stream);
+                logAndToast(ServerListActivity.this, "Weird-looking stream: " + stream);
                 return;
             }
             if (stream.videoTracks.size() == 1) {
@@ -504,8 +505,6 @@ public class ServerListActivity extends AppCompatActivity implements
 
         @Override
         public void onDataChannel(final DataChannel dc) {
-            Log.d(LOG, "New Data channel " + dc.label());
-
             dc.registerObserver(new DataChannel.Observer() {
                 public void onBufferedAmountChange(long previousAmount) {
                     Log.d(LOG, "Data channel buffered amount changed: " + dc.label() + ": " + dc.state());
@@ -548,11 +547,11 @@ public class ServerListActivity extends AppCompatActivity implements
      * Implementation detail: handle offer creation/signaling and answer setting,
      * as well as adding remote ICE candidates once the answer SDP is set.
      */
-    private class SDPObserver implements SdpObserver {
+    public class SDPObserver implements SdpObserver {
         @Override
         public void onCreateSuccess(final SessionDescription origSdp) {
             if (localSdp != null) {
-                Log.d(ERROR, "Multiple SDP create.");
+                logAndToast(ServerListActivity.this, "Multiple SDP create.");
                 return;
             }
             String sdpDescription = origSdp.description;
@@ -608,12 +607,12 @@ public class ServerListActivity extends AppCompatActivity implements
 
         @Override
         public void onCreateFailure(final String error) {
-            Log.d(ERROR, "createSDP error: " + error);
+            logAndToast(ServerListActivity.this, "createSDP error: " + error);
         }
 
         @Override
         public void onSetFailure(final String error) {
-            Log.d(ERROR, "setSDP error: " + error);
+            logAndToast(ServerListActivity.this, "setSDP error: " + error);
         }
     }
 }
