@@ -46,8 +46,10 @@ class VideoStreamViewController: UIViewController {
     var prevNavPitch: CGFloat = 0.0
     var yaw: CGFloat = 0.0
     var pitch: CGFloat = 0.0
+    var roll: CGFloat = 0.0
     var prevYaw: CGFloat = 0.0
     var prevPitch: CGFloat = 0.0
+    var prevRoll: CGFloat = 0.0
     lazy var navTransform: [CGFloat] = {
         [unowned self] in
         self.mathMatrix.matCreate()
@@ -174,10 +176,13 @@ class VideoStreamViewController: UIViewController {
         let attitude = deviceMotion.attitude
         prevYaw = yaw
         prevPitch = pitch
+        prevRoll = roll
         yaw = CGFloat(attitude.yaw)
         pitch = CGFloat(attitude.pitch)
+        roll = CGFloat(attitude.roll)
         let dheading = yaw - prevYaw
         let dpitch = pitch - prevPitch
+        let droll = roll - prevRoll
         // do not send movement that is too small
         if isAccelerometerEnabled {
             if abs(dheading) < 0.005 && abs(dpitch) < 0.005 {
@@ -185,8 +190,21 @@ class VideoStreamViewController: UIViewController {
             }
             prevNavHeading = navHeading
             prevNavPitch = navPitch
-            navHeading = prevNavHeading - dheading
-            navPitch = prevNavPitch + dpitch
+            
+	    if UIDevice.current.orientation == .landscapeLeft {
+            	print("left")
+            	navPitch = prevNavPitch - droll
+            	navHeading = prevNavHeading - dheading
+            } else if UIDevice.current.orientation == .landscapeRight {
+            	navPitch = prevNavPitch + droll
+            	navHeading = prevNavHeading - dheading
+            	print("right")
+            } else {
+            	navPitch = prevNavPitch + dpitch
+            	navHeading = prevNavHeading - dheading
+            	print("else")
+            }
+
             let locTransform =  mathMatrix.matMultiply(a: mathMatrix.matRotateY(rad: navHeading), b: mathMatrix.matRotateZ(rad: navPitch))
             navTransform = mathMatrix.matMultiply(a: mathMatrix.matTranslate(v: navLocation), b: locTransform)
             sendTransform()
