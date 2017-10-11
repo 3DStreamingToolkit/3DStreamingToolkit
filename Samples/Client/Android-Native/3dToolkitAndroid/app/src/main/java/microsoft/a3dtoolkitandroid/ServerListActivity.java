@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.android.volley.Request;
+import com.android.volley.VolleyError;
 import com.facebook.stetho.Stetho;
 
 import org.json.JSONException;
@@ -42,12 +43,13 @@ import java.util.TimerTask;
 import microsoft.a3dtoolkitandroid.util.Config;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.GenericRequest;
+import microsoft.a3dtoolkitandroid.util.HttpRequestQueue;
 import microsoft.a3dtoolkitandroid.util.renderer.EglBase;
 import microsoft.a3dtoolkitandroid.view.VideoRendererWithControls;
 
 import static java.lang.Integer.parseInt;
+import static microsoft.a3dtoolkitandroid.util.HelperFunctions.REQUEST_TAG;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.addRequest;
-import static microsoft.a3dtoolkitandroid.util.HelperFunctions.getVolleyRequestQueue;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.logAndToast;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.preferCodec;
 
@@ -56,30 +58,36 @@ public class ServerListActivity extends AppCompatActivity implements
 
     public static final String LOG = "ServerListLog";
     public static final String ERROR = "ServerListLogError";
+    public static final String DTLS = "true";
+    public static final String OfferToReceiveAudio = "false";
+    public static final String OfferToReceiveVideo= "true";
+
+
     private final int heartbeatIntervalInMs = 5000;
-    private Intent intent;
-    private int my_id = -1;
-    private int peer_id = -1;
-    private String server;
-    private boolean isInitiator;
-    private boolean activityRunning;
+    public Intent intent;
+    public int my_id = -1;
+    public int peer_id = -1;
+    public String server;
+    public String stringList;
+    public boolean isInitiator;
+    public boolean activityRunning;
 
     // WebRTC Variables
-    private PeerConnection peerConnection;
-    private PeerConnectionFactory peerConnectionFactory;
-    private DataChannel inputChannel;
-    private VideoTrack remoteVideoTrack;
-    private final PeerConnectionObserver peerConnectionObserver = new PeerConnectionObserver();
-    private final SDPObserver sdpObserver = new SDPObserver();
-    private MediaConstraints sdpMediaConstraints;
-    private MediaConstraints peerConnectionConstraints;
-    private SessionDescription localSdp; // either offer or answer SDP
-    private VideoRendererWithControls remoteVideoRenderer;
-    private final EglBase rootEglBase = EglBase.create();
+    public PeerConnection peerConnection;
+    public PeerConnectionFactory peerConnectionFactory;
+    public DataChannel inputChannel;
+    public VideoTrack remoteVideoTrack;
+    public final PeerConnectionObserver peerConnectionObserver = new PeerConnectionObserver();
+    public final SDPObserver sdpObserver = new SDPObserver();
+    public MediaConstraints sdpMediaConstraints;
+    public MediaConstraints peerConnectionConstraints;
+    public SessionDescription localSdp; // either offer or answer SDP
+    public VideoRendererWithControls remoteVideoRenderer;
+    public final EglBase rootEglBase = EglBase.create();
 
     //Fragment variables
-    private FragmentManager fragmentManager;
-    private ServerListFragment serverListFragment;
+    public FragmentManager fragmentManager;
+    public ServerListFragment serverListFragment;
 
 
     @Override
@@ -131,7 +139,7 @@ public class ServerListActivity extends AppCompatActivity implements
      */
     private void setUpListView(){
         // get the string response from the login request in the Connect Activity
-        String stringList = intent.getStringExtra(ConnectActivity.SERVER_LIST);
+        stringList = intent.getStringExtra(ConnectActivity.SERVER_LIST);
 
         // initialize list fragment with server list string
         fragmentManager = getSupportFragmentManager();
@@ -173,12 +181,12 @@ public class ServerListActivity extends AppCompatActivity implements
         peerConnectionConstraints = new MediaConstraints();
 
         // Enable DTLS for normal calls and disable for loopback calls.
-        peerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
+        peerConnectionConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", DTLS));
 
         //Create SDP constraints.
         sdpMediaConstraints = new MediaConstraints();
-        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "false"));
-        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
+        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", OfferToReceiveAudio));
+        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", OfferToReceiveVideo));
     }
 
     /**
@@ -266,7 +274,7 @@ public class ServerListActivity extends AppCompatActivity implements
                     }, error -> logAndToast(this, "onErrorResponse: SendToPeer = " + error), headerParams, true, true);
 
             // Add the request to the RequestQueue.
-            getVolleyRequestQueue(this).add(getRequest);
+            HttpRequestQueue.getInstance(this).addToQueue(getRequest, REQUEST_TAG);
         } catch (Throwable e) {
             logAndToast(this, "send to peer error: " + e.toString());
         }
@@ -321,45 +329,56 @@ public class ServerListActivity extends AppCompatActivity implements
         }
         // Created a custom request class to access headers of responses.
         CustomStringRequest stringRequest = new CustomStringRequest(Request.Method.GET, server + "/wait?peer_id=" + my_id,
-                result -> {
-                    //If peer_id has not been set then set it
-                    String get_id_string = result.headers.get("Pragma");
-                    int get_id = parseInt(get_id_string);
+                this::onHangingGetSuccess, this::onHangingGetFailure);
+        HttpRequestQueue.getInstance(this).addToQueue(stringRequest, REQUEST_TAG);
 
-                    JSONObject response = result.response;
-                    // if the ID returned is equal to my_id then it is message from a server notifying it's presence
-                    if (get_id == my_id) {
-                        // Update the list of peers
-                        try {
-                            handleServerNotification(response.getString("Server"));
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        // Handle other messages from server and set peer_id
-                        peer_id = get_id;
-                        try {
-                            handlePeerMessage(response);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
+    }
 
-                    // keep looping hanging get to wait for any message from the server
-                    if (my_id != -1){
-                        startHangingGet();
-                    }
-                },
-                error -> {
-                    // keep looping on request timeout
-                    if (error.toString().equals("com.android.volley.TimeoutError")) {
-                        startHangingGet();
-                    } else {
-                        logAndToast(this, "startHangingGet: ERROR" + error.toString());
-                    }
-                });
-        getVolleyRequestQueue(this).add(stringRequest);
+    /**
+     * Callback for a sucessfull response from server
+     * @param result: custom response object that allows access to response headers
+     */
+    private void onHangingGetSuccess(CustomStringRequest.ResponseM result){
+        //get id from header
+        String get_id_string = result.headers.get("Pragma");
+        int get_id = parseInt(get_id_string);
 
+        JSONObject response = result.response;
+        // if the ID returned is equal to my_id then it is message from a server notifying it's presence
+        if (get_id == my_id) {
+            // Update the list of peers
+            try {
+                handleServerNotification(response.getString("Server"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else {
+            // Handle other messages from server and set peer_id
+            peer_id = get_id;
+            try {
+                handlePeerMessage(response);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // keep looping hanging get to wait for any message from the server
+        if (my_id != -1){
+            startHangingGet();
+        }
+    }
+
+    /**
+     * Callback for a failed response from server
+     * @param error: server error
+     */
+    private void onHangingGetFailure(VolleyError error){
+        // keep looping on request timeout
+        if (error.toString().equals("com.android.volley.TimeoutError")) {
+            startHangingGet();
+        } else {
+            logAndToast(this, "startHangingGet: ERROR" + error.toString());
+        }
     }
 
     /**

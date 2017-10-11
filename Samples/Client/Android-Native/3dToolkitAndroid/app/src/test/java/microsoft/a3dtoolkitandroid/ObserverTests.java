@@ -13,9 +13,9 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.webrtc.IceCandidate;
 import org.webrtc.SessionDescription;
-
 
 
 public class ObserverTests {

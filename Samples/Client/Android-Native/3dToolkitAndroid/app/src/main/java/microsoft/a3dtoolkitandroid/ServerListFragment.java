@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import static java.lang.Integer.parseInt;
-import static microsoft.a3dtoolkitandroid.ServerListActivity.LOG;
 
 /**
  * A fragment representing a list of Items.
@@ -27,14 +26,13 @@ import static microsoft.a3dtoolkitandroid.ServerListActivity.LOG;
  * interface.
  */
 public class ServerListFragment extends Fragment {
-    private OnListFragmentInteractionListener mListener;
-    ServerListRecyclerViewAdapter adapter;
-    RecyclerView recyclerView;
+    public OnListFragmentInteractionListener mListener;
+    public ServerListRecyclerViewAdapter adapter;
+    public RecyclerView recyclerView;
     public List<ServerItem> servers = new ArrayList<>();
     public Map<Integer, ServerItem> serverMap = new HashMap<>();
 
     public void initializeList(String originalList){
-        Log.d(LOG, "initializeList: " + originalList);
         // split the string into a list of servers
         List<String> peers = new ArrayList<>(Arrays.asList(originalList.split("\n")));
 
@@ -48,21 +46,24 @@ public class ServerListFragment extends Fragment {
                 addServer(parseInt(parsed[1]), parsed[0]);
             }
         }
-        Log.d(LOG, "initializeList: serverlist = " + servers.toString());
+        if (adapter == null){
+            adapter = new ServerListRecyclerViewAdapter(getActivity());
+            recyclerView.setAdapter(adapter);
+        }
 
-        adapter = new ServerListRecyclerViewAdapter(getActivity());
-        recyclerView.setAdapter(adapter);
     }
 
     /**
      * Updates the peer list adapter with any new entries
      */
     public void addPeerList(int serverID, String serverName) {
-        Log.d(LOG, "updatePeerList: ");
         addServer(serverID, serverName);
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * Adds a server to the list of servers and the map of server names to server id's
+     */
     public void addServer(int serverID, String serverName) {
         ServerItem item = new ServerItem(serverID, serverName);
         servers.add(item);
@@ -141,10 +142,8 @@ public class ServerListFragment extends Fragment {
         public void onBindViewHolder(final ViewHolder holder, int position) {
             holder.mItem = servers.get(position);
             holder.mTextView.setText(holder.mItem.serverName);
-            Log.d(LOG, "onBindViewHolder: " + holder.itemView);
 
             holder.itemView.setOnClickListener(v -> {
-                Log.d(LOG, "onBindViewHolder: on click " + mListener);
                 if (mListener != null) {
                     // Notify the active callbacks interface (the activity, if the
                     // fragment is attached to one) that an item has been selected.
@@ -166,7 +165,7 @@ public class ServerListFragment extends Fragment {
 
         private ViewHolder(View itemView) {
             super(itemView);
-            mTextView = (TextView) itemView.findViewById(R.id.name);
+            mTextView = itemView.findViewById(R.id.name);
         }
 
         @Override

@@ -9,7 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/nameLayout"
+        android:layout_above="@+id/nameLayout"
         android:gravity="center">
         <TextView
             android:id="@+id/serverTag"
@@ -36,8 +36,7 @@
             android:id="@+id/nameInput"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/name_field"
-            app:layout_constraintRight_toLeftOf="@+id/port" />
+            android:text="@string/name_field"/>
 
         <EditText
             android:id="@+id/port"
