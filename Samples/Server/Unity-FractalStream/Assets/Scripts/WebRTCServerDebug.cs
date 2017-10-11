@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Threading;
+using UnityEngine;
 
 namespace Microsoft.Toolkit.ThreeD
 {
     /// <summary>
-    /// Behavior to capture and log <see cref="WebRTCServer"/> debug information
+    /// Behavior to capture and log <see cref="WebRTCServer"/> debug information based on command line arguments
     /// </summary>
     /// <remarks>
     /// This includes debug information from the underlying <see cref="StreamingUnityServerPlugin"/>
@@ -12,14 +14,47 @@ namespace Microsoft.Toolkit.ThreeD
     public class WebRTCServerDebug : MonoBehaviour
     {
         /// <summary>
+        /// Indicates if we should log plugin info
+        /// </summary>
+        private bool shouldLog = false;
+        
+        /// <summary>
+        /// Unity engine object Awake() hook
+        /// </summary>
+        private void Awake()
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (var i = 0;  i < args.Length; i++)
+            {
+                // support -webrtc-debug-log to enable detailed logging
+                if (args[i].ToLower() == "-webrtc-debug-log")
+                {
+                    shouldLog = true;
+                }
+                // support -webrtc-debug-sleep [intervalMs] to enable sleep on start, default intervalMs = 5000
+                else if (args[i].ToLower() == "-webrtc-debug-sleep")
+                {
+                    int sleepVal;
+                    if (args.Length <= i + 1 || !int.TryParse(args[i + 1], out sleepVal))
+                    {
+                        sleepVal = 5000;
+                    }
+
+                    // sleep the main thread
+                    Thread.Sleep(sleepVal);
+                }
+            }
+        }
+
+        /// <summary>
         /// Unity engine object Start() hook
         /// </summary>
         private void Start()
         {
             var plugin = this.GetComponent<WebRTCServer>().Plugin;
 
-            // if it has a plugin, then attach to it's log event
-            if (plugin != null)
+            // if it has a plugin, and should log, then attach to it's log event
+            if (plugin != null && shouldLog)
             {
                 plugin.Log += OnLogData;
             }
