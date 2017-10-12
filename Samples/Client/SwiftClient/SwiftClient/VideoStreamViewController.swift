@@ -9,10 +9,15 @@ class VideoStreamViewController: UIViewController {
     static let peerListDisplayInitialMessage = "Select peer to join"
     static let connectButtonTitle = "Connect"
     static let disconnectButtonTitle = "Disconnect"
-    static let connectDisconnectButtonErrorInstructions = "Error: Please restart app"
+    static let connectDisconnectButtonErrorTitle = "Error: Please restart app"
+    static let accelerometerButtonEnableTitle = "Enable Accelerometer"
+    static let accelerometerButtonDisableTitle = "Disable Accelerometer"
+    var isAccelerometerEnabled = true
     let heartbeatIntervalInSecs = 5
     let server = Config.signalingServer
     let localName = "ios_client"
+    var fingerGestureRecognizer: UIPanGestureRecognizer!
+    var accelerometerButton: UIButton!
     var mathMatrix = MathMatrix()
     var request: URLSessionDataTask!
     var hangingGet: URLSessionDataTask!
@@ -64,7 +69,7 @@ class VideoStreamViewController: UIViewController {
             connectAsync(completionHandler: { (error) in
                 if error != nil {
                     DispatchQueue.main.async {
-                        self.connectDisconnectButton.setTitle(VideoStreamViewController.connectDisconnectButtonErrorInstructions, for: .normal)
+                        self.connectDisconnectButton.setTitle(VideoStreamViewController.connectDisconnectButtonErrorTitle, for: .normal)
                     }
                 }
             })
@@ -72,7 +77,7 @@ class VideoStreamViewController: UIViewController {
             disconnectAsync(completionHandler: { (error) in
                 if error != nil {
                     DispatchQueue.main.async {
-                        self.connectDisconnectButton.setTitle(VideoStreamViewController.connectDisconnectButtonErrorInstructions, for: .normal)
+                        self.connectDisconnectButton.setTitle(VideoStreamViewController.connectDisconnectButtonErrorTitle, for: .normal)
                     }
                 }
             })
@@ -174,16 +179,18 @@ class VideoStreamViewController: UIViewController {
         let dheading = yaw - prevYaw
         let dpitch = pitch - prevPitch
         // do not send movement that is too small
-        if abs(dheading) < 0.005 && abs(dpitch) < 0.005 {
-            return
+        if isAccelerometerEnabled {
+            if abs(dheading) < 0.005 && abs(dpitch) < 0.005 {
+                return
+            }
+            prevNavHeading = navHeading
+            prevNavPitch = navPitch
+            navHeading = prevNavHeading - dheading
+            navPitch = prevNavPitch + dpitch
+            let locTransform =  mathMatrix.matMultiply(a: mathMatrix.matRotateY(rad: navHeading), b: mathMatrix.matRotateZ(rad: navPitch))
+            navTransform = mathMatrix.matMultiply(a: mathMatrix.matTranslate(v: navLocation), b: locTransform)
+            sendTransform()
         }
-        prevNavHeading = navHeading
-        prevNavPitch = navPitch
-        navHeading = prevNavHeading - dheading
-        navPitch = prevNavPitch + dpitch
-        let locTransform =  mathMatrix.matMultiply(a: mathMatrix.matRotateY(rad: navHeading), b: mathMatrix.matRotateZ(rad: navPitch))
-        navTransform = mathMatrix.matMultiply(a: mathMatrix.matTranslate(v: navLocation), b: locTransform)
-        sendTransform()
     }
     
     func joinPeer(peerId: Int, completionHandler: ((Data, Error?) -> Void)?) {
@@ -226,11 +233,26 @@ class VideoStreamViewController: UIViewController {
         }
     }
     
+    func handleAccelerometerButton(button: UIButton) {
+        if isAccelerometerEnabled {
+            button.setTitle(VideoStreamViewController.accelerometerButtonEnableTitle, for: .normal)
+            button.backgroundColor = .green
+            isAccelerometerEnabled = false
+            self.fingerGestureRecognizer.minimumNumberOfTouches = 1
+        } else {
+            button.setTitle(VideoStreamViewController.accelerometerButtonDisableTitle, for: .normal)
+            button.backgroundColor = .red
+            isAccelerometerEnabled = true
+            self.fingerGestureRecognizer.minimumNumberOfTouches = 2
+        }
+    }
+    
     func initGestureRecognizer() {
-        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(VideoStreamViewController.handlePan(_:)))
-        panGestureRecognizer.minimumNumberOfTouches = 1
-        panGestureRecognizer.maximumNumberOfTouches = 2
-        self.renderView.addGestureRecognizer(panGestureRecognizer)
+        fingerGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(VideoStreamViewController.handlePan(_:)))
+        fingerGestureRecognizer.minimumNumberOfTouches = 1
+        fingerGestureRecognizer.maximumNumberOfTouches = 2
+        fingerGestureRecognizer.delegate = self
+        self.renderView.addGestureRecognizer(fingerGestureRecognizer)
     }
     
     func beginTouch(tappedPoint: CGPoint) {
@@ -303,6 +325,37 @@ class VideoStreamViewController: UIViewController {
             ]
             let buffer = RTCDataBuffer(data: convertDictionaryToData(dict: msg)!, isBinary: false)
             inputChannel.sendData(buffer)
+        }
+    }
+    
+    func addAccelerometerButton() {
+        self.isAccelerometerEnabled = true
+        self.fingerGestureRecognizer.minimumNumberOfTouches = 2
+        self.accelerometerButton = UIButton()
+        self.accelerometerButton.translatesAutoresizingMaskIntoConstraints = false
+        self.accelerometerButton.backgroundColor = .red
+        self.accelerometerButton.setTitle(VideoStreamViewController.accelerometerButtonDisableTitle, for: .normal)
+        self.accelerometerButton.isUserInteractionEnabled = true
+        self.accelerometerButton.addTarget(self, action: #selector(self.handleAccelerometerButton), for: .touchUpInside)
+        DispatchQueue.main.async {
+            self.renderView.addSubview(self.accelerometerButton)
+        }
+        let views: [String: Any] = ["button": self.accelerometerButton]
+        let horizontalConstraint = NSLayoutConstraint.constraints(
+            withVisualFormat: "H:|[button]|",
+            options: [],
+            metrics: nil,
+            views: views)
+        let verticalConstraint = NSLayoutConstraint.constraints(
+            withVisualFormat: "V:[button(50)]|",
+            options: [],
+            metrics: nil,
+            views: views)
+        var allConstraints = [NSLayoutConstraint]()
+        allConstraints += horizontalConstraint
+        allConstraints += verticalConstraint
+        DispatchQueue.main.async {
+            NSLayoutConstraint.activate(allConstraints)
         }
     }
     
@@ -548,6 +601,15 @@ class VideoStreamViewController: UIViewController {
                         self.videoStream = nil
                     }
                 }
+                if self.accelerometerButton != nil {
+                    DispatchQueue.main.async {
+                        self.accelerometerButton.removeFromSuperview()
+                    }
+                    self.accelerometerButton = nil
+                }
+                if self.fingerGestureRecognizer != nil {
+                    self.fingerGestureRecognizer.minimumNumberOfTouches = 1
+                }
                 if self.inputChannel != nil {
                     self.inputChannel.close()
                     self.inputChannel = nil
@@ -642,6 +704,9 @@ extension VideoStreamViewController : RTCPeerConnectionDelegate {
         if renderView != nil && videoStream.videoTracks.last != nil {
             remoteVideoTrack = videoStream.videoTracks.last
             remoteVideoTrack.add(renderView)
+            if accelerometerButton == nil {
+                addAccelerometerButton()
+            }
         }
     }
     
@@ -657,5 +722,16 @@ extension VideoStreamViewController : RTCPeerConnectionDelegate {
     func peerConnection(_ peerConnection: RTCPeerConnection, didOpen dataChannel: RTCDataChannel) {
         inputChannel = dataChannel
         inputChannel.delegate = self
+    }
+}
+
+extension VideoStreamViewController : UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if let touchView = touch.view, let button = self.accelerometerButton {
+            if touchView.isDescendant(of: button) {
+                return false
+            }
+        }
+        return true
     }
 }
