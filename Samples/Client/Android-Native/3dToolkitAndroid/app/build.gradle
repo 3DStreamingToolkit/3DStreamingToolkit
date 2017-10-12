@@ -52,5 +52,6 @@ dependencies {
     compile project(':libwebrtc')
     compile 'com.google.code.gson:gson:2.8.0'
     compile group: 'gov.nist.math', name: 'jama', version: '1.0.3'
+    compile group: 'org.json', name: 'json', version: '20170516'
 
 }

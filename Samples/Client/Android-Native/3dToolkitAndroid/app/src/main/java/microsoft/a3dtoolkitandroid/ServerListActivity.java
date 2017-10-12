@@ -220,9 +220,10 @@ public class ServerListActivity extends AppCompatActivity implements
      */
     private void createPeerConnection() {
         // show the video renderer and set the screen to landscape
-        remoteVideoRenderer.setVisibility(View.VISIBLE);
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-
+        runOnUiThread(() -> {
+                    remoteVideoRenderer.setVisibility(View.VISIBLE);
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                });
         //Initialize PeerConnectionFactory globals.
         //Params are context, initAudio, initVideo and videoCodecHwAcceleration
         PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
@@ -338,7 +339,11 @@ public class ServerListActivity extends AppCompatActivity implements
      * Callback for a sucessfull response from server
      * @param result: custom response object that allows access to response headers
      */
-    private void onHangingGetSuccess(CustomStringRequest.ResponseM result){
+    public void onHangingGetSuccess(CustomStringRequest.ResponseM result){
+        if (!result.headers.containsKey("Pragma")){
+            logAndToast(this, "No Pragma Field");
+            return;
+        }
         //get id from header
         String get_id_string = result.headers.get("Pragma");
         int get_id = parseInt(get_id_string);
@@ -372,7 +377,7 @@ public class ServerListActivity extends AppCompatActivity implements
      * Callback for a failed response from server
      * @param error: server error
      */
-    private void onHangingGetFailure(VolleyError error){
+    public void onHangingGetFailure(VolleyError error){
         // keep looping on request timeout
         if (error.toString().equals("com.android.volley.TimeoutError")) {
             startHangingGet();

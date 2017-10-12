@@ -58,7 +58,7 @@ public class ServerListFragment extends Fragment {
      */
     public void addPeerList(int serverID, String serverName) {
         addServer(serverID, serverName);
-        adapter.notifyDataSetChanged();
+        getActivity().runOnUiThread(() -> adapter.notifyDataSetChanged());
     }
 
     /**
