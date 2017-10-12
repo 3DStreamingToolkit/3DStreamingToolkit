@@ -190,21 +190,16 @@ class VideoStreamViewController: UIViewController {
             }
             prevNavHeading = navHeading
             prevNavPitch = navPitch
-            
 	    if UIDevice.current.orientation == .landscapeLeft {
-            	print("left")
             	navPitch = prevNavPitch - droll
             	navHeading = prevNavHeading - dheading
             } else if UIDevice.current.orientation == .landscapeRight {
             	navPitch = prevNavPitch + droll
             	navHeading = prevNavHeading - dheading
-            	print("right")
             } else {
             	navPitch = prevNavPitch + dpitch
             	navHeading = prevNavHeading - dheading
-            	print("else")
             }
-
             let locTransform =  mathMatrix.matMultiply(a: mathMatrix.matRotateY(rad: navHeading), b: mathMatrix.matRotateZ(rad: navPitch))
             navTransform = mathMatrix.matMultiply(a: mathMatrix.matTranslate(v: navLocation), b: locTransform)
             sendTransform()
