@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using Org.WebRtc;
@@ -159,10 +159,10 @@ namespace WebRtcWrapper
                 {
                     SelectedPeer = Peers.First(x => x.Id == id);
                     OnStatusMessageUpdate?.Invoke(string.Format("Connected Peer: {0}-{1}", SelectedPeer.Id, SelectedPeer.Name));
-
-                    // Automatically connect to the first available server
-                    var peer = new Peer { Id = id, Name = name };
-                    Conductor.Instance.ConnectToPeer(peer);
+					
+					// Automatically connect to the first available server
+                    // var peer = new Peer { Id = id, Name = name };
+                    // Conductor.Instance.ConnectToPeer(peer);
                 });
             };
 

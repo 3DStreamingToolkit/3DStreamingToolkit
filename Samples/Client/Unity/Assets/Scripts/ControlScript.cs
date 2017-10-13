@@ -245,8 +245,6 @@ public class ControlScript : MonoBehaviour
                 Plugin.LoadMediaStreamSource((MediaStreamSource)source);
                 Plugin.Play();
                 enabledStereo = true;
-
-                StartCoroutine(DelayStereoMessage());
             }
         }
 #endif
