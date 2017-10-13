@@ -3,19 +3,19 @@
   "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
     "bitrate": 5500000,
-    "minBitrate": 3500000,
+    "minBitrate": 300000,
     "fps": 60,
     "qp": 5,
     "intraRefreshPeriod": 60,
-    "intraRefreshEnableFlag": true,
+    "intraRefreshEnableFlag": false,
     "intraRefreshDuration": 6,
     "enableTemporalAQ": false,
     "invalidateRefFramesEnableFlag": true,
     "nvEncodePreset": 3,
     "nvEncodePreset_comment": "nvEncodePreset enums: 1 - NV_ENC_PRESET_HQ_GUID; 2 - NV_ENC_PRESET_LOW_LATENCY_HQ_GUID; 3 - NV_ENC_PRESET_LOW_LATENCY_HP_GUID; 4 - NV_ENC_PRESET_HP_GUID; 0 - NV_ENC_PRESET_DEFAULT_GUID",
-    "nvEncodeProfile": 1,
+    "nvEncodeProfile": 2,
     "nvEncodeProfile_comment": "nvEncodeProfile enums: 1 - NV_ENC_H264_PROFILE_MAIN_GUID; 2 - NV_ENC_H264_PROFILE_BASELINE_GUID; 3 - NV_ENC_H264_PROFILE_HIGH_GUID; 4 - NV_ENC_H264_PROFILE_STEREO_GUID; 0 - NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID",
-    "nvEncodeLevel": 5,
+    "nvEncodeLevel": 42,
     "nvEncodeLevel_comment": "nvEncodeLevel enums: 3, 31, 32, 4, 41, 42, 5, 51, 52"
   }
 }
