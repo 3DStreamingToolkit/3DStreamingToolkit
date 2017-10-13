@@ -30,15 +30,16 @@
 #include "webrtc/system_wrappers/include/clock.h"
 #include "ppltasks.h"
 
-#include "video_helper.h"
+#include "buffer_renderer.h"
 #include "libyuv/convert.h"
 
 using namespace Concurrency;
 using namespace webrtc;
 
-namespace Toolkit3DLibrary
+namespace StreamingToolkit
 {
-	class SinkWantsObserver {
+	class SinkWantsObserver 
+	{
 	public:
 		// OnSinkWantsChanged is called when FrameGeneratorCapturer::AddOrUpdateSink
 		// is called.
@@ -53,9 +54,9 @@ namespace Toolkit3DLibrary
 	class CustomVideoCapturer : public cricket::VideoCapturer
 	{
 	public:
-		explicit CustomVideoCapturer(webrtc::Clock* clock,
-			Toolkit3DLibrary::VideoHelper* video_helper,
-			void(*frame_update_func)(),
+		explicit CustomVideoCapturer(
+			webrtc::Clock* clock,
+			StreamingToolkit::BufferRenderer* buffer_renderer,
 			int target_fps);
 
 		CustomVideoCapturer();
@@ -124,6 +125,7 @@ namespace Toolkit3DLibrary
 
 		void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
 			const rtc::VideoSinkWants& wants) override;
+
 		void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
 
 		void ForceFrame();
@@ -149,11 +151,10 @@ namespace Toolkit3DLibrary
 		rtc::VideoSinkInterface<VideoFrame>* sink_ GUARDED_BY(&lock_);
 		SinkWantsObserver* sink_wants_observer_ GUARDED_BY(&lock_);
 		rtc::CriticalSection lock_;
-
-		void(*frame_update_func_)();
-		Toolkit3DLibrary::VideoHelper* video_helper_;
+		StreamingToolkit::BufferRenderer* buffer_renderer_;
 
 		int64_t first_frame_capture_time_;
+
 		// Must be the last field, so it will be deconstructed first as tasks
 		// in the TaskQueue access other fields of the instance of this class.
 		rtc::TaskQueue task_queue_;
@@ -170,18 +171,17 @@ namespace Toolkit3DLibrary
 		{
 			// XXX: WebRTC uses device name to instantiate the capture, which is always 0.
 			return std::unique_ptr<cricket::VideoCapturer>(
-				new CustomVideoCapturer(nullptr, nullptr, nullptr, 0));
+				new CustomVideoCapturer(nullptr, nullptr, 0));
 		}
 
 		virtual std::unique_ptr<cricket::VideoCapturer> Create(
 			webrtc::Clock* clock,
 			const cricket::Device& device,
-			void(*frame_update_func)(),
-			Toolkit3DLibrary::VideoHelper* video_helper)
+			StreamingToolkit::BufferRenderer* buffer_renderer)
 		{
 			// XXX: WebRTC uses device name to instantiate the capture, which is always 0.
 			return std::unique_ptr<cricket::VideoCapturer>(
-				new CustomVideoCapturer(clock, video_helper, frame_update_func, 0));
+				new CustomVideoCapturer(clock, buffer_renderer, 0));
 		}
 	};
 }

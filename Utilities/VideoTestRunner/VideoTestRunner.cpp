@@ -9,9 +9,9 @@
 #include "VideoTestRunner.h"
 #include <string>
 
-using namespace Toolkit3DLibrary;
+using namespace StreamingToolkit;
 
-// Constructor for VideoHelper.
+// Constructor for VideoTestRunner.
 VideoTestRunner::VideoTestRunner(ID3D11Device* device, ID3D11DeviceContext* context) :
 	m_d3dDevice(device),
 	m_d3dContext(context),
@@ -160,7 +160,11 @@ void VideoTestRunner::GetDefaultEncodeConfig()
 
 	//Unused by nvEncode.
 	m_encodeConfig.startFrameIdx = 0;
+#ifdef _DEBUG
 	m_encodeConfig.endFrameIdx = 300;
+#else // _DEBUG
+	m_encodeConfig.endFrameIdx = 1000;
+#endif // _DEBUG
 
 	//DeviceType 1 = Force CUDA.
 	m_encodeConfig.deviceType = 0;

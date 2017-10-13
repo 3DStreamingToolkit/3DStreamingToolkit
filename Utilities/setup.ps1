@@ -1,5 +1,7 @@
 Push-Location -Path .
 $err = $null
+$libCount = 0
+$libTotal = 3
 
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\WebRTC")
 
@@ -13,6 +15,8 @@ if ($err) {
     Write-Host ('Error retrieving WebRTC libraries: ' + $err.Message) -ForegroundColor Red
 }
 
+$libCount++
+Write-Host 'Finished Library '$libCount'/'$libTotal
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\DirectXTK")
 
 try {
@@ -25,6 +29,8 @@ if ($err) {
     Write-Host ('Error retrieving DirectXTK libraries for native client: ' + $err.Message) -ForegroundColor Red
 }
 
+$libCount++
+Write-Host 'Finished Library '$libCount'/'$libTotal
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\WebRTCUWP")
 
 try {
@@ -36,6 +42,9 @@ try {
 if ($err) {
     Write-Host ('Error retrieving WebRTC-UWP & LibYUV libraries for directx hololens client: ' + $err.Message) -ForegroundColor Red
 }
+
+$libCount++
+Write-Host 'Finished Library '$libCount'/'$libTotal
 
 if ($err -eq $null) {
     Write-Host 'Libraries retrieved and up to date' -ForegroundColor Green

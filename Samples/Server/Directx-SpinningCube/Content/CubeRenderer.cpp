@@ -1,10 +1,17 @@
 #include "pch.h"
 #include "CubeRenderer.h"
 #include "DirectXHelper.h"
+#ifndef TEST_RUNNER
+#include "config_parser.h"
+#endif // TEST_RUNNER
 
 using namespace DirectX;
 using namespace DX;
-using namespace Toolkit3DSample;
+using namespace StreamingToolkitSample;
+
+#ifndef TEST_RUNNER
+using namespace StreamingToolkit;
+#endif // TEST_RUNNER
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
 static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
@@ -97,7 +104,14 @@ void CubeRenderer::InitPipeline()
 {
 	// Creates the vertex shader.
 	FILE* vertexShaderFile = nullptr;
+#ifndef TEST_RUNNER
+	errno_t error = fopen_s(
+		&vertexShaderFile,
+		ConfigParser::GetAbsolutePath("VertexShader.cso").c_str(),
+		"rb");
+#else // TEST_RUNNER
 	errno_t error = fopen_s(&vertexShaderFile, "VertexShader.cso", "rb");
+#endif // TEST_RUNNER
 	fseek(vertexShaderFile, 0, SEEK_END);
 	int vertexShaderFileSize = ftell(vertexShaderFile);
 	char* vertexShaderFileData = new char[vertexShaderFileSize];
@@ -130,7 +144,15 @@ void CubeRenderer::InitPipeline()
 
 	// Creates the pixel shader.
 	FILE* pixelShaderFile = nullptr;
+#ifndef TEST_RUNNER
+	error = fopen_s(
+		&pixelShaderFile,
+		ConfigParser::GetAbsolutePath("PixelShader.cso").c_str(),
+		"rb");
+#else // TEST_RUNNER
 	error = fopen_s(&pixelShaderFile, "PixelShader.cso", "rb");
+#endif // TEST_RUNNER
+
 	fseek(pixelShaderFile, 0, SEEK_END);
 	int pixelShaderFileSize = ftell(pixelShaderFile);
 	char* pixelShaderFileData = new char[pixelShaderFileSize];
@@ -274,17 +296,17 @@ void CubeRenderer::Update()
 		m_modelConstantBuffer, 0, NULL, &m_modelConstantBufferData, 0, 0, 0);
 }
 
-void CubeRenderer::Render()
+void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
 {
 	// Gets the device context.
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
 	// Sets the render target.
-	ID3D11RenderTargetView *const targets[1] = { m_deviceResources->GetBackBufferRenderTargetView() };
+	ID3D11RenderTargetView *const targets[1] = { renderTargetView };
 	context->OMSetRenderTargets(1, targets, nullptr);
 
 	// Clear the back buffer.
-	context->ClearRenderTargetView(m_deviceResources->GetBackBufferRenderTargetView(), Colors::Black);
+	context->ClearRenderTargetView(renderTargetView, Colors::Black);
 
 	// Sets the vertex buffer and index buffer.
 	UINT stride = sizeof(VertexPositionColor);
@@ -331,6 +353,11 @@ void CubeRenderer::Render()
 		context->RSSetViewports(1, viewports);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
+}
+
+void CubeRenderer::Render()
+{
+	Render(m_deviceResources->GetBackBufferRenderTargetView());
 }
 
 void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)

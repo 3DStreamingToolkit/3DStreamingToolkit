@@ -7,12 +7,21 @@
     <ClCompile Include="src\ssl_capable_socket.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\turn_credential_provider.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\peer_connection_client.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\ssl_capable_socket.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\authentication_provider.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\turn_credential_provider.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

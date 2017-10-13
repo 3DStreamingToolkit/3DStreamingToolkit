@@ -221,12 +221,15 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common\DeviceResources.h" />
+    <ClInclude Include="Common\DirectXHelper.h" />
+    <ClInclude Include="Content\CubeRenderer.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="server_renderer.h" />
     <ClInclude Include="test_runner.h" />
     <ClInclude Include="webrtc.h" />
   </ItemGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

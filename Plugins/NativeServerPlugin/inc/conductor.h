@@ -17,22 +17,13 @@
 #include <set>
 #include <string>
 
-#include "video_helper.h"
+#include "buffer_renderer.h"
 #include "peer_connection_client.h"
-#include "default_data_channel_observer.h"
+#include "input_data_channel_observer.h"
 #include "main_window.h"
+#include "config_parser.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-
-namespace webrtc
-{
-	class VideoCaptureModule;
-}
-
-namespace cricket
-{
-	class VideoRenderer;
-}
 
 class Conductor : public webrtc::PeerConnectionObserver,
 	public webrtc::CreateSessionDescriptionObserver,
@@ -49,11 +40,22 @@ public:
 		STREAM_REMOVED,
 	};
 
-	Conductor(PeerConnectionClient* client, MainWindow* main_window,
-		void (*frame_update_func)(), void (*input_update_func)(const std::string&), 
-		Toolkit3DLibrary::VideoHelper* video_helper);
+	Conductor(
+		PeerConnectionClient* client,
+		MainWindow* main_window,
+		StreamingToolkit::WebRTCConfig* webrtc_config,
+		StreamingToolkit::BufferRenderer* buffer_renderer);
 
 	bool connection_active() const;
+
+	void SetTurnCredentials(const std::string& username, const std::string& password);
+
+	void SetInputDataHandler(StreamingToolkit::InputDataHandler* handler);
+
+	//-------------------------------------------------------------------------
+	// MainWindowCallback implementation.
+	//-------------------------------------------------------------------------
+	void StartLogin(const std::string& server, int port) override;
 
 	virtual void Close();
 
@@ -73,7 +75,6 @@ protected:
 	void AddStreams();
 
 	std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
-	std::unique_ptr<cricket::VideoCapturer> OpenFakeVideoCaptureDevice();
 
 	//-------------------------------------------------------------------------
 	// PeerConnectionObserver implementation.
@@ -122,10 +123,8 @@ protected:
 	void OnServerConnectionFailure() override;
 
 	//-------------------------------------------------------------------------
-	// MainWndCallback implementation.
+	// MainWindowCallback implementation.
 	//-------------------------------------------------------------------------
-
-	void StartLogin(const std::string& server, int port) override;
 
 	void DisconnectFromServer() override;
 
@@ -144,24 +143,31 @@ protected:
 	// Send a message to the remote peer.
 	void SendMessage(const std::string& json_object);
 
+private:
+	void SendMessageToPeer(std::string* msg);
+
+	void NewStreamAdded(webrtc::MediaStreamInterface* stream);
+
+	void StreamRemoved(webrtc::MediaStreamInterface* stream);
+
 	int peer_id_;
 	bool loopback_;
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-		peer_connection_factory_;
+	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
 	PeerConnectionClient* client_;
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
-	std::unique_ptr<DefaultDataChannelObserver> data_channel_observer_;
+	std::unique_ptr<StreamingToolkit::InputDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;
-	void (*frame_update_func_)();
-	void (*input_update_func_)(const std::string&);
-	Toolkit3DLibrary::VideoHelper* video_helper_;
+	StreamingToolkit::WebRTCConfig* webrtc_config_;
+	StreamingToolkit::InputDataHandler* input_data_handler_;
+	StreamingToolkit::BufferRenderer* buffer_renderer_;
 	std::deque<std::string*> pending_messages_;
-	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
-		active_streams_;
+	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> active_streams_;
 
 	std::string server_;
+	std::string turn_username_;
+	std::string turn_password_;
 };
 
 #endif // WEBRTC_CONDUCTOR_H_
