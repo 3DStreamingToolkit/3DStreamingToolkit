@@ -5,22 +5,16 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.facebook.stetho.okhttp3.StethoInterceptor;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import okhttp3.Interceptor;
-
-import static microsoft.a3dtoolkitandroid.ServerListActivity.ERROR;
-import static microsoft.a3dtoolkitandroid.ServerListActivity.LOG;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.ERROR;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.LOG;
 
 /**
  * Created by arrahm on 10/9/2017.

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="microsoft.a3dtoolkitandroid.ConnectActivity">
+    tools:context="microsoft.a3dtoolkitandroid.SignInActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -51,7 +51,7 @@
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="connect"
+        android:onClick="signIn"
         android:text="@string/connect"
         android:layout_below="@id/nameLayout"
         android:layout_centerInParent="true"/>

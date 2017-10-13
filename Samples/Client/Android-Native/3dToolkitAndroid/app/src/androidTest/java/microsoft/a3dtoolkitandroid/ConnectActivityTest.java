@@ -6,9 +6,9 @@ import android.support.test.runner.AndroidJUnit4;
 
 
 import com.android.volley.*;
-import com.google.gson.JsonObject;
 
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,22 +22,19 @@ import java.util.HashMap;
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
 import microsoft.a3dtoolkitandroid.util.HttpRequestQueue;
 
-import static android.support.test.espresso.Espresso.*;
-import static android.support.test.espresso.action.ViewActions.*;
-import static android.support.test.espresso.matcher.ViewMatchers.*;
-import static microsoft.a3dtoolkitandroid.ServerListActivity.DTLS;
-import static microsoft.a3dtoolkitandroid.ServerListActivity.OfferToReceiveAudio;
-import static microsoft.a3dtoolkitandroid.ServerListActivity.OfferToReceiveVideo;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.DTLS;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.OfferToReceiveAudio;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.OfferToReceiveVideo;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import static util.SharedTestStrings.*;
 
 @RunWith(AndroidJUnit4.class)
-public class ConnectActivityTest extends ActivityTestRule<ServerListActivity> {
-    private ServerListActivity activity;
+public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
+    private ConnectActivity activity;
     public ConnectActivityTest() {
-        super(ServerListActivity.class);
+        super(ConnectActivity.class);
     }
 
     @Before
@@ -46,18 +43,34 @@ public class ConnectActivityTest extends ActivityTestRule<ServerListActivity> {
         doNothing().when(mockRequestQueue).addToQueue(any(Request.class), anyString());
         HttpRequestQueue.setInstance(mockRequestQueue);
         Intent intent = new Intent();
-        intent.putExtra(ConnectActivity.SERVER_LIST, mockServerListString);
-        intent.putExtra(ConnectActivity.SERVER_SERVER, mockServer);
+        intent.putExtra(SignInActivity.SERVER_LIST, mockServerListString);
+        intent.putExtra(SignInActivity.SERVER_SERVER, mockServer);
         launchActivity(intent);
         activity = getActivity();
-        activity.onServerClicked(99);
+        activity.peer_id = 99;
+//        activity.createPeerConnection();
+        activity.peerConnection = mock(PeerConnection.class);
+    }
+
+    @After
+    public void tearDown(){
+        activity.disconnect();
+        activity = null;
     }
 
     @Test
     public void testStartUpActivity() throws Exception{
+        assertNotNull(activity.peerConnectionObserver);
         assertTrue(activity.activityRunning);
         assertEquals(mockServer, activity.server);
         assertEquals(mockServerListString, activity.stringList);
+    }
+
+    @Test
+    public void testJoinPeer() throws Exception{
+        assertTrue(activity.isInitiator);
+        assertNotNull(activity.inputChannel);
+        assertEquals(mockServer, activity.server);
     }
 
     @Test

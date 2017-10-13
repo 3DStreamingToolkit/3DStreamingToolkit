@@ -17,7 +17,7 @@ import org.webrtc.VideoTrack;
 import microsoft.a3dtoolkitandroid.util.renderer.EglBase;
 import microsoft.a3dtoolkitandroid.util.renderer.SurfaceViewRenderer;
 
-import static microsoft.a3dtoolkitandroid.ServerListActivity.ERROR;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.ERROR;
 
 
 /**

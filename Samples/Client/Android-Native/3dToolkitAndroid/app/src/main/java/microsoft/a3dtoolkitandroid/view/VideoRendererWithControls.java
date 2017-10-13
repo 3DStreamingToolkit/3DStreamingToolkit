@@ -16,7 +16,7 @@ import Jama.Matrix;
 import microsoft.a3dtoolkitandroid.util.MatrixMath;
 import microsoft.a3dtoolkitandroid.util.renderer.SurfaceViewRenderer;
 
-import static microsoft.a3dtoolkitandroid.ServerListActivity.LOG;
+import static microsoft.a3dtoolkitandroid.ConnectActivity.LOG;
 
 /**
  * Created by arrahm on 10/9/2017.

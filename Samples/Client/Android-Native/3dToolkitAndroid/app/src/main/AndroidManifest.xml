@@ -14,7 +14,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ConnectActivity">
+        <activity android:name=".SignInActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -22,14 +22,14 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ServerListActivity"
+            android:name=".ConnectActivity"
             android:label="@string/title_activity_serverList"
             android:screenOrientation="fullUser"
             android:configChanges="orientation|smallestScreenSize|screenSize|screenLayout"
             >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".ConnectActivity" />
+                android:value=".SignInActivity" />
         </activity>
     </application>
 
