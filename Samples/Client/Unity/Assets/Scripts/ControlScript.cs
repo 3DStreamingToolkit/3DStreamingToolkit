@@ -229,7 +229,7 @@ public class ControlScript : MonoBehaviour
            "}";
 
         _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
-
+        
         if (!enabledStereo && _peerVideoTrack != null)
         {
             // Enables the stereo output mode.
@@ -238,7 +238,7 @@ public class ControlScript : MonoBehaviour
             "  \"body\":\"1\"" +
             "}";
 
-            if(_webRtcControl.SendPeerDataChannelMessage(msg))
+            if (_webRtcControl.SendPeerDataChannelMessage(msg))
             {
                 // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
                 var source = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, FrameRate, "media");
@@ -249,6 +249,19 @@ public class ControlScript : MonoBehaviour
         }
 #endif
     }
+
+#if !UNITY_EDITOR
+    private IEnumerator DelayStereoMessage()
+    {
+        yield return new WaitForSeconds(3);
+        var msg = "{" +
+            "  \"type\":\"stereo-rendering\"," +
+            "  \"body\":\"1\"" +
+            "}";
+
+        _webRtcControl.SendPeerDataChannelMessage(msg);
+    }
+#endif
 
     private void GetPlaybackTextureFromPlugin()
     {

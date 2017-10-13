@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using Org.WebRtc;
@@ -57,15 +57,16 @@ namespace WebRtcWrapper
             Microphones = new ObservableCollection<MediaDevice>();
             AudioPlayoutDevices = new ObservableCollection<MediaDevice>();
 
-            foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
-            {
-                Microphones.Add(audioCaptureDevice);
-            }
+            // WebRTCUWP M58 library does not support audio capture/playout devices
+            //foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
+            //{
+            //    Microphones.Add(audioCaptureDevice);
+            //}
 
-            foreach (MediaDevice audioPlayoutDevice in Conductor.Instance.Media.GetAudioPlayoutDevices())
-            {
-                AudioPlayoutDevices.Add(audioPlayoutDevice);
-            }
+            //foreach (MediaDevice audioPlayoutDevice in Conductor.Instance.Media.GetAudioPlayoutDevices())
+            //{
+            //    AudioPlayoutDevices.Add(audioPlayoutDevice);
+            //}
 
             // HACK Remove Automatic Device Assignment
             if (SelectedCamera == null && Cameras.Count > 0)
@@ -158,6 +159,10 @@ namespace WebRtcWrapper
                 {
                     SelectedPeer = Peers.First(x => x.Id == id);
                     OnStatusMessageUpdate?.Invoke(string.Format("Connected Peer: {0}-{1}", SelectedPeer.Id, SelectedPeer.Name));
+					
+					// Automatically connect to the first available server
+                    // var peer = new Peer { Id = id, Name = name };
+                    // Conductor.Instance.ConnectToPeer(peer);
                 });
             };
 
@@ -535,12 +540,13 @@ namespace WebRtcWrapper
                 case MediaDeviceType.MediaDeviceType_VideoCapture:
                     RefreshVideoCaptureDevices(Conductor.Instance.Media.GetVideoCaptureDevices());
                     break;
-                case MediaDeviceType.MediaDeviceType_AudioCapture:
-                    RefreshAudioCaptureDevices(Conductor.Instance.Media.GetAudioCaptureDevices());
-                    break;
-                case MediaDeviceType.MediaDeviceType_AudioPlayout:
-                    RefreshAudioPlayoutDevices(Conductor.Instance.Media.GetAudioPlayoutDevices());
-                    break;
+                // WebRTCUWP M58 library does not support audio capture/playout devices
+                //case MediaDeviceType.MediaDeviceType_AudioCapture:
+                //    RefreshAudioCaptureDevices(Conductor.Instance.Media.GetAudioCaptureDevices());
+                //    break;
+                //case MediaDeviceType.MediaDeviceType_AudioPlayout:
+                //    RefreshAudioPlayoutDevices(Conductor.Instance.Media.GetAudioPlayoutDevices());
+                //    break;
             }
         }
 
@@ -1265,7 +1271,8 @@ namespace WebRtcWrapper
                     _selectedMicrophone = value;
                     if (value != null)
                     {
-                        Conductor.Instance.Media.SelectAudioCaptureDevice(_selectedMicrophone);
+                        // WebRTCUWP M58 library does not support audio capture/playout devices
+                        // Conductor.Instance.Media.SelectAudioCaptureDevice(_selectedMicrophone);
                     }
                 }
             }
@@ -1282,7 +1289,8 @@ namespace WebRtcWrapper
                     _selectedAudioPlayoutDevice = value;
                     if (value != null)
                     {
-                        Conductor.Instance.Media.SelectAudioPlayoutDevice(_selectedAudioPlayoutDevice);
+                        // WebRTCUWP M58 library does not support audio capture/playout devices
+                        // Conductor.Instance.Media.SelectAudioPlayoutDevice(_selectedAudioPlayoutDevice);
                     }
                 }
             }
