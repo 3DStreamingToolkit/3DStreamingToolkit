@@ -352,22 +352,20 @@ class VideoStreamViewController: UIViewController {
         self.accelerometerButton.addTarget(self, action: #selector(self.handleAccelerometerButton), for: .touchUpInside)
         DispatchQueue.main.async {
             self.renderView.addSubview(self.accelerometerButton)
-        }
-        let views: [String: Any] = ["button": self.accelerometerButton]
-        let horizontalConstraint = NSLayoutConstraint.constraints(
-            withVisualFormat: "H:|[button]|",
-            options: [],
-            metrics: nil,
-            views: views)
-        let verticalConstraint = NSLayoutConstraint.constraints(
-            withVisualFormat: "V:[button(50)]|",
-            options: [],
-            metrics: nil,
-            views: views)
-        var allConstraints = [NSLayoutConstraint]()
-        allConstraints += horizontalConstraint
-        allConstraints += verticalConstraint
-        DispatchQueue.main.async {
+            let views: [String: Any] = ["button": self.accelerometerButton]
+            let horizontalConstraint = NSLayoutConstraint.constraints(
+                withVisualFormat: "H:|[button]|",
+                options: [],
+                metrics: nil,
+                views: views)
+            let verticalConstraint = NSLayoutConstraint.constraints(
+                withVisualFormat: "V:[button(50)]|",
+                options: [],
+                metrics: nil,
+                views: views)
+            var allConstraints = [NSLayoutConstraint]()
+            allConstraints += horizontalConstraint
+            allConstraints += verticalConstraint
             NSLayoutConstraint.activate(allConstraints)
         }
     }
@@ -605,20 +603,20 @@ class VideoStreamViewController: UIViewController {
                     self.heartBeatTimerIsRunning = false
                     self.heartBeatTimer.invalidate()
                 }
-                if self.renderView != nil && self.videoStream != nil && self.remoteVideoTrack != nil {
-                    DispatchQueue.main.async {
+                DispatchQueue.main.async {
+                    if self.accelerometerButton != nil {
+                        self.accelerometerButton.removeConstraints(self.accelerometerButton.constraints)
+                        self.accelerometerButton.removeFromSuperview()
+                        self.accelerometerButton = nil
+                        self.isAccelerometerEnabled = false
+                    }
+                    if self.renderView != nil && self.videoStream != nil && self.remoteVideoTrack != nil {
                         self.videoStream.removeVideoTrack(self.remoteVideoTrack)
                         self.remoteVideoTrack.remove(self.renderView)
                         self.remoteVideoTrack = nil
                         self.renderView.renderFrame(nil)
                         self.videoStream = nil
                     }
-                }
-                if self.accelerometerButton != nil {
-                    DispatchQueue.main.async {
-                        self.accelerometerButton.removeFromSuperview()
-                    }
-                    self.accelerometerButton = nil
                 }
                 if self.fingerGestureRecognizer != nil {
                     self.fingerGestureRecognizer.minimumNumberOfTouches = 1
