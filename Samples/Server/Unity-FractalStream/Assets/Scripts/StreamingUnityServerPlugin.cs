@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -58,6 +60,13 @@ namespace Microsoft.Toolkit.ThreeD
         private static extern void Close();
 #endif
 
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+        [DllImport ("__Internal")]
+#else
+        [DllImport(PluginName)]
+        private static extern void SetResolution(int width, int height);
+#endif
+
         #endregion
 
         /// <summary>
@@ -85,9 +94,13 @@ namespace Microsoft.Toolkit.ThreeD
         /// <summary>
         /// Default ctor
         /// </summary>
-        /// <param name="camera">the camera to hook on</param>
-        public StreamingUnityServerPlugin(Camera camera)
+        public StreamingUnityServerPlugin()
         {
+            // set up the command buffer
+            EncodeAndTransmitCommand = new CommandBuffer();
+            EncodeAndTransmitCommand.name = PluginName + " Encoding";
+            EncodeAndTransmitCommand.IssuePluginEvent(GetRenderEventFunc(), 0);
+
             // we need to set up the scoped delegates
             this.managedInputDelegate = new InputHandlerDelegate(OnInput);
             this.managedLogDelegate = new LogHandlerDelegate(OnLog);
@@ -96,13 +109,36 @@ namespace Microsoft.Toolkit.ThreeD
             SetInputDataCallback(Marshal.GetFunctionPointerForDelegate(this.managedInputDelegate));
             SetLogCallback(Marshal.GetFunctionPointerForDelegate(this.managedLogDelegate));
 
-            // configure a command to issue an event to the render event function
-            CommandBuffer cmb = new CommandBuffer();
-            cmb.name = PluginName + " Encoding";
-            cmb.IssuePluginEvent(GetRenderEventFunc(), 0);
+            // TODO(bengreenier): do we want this optimization? see native
+            //SetResolution(Screen.width, Screen.height);
+        }
 
-            // add the command to the camera so it's issued after all camera rendering occurs
-            Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, cmb);
+        /// <summary>
+        /// The <see cref="CommandBuffer"/> needed to encode and transmit frame data
+        /// </summary>
+        /// <remarks>
+        /// This is consumed by <see cref="EncodeAndTransmitFrame"/> to encode the entire rendertexture
+        /// and can also be added to a camera command buffer to encode just that cameras view
+        /// </remarks>
+        /// <example>
+        /// var plugin = new StreamingUnityServerPlugin();
+        /// Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, plugin.EncodeAndTransmitCommand);
+        /// </example>
+        public CommandBuffer EncodeAndTransmitCommand
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// <see cref="Coroutine"/> that encodes and transmits the current frame in it's entirety
+        /// </summary>
+        /// <returns>iterator for coroutine</returns>
+        public IEnumerator EncodeAndTransmitFrame()
+        {
+            yield return new WaitForEndOfFrame();
+
+            Graphics.ExecuteCommandBuffer(EncodeAndTransmitCommand);
         }
 
         /// <summary>

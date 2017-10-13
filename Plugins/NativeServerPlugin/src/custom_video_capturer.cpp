@@ -188,6 +188,8 @@ namespace StreamingToolkit
 			else
 			{
 				texture = buffer_renderer_->Capture();
+				D3D11_TEXTURE2D_DESC desc;
+				texture->GetDesc(&desc);
 				if (!texture)
 				{
 					return;

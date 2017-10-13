@@ -64,27 +64,27 @@ using namespace StreamingToolkit;
 void(__stdcall*s_onInputUpdate)(const char *msg);
 void(__stdcall*s_onLog)(const int level, const char *msg);
 
-#ifdef DEBUG
-static struct FsLogStream : rtc::LogSink
-{
-	FsLogStream() : m_nativeLog("StreamingUnityServerPlugin.log", std::ios_base::app)
-	{
-		rtc::LogMessage::AddLogToStream(this, rtc::LoggingSeverity::LS_VERBOSE);
-	}
-
-	~FsLogStream()
-	{
-		rtc::LogMessage::RemoveLogToStream(this);
-	}
-
-	std::ofstream m_nativeLog;
-	
-	virtual void OnLogMessage(const std::string& message) override
-	{
-		m_nativeLog << message;
-	}
-} s_fsLogger;
-#endif
+//#ifdef DEBUG
+//static struct FsLogStream : rtc::LogSink
+//{
+//	FsLogStream() : m_nativeLog("StreamingUnityServerPlugin.log", std::ios_base::app)
+//	{
+//		rtc::LogMessage::AddLogToStream(this, rtc::LoggingSeverity::LS_VERBOSE);
+//	}
+//
+//	~FsLogStream()
+//	{
+//		rtc::LogMessage::RemoveLogToStream(this);
+//	}
+//
+//	std::ofstream m_nativeLog;
+//	
+//	virtual void OnLogMessage(const std::string& message) override
+//	{
+//		m_nativeLog << message;
+//	}
+//} s_fsLogger;
+//#endif
 
 #define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
 
@@ -292,10 +292,14 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 			ID3D11DepthStencilView* depthStencilView(nullptr);
 
 			s_Context->OMGetRenderTargets(1, &rtv, &depthStencilView);
-
+			
 			if (rtv)
 			{
 				rtv->GetResource(reinterpret_cast<ID3D11Resource**>(&s_frameBuffer));
+				
+				D3D11_RENDER_TARGET_VIEW_DESC rtvDesc;
+				rtv->GetDesc(&rtvDesc);
+
 				rtv->Release();
 
 				// Render loop.
@@ -305,8 +309,9 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				});
 
 				// Initializes the buffer renderer.
+				// TODO(bengreenier): we can optimize this sizing by reporting it to native-land from unity
 				s_bufferRenderer = new BufferRenderer(
-					1280,
+					1280 * 2,
 					720,
 					s_Device.Get(),
 					frameRenderFunc,
