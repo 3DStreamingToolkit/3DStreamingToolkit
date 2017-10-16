@@ -11,6 +11,7 @@
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\Authentication\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\UserInterface\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\ConfigParser\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)\StreamingNativeServerPlugin.vcxproj" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Lib)!=true" >
       <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
