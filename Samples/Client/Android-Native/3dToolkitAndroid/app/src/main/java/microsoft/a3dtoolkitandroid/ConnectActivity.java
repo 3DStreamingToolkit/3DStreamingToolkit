@@ -154,27 +154,30 @@ public class ConnectActivity extends AppCompatActivity implements
      * Sets up peer connection constraints and sdp constraints for connection
      */
     private void createMediaConstraints() {
-        //Android flags for video UI
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        runOnUiThread(() -> {
+                    //Android flags for video UI
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                            | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+                    getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
-        //create video renderer and initialize it
-        remoteVideoRenderer = findViewById(R.id.remote_video_view);
-        remoteVideoRenderer.init(rootEglBase.getEglBaseContext(), null);
-        remoteVideoRenderer.setEventListener(new VideoRendererWithControls.OnMotionEventListener(){
-            /**
-             * Sends gesture control buffer from {@link VideoRendererWithControls}
-             * @param buffer: DataChannel buffer to send to server
-             */
-            @Override
-            public void sendTransform(DataChannel.Buffer buffer) {
-                if (inputChannel != null) {
-                    inputChannel.send(buffer);
-                }
-            }
-        });
+                    //create video renderer and initialize it
+                    remoteVideoRenderer = findViewById(R.id.remote_video_view);
+                    remoteVideoRenderer.init(rootEglBase.getEglBaseContext(), null);
+                    remoteVideoRenderer.setEventListener(new VideoRendererWithControls.OnMotionEventListener() {
+                        /**
+                         * Sends gesture control buffer from {@link VideoRendererWithControls}
+                         *
+                         * @param buffer: DataChannel buffer to send to server
+                         */
+                        @Override
+                        public void sendTransform(DataChannel.Buffer buffer) {
+                            if (inputChannel != null) {
+                                inputChannel.send(buffer);
+                            }
+                        }
+                    });
+                });
 
         // Create peer connection constraints.
         peerConnectionConstraints = new MediaConstraints();
@@ -192,7 +195,6 @@ public class ConnectActivity extends AppCompatActivity implements
      * Joins server selected from list of peers
      */
     public void joinPeer() {
-        isInitiator = true;
         createPeerConnection();
         inputChannel = peerConnection.createDataChannel("inputDataChannel", new DataChannel.Init());
         inputChannel.registerObserver(new DataChannel.Observer() {
@@ -211,22 +213,24 @@ public class ConnectActivity extends AppCompatActivity implements
 
             }
         });
-        peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
+        createOffer();
     }
 
     /**
      * Creates a peer connection using the ICE server and media constraints specified
      */
     public void createPeerConnection() {
+        // show the video renderer and set the screen to landscape
+        runOnUiThread(() -> {
+            remoteVideoRenderer.setVisibility(View.VISIBLE);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        });
 
-        //Initialize PeerConnectionFactory globals.
-        //Params are context, initAudio, initVideo and videoCodecHwAcceleration
-        PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
-        peerConnectionFactory = new PeerConnectionFactory();
-
-        if (peerConnectionFactory == null) {
-            logAndToast(this, "Peerconnection factory is not created");
-            return;
+        if (peerConnectionFactory == null){
+            //Initialize PeerConnectionFactory globals.
+            //Params are context, initAudio, initVideo and videoCodecHwAcceleration
+            PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
+            peerConnectionFactory = new PeerConnectionFactory(null);
         }
 
         // add initial ICE Server from Config File
@@ -237,12 +241,14 @@ public class ConnectActivity extends AppCompatActivity implements
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServerList);
         rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
 
-        peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
+        if (peerConnection == null){
+            peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
+        }
 
-//        // Set default WebRTC tracing and INFO libjingle logging.
-//        // NOTE: this _must_ happen while |factory| is alive!
-//        Logging.enableTracing("logcat:", EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT));
-//        Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO);
+        // Set default WebRTC tracing and INFO libjingle logging.
+        // NOTE: this _must_ happen while |factory| is alive!
+        Logging.enableTracing("logcat:", EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT));
+        Logging.enableLogToDebugOutput(Logging.Severity.LS_INFO);
 
     }
 
@@ -285,19 +291,12 @@ public class ConnectActivity extends AppCompatActivity implements
     private void handlePeerMessage(JSONObject data) throws JSONException {
         Log.d(LOG, "handlePeerMessage: Message from '" + peer_id + ":" + data);
 
-        // show the video renderer and set the screen to landscape
-        runOnUiThread(() -> {
-            remoteVideoRenderer.setVisibility(View.VISIBLE);
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        });
-
         //first check if the json object has a field "type"
         if (data.has("type")) {
             if (data.getString("type").equals("offer")) {
-                isInitiator = false;
                 createPeerConnection();
                 peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
-                peerConnection.createAnswer(sdpObserver, sdpMediaConstraints);
+                createAnswer();
             } else if (data.getString("type").equals("answer")) {
                 isInitiator = true;
                 peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
@@ -394,13 +393,29 @@ public class ConnectActivity extends AppCompatActivity implements
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                try {
-                    addRequest(server + "/heartbeat?peer_id=" + my_id, Request.Method.GET, ConnectActivity.this, response -> {});
-                } catch (Throwable error) {
-                    logAndToast(ConnectActivity.this, error.toString());
-                }
+                addRequest(server + "/heartbeat?peer_id=" + my_id, Request.Method.GET, ConnectActivity.this, response -> {});
             }
         }, 0, heartbeatIntervalInMs);
+    }
+
+    /**
+     * Create sdp offer
+     */
+    public void createOffer() {
+        if (peerConnection != null) {
+            isInitiator = true;
+            peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
+        }
+    }
+
+    /**
+     * Create sdp answer
+     */
+    public void createAnswer() {
+        if (peerConnection != null ) {
+            isInitiator = false;
+            peerConnection.createAnswer(sdpObserver, sdpMediaConstraints);
+        }
     }
 
 

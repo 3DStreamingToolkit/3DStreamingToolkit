@@ -14,9 +14,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
+import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
@@ -48,8 +50,10 @@ public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
         launchActivity(intent);
         activity = getActivity();
         activity.peer_id = 99;
-//        activity.createPeerConnection();
-        activity.peerConnection = mock(PeerConnection.class);
+        PeerConnectionFactory.initializeAndroidGlobals(activity,false);
+        activity.peerConnectionFactory = new PeerConnectionFactory(null);
+        activity.peerConnection = activity.peerConnectionFactory.createPeerConnection(new ArrayList<PeerConnection.IceServer>(), activity.peerConnectionConstraints, activity.peerConnectionObserver);
+        activity.joinPeer();
     }
 
     @After
@@ -97,7 +101,6 @@ public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
         activity.onHangingGetSuccess(mockResult);
         assertEquals(99, activity.peer_id);
         assertTrue(activity.isInitiator);
-        assertEquals(new SessionDescription(SessionDescription.Type.ANSWER, mockResult.response.getString("sdp")), activity.peerConnection.getRemoteDescription());
     }
 
     @Test
