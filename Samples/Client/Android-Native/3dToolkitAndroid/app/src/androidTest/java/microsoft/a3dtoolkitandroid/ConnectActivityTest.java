@@ -27,6 +27,7 @@ import microsoft.a3dtoolkitandroid.util.HttpRequestQueue;
 import static microsoft.a3dtoolkitandroid.ConnectActivity.DTLS;
 import static microsoft.a3dtoolkitandroid.ConnectActivity.OfferToReceiveAudio;
 import static microsoft.a3dtoolkitandroid.ConnectActivity.OfferToReceiveVideo;
+import static microsoft.a3dtoolkitandroid.util.Config.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -50,9 +51,7 @@ public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
         launchActivity(intent);
         activity = getActivity();
         activity.peer_id = 99;
-        PeerConnectionFactory.initializeAndroidGlobals(activity,false);
-        activity.peerConnectionFactory = new PeerConnectionFactory(null);
-        activity.peerConnection = activity.peerConnectionFactory.createPeerConnection(new ArrayList<PeerConnection.IceServer>(), activity.peerConnectionConstraints, activity.peerConnectionObserver);
+        activity.iceServer = new PeerConnection.IceServer("stun1.l.google.com:19302");
         activity.joinPeer();
     }
 
@@ -104,7 +103,19 @@ public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
     }
 
     @Test
-    public void testHangingGetUpdatePeer() throws Exception{
+    public void testHandleOfferFromHangingGet() throws Exception{
+//        CustomStringRequest.ResponseM mockResult = new CustomStringRequest.ResponseM();
+//        mockResult.headers = new HashMap<>();
+//        mockResult.headers.put("Pragma", "99");
+//        mockResult.response = mockSdpJSON(mockSdpOffer);
+//
+//        activity.onHangingGetSuccess(mockResult);
+//        assertEquals(99, activity.peer_id);
+//        assertFalse(activity.isInitiator);
+    }
+
+    @Test
+    public void testHangingGetHandleServerNotification() throws Exception{
         CustomStringRequest.ResponseM mockResult = new CustomStringRequest.ResponseM();
         mockResult.headers = new HashMap<>();
         mockResult.headers.put("Pragma", String.valueOf(activity.my_id));
@@ -122,6 +133,7 @@ public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
 
     @Test
     public void testHeartBeat() throws Exception{
+        assertTrue(activity.heartbeatRunning);
     }
 
 
@@ -129,8 +141,6 @@ public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {
     public void testServerListFragment() throws Exception{
         assertNotNull(activity.serverListFragment);
         assertEquals(1, activity.my_id);
-//        onView(withId(R.id.ServerList))
-//                .perform(actionOnItemAtPosition(0, click()));
         assertEquals(3, activity.serverListFragment.servers.size());
     }
 

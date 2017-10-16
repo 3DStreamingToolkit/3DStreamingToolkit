@@ -70,6 +70,9 @@ public class ConnectActivity extends AppCompatActivity implements
     public String stringList;
     public boolean isInitiator;
     public boolean activityRunning;
+    public boolean heartbeatRunning = false;
+    List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
+    public PeerConnection.IceServer iceServer = new PeerConnection.IceServer(Config.turnServer, Config.username, Config.credential, Config.tlsCertPolicy);
 
     // WebRTC Variables
     public PeerConnection peerConnection;
@@ -226,24 +229,19 @@ public class ConnectActivity extends AppCompatActivity implements
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         });
 
-        if (peerConnectionFactory == null){
-            //Initialize PeerConnectionFactory globals.
-            //Params are context, initAudio, initVideo and videoCodecHwAcceleration
-            PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
-            peerConnectionFactory = new PeerConnectionFactory(null);
-        }
+        //Initialize PeerConnectionFactory globals.
+        //Params are context, initAudio, initVideo and videoCodecHwAcceleration
+        PeerConnectionFactory.initializeAndroidGlobals(this, false, true, true);
+        peerConnectionFactory = new PeerConnectionFactory(null);
 
         // add initial ICE Server from Config File
-        List<PeerConnection.IceServer> iceServerList = new ArrayList<>();
-        iceServerList.add(new PeerConnection.IceServer(Config.turnServer, Config.username, Config.credential, Config.tlsCertPolicy));
+        iceServerList.add(iceServer);
 
         // TCP candidates are only useful when connecting to a server that supports ICE-TCP.
         PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServerList);
         rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
 
-        if (peerConnection == null){
-            peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
-        }
+        peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, peerConnectionConstraints, peerConnectionObserver);
 
         // Set default WebRTC tracing and INFO libjingle logging.
         // NOTE: this _must_ happen while |factory| is alive!
@@ -298,7 +296,6 @@ public class ConnectActivity extends AppCompatActivity implements
                 peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.OFFER, data.getString("sdp")));
                 createAnswer();
             } else if (data.getString("type").equals("answer")) {
-                isInitiator = true;
                 peerConnection.setRemoteDescription(sdpObserver, new SessionDescription(SessionDescription.Type.ANSWER, data.getString("sdp")));
             }
         } else {
@@ -393,6 +390,7 @@ public class ConnectActivity extends AppCompatActivity implements
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                heartbeatRunning = true;
                 addRequest(server + "/heartbeat?peer_id=" + my_id, Request.Method.GET, ConnectActivity.this, response -> {});
             }
         }, 0, heartbeatIntervalInMs);
