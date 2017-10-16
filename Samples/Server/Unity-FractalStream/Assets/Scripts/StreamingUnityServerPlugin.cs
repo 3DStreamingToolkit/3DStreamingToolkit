@@ -17,79 +17,97 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         private const string PluginName = "StreamingUnityServerPlugin";
 
-        /// <summary>
-        /// A representation of the marshalled function that native code calls when input is received
-        /// </summary>
-        /// <param name="inputData">the input message data</param>
-        public delegate void InputHandlerDelegate(string inputData);
-
-        /// <summary>
-        /// A representation of the marshalled function that native code calls when a debug message is logged
-        /// </summary>
-        /// <param name="logLevel">the severity at which the message occurs</param>
-        /// <param name="logData">the data of the message</param>
-        public delegate void LogHandlerDelegate(int logLevel, string logData);
-
         #region Dll Imports
 
+        private static class Native
+        {
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-        [DllImport ("__Internal")]
+            [DllImport ("__Internal")]
 #else
-        [DllImport(PluginName)]
+            [DllImport(PluginName)]
 #endif
-        private static extern IntPtr GetRenderEventFunc();
+            public static extern IntPtr GetRenderEventFunc();
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-        [DllImport ("__Internal")]
+            [DllImport ("__Internal")]
 #else
-        [DllImport(PluginName)]
-#endif
-        private static extern void SetInputDataCallback(IntPtr cb);
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-        [DllImport ("__Internal")]
-#else
-        [DllImport(PluginName)]
-#endif
-        private static extern void SetLogCallback(IntPtr cb);
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-        [DllImport ("__Internal")]
-#else
-        [DllImport(PluginName)]
-        private static extern void Close();
+            [DllImport(PluginName)]
+            public static extern void Close();
 #endif
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-        [DllImport ("__Internal")]
+            [DllImport ("__Internal")]
 #else
-        [DllImport(PluginName)]
-        private static extern void SetResolution(int width, int height);
+            [DllImport(PluginName)]
+            public static extern void SetResolution(int width, int height);
 #endif
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+            public static extern void ConnectToPeer(int peerId);
+#endif
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+            public static extern void DisconnectFromPeer();
+#endif
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+            public static extern void SetCallbackMap(GenericDelegate<string>.Handler inputFunc,
+            GenericDelegate<int, string>.Handler logFunc,
+            GenericDelegate<int, string>.Handler peerConnectFunc,
+            GenericDelegate<int>.Handler peerDisconnectFunc);
+#endif
+        }
 
         #endregion
-
+        
         /// <summary>
         /// Emitted when input is received
         /// </summary>
-        public event InputHandlerDelegate Input;
+        public event GenericDelegate<string>.Handler Input;
 
         /// <summary>
         /// Emitted when log data is received
         /// </summary>
-        public event LogHandlerDelegate Log;
+        public event GenericDelegate<int, string>.Handler Log;
 
         /// <summary>
-        /// Instance member delegate that represents <see cref="OnInput(string)"/>
-        /// so that the GC won't clean up the delegate until this instance is nuked
+        /// Emitted when a peer connects
         /// </summary>
-        private InputHandlerDelegate managedInputDelegate;
+        public event GenericDelegate<int, string>.Handler PeerConnect;
 
         /// <summary>
-        /// Instance member delegate that represents <see cref="OnLog(int, string)"/>
-        /// so that the GC won't clean up the delegate until this instance is nuked
+        /// Emitted when a peer disconnects
         /// </summary>
-        private LogHandlerDelegate managedLogDelegate;
+        public event GenericDelegate<int>.Handler PeerDisconnect;
+        
+        /// <summary>
+        /// log delegate tied to the lifetime of this instance
+        /// </summary>
+        private GenericDelegate<int, string>.Handler pinnedLogDelegate;
+
+        /// <summary>
+        /// input delegate tied to the lifetime of this instance
+        /// </summary>
+        private GenericDelegate<string>.Handler pinnedInputDelegate;
+
+        /// <summary>
+        /// peer connect delegate tied to the lifetime of this instance
+        /// </summary>
+        private GenericDelegate<int, string>.Handler pinnedPeerConnectDelegate;
+
+        /// <summary>
+        /// peer disconnect delegate tied to the lifetime of this instance
+        /// </summary>
+        private GenericDelegate<int>.Handler pinnedPeerDisconnectDelegate;
 
         /// <summary>
         /// Default ctor
@@ -99,15 +117,18 @@ namespace Microsoft.Toolkit.ThreeD
             // set up the command buffer
             EncodeAndTransmitCommand = new CommandBuffer();
             EncodeAndTransmitCommand.name = PluginName + " Encoding";
-            EncodeAndTransmitCommand.IssuePluginEvent(GetRenderEventFunc(), 0);
+            EncodeAndTransmitCommand.IssuePluginEvent(Native.GetRenderEventFunc(), 0);
 
-            // we need to set up the scoped delegates
-            this.managedInputDelegate = new InputHandlerDelegate(OnInput);
-            this.managedLogDelegate = new LogHandlerDelegate(OnLog);
-
-            // and then we can proxy them across to native land
-            SetInputDataCallback(Marshal.GetFunctionPointerForDelegate(this.managedInputDelegate));
-            SetLogCallback(Marshal.GetFunctionPointerForDelegate(this.managedLogDelegate));
+            this.pinnedInputDelegate = new GenericDelegate<string>.Handler(OnInput);
+            this.pinnedLogDelegate = new GenericDelegate<int, string>.Handler(OnLog);
+            this.pinnedPeerConnectDelegate = new GenericDelegate<int, string>.Handler(OnPeerConnect);
+            this.pinnedPeerDisconnectDelegate = new GenericDelegate<int>.Handler(OnPeerDisconnect);
+            
+            // marshal the callbacks across into native land
+            Native.SetCallbackMap(this.pinnedInputDelegate,
+                this.pinnedLogDelegate,
+                this.pinnedPeerConnectDelegate,
+                this.pinnedPeerDisconnectDelegate);
 
             // TODO(bengreenier): do we want this optimization? see native
             //SetResolution(Screen.width, Screen.height);
@@ -142,6 +163,23 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
+        /// Connect to a peer identified by a given id
+        /// </summary>
+        /// <param name="peerId">the peer id</param>
+        public void ConnectToPeer(int peerId)
+        {
+            Native.ConnectToPeer(peerId);
+        }
+
+        /// <summary>
+        /// Disconnects from the current peer
+        /// </summary>
+        public void DisconnectFromPeer()
+        {
+            Native.DisconnectFromPeer();
+        }
+
+        /// <summary>
         /// Called by NativeCode when input is received
         /// </summary>
         /// <param name="inputData">input data</param>
@@ -166,6 +204,31 @@ namespace Microsoft.Toolkit.ThreeD
             }
         }
 
+        /// <summary>
+        /// Called by NativeCode when a peer is connected
+        /// </summary>
+        /// <param name="peerId">the peer id</param>
+        /// <param name="peerName">the peer name</param>
+        void OnPeerConnect(int peerId, string peerName)
+        {
+            if (this.PeerConnect != null)
+            {
+                this.PeerConnect(peerId, peerName);
+            }
+        }
+
+        /// <summary>
+        /// Called by NativeCode when a peer is disconnected
+        /// </summary>
+        /// <param name="peerId">the peer id</param>
+        void OnPeerDisconnect(int peerId)
+        {
+            if (this.PeerDisconnect != null)
+            {
+                this.PeerDisconnect(peerId);
+            }
+        }
+
         #region IDisposable Support
 
         private bool disposedValue = false; // To detect redundant calls
@@ -177,7 +240,7 @@ namespace Microsoft.Toolkit.ThreeD
                 if (disposing)
                 {
                     // just shutdown the underlying plugin
-                    Close();
+                    Native.Close();
                 }
 
                 disposedValue = true;
@@ -188,6 +251,56 @@ namespace Microsoft.Toolkit.ThreeD
         public void Dispose()
         {
             Dispose(true);
+        }
+
+        #endregion
+
+        #region GenericDelegate generics
+
+        /// <summary>
+        /// Helper to generate delegate signatures with generics
+        /// </summary>
+        public abstract class GenericDelegate
+        {
+            public delegate void Handler();
+
+            private GenericDelegate() { }
+        }
+
+        /// <summary>
+        /// Helper to generate delegate signatures with generics
+        /// </summary>
+        public abstract class GenericDelegate<TArg0>
+        {
+            public delegate void Handler(TArg0 arg0);
+            private GenericDelegate() { }
+        }
+
+        /// <summary>
+        /// Helper to generate delegate signatures with generics
+        /// </summary>
+        public abstract class GenericDelegate<TArg0, TArg1>
+        {
+            public delegate void Handler(TArg0 arg0, TArg1 arg1);
+            private GenericDelegate() { }
+        }
+
+        /// <summary>
+        /// Helper to generate delegate signatures with generics
+        /// </summary>
+        public abstract class GenericDelegate<TArg0, TArg1, TArg2>
+        {
+            public delegate void Handler(TArg0 arg0, TArg1 arg1, TArg2 arg2);
+            private GenericDelegate() { }
+        }
+
+        /// <summary>
+        /// Helper to generate delegate signatures with generics
+        /// </summary>
+        public abstract class GenericDelegate<TArg0, TArg1, TArg2, TArg3>
+        {
+            public delegate void Handler(TArg0 arg0, TArg1 arg1, TArg2 arg2, TArg3 arg3);
+            private GenericDelegate() { }
         }
 
         #endregion

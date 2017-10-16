@@ -4,3 +4,6 @@ EXPORTS
    UnityPluginLoad
    UnityPluginUnload
    GetRenderEventFunc
+   SetCallbackMap
+   ConnectToPeer
+   DisconnectFromPeer

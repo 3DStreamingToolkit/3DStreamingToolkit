@@ -57,6 +57,12 @@ public:
 	//-------------------------------------------------------------------------
 	void StartLogin(const std::string& server, int port) override;
 
+	void DisconnectFromServer() override;
+
+	void ConnectToPeer(int peer_id) override;
+
+	void DisconnectFromCurrentPeer() override;
+
 	virtual void Close();
 
 protected:
@@ -123,14 +129,8 @@ protected:
 	void OnServerConnectionFailure() override;
 
 	//-------------------------------------------------------------------------
-	// MainWindowCallback implementation.
+	// Remaining MainWindowCallback implementation.
 	//-------------------------------------------------------------------------
-
-	void DisconnectFromServer() override;
-
-	void ConnectToPeer(int peer_id) override;
-
-	void DisconnectFromCurrentPeer() override;
 
 	void UIThreadCallback(int msg_id, void* data) override;
 

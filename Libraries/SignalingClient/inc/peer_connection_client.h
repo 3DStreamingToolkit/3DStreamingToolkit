@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <vector>
 
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
@@ -146,7 +147,7 @@ protected:
 
 	std::string PrepareRequest(const std::string& method, const std::string& fragment, std::map<std::string, std::string> headers);
 
-	PeerConnectionClientObserver* callback_;
+	std::vector<PeerConnectionClientObserver*> callbacks_;
 	bool server_address_ssl_;
 	rtc::SocketAddress server_address_;
 	rtc::AsyncResolver* resolver_;

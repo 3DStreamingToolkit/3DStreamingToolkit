@@ -18,6 +18,11 @@ namespace Microsoft.Toolkit.ThreeD
     public class WebRTCServer : MonoBehaviour
     {
         /// <summary>
+        /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
+        /// </summary>
+        public PeerListState PeerList = null;
+
+        /// <summary>
         /// Instance that represents the underlying native plugin that powers the webrtc experience
         /// </summary>
         public StreamingUnityServerPlugin Plugin = null;
@@ -49,7 +54,12 @@ namespace Microsoft.Toolkit.ThreeD
         /// Internal flag used to indicate we are shutting down
         /// </summary>
         private bool isClosing = false;
-        
+
+        /// <summary>
+        /// Internal reference to the previous peer
+        /// </summary>
+        private PeerListState.Peer previousPeer = null;
+
         /// <summary>
         /// Unity engine object Awake() hook
         /// </summary>
@@ -84,9 +94,18 @@ namespace Microsoft.Toolkit.ThreeD
                 transform.position = location;
                 transform.LookAt(lookAt, up);
             }
-
+            
             // encode the entire render texture at the end of the frame
             StartCoroutine(Plugin.EncodeAndTransmitFrame());
+            
+            // check if we need to connect to a peer, and if so, do it
+            if ((previousPeer == null && PeerList.SelectedPeer != null) ||
+                (previousPeer != null && PeerList.SelectedPeer != null && !previousPeer.Equals(PeerList.SelectedPeer)))
+            {
+                Debug.Log("imma connect to " + PeerList.SelectedPeer.Id);
+                Plugin.ConnectToPeer(PeerList.SelectedPeer.Id);
+                previousPeer = PeerList.SelectedPeer;
+            }
         }
 
         /// <summary>
@@ -99,6 +118,10 @@ namespace Microsoft.Toolkit.ThreeD
                 Close();
             }
 
+            // clear the underlying mutable peer data
+            PeerList.Peers.Clear();
+            PeerList.SelectedPeer = null;
+
             // Create the plugin
             Plugin = new StreamingUnityServerPlugin();
 
@@ -106,6 +129,20 @@ namespace Microsoft.Toolkit.ThreeD
             // note: if you wish to capture debug data, see the <see cref="StreamingUnityServerDebug"/> behaviour
             Plugin.Input += OnInputData;
 
+            Plugin.PeerConnect += (int peerId, string peerName) =>
+            {
+                PeerList.Peers.Add(new PeerListState.Peer()
+                {
+                    Id = peerId,
+                    Name = peerName
+                });
+            };
+
+            Plugin.PeerDisconnect += (int peerId) =>
+            {
+                // TODO(bengreenier): this can be optimized to stop at the first match
+                PeerList.Peers.RemoveAll(p => p.Id == peerId);
+            };
         }
 
         /// <summary>

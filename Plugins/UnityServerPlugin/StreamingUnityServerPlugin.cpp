@@ -61,33 +61,6 @@
 using namespace Microsoft::WRL;
 using namespace StreamingToolkit;
 
-void(__stdcall*s_onInputUpdate)(const char *msg);
-void(__stdcall*s_onLog)(const int level, const char *msg);
-
-//#ifdef DEBUG
-//static struct FsLogStream : rtc::LogSink
-//{
-//	FsLogStream() : m_nativeLog("StreamingUnityServerPlugin.log", std::ios_base::app)
-//	{
-//		rtc::LogMessage::AddLogToStream(this, rtc::LoggingSeverity::LS_VERBOSE);
-//	}
-//
-//	~FsLogStream()
-//	{
-//		rtc::LogMessage::RemoveLogToStream(this);
-//	}
-//
-//	std::ofstream m_nativeLog;
-//	
-//	virtual void OnLogMessage(const std::string& message) override
-//	{
-//		m_nativeLog << message;
-//	}
-//} s_fsLogger;
-//#endif
-
-#define ULOG(sev, msg) if (s_onLog) { (*s_onLog)(sev, msg); } LOG(sev) << msg
-
 DEFINE_GUID(IID_Texture2D, 0x6f15aaf2, 0xd208, 0x4e89, 0x9a, 0xb4, 0x48, 0x95, 0x35, 0xd3, 0x4f, 0x9c);
 
 static IUnityInterfaces* s_UnityInterfaces = nullptr;
@@ -104,12 +77,76 @@ static WebRTCConfig			s_webrtcConfig;
 
 ServerMainWindow *wnd;
 std::thread *messageThread;
+rtc::Thread *rtcMainThread;
 
 std::string s_server = "signalingserveruri";
 uint32_t s_port = 3000;
 
 bool s_closing = false;
 
+typedef void(__stdcall*InputUpdateFuncType)(const char *msg);
+typedef void(__stdcall*LogFuncType)(const int level, const char *msg);
+typedef void(__stdcall*PeerConnectFuncType)(const int peerId, const char *peerName);
+typedef void(__stdcall*PeerDisconnectFuncType)(const int peerId);
+
+struct CallbackMap
+{
+	InputUpdateFuncType onInputUpdate;
+	LogFuncType onLog;
+	PeerConnectFuncType onPeerConnect;
+	PeerDisconnectFuncType onPeerDisconnect;
+} s_callbackMap;
+
+#define ULOG(sev, msg) if (s_callbackMap.onLog) { (*s_callbackMap.onLog)(sev, msg); } LOG(sev) << msg
+
+
+struct UnityServerPeerObserver : PeerConnectionClientObserver
+{
+	virtual void OnSignedIn() override
+	{
+		ULOG(INFO, __FUNCTION__);
+		//TODO(bengreenier): we could surface this to unity
+	}
+
+	virtual void OnDisconnected() override
+	{
+		ULOG(INFO, __FUNCTION__);
+		//TODO(bengreenier): we could surface this to unity
+	}
+
+	virtual void OnPeerConnected(int id, const std::string& name) override
+	{
+		if (s_callbackMap.onPeerConnect)
+		{
+			(*s_callbackMap.onPeerConnect)(id, name.c_str());
+		}
+	}
+
+	virtual void OnPeerDisconnected(int peer_id) override
+	{
+		if (s_callbackMap.onPeerDisconnect)
+		{
+			(*s_callbackMap.onPeerDisconnect)(peer_id);
+		}
+	}
+
+	virtual void OnMessageFromPeer(int peer_id, const std::string& message) override
+	{
+		//TODO(bengreenier): we could surface this to unity
+	}
+
+	virtual void OnMessageSent(int err) override
+	{
+		ULOG(INFO, __FUNCTION__);
+		//TODO(bengreenier): we could surface this to unity
+	}
+
+	virtual void OnServerConnectionFailure() override
+	{
+		ULOG(INFO, __FUNCTION__);
+		//TODO(bengreenier): we could surface this to unity
+	}
+} s_clientObserver;
 
 void InitWebRTC()
 {
@@ -129,6 +166,8 @@ void InitWebRTC()
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 	rtc::InitializeSSL();
 
+	rtcMainThread = &w32_thread;
+
 	PeerConnectionClient client;
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
@@ -143,7 +182,7 @@ void InitWebRTC()
 		720);
 
 	wnd->Create();
-
+	
 	s_server = s_webrtcConfig.server;
 	s_port = s_webrtcConfig.port;
 	client.SetHeartbeatMs(s_webrtcConfig.heartbeat);
@@ -154,15 +193,17 @@ void InitWebRTC()
 		&s_webrtcConfig,
 		s_bufferRenderer);
 
+	client.RegisterObserver(&s_clientObserver);
+
 	InputDataHandler inputHandler([&](const std::string& message)
 	{
 		ULOG(INFO, __FUNCTION__);
 
-		if (s_onInputUpdate)
+		if (s_callbackMap.onInputUpdate)
 		{
 			ULOG(INFO, message.c_str());
 
-			(*s_onInputUpdate)(message.c_str());
+			(*s_callbackMap.onInputUpdate)(message.c_str());
 		}
 	});
 
@@ -282,8 +323,6 @@ void InitWebRTC()
 
 static void UNITY_INTERFACE_API OnEncode(int eventID)
 {
-	ULOG(INFO, __FUNCTION__);
-
 	if (s_Context)
 	{
 		if (s_frameBuffer == nullptr)
@@ -305,7 +344,7 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				// Render loop.
 				std::function<void()> frameRenderFunc = ([&]
 				{
-					ULOG(INFO, __FUNCTION__);
+					// do nothing
 				});
 
 				// Initializes the buffer renderer.
@@ -413,16 +452,35 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 	return OnEncode;
 }
 
-extern "C" __declspec(dllexport) void SetInputDataCallback(void(__stdcall*onInputUpdate)(const char *msg))
+extern "C" __declspec(dllexport) void SetCallbackMap(InputUpdateFuncType inputFunc,
+	LogFuncType logFunc,
+	PeerConnectFuncType peerConnectFunc,
+	PeerDisconnectFuncType peerDisconnectFunc)
 {
 	ULOG(INFO, __FUNCTION__);
-
-	s_onInputUpdate = onInputUpdate;
+	
+	s_callbackMap.onInputUpdate = inputFunc;
+	s_callbackMap.onLog = logFunc;
+	s_callbackMap.onPeerConnect = peerConnectFunc;
+	s_callbackMap.onPeerDisconnect = peerDisconnectFunc;
 }
 
-extern "C" __declspec(dllexport) void SetLogCallback(void(__stdcall*onLog)(const int level, const char *msg))
+extern "C" __declspec(dllexport) void ConnectToPeer(const int peerId)
 {
 	ULOG(INFO, __FUNCTION__);
 
-	s_onLog = onLog;
+	// TODO(bengreenier): *maniacal laughter* does this work?
+	rtcMainThread->Invoke<void>(RTC_FROM_HERE, [&] {
+		s_conductor->ConnectToPeer(peerId);
+	});
+}
+
+extern "C" __declspec(dllexport) void DisconnectFromPeer()
+{
+	ULOG(INFO, __FUNCTION__);
+
+	// TODO(bengreenier): *maniacal laughter* does this work?
+	rtcMainThread->Invoke<void>(RTC_FROM_HERE, [&] {
+		s_conductor->DisconnectFromCurrentPeer();
+	});
 }
