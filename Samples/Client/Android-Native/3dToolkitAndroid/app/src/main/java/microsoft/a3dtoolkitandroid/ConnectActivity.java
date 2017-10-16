@@ -52,6 +52,9 @@ import static microsoft.a3dtoolkitandroid.util.HelperFunctions.addRequest;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.logAndToast;
 import static microsoft.a3dtoolkitandroid.util.HelperFunctions.preferCodec;
 
+/**
+ * Activity for listing servers and streaming video once a server is chosen
+ */
 public class ConnectActivity extends AppCompatActivity implements
         ServerListFragment.OnListFragmentInteractionListener{
 
@@ -475,7 +478,7 @@ public class ConnectActivity extends AppCompatActivity implements
     /**
      * Implementation detail: observe ICE & stream changes and react accordingly.
      */
-    public class PeerConnectionObserver implements PeerConnection.Observer {
+    class PeerConnectionObserver implements PeerConnection.Observer {
         // Send Ice candidate to the server.
         @Override
         public void onIceCandidate(final IceCandidate iceCandidate) {
@@ -585,7 +588,7 @@ public class ConnectActivity extends AppCompatActivity implements
      * Implementation detail: handle offer creation/signaling and answer setting,
      * as well as adding remote ICE candidates once the answer SDP is set.
      */
-    public class SDPObserver implements SdpObserver {
+    class SDPObserver implements SdpObserver {
         @Override
         public void onCreateSuccess(final SessionDescription origSdp) {
             if (localSdp != null) {

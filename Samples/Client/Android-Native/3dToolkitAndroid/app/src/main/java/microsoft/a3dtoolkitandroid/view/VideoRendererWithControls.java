@@ -20,6 +20,7 @@ import static microsoft.a3dtoolkitandroid.ConnectActivity.LOG;
 
 /**
  * Created by arrahm on 10/9/2017.
+ * Custom video renderer that extends the SurfaceViewRenderer with gesture controls.
  */
 
 public class VideoRendererWithControls extends SurfaceViewRenderer {
@@ -50,6 +51,11 @@ public class VideoRendererWithControls extends SurfaceViewRenderer {
         this.mListener = eventListener;
     }
 
+    /**
+     * Takes a touch event and transforms it into a navigation matrix
+     * @param event: touch event
+     * @return true, unless listener hasn't been set
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (mListener == null) {
@@ -59,7 +65,6 @@ public class VideoRendererWithControls extends SurfaceViewRenderer {
 
         switch(action) {
             case (MotionEvent.ACTION_DOWN) :
-                Log.d(LOG,"Action was DOWN");
                 isFingerDown = true;
                 fingerDownX = event.getRawX();
                 fingerDownY = event.getRawY();
@@ -71,7 +76,6 @@ public class VideoRendererWithControls extends SurfaceViewRenderer {
                 downLocation[2] = navLocation[2];
                 return true;
             case (MotionEvent.ACTION_MOVE) :
-                Log.d(LOG,"Action was MOVE");
                 if (isFingerDown) {
                     int pointerCount = event.getPointerCount();
 
@@ -115,21 +119,20 @@ public class VideoRendererWithControls extends SurfaceViewRenderer {
                 }
                 return true;
             case (MotionEvent.ACTION_UP) :
-                Log.d(LOG,"Action was UP");
                 isFingerDown = false;
                 return true;
             case (MotionEvent.ACTION_CANCEL) :
-                Log.d(LOG,"Action was CANCEL");
                 return true;
             case (MotionEvent.ACTION_OUTSIDE) :
-                Log.d(LOG,"Movement occurred outside bounds " +
-                        "of current screen element");
                 return true;
             default :
                 return super.onTouchEvent(event);
         }
     }
 
+    /**
+     * Takes movement data (from matrix) and creates a byte buffer to send to the server
+     */
     private void toBuffer(){
         if (mListener == null) {
             return;

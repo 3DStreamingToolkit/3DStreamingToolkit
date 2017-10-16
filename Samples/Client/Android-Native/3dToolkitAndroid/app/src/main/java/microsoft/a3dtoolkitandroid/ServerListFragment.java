@@ -20,7 +20,7 @@ import java.util.Map;
 import static java.lang.Integer.parseInt;
 
 /**
- * A fragment representing a list of Items.
+ * A fragment representing a list of servers.
  * <p/>
  * Activities containing this fragment MUST implement the {@link OnListFragmentInteractionListener}
  * interface.
@@ -177,11 +177,11 @@ public class ServerListFragment extends Fragment {
     /**
      * A item representing a server and its ID.
      */
-    public class ServerItem {
+    private class ServerItem {
         public final int id;
-        public final String serverName;
+        final String serverName;
 
-        public ServerItem(int id, String serverName) {
+        ServerItem(int id, String serverName) {
             this.id = id;
             this.serverName = serverName;
         }
@@ -197,12 +197,8 @@ public class ServerListFragment extends Fragment {
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
      */
-    public interface OnListFragmentInteractionListener {
+    interface OnListFragmentInteractionListener {
         void onServerClicked(int server);
         void addMyID(int myID);
     }

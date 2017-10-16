@@ -4,8 +4,7 @@ import android.content.Intent;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 
-
-import com.android.volley.*;
+import com.android.volley.Request;
 
 import org.json.JSONObject;
 import org.junit.After;
@@ -14,11 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
-import org.webrtc.PeerConnectionFactory;
-import org.webrtc.SessionDescription;
 
-
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import microsoft.a3dtoolkitandroid.util.CustomStringRequest;
@@ -27,11 +22,17 @@ import microsoft.a3dtoolkitandroid.util.HttpRequestQueue;
 import static microsoft.a3dtoolkitandroid.ConnectActivity.DTLS;
 import static microsoft.a3dtoolkitandroid.ConnectActivity.OfferToReceiveAudio;
 import static microsoft.a3dtoolkitandroid.ConnectActivity.OfferToReceiveVideo;
-import static microsoft.a3dtoolkitandroid.util.Config.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
-import static util.SharedTestStrings.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static util.SharedTestStrings.mockSdpAnswer;
+import static util.SharedTestStrings.mockSdpJSON;
+import static util.SharedTestStrings.mockServer;
+import static util.SharedTestStrings.mockServerListString;
 
 @RunWith(AndroidJUnit4.class)
 public class ConnectActivityTest extends ActivityTestRule<ConnectActivity> {

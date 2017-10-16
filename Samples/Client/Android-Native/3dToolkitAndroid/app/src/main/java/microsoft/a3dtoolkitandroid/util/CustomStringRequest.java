@@ -14,6 +14,7 @@ import java.util.Map;
 
 /**
  * Created by arrahm on 9/26/2017.
+ * Custom String Request class to allow access to response headers (...because volley is annoying)
  */
 
 public class CustomStringRequest extends Request<CustomStringRequest.ResponseM> {

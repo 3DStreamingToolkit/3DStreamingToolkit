@@ -13,6 +13,7 @@ import okhttp3.Interceptor;
 
 /**
  * Created by arrahm on 10/11/2017.
+ * Class for accessing and adding to the Volley Request Queue
  */
 
 public class HttpRequestQueue {
