@@ -168,6 +168,8 @@ namespace Microsoft.Toolkit.ThreeD
                 var node = SimpleJSON.JSON.Parse(data);
                 string messageType = node["type"];
 
+                Debug.Log(data);
+
                 switch (messageType)
                 {
                     case "stereo-rendering":

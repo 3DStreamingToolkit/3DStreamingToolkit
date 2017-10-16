@@ -63,10 +63,16 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         private void Start()
         {
+            // do some special setup for stereo, if you aren't stereo, we return
+            if (this.TotalEyes != EyeCount.Two)
+            {
+                return;
+            }
+            
             // TODO(bengreenier): make this configurable (static value, vs this calculation)
             // calculate and configure our stereo distance based on camera transform distance in the scene
             var stereoDistance = Vector3.Distance(this.EyeOne.transform.position, this.EyeTwo.transform.position);
-
+            
             this.EyeOne.stereoSeparation = stereoDistance;
             this.EyeTwo.stereoSeparation = stereoDistance;
         }

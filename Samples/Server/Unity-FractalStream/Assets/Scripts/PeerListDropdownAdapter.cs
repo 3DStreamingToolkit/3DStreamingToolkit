@@ -42,6 +42,9 @@ public class PeerListDropdownAdapter : MonoBehaviour
             var opt = this.dropdown.options.ElementAt(index) as PeerDropdownOption;
 
             this.PeerList.SelectedPeer = this.PeerList.Peers.First(p => p.Equals(opt.Peer));
+
+            // close the open menu (the one we sit inside of)
+            this.GetComponentInParent<MenuStack.MenuRoot>().CloseAsync();
         });
     }
 
