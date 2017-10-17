@@ -52,6 +52,16 @@ namespace Microsoft.Toolkit.ThreeD
         private Vector3 up = Vector3.zero;
 
         /// <summary>
+        /// The left stereo eye projection as determined by client control
+        /// </summary>
+        private Matrix4x4 stereoLeftProjection = Matrix4x4.identity;
+
+        /// <summary>
+        /// The right stereo eye projection as determined by client control
+        /// </summary>
+        private Matrix4x4 stereoRightProjection = Matrix4x4.identity;
+
+        /// <summary>
         /// Internal flag used to indicate we are shutting down
         /// </summary>
         private bool isClosing = false;
@@ -94,6 +104,15 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 transform.position = location;
                 transform.LookAt(lookAt, up);
+
+                // apply stereo projection if needed
+                if (this.Eyes.TotalEyes == WebRTCEyes.EyeCount.Two &&
+                    !stereoLeftProjection.isIdentity &&
+                    !stereoRightProjection.isIdentity)
+                {
+                    this.Eyes.EyeOne.SetStereoProjectionMatrix(Camera.StereoscopicEye.Left, stereoLeftProjection * this.Eyes.EyeOne.worldToCameraMatrix);
+                    this.Eyes.EyeTwo.SetStereoProjectionMatrix(Camera.StereoscopicEye.Right, stereoRightProjection * this.Eyes.EyeOne.worldToCameraMatrix);
+                }
             }
             
             // encode the entire render texture at the end of the frame
@@ -103,7 +122,6 @@ namespace Microsoft.Toolkit.ThreeD
             if ((previousPeer == null && PeerList.SelectedPeer != null) ||
                 (previousPeer != null && PeerList.SelectedPeer != null && !previousPeer.Equals(PeerList.SelectedPeer)))
             {
-                Debug.Log("imma connect to " + PeerList.SelectedPeer.Id);
                 Plugin.ConnectToPeer(PeerList.SelectedPeer.Id);
                 previousPeer = PeerList.SelectedPeer;
             }
@@ -174,11 +192,20 @@ namespace Microsoft.Toolkit.ThreeD
                 switch (messageType)
                 {
                     case "stereo-rendering":
-                        var isStereo = node["body"].IsBoolean ? node["body"].AsBool : false;
+                        // note: 1 represents true, 0 represents false
+                        int isStereo;
+
+                        // if it's not a valid bool, don't continue
+                        if (!int.TryParse(node["body"].Value, out isStereo))
+                        {
+                            break;
+                        }
+
+                        Debug.Log("iss:" + isStereo);
 
                         // change the number of eyes so that we can react
                         // TODO(bengreenier): rendering behavior should change as a result
-                        if (isStereo)
+                        if (isStereo == 1)
                         {
                             this.Eyes.TotalEyes = WebRTCEyes.EyeCount.Two;
                         }
@@ -236,27 +263,18 @@ namespace Microsoft.Toolkit.ThreeD
                         string camera = node["body"];
                         if (camera != null && camera.Length > 0)
                         {
-                            var leftViewProjection = new Matrix4x4();
-                            var rightViewProjection = new Matrix4x4();
-
                             var coords = camera.Split(',');
                             var index = 0;
                             for (int i = 0; i < 4; i++)
                             {
                                 for (int j = 0; j < 4; j++)
                                 {
-                                    // We are receiving 32 values for the left/right matrix. The first 16 are for left followed by the right matrix.
-                                    rightViewProjection[i, j] = float.Parse(coords[16+index]);
-                                    leftViewProjection[i, j] = float.Parse(coords[index++]);
+                                    // We are receiving 32 values for the left/right matrix.
+                                    // The first 16 are for left followed by the right matrix.
+                                    stereoRightProjection[i, j] = float.Parse(coords[16+index]);
+                                    stereoLeftProjection[i, j] = float.Parse(coords[index++]);
                                 }
                             }
-
-                            // This needs to run on the main thread
-                            UIThreadSingleton.Dispatch(() =>
-                            {
-                                this.Eyes.EyeOne.cullingMatrix = leftViewProjection;
-                                this.Eyes.EyeTwo.cullingMatrix = rightViewProjection;
-                            });
                         }
                         
                         break;
