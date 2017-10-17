@@ -52,9 +52,9 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
 #if UNITY_WSA
-        private ConcurrentQueue<Func<IEnumerator>> updateQueue = new ConcurrentQueue<Func<IEnumerator>>();
-        private ConcurrentQueue<Func<IEnumerator>> lateUpdateQueue = new ConcurrentQueue<Func<IEnumerator>>();
-        private ConcurrentQueue<Func<IEnumerator>> coRoutineQueue = new ConcurrentQueue<Func<IEnumerator>>();
+		private ConcurrentQueue<Func<IEnumerator>> updateQueue = new ConcurrentQueue<Func<IEnumerator>>();
+		private ConcurrentQueue<Func<IEnumerator>> lateUpdateQueue = new ConcurrentQueue<Func<IEnumerator>>();
+		private ConcurrentQueue<Func<IEnumerator>> coRoutineQueue = new ConcurrentQueue<Func<IEnumerator>>();
 #else
         private Queue<Func<IEnumerator>> updateQueue = new Queue<Func<IEnumerator>>();
         private Queue<Func<IEnumerator>> lateUpdateQueue = new Queue<Func<IEnumerator>>();
@@ -95,8 +95,8 @@ namespace Microsoft.Toolkit.ThreeD
         {
             Func<IEnumerator> action;
 #if UNITY_WSA
-            while (updateQueue.TryDequeue(out action))
-            {
+			while (updateQueue.TryDequeue(out action))
+			{
 #else
             while (updateQueue.Count > 0)
             {
@@ -110,8 +110,8 @@ namespace Microsoft.Toolkit.ThreeD
 
             Func<IEnumerator> co;
 #if UNITY_WSA
-            while (coRoutineQueue.TryDequeue(out co))
-            {
+			while (coRoutineQueue.TryDequeue(out co))
+			{
 #else
             while (coRoutineQueue.Count > 0)
             {
@@ -128,8 +128,8 @@ namespace Microsoft.Toolkit.ThreeD
         {
             Func<IEnumerator> action;
 #if UNITY_WSA
-            while (lateUpdateQueue.TryDequeue(out action))
-            {
+			while (lateUpdateQueue.TryDequeue(out action))
+			{
 #else
             while (lateUpdateQueue.Count > 0)
             {

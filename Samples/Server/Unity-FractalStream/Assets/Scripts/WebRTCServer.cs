@@ -19,11 +19,6 @@ namespace Microsoft.Toolkit.ThreeD
     public class WebRTCServer : MonoBehaviour
     { 
         /// <summary>
-        /// A queue needed to run actions on the main thread
-        /// </summary>
-        private static Queue<Action> _executionQueue = new Queue<Action>();
-
-        /// <summary>
         /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
         /// </summary>
         public PeerListState PeerList = null;
@@ -82,17 +77,6 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// Method to enqueue actions on the main thread
-        /// </summary>
-        public void EnqueueAction(Action action)
-        {
-            lock (_executionQueue)
-            {
-                _executionQueue.Enqueue(action);
-            }
-        }
-
-        /// <summary>
         /// Unity engine object OnDestroy() hook
         /// </summary>
         private void OnDestroy()
@@ -122,15 +106,6 @@ namespace Microsoft.Toolkit.ThreeD
                 Debug.Log("imma connect to " + PeerList.SelectedPeer.Id);
                 Plugin.ConnectToPeer(PeerList.SelectedPeer.Id);
                 previousPeer = PeerList.SelectedPeer;
-            }
-
-            // look at the action queue and invoke any pending actions on the main thread
-            lock (_executionQueue)
-            {
-                while (_executionQueue.Count > 0)
-                {
-                    _executionQueue.Dequeue().Invoke();
-                }
             }
         }
 
@@ -277,7 +252,7 @@ namespace Microsoft.Toolkit.ThreeD
                             }
 
                             // This needs to run on the main thread
-                            EnqueueAction(() =>
+                            UIThreadSingleton.Dispatch(() =>
                             {
                                 this.Eyes.EyeOne.cullingMatrix = leftViewProjection;
                                 this.Eyes.EyeTwo.cullingMatrix = rightViewProjection;
