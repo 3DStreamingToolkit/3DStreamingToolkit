@@ -1,12 +1,13 @@
 ﻿using Microsoft.Toolkit.ThreeD;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace Microsoft.Toolkit.ThreeD
 {
-
     /// <summary>
     /// WebRTC server behavior that enables 3dtoolkit webrtc
     /// </summary>
@@ -16,7 +17,12 @@ namespace Microsoft.Toolkit.ThreeD
     /// </remarks>
     [RequireComponent(typeof(WebRTCEyes))]
     public class WebRTCServer : MonoBehaviour
-    {
+    { 
+        /// <summary>
+        /// A queue needed to run actions on the main thread
+        /// </summary>
+        private static Queue<Action> _executionQueue = new Queue<Action>();
+
         /// <summary>
         /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
         /// </summary>
@@ -76,6 +82,17 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
+        /// Method to enqueue actions on the main thread
+        /// </summary>
+        public void EnqueueAction(Action action)
+        {
+            lock (_executionQueue)
+            {
+                _executionQueue.Enqueue(action);
+            }
+        }
+
+        /// <summary>
         /// Unity engine object OnDestroy() hook
         /// </summary>
         private void OnDestroy()
@@ -105,6 +122,15 @@ namespace Microsoft.Toolkit.ThreeD
                 Debug.Log("imma connect to " + PeerList.SelectedPeer.Id);
                 Plugin.ConnectToPeer(PeerList.SelectedPeer.Id);
                 previousPeer = PeerList.SelectedPeer;
+            }
+
+            // look at the action queue and invoke any pending actions on the main thread
+            lock (_executionQueue)
+            {
+                while (_executionQueue.Count > 0)
+                {
+                    _executionQueue.Dequeue().Invoke();
+                }
             }
         }
 
@@ -228,6 +254,36 @@ namespace Microsoft.Toolkit.ThreeD
                             up = u;
                         }
 
+                        break;
+
+                    case "camera-transform-stereo":
+
+                        string camera = node["body"];
+                        if (camera != null && camera.Length > 0)
+                        {
+                            var leftViewProjection = new Matrix4x4();
+                            var rightViewProjection = new Matrix4x4();
+
+                            var coords = camera.Split(',');
+                            var index = 0;
+                            for (int i = 0; i < 4; i++)
+                            {
+                                for (int j = 0; j < 4; j++)
+                                {
+                                    // We are receiving 32 values for the left/right matrix. The first 16 are for left followed by the right matrix.
+                                    rightViewProjection[i, j] = float.Parse(coords[16+index]);
+                                    leftViewProjection[i, j] = float.Parse(coords[index++]);
+                                }
+                            }
+
+                            // This needs to run on the main thread
+                            EnqueueAction(() =>
+                            {
+                                this.Eyes.EyeOne.cullingMatrix = leftViewProjection;
+                                this.Eyes.EyeTwo.cullingMatrix = rightViewProjection;
+                            });
+                        }
+                        
                         break;
                 }
             }
