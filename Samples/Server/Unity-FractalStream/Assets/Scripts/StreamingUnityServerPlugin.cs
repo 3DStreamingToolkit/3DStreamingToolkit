@@ -38,13 +38,6 @@ namespace Microsoft.Toolkit.ThreeD
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
-            public static extern void SetResolution(int width, int height);
-#endif
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-            [DllImport ("__Internal")]
-#else
-            [DllImport(PluginName)]
             public static extern void ConnectToPeer(int peerId);
 #endif
 
@@ -220,9 +213,6 @@ namespace Microsoft.Toolkit.ThreeD
                     this.pinnedIceGatheringChange,
                     this.pinnedIceCandidate,
                     this.pinnedIceConnectionReceivingChange);
-
-            // TODO(bengreenier): do we want this optimization? see native
-            //SetResolution(Screen.width, Screen.height);
         }
 
         /// <summary>

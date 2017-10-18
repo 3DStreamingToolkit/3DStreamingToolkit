@@ -283,8 +283,8 @@ void InitWebRTC()
 		FLAG_autoconnect,
 		FLAG_autocall,
 		true,
-		1280,
-		720);
+		0,
+		0);
 
 	wnd->Create();
 	
@@ -453,11 +453,10 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 					// do nothing
 				});
 
-				// Initializes the buffer renderer.
-				// TODO(bengreenier): we can optimize this sizing by reporting it to native-land from unity
+				// initializes the buffer renderer, texture size will be auto-determined
 				s_bufferRenderer = new BufferRenderer(
-					1280 * 2,
-					720,
+					0,
+					0,
 					s_Device.Get(),
 					frameRenderFunc,
 					s_frameBuffer);
@@ -573,8 +572,6 @@ extern "C" __declspec(dllexport) void SetCallbackMap(StrParamFuncType onInputUpd
 	StrParamFuncType onIceCandidate,
 	BoolParamFuncType onIceConnectionReceivingChange)
 {
-	ULOG(INFO, __FUNCTION__);
-	
 	s_callbackMap.onInputUpdate = onInputUpdate;
 	s_callbackMap.onLog = onLog;
 	s_callbackMap.onPeerConnect = onPeerConnect;
