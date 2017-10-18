@@ -69,7 +69,8 @@ Conductor::Conductor(
 	PeerConnectionClient* client,
 	MainWindow* main_window,
 	WebRTCConfig* webrtc_config,
-	BufferRenderer* buffer_renderer) :
+	BufferRenderer* buffer_renderer,
+	PeerConnectionObserver* connection_observer) :
 		peer_id_(-1),
 		loopback_(false),
 		client_(client),
@@ -83,11 +84,26 @@ Conductor::Conductor(
 	{
 		main_window->RegisterObserver(this);
 	}
+
+	if (connection_observer != nullptr)
+	{
+		client_observer_ = new PeerConnectionMultiObserver({ this, connection_observer });
+	}
+	else
+	{
+		// we technically don't need the multi observer here, but it makes cleanup easier
+		// as we can just always delete client_observer_ rather than needing a conditional
+		// and the overhead is low.
+		client_observer_ = new PeerConnectionMultiObserver({ this });
+	}
 }
 
 Conductor::~Conductor() 
 {
 	RTC_DCHECK(peer_connection_.get() == NULL);
+
+	// cleanup the observer
+	delete client_observer_;
 }
 
 bool Conductor::connection_active() const
@@ -252,7 +268,7 @@ bool Conductor::CreatePeerConnection(bool dtls)
 	}
 
 	peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-		config, &constraints, NULL, NULL, this);
+		config, &constraints, NULL, NULL, client_observer_);
 
 	return peer_connection_.get() != NULL;
 }

@@ -59,54 +59,89 @@ namespace Microsoft.Toolkit.ThreeD
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
-            public static extern void SetCallbackMap(GenericDelegate<string>.Handler inputFunc,
-            GenericDelegate<int, string>.Handler logFunc,
-            GenericDelegate<int, string>.Handler peerConnectFunc,
-            GenericDelegate<int>.Handler peerDisconnectFunc);
+            public static extern void SetCallbackMap(GenericDelegate<string>.Handler onInputUpdate,
+                GenericDelegate<int, string>.Handler onLog,
+                GenericDelegate<int, string>.Handler onPeerConnect,
+                GenericDelegate<int>.Handler onPeerDisconnect,
+                GenericDelegate.Handler onSignIn,
+                GenericDelegate.Handler onDisconnect,
+                GenericDelegate<int, string>.Handler onMessageFromPeer,
+                GenericDelegate<int>.Handler onMessageSent,
+                GenericDelegate.Handler onServerConnectionFailure,
+                GenericDelegate<int>.Handler onSignalingChange,
+                GenericDelegate<string>.Handler onAddStream,
+                GenericDelegate<string>.Handler onRemoveStream,
+                GenericDelegate<string>.Handler onDataChannel,
+                GenericDelegate.Handler onRenegotiationNeeded,
+                GenericDelegate<int>.Handler onIceConnectionChange,
+                GenericDelegate<int>.Handler onIceGatheringChange,
+                GenericDelegate<string>.Handler onIceCandidate,
+                GenericDelegate<bool>.Handler onIceConnectionReceivingChange);
 #endif
         }
 
         #endregion
-        
-        /// <summary>
-        /// Emitted when input is received
-        /// </summary>
-        public event GenericDelegate<string>.Handler Input;
 
-        /// <summary>
-        /// Emitted when log data is received
-        /// </summary>
+        #region Marshalled events
+
+        public event GenericDelegate<string>.Handler InputUpdate;
         public event GenericDelegate<int, string>.Handler Log;
-
-        /// <summary>
-        /// Emitted when a peer connects
-        /// </summary>
         public event GenericDelegate<int, string>.Handler PeerConnect;
-
-        /// <summary>
-        /// Emitted when a peer disconnects
-        /// </summary>
         public event GenericDelegate<int>.Handler PeerDisconnect;
-        
-        /// <summary>
-        /// log delegate tied to the lifetime of this instance
-        /// </summary>
-        private GenericDelegate<int, string>.Handler pinnedLogDelegate;
+        public event GenericDelegate.Handler SignIn;
+        public event GenericDelegate.Handler Disconnect;
+        public event GenericDelegate<int, string>.Handler MessageFromPeer;
+        public event GenericDelegate<int>.Handler MessageSent;
+        public event GenericDelegate.Handler ServerConnectionFailure;
+        public event GenericDelegate<int>.Handler SignalingChange;
+        public event GenericDelegate<string>.Handler AddStream;
+        public event GenericDelegate<string>.Handler RemoveStream;
+        public event GenericDelegate<string>.Handler DataChannel;
+        public event GenericDelegate.Handler RenegotiationNeeded;
+        public event GenericDelegate<int>.Handler IceConnectionChange;
+        public event GenericDelegate<int>.Handler IceGatheringChange;
+        public event GenericDelegate<string>.Handler IceCandidate;
+        public event GenericDelegate<bool>.Handler IceConnectionReceivingChange;
 
-        /// <summary>
-        /// input delegate tied to the lifetime of this instance
-        /// </summary>
-        private GenericDelegate<string>.Handler pinnedInputDelegate;
+        private GenericDelegate<string>.Handler pinnedInputUpdate;
+        private GenericDelegate<int, string>.Handler pinnedLog;
+        private GenericDelegate<int, string>.Handler pinnedPeerConnect;
+        private GenericDelegate<int>.Handler pinnedPeerDisconnect;
+        private GenericDelegate.Handler pinnedSignIn;
+        private GenericDelegate.Handler pinnedDisconnect;
+        private GenericDelegate<int, string>.Handler pinnedMessageFromPeer;
+        private GenericDelegate<int>.Handler pinnedMessageSent;
+        private GenericDelegate.Handler pinnedServerConnectionFailure;
+        private GenericDelegate<int>.Handler pinnedSignalingChange;
+        private GenericDelegate<string>.Handler pinnedAddStream;
+        private GenericDelegate<string>.Handler pinnedRemoveStream;
+        private GenericDelegate<string>.Handler pinnedDataChannel;
+        private GenericDelegate.Handler pinnedRenegotiationNeeded;
+        private GenericDelegate<int>.Handler pinnedIceConnectionChange;
+        private GenericDelegate<int>.Handler pinnedIceGatheringChange;
+        private GenericDelegate<string>.Handler pinnedIceCandidate;
+        private GenericDelegate<bool>.Handler pinnedIceConnectionReceivingChange;
 
-        /// <summary>
-        /// peer connect delegate tied to the lifetime of this instance
-        /// </summary>
-        private GenericDelegate<int, string>.Handler pinnedPeerConnectDelegate;
+        private void OnInputUpdate(string val0){ if (this.InputUpdate != null) this.InputUpdate(val0); }
+        private void OnLog(int val0, string val1) { if (Log != null) this.Log(val0, val1); }
+        private void OnPeerConnect(int val0, string val1) { if (PeerConnect != null) this.PeerConnect(val0, val1); }
+        private void OnPeerDisconnect(int val0) { if (this.PeerDisconnect != null) this.PeerDisconnect(val0); }
+        private void OnSignIn() { if (this.SignIn != null) this.SignIn(); }
+        private void OnDisconnect() { if (this.Disconnect != null) this.Disconnect(); }
+        private void OnMessageFromPeer(int val0, string val1){ if (MessageFromPeer != null) this.MessageFromPeer(val0, val1); }
+        private void OnMessageSent(int val0) { if (this.MessageSent != null) this.MessageSent(val0); }
+        private void OnServerConnectionFailure() { if (this.ServerConnectionFailure != null) this.ServerConnectionFailure(); }
+        private void OnSignalingChange(int val0) { if (this.SignalingChange != null) this.SignalingChange(val0); }
+        private void OnAddStream(string val0) { if (this.AddStream != null) this.AddStream(val0); }
+        private void OnRemoveStream(string val0) { if (this.RemoveStream != null) this.RemoveStream(val0); }
+        private void OnDataChannel(string val0) { if (this.DataChannel != null) this.DataChannel(val0); }
+        private void OnRenegotiationNeeded(){ if (this.RenegotiationNeeded != null) this.RenegotiationNeeded(); }
+        private void OnIceConnectionChange(int val0) { if (this.IceConnectionChange != null) this.IceConnectionChange(val0); }
+        private void OnIceGatheringChange(int val0) { if (this.IceGatheringChange != null) this.IceGatheringChange(val0); }
+        private void OnIceCandidate(string val0) { if (this.IceCandidate != null) this.IceCandidate(val0); }
+        private void OnIceConnectionReceivingChange(bool val0) { if (this.IceConnectionReceivingChange != null) this.IceConnectionReceivingChange(val0); }
 
-        /// <summary>
-        /// peer disconnect delegate tied to the lifetime of this instance
-        /// </summary>
-        private GenericDelegate<int>.Handler pinnedPeerDisconnectDelegate;
+        #endregion
 
         /// <summary>
         /// Default ctor
@@ -118,16 +153,45 @@ namespace Microsoft.Toolkit.ThreeD
             EncodeAndTransmitCommand.name = PluginName + " Encoding";
             EncodeAndTransmitCommand.IssuePluginEvent(Native.GetRenderEventFunc(), 0);
 
-            this.pinnedInputDelegate = new GenericDelegate<string>.Handler(OnInput);
-            this.pinnedLogDelegate = new GenericDelegate<int, string>.Handler(OnLog);
-            this.pinnedPeerConnectDelegate = new GenericDelegate<int, string>.Handler(OnPeerConnect);
-            this.pinnedPeerDisconnectDelegate = new GenericDelegate<int>.Handler(OnPeerDisconnect);
-            
+            // create null checking wrappers that we can always call on the native side
+            this.pinnedInputUpdate = new GenericDelegate<string>.Handler(this.OnInputUpdate);
+            this.pinnedLog = new GenericDelegate<int, string>.Handler(this.OnLog);
+            this.pinnedPeerConnect = new GenericDelegate<int, string>.Handler(this.OnPeerConnect);
+            this.pinnedPeerDisconnect = new GenericDelegate<int>.Handler(this.OnPeerDisconnect);
+            this.pinnedSignIn = new GenericDelegate.Handler(this.OnSignIn);
+            this.pinnedDisconnect = new GenericDelegate.Handler(this.OnDisconnect);
+            this.pinnedMessageFromPeer = new GenericDelegate<int, string>.Handler(this.OnMessageFromPeer);
+            this.pinnedMessageSent = new GenericDelegate<int>.Handler(this.OnMessageSent);
+            this.pinnedServerConnectionFailure = new GenericDelegate.Handler(this.OnServerConnectionFailure);
+            this.pinnedSignalingChange = new GenericDelegate<int>.Handler(this.OnSignalingChange);
+            this.pinnedAddStream = new GenericDelegate<string>.Handler(this.OnAddStream);
+            this.pinnedRemoveStream = new GenericDelegate<string>.Handler(this.OnRemoveStream);
+            this.pinnedDataChannel = new GenericDelegate<string>.Handler(this.OnDataChannel);
+            this.pinnedRenegotiationNeeded = new GenericDelegate.Handler(this.OnRenegotiationNeeded);
+            this.pinnedIceConnectionChange = new GenericDelegate<int>.Handler(this.OnIceConnectionChange);
+            this.pinnedIceGatheringChange = new GenericDelegate<int>.Handler(this.OnIceGatheringChange);
+            this.pinnedIceCandidate = new GenericDelegate<string>.Handler(this.OnIceCandidate);
+            this.pinnedIceConnectionReceivingChange = new GenericDelegate<bool>.Handler(this.OnIceConnectionReceivingChange);
+
             // marshal the callbacks across into native land
-            Native.SetCallbackMap(this.pinnedInputDelegate,
-                this.pinnedLogDelegate,
-                this.pinnedPeerConnectDelegate,
-                this.pinnedPeerDisconnectDelegate);
+            Native.SetCallbackMap(this.pinnedInputUpdate,
+                    this.pinnedLog,
+                    this.pinnedPeerConnect,
+                    this.pinnedPeerDisconnect,
+                    this.pinnedSignIn,
+                    this.pinnedDisconnect,
+                    this.pinnedMessageFromPeer,
+                    this.pinnedMessageSent,
+                    this.pinnedServerConnectionFailure,
+                    this.pinnedSignalingChange,
+                    this.pinnedAddStream,
+                    this.pinnedRemoveStream,
+                    this.pinnedDataChannel,
+                    this.pinnedRenegotiationNeeded,
+                    this.pinnedIceConnectionChange,
+                    this.pinnedIceGatheringChange,
+                    this.pinnedIceCandidate,
+                    this.pinnedIceConnectionReceivingChange);
 
             // TODO(bengreenier): do we want this optimization? see native
             //SetResolution(Screen.width, Screen.height);
@@ -178,56 +242,6 @@ namespace Microsoft.Toolkit.ThreeD
             Native.DisconnectFromPeer();
         }
 
-        /// <summary>
-        /// Called by NativeCode when input is received
-        /// </summary>
-        /// <param name="inputData">input data</param>
-        void OnInput(string inputData)
-        {
-            if (this.Input != null)
-            {
-                this.Input(inputData);
-            }
-        }
-
-        /// <summary>
-        /// Called by NativeCode when log data is received
-        /// </summary>
-        /// <param name="logLevel">log level</param>
-        /// <param name="logData">log data</param>
-        void OnLog(int logLevel, string logData)
-        {
-            if (this.Log != null)
-            {
-                this.Log(logLevel, logData);
-            }
-        }
-
-        /// <summary>
-        /// Called by NativeCode when a peer is connected
-        /// </summary>
-        /// <param name="peerId">the peer id</param>
-        /// <param name="peerName">the peer name</param>
-        void OnPeerConnect(int peerId, string peerName)
-        {
-            if (this.PeerConnect != null)
-            {
-                this.PeerConnect(peerId, peerName);
-            }
-        }
-
-        /// <summary>
-        /// Called by NativeCode when a peer is disconnected
-        /// </summary>
-        /// <param name="peerId">the peer id</param>
-        void OnPeerDisconnect(int peerId)
-        {
-            if (this.PeerDisconnect != null)
-            {
-                this.PeerDisconnect(peerId);
-            }
-        }
-
         #region IDisposable Support
 
         private bool disposedValue = false; // To detect redundant calls
@@ -262,7 +276,6 @@ namespace Microsoft.Toolkit.ThreeD
         public abstract class GenericDelegate
         {
             public delegate void Handler();
-
             private GenericDelegate() { }
         }
 

@@ -10,6 +10,9 @@
     <ClCompile Include="src\turn_credential_provider.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="src\peer_connection_multi_observer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\peer_connection_client.h">
@@ -22,6 +25,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="inc\turn_credential_provider.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\peer_connection_multi_observer.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

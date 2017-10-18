@@ -84,34 +84,54 @@ uint32_t s_port = 3000;
 
 bool s_closing = false;
 
-typedef void(__stdcall*InputUpdateFuncType)(const char *msg);
-typedef void(__stdcall*LogFuncType)(const int level, const char *msg);
-typedef void(__stdcall*PeerConnectFuncType)(const int peerId, const char *peerName);
-typedef void(__stdcall*PeerDisconnectFuncType)(const int peerId);
+typedef void(__stdcall*NoParamFuncType)();
+typedef void(__stdcall*IntParamFuncType)(const int val);
+typedef void(__stdcall*BoolParamFuncType)(const bool val);
+typedef void(__stdcall*StrParamFuncType)(const char* str);
+typedef void(__stdcall*IntStringParamsFuncType)(const int val, const char* str);
 
 struct CallbackMap
 {
-	InputUpdateFuncType onInputUpdate;
-	LogFuncType onLog;
-	PeerConnectFuncType onPeerConnect;
-	PeerDisconnectFuncType onPeerDisconnect;
+	StrParamFuncType onInputUpdate;
+	IntStringParamsFuncType onLog;
+	IntStringParamsFuncType onPeerConnect;
+	IntParamFuncType onPeerDisconnect;
+	NoParamFuncType onSignIn;
+	NoParamFuncType onDisconnect;
+	IntStringParamsFuncType onMessageFromPeer;
+	IntParamFuncType onMessageSent;
+	NoParamFuncType onServerConnectionFailure;
+	IntParamFuncType onSignalingChange;
+	StrParamFuncType onAddStream;
+	StrParamFuncType onRemoveStream;
+	StrParamFuncType onDataChannel;
+	NoParamFuncType onRenegotiationNeeded;
+	IntParamFuncType onIceConnectionChange;
+	IntParamFuncType onIceGatheringChange;
+	StrParamFuncType onIceCandidate;
+	BoolParamFuncType onIceConnectionReceivingChange;
 } s_callbackMap;
 
 #define ULOG(sev, msg) if (s_callbackMap.onLog) { (*s_callbackMap.onLog)(sev, msg); } LOG(sev) << msg
 
 
-struct UnityServerPeerObserver : PeerConnectionClientObserver
+struct UnityServerPeerObserver : public PeerConnectionClientObserver,
+	public webrtc::PeerConnectionObserver
 {
 	virtual void OnSignedIn() override
 	{
-		ULOG(INFO, __FUNCTION__);
-		//TODO(bengreenier): we could surface this to unity
+		if (s_callbackMap.onSignIn)
+		{
+			(*s_callbackMap.onSignIn)();
+		}
 	}
 
 	virtual void OnDisconnected() override
 	{
-		ULOG(INFO, __FUNCTION__);
-		//TODO(bengreenier): we could surface this to unity
+		if (s_callbackMap.onDisconnect)
+		{
+			(*s_callbackMap.onDisconnect)();
+		}
 	}
 
 	virtual void OnPeerConnected(int id, const std::string& name) override
@@ -132,20 +152,105 @@ struct UnityServerPeerObserver : PeerConnectionClientObserver
 
 	virtual void OnMessageFromPeer(int peer_id, const std::string& message) override
 	{
-		//TODO(bengreenier): we could surface this to unity
+		if (s_callbackMap.onMessageFromPeer)
+		{
+			(*s_callbackMap.onMessageFromPeer)(peer_id, message.c_str());
+		}
 	}
 
 	virtual void OnMessageSent(int err) override
 	{
-		ULOG(INFO, __FUNCTION__);
-		//TODO(bengreenier): we could surface this to unity
+		if (s_callbackMap.onMessageSent)
+		{
+			(*s_callbackMap.onMessageSent)(err);
+		}
 	}
 
 	virtual void OnServerConnectionFailure() override
 	{
-		ULOG(INFO, __FUNCTION__);
-		//TODO(bengreenier): we could surface this to unity
+		if (s_callbackMap.onServerConnectionFailure)
+		{
+			(*s_callbackMap.onServerConnectionFailure)();
+		}
 	}
+
+	virtual void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override
+	{
+		if (s_callbackMap.onSignalingChange)
+		{
+			(*s_callbackMap.onSignalingChange)(new_state);
+		}
+	}
+
+	virtual void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override
+	{
+		if (s_callbackMap.onAddStream)
+		{
+			(*s_callbackMap.onAddStream)(stream->label().c_str());
+		}
+	}
+
+	virtual void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override
+	{
+		if (s_callbackMap.onRemoveStream)
+		{
+			(*s_callbackMap.onRemoveStream)(stream->label().c_str());
+		}
+	}
+
+	virtual void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override
+	{
+		if (s_callbackMap.onDataChannel)
+		{
+			(*s_callbackMap.onDataChannel)(channel->label().c_str());
+		}
+	}
+
+	virtual void OnRenegotiationNeeded() override
+	{
+		if (s_callbackMap.onRenegotiationNeeded)
+		{
+			(*s_callbackMap.onRenegotiationNeeded)();
+		}
+	}
+
+	virtual void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override
+	{
+		if (s_callbackMap.onIceConnectionChange)
+		{
+			(*s_callbackMap.onIceConnectionChange)(new_state);
+		}
+	}
+
+	virtual void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override
+	{
+		if (s_callbackMap.onIceGatheringChange)
+		{
+			(*s_callbackMap.onIceGatheringChange)(new_state);
+		}
+	}
+
+	virtual void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override
+	{
+		if (s_callbackMap.onIceCandidate)
+		{
+			std::string sdp;
+
+			if (candidate->ToString(&sdp))
+			{
+				(*s_callbackMap.onIceCandidate)(sdp.c_str());
+			}
+		}
+	}
+
+	virtual void OnIceConnectionReceivingChange(bool receiving) override
+	{
+		if (s_callbackMap.onIceConnectionReceivingChange)
+		{
+			(*s_callbackMap.onIceConnectionReceivingChange)(receiving);
+		}
+	}
+
 } s_clientObserver;
 
 void InitWebRTC()
@@ -191,7 +296,8 @@ void InitWebRTC()
 		&client,
 		wnd,
 		&s_webrtcConfig,
-		s_bufferRenderer);
+		s_bufferRenderer,
+		&s_clientObserver);
 
 	client.RegisterObserver(&s_clientObserver);
 
@@ -368,7 +474,7 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 
 extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType)
 {
-	ULOG(INFO, __FUNCTION__);
+	// note: we can't call any marshalled stuff from this hook
 
 	switch (eventType)
 	{
@@ -396,8 +502,6 @@ extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventTyp
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginLoad(IUnityInterfaces* unityInterfaces)
 {
-	ULOG(INFO, __FUNCTION__);
-
 #if SHOW_CONSOLE
 	AllocConsole();
 	FILE* out(nullptr);
@@ -438,8 +542,6 @@ extern "C" __declspec(dllexport) void Close()
 
 extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 {
-	ULOG(INFO, __FUNCTION__);
-
 	s_Graphics->UnregisterDeviceEventCallback(OnGraphicsDeviceEvent);
 
 	Close();
@@ -452,24 +554,52 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 	return OnEncode;
 }
 
-extern "C" __declspec(dllexport) void SetCallbackMap(InputUpdateFuncType inputFunc,
-	LogFuncType logFunc,
-	PeerConnectFuncType peerConnectFunc,
-	PeerDisconnectFuncType peerDisconnectFunc)
+extern "C" __declspec(dllexport) void SetCallbackMap(StrParamFuncType onInputUpdate,
+	IntStringParamsFuncType onLog,
+	IntStringParamsFuncType onPeerConnect,
+	IntParamFuncType onPeerDisconnect,
+	NoParamFuncType onSignIn,
+	NoParamFuncType onDisconnect,
+	IntStringParamsFuncType onMessageFromPeer,
+	IntParamFuncType onMessageSent,
+	NoParamFuncType onServerConnectionFailure,
+	IntParamFuncType onSignalingChange,
+	StrParamFuncType onAddStream,
+	StrParamFuncType onRemoveStream,
+	StrParamFuncType onDataChannel,
+	NoParamFuncType onRenegotiationNeeded,
+	IntParamFuncType onIceConnectionChange,
+	IntParamFuncType onIceGatheringChange,
+	StrParamFuncType onIceCandidate,
+	BoolParamFuncType onIceConnectionReceivingChange)
 {
 	ULOG(INFO, __FUNCTION__);
 	
-	s_callbackMap.onInputUpdate = inputFunc;
-	s_callbackMap.onLog = logFunc;
-	s_callbackMap.onPeerConnect = peerConnectFunc;
-	s_callbackMap.onPeerDisconnect = peerDisconnectFunc;
+	s_callbackMap.onInputUpdate = onInputUpdate;
+	s_callbackMap.onLog = onLog;
+	s_callbackMap.onPeerConnect = onPeerConnect;
+	s_callbackMap.onPeerDisconnect = onPeerDisconnect;
+	s_callbackMap.onSignIn = onSignIn;
+	s_callbackMap.onDisconnect = onDisconnect;
+	s_callbackMap.onMessageFromPeer = onMessageFromPeer;
+	s_callbackMap.onMessageSent = onMessageSent;
+	s_callbackMap.onServerConnectionFailure = onServerConnectionFailure;
+	s_callbackMap.onSignalingChange = onSignalingChange;
+	s_callbackMap.onAddStream = onAddStream;
+	s_callbackMap.onRemoveStream = onRemoveStream;
+	s_callbackMap.onDataChannel = onDataChannel;
+	s_callbackMap.onRenegotiationNeeded = onRenegotiationNeeded;
+	s_callbackMap.onIceConnectionChange = onIceConnectionChange;
+	s_callbackMap.onIceGatheringChange = onIceGatheringChange;
+	s_callbackMap.onIceCandidate = onIceCandidate;
+	s_callbackMap.onIceConnectionReceivingChange = onIceConnectionReceivingChange;
 }
 
 extern "C" __declspec(dllexport) void ConnectToPeer(const int peerId)
 {
 	ULOG(INFO, __FUNCTION__);
 
-	// TODO(bengreenier): *maniacal laughter* does this work?
+	// marshal to main thread
 	rtcMainThread->Invoke<void>(RTC_FROM_HERE, [&] {
 		s_conductor->ConnectToPeer(peerId);
 	});
@@ -479,7 +609,7 @@ extern "C" __declspec(dllexport) void DisconnectFromPeer()
 {
 	ULOG(INFO, __FUNCTION__);
 
-	// TODO(bengreenier): *maniacal laughter* does this work?
+	// marshal to main thread
 	rtcMainThread->Invoke<void>(RTC_FROM_HERE, [&] {
 		s_conductor->DisconnectFromCurrentPeer();
 	});

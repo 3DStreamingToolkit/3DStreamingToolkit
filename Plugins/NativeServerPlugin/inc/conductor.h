@@ -19,6 +19,7 @@
 
 #include "buffer_renderer.h"
 #include "peer_connection_client.h"
+#include "peer_connection_multi_observer.h"
 #include "input_data_channel_observer.h"
 #include "main_window.h"
 #include "config_parser.h"
@@ -44,7 +45,8 @@ public:
 		PeerConnectionClient* client,
 		MainWindow* main_window,
 		StreamingToolkit::WebRTCConfig* webrtc_config,
-		StreamingToolkit::BufferRenderer* buffer_renderer);
+		StreamingToolkit::BufferRenderer* buffer_renderer,
+		PeerConnectionObserver* connection_observer = nullptr);
 
 	bool connection_active() const;
 
@@ -156,6 +158,7 @@ private:
 	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
 	PeerConnectionClient* client_;
+	PeerConnectionMultiObserver* client_observer_;
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 	std::unique_ptr<StreamingToolkit::InputDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;

@@ -163,7 +163,7 @@ namespace Microsoft.Toolkit.ThreeD
 
             // hook it's input event
             // note: if you wish to capture debug data, see the <see cref="StreamingUnityServerDebug"/> behaviour
-            Plugin.Input += OnInputData;
+            Plugin.InputUpdate += OnInputData;
 
             Plugin.PeerConnect += (int peerId, string peerName) =>
             {
