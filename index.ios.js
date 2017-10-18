@@ -19,7 +19,7 @@ var {
   getUserMedia,
 } = WebRTC;
 
-import ThreeDStreamingClient from './ThreeDStreamingClient';
+import ThreeDStreamingClient from './ThreeDStreamingClient.js';
 
 import Config from './config';
 
@@ -52,7 +52,7 @@ export default class rn3dtksample extends Component {
 
   this.state = {otherPeers: streamingClient.otherPeers, 
                 currentPeerId: 0,
-                videoURL: ''};
+                videoURL: null};
   }
   componentWillMount() {
 
@@ -63,16 +63,16 @@ export default class rn3dtksample extends Component {
   updatePeerList() {
     let peers = streamingClient.otherPeers;
 
-    if(peers.count > 0)
+    if(peers)
     {
-      this.setState({currentPeerId: peers[0]});
+      this.setState({currentPeerId: Object.keys(peers)[0]});
     }
 
     this.setState({otherPeers: streamingClient.otherPeers});
   }
 
   onRemoteStreamAdded(event) {
-    this.setState({videoURL: event.stream});
+    this.setState({videoURL: event.stream.toURL()});
   }
 
   onRemoteStreamRemoved(event) {
@@ -103,7 +103,7 @@ export default class rn3dtksample extends Component {
             {this.renderPeers()}
         </Picker>
         <Button title="Join peer" onPress={this.joinPeer.bind(this)}>Join Peer</Button>
-        <RTCView streamURL={this.state.videoURL}/>
+        <RTCView streamURL={this.state.videoURL} style={styles.remoteView}/>
       </View>
     );
   }
@@ -113,5 +113,12 @@ export default class rn3dtksample extends Component {
     });
   }
 }
+
+const styles = StyleSheet.create({
+  remoteView: {
+    width: 500,
+    height: 400,
+  },
+});
 
 AppRegistry.registerComponent('rn3dtksample', () => rn3dtksample);
