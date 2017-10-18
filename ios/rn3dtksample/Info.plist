@@ -12,6 +12,10 @@
 	<string>org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+  <key>NSCameraUsageDescription</key>
+  <string>Camera Permission</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Microphone Permission</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
