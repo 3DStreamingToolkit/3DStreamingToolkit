@@ -1,13 +1,12 @@
 ﻿using UnityEditor;
-using UnityEngine;
 
-namespace Microsoft.Toolkit.ThreeD
+namespace Microsoft.Toolkit.ThreeD.Editor
 {
     /// <summary>
     /// Custom editor for <see cref="WebRTCEyes"/>
     /// </summary>
     [CustomEditor(typeof(WebRTCEyes))]
-    public class WebRTCEyesEditor : Editor
+    public class WebRTCEyesEditor : UnityEditor.Editor
     {
         /// <summary>
         /// Unity inspector hook
@@ -22,7 +21,8 @@ namespace Microsoft.Toolkit.ThreeD
             var totalEyes = serializedObject.FindProperty("TotalEyes");
 
             EditorGUILayout.PropertyField(totalEyes);
-
+            EditorGUILayout.PropertyField(serializedObject.FindProperty("VisibleEyes"));
+            
             EditorGUILayout.PropertyField(serializedObject.FindProperty("EyeOne"));
 
             if (totalEyes.enumValueIndex == (int)WebRTCEyes.EyeCount.Two)

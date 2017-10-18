@@ -1,10 +1,5 @@
-﻿using Microsoft.Toolkit.ThreeD;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+﻿using System;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Microsoft.Toolkit.ThreeD
 {
@@ -17,11 +12,21 @@ namespace Microsoft.Toolkit.ThreeD
     /// </remarks>
     [RequireComponent(typeof(WebRTCEyes))]
     public class WebRTCServer : MonoBehaviour
-    { 
+    {
         /// <summary>
         /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
         /// </summary>
         public PeerListState PeerList = null;
+
+        /// <summary>
+        /// Should we load the native plugin in the editor?
+        /// </summary>
+        /// <remarks>
+        /// This requires webrtcConfig.json and nvEncConfig.json to exist in the unity
+        /// application directory (where Unity.exe) lives, and requires a native plugin
+        /// for the architecture of the editor (x64 vs x86).
+        /// </remarks>
+        public bool UseEditorNativePlugin = false;
 
         /// <summary>
         /// Instance that represents the underlying native plugin that powers the webrtc experience
@@ -114,7 +119,13 @@ namespace Microsoft.Toolkit.ThreeD
                     this.Eyes.EyeTwo.SetStereoProjectionMatrix(Camera.StereoscopicEye.Right, stereoRightProjection * this.Eyes.EyeOne.worldToCameraMatrix);
                 }
             }
-            
+
+            // check if we're in the editor, and fail out if we aren't loading the plugin in editor
+            if (Application.isEditor && !UseEditorNativePlugin)
+            {
+                return;
+            }
+
             // encode the entire render texture at the end of the frame
             StartCoroutine(Plugin.EncodeAndTransmitFrame());
             
@@ -140,6 +151,12 @@ namespace Microsoft.Toolkit.ThreeD
             // clear the underlying mutable peer data
             PeerList.Peers.Clear();
             PeerList.SelectedPeer = null;
+
+            // check if we're in the editor, and fail out if we aren't loading the plugin in editor
+            if (Application.isEditor && !UseEditorNativePlugin)
+            {
+                return;
+            }
 
             // Create the plugin
             Plugin = new StreamingUnityServerPlugin();
@@ -203,16 +220,11 @@ namespace Microsoft.Toolkit.ThreeD
 
                         Debug.Log("iss:" + isStereo);
 
-                        // change the number of eyes so that we can react
-                        // TODO(bengreenier): rendering behavior should change as a result
-                        if (isStereo == 1)
-                        {
-                            this.Eyes.TotalEyes = WebRTCEyes.EyeCount.Two;
-                        }
-                        else
-                        {
-                            this.Eyes.TotalEyes = WebRTCEyes.EyeCount.One;
-                        }
+                        // the visible eyes value needs to be set to Two only when isStereo is true (value of 1)
+                        // and the total eyes known by the scene is two (meaning we have a second camera available)
+                        this.Eyes.VisibleEyes = (isStereo == 1 && this.Eyes.TotalEyes == WebRTCEyes.EyeCount.Two) ?
+                            WebRTCEyes.EyeCount.Two :
+                            WebRTCEyes.EyeCount.One;
 
                         break;
 

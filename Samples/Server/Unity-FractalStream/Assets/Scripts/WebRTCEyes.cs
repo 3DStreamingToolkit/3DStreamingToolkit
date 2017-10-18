@@ -23,6 +23,11 @@ namespace Microsoft.Toolkit.ThreeD
         public EyeCount TotalEyes = EyeCount.One;
 
         /// <summary>
+        /// How many eyes we currently render with
+        /// </summary>
+        public EyeCount VisibleEyes = EyeCount.One;
+
+        /// <summary>
         /// Camera for first (left-most) eye
         /// </summary>
         public Camera EyeOne;
@@ -34,6 +39,11 @@ namespace Microsoft.Toolkit.ThreeD
         /// In a 2 eye (most common) scenario this is also known as the right eye
         /// </remarks>
         public Camera EyeTwo;
+
+        /// <summary>
+        /// The eye count from the last <see cref="SetupActiveEyes"/> call
+        /// </summary>
+        private EyeCount? lastSetupVisibleEyes = null;
 
         /// <summary>
         /// List of all camera for all eyes
@@ -75,6 +85,44 @@ namespace Microsoft.Toolkit.ThreeD
             
             this.EyeOne.stereoSeparation = stereoDistance;
             this.EyeTwo.stereoSeparation = stereoDistance;
+
+            // configure the eyes at start
+            SetupActiveEyes();
+        }
+
+        /// <summary>
+        /// Unity engine object Uodate() hook
+        /// </summary>
+        private void Update()
+        {
+            // if the eye config changes, reconfigure
+            if (this.lastSetupVisibleEyes.HasValue &&
+                this.lastSetupVisibleEyes.Value != this.VisibleEyes)
+            {
+                SetupActiveEyes();
+            }
+        }
+
+        /// <summary>
+        /// Setup eye cameras based on number of eyes
+        /// </summary>
+        private void SetupActiveEyes()
+        {
+            switch (this.VisibleEyes)
+            {
+                case EyeCount.One:
+                    // none means use the eye like a single camera, which is what we want here
+                    this.EyeOne.stereoTargetEye = StereoTargetEyeMask.None;
+                    this.EyeTwo.enabled = false;
+                    break;
+                case EyeCount.Two:
+                    this.EyeOne.stereoTargetEye = StereoTargetEyeMask.Left;
+                    this.EyeTwo.enabled = true;
+                    break;
+            }
+            
+            // update our last setup visible eye value
+            this.lastSetupVisibleEyes = this.VisibleEyes;
         }
     }
 }

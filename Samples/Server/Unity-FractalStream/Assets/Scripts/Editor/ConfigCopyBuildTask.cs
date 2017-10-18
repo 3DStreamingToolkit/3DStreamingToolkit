@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Microsoft.Toolkit.ThreeD
+namespace Microsoft.Toolkit.ThreeD.Editor
 {
     /// <summary>
     /// Build task that copies the <see cref="WebRTCServer"/> config files to the output directory if they exist
