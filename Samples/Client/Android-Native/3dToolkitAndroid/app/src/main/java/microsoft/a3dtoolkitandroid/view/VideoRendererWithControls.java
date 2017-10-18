@@ -11,6 +11,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 
 import com.badlogic.gdx.*;
 
@@ -19,6 +20,7 @@ import org.json.JSONObject;
 import org.webrtc.DataChannel;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import Jama.Matrix;
 import microsoft.a3dtoolkitandroid.util.MatrixMath;
@@ -33,16 +35,26 @@ import static microsoft.a3dtoolkitandroid.ConnectActivity.LOG;
  */
 
 public class VideoRendererWithControls extends SurfaceViewRenderer implements SensorEventListener {
+    private enum Mode{
+        NONE, DRAG, ZOOM
+    }
+
+    private Mode mode;
+
+
     //For Gesture Control
     double navHeading = 0.0;
     double navPitch = 0.0;
     double[] navLocation = { 0.0, 0.0, 0.0 };
-    boolean isFingerDown = false;
     double fingerDownX = 0.0;
     double fingerDownY = 0.0;
+    double zoomFingerDownY = 0.0;
+    double dx = 0.0;
+    double dy = 0.0;
     double downPitch = 0.0;
     double downHeading = 0.0;
     double[] downLocation = { 0.0, 0.0, 0.0 };
+
     double prevNavHeading = 0.0;
     double prevNavPitch = 0.0;
 
@@ -63,12 +75,11 @@ public class VideoRendererWithControls extends SurfaceViewRenderer implements Se
     float prevRoll = 0.0f;
 
     private MatrixMath matrixMath = new MatrixMath();
-    private Matrix navTransform;
+    private Matrix navTransform = matrixMath.MatrixCreateIdentity();
     private OnMotionEventListener mListener;
     private GestureDetectorCompat mDetector;
+    private double scaleFactor = 0.0;
 
-
-    int i = 0;
 
 
     public VideoRendererWithControls(Context context) {
@@ -81,129 +92,100 @@ public class VideoRendererWithControls extends SurfaceViewRenderer implements Se
 
     public void setEventListener(OnMotionEventListener eventListener, Context context) {
         this.mListener = eventListener;
-        mDetector = new GestureDetectorCompat(context, new VideoGestureListener());
     }
 
 
+    /**
+     * Takes a touch event and transforms it into a navigation matrix
+     * @param event: touch event
+     * @return true, unless listener hasn't been set
+     */
     @Override
-    public boolean onTouchEvent(MotionEvent event){
-        this.mDetector.onTouchEvent(event);
+    public boolean onTouchEvent(MotionEvent event) {
+        if (mListener == null) {
+            return false;
+        }
+        int pointerCount = event.getPointerCount();
+        MotionEvent.PointerCoords pointerCoords = new MotionEvent.PointerCoords();
+
+        switch(event.getAction() & MotionEvent.ACTION_MASK) {
+            case (MotionEvent.ACTION_DOWN) :
+//                Log.d(LOG, "onTouchEvent: ACTION_DOWN; pointerCount = " + pointerCount);
+                mode = Mode.DRAG;
+
+                fingerDownX = event.getX();
+                fingerDownY = event.getY();
+
+                downPitch = navPitch;
+                downHeading = navHeading;
+                downLocation[0] = navLocation[0];
+                downLocation[1] = navLocation[1];
+                downLocation[2] = navLocation[2];
+                break;
+            case (MotionEvent.ACTION_MOVE) :
+                if (mode == Mode.DRAG){
+//                    Log.d(LOG, "onTouchEvent: ACTION_MOVE, pointerCount = " + pointerCount);
+//                    Log.d(LOG, "onTouchEvent: fingerDownX = " + fingerDownX + " | fingerDownY = " + fingerDownY);
+                    dx = event.getX() - fingerDownX;
+                    dy = event.getY() - fingerDownY;
+                } else if (mode == Mode.ZOOM){
+//                    Log.d(LOG, "onTouchEvent: ACTION_MOVE, pointerCount = " + pointerCount);
+//                    Log.d(LOG, "onTouchEvent: fingerDownX = " + fingerDownX + " | fingerDownY = " + fingerDownY);
+                    event.getPointerCoords(1,pointerCoords);
+                    scaleFactor = pointerCoords.y - zoomFingerDownY;
+                }
+                break;
+            case (MotionEvent.ACTION_POINTER_DOWN):
+                mode = Mode.ZOOM;
+                event.getPointerCoords(1,pointerCoords);
+                zoomFingerDownY = pointerCoords.y;
+                break;
+            case (MotionEvent.ACTION_UP) :
+                mode = Mode.NONE;
+                break;
+            case (MotionEvent.ACTION_POINTER_UP):
+                mode = Mode.NONE;
+                break;
+        }
+
+
+        if (mode == Mode.DRAG && (abs(dx) + abs(dy) > 20)) {
+            Log.d(LOG, "onTouchEvent: begining = " + mode);
+            Log.d(LOG, "onTouchEvent: dx = " + dx + " | dy = " + dy);
+            double dpitch = 0.003 * dy;
+            double dheading = 0.003 * dx;
+
+            navHeading = downHeading - dheading;
+            navPitch = downPitch + dpitch;
+
+//            Log.d(LOG, "onTouchEvent: navPitch = " + navPitch + " | navHeading = " + navHeading);
+
+
+            Matrix locTransform =  matrixMath.MatrixMultiply(matrixMath.MatrixRotateY(navHeading), matrixMath.MatrixRotateZ(navPitch));
+            navTransform = matrixMath.MatrixMultiply(matrixMath.MatrixTranslate(navLocation), locTransform);
+
+            toBuffer();
+
+        } else if (mode == Mode.ZOOM && abs(scaleFactor) > 10){
+            Log.d(LOG, "onTouchEvent: begining = " + mode);
+            Log.d(LOG, "onTouchEvent: scaleFactor = " + scaleFactor);
+
+            double distance = -.3 * scaleFactor;
+
+            navLocation[0] = downLocation[0] + distance * navTransform.get(0,0);
+            navLocation[1] = downLocation[1] + distance * navTransform.get(0,1);
+            navLocation[2] = downLocation[2] + distance * navTransform.get(0,2);
+
+            navTransform.set(3,0, navLocation[0]);
+            navTransform.set(3,1, navLocation[1]);
+            navTransform.set(3,2, navLocation[2]);
+
+            toBuffer();
+        }
+        Log.d(LOG, "onTouchEvent:                                                     ---                                                   ");
+
         return true;
     }
-
-    private class VideoGestureListener extends GestureDetector.SimpleOnGestureListener {
-
-        @Override
-        public boolean onDown(MotionEvent event) {
-            Log.d(LOG,"onDown: " + event.toString());
-            return true;
-        }
-
-        @Override
-        public boolean onFling(MotionEvent event1, MotionEvent event2,
-                               float velocityX, float velocityY) {
-            Log.d(LOG, "onFling: " + event1.toString() + event2.toString());
-            return true;
-        }
-    }
-
-
-
-//    /**
-//     * Takes a touch event and transforms it into a navigation matrix
-//     * @param event: touch event
-//     * @return true, unless listener hasn't been set
-//     */
-//    @Override
-//    public boolean onTouchEvent(MotionEvent event) {
-//        if (mListener == null) {
-//            return false;
-//        }
-//        int action = MotionEventCompat.getActionMasked(event);
-//        MotionEvent.PointerCoords pointerCoords = new MotionEvent.PointerCoords();
-//        int pointerCount = event.getPointerCount();
-//
-//
-//        switch(action) {
-//            case (MotionEvent.ACTION_DOWN) :
-//                Log.d(LOG, "onTouchEvent: ACTION_DOWN; pointerCount = " + pointerCount);
-//
-//                isFingerDown = true;
-//                event.getPointerCoords(0, pointerCoords);
-//                fingerDownX = pointerCoords.x;
-//                fingerDownY = pointerCoords.y;
-//
-//                downPitch = navPitch;
-//                downHeading = navHeading;
-//                downLocation[0] = navLocation[0];
-//                downLocation[1] = navLocation[1];
-//                downLocation[2] = navLocation[2];
-//                return true;
-//            case (MotionEvent.ACTION_MOVE) :
-//                if (isFingerDown) {
-//
-//                    if(pointerCount == 1){
-//                        Log.d(LOG, "onTouchEvent: ACTION_MOVE, pointerCount == 1");
-//
-//                        // location of first finger
-//                        event.getPointerCoords(0, pointerCoords);
-//                        Log.d(LOG, "onTouchEvent: fingerDownX = " + fingerDownX + " | fingerDownY = " + fingerDownY);
-//                        Log.d(LOG, "onTouchEvent: pointerCoords.x  = " + pointerCoords.x  + " | pointerCoords.y = " + pointerCoords.y);
-//
-//                        double dx = pointerCoords.x - fingerDownX;
-//                        double dy = pointerCoords.y - fingerDownY;
-//
-//                        Log.d(LOG, "onTouchEvent: dx = " + dx + " | dy = " + dy);
-//
-//                        double dpitch = 0.005 * dy;
-//                        double dheading = 0.005 * dx;
-//
-//                        Log.d(LOG, "onTouchEvent: dpitch = " + dpitch + " | dheading = " + dheading);
-//
-//                        navHeading = downHeading - dheading;
-//                        navPitch = downPitch + dpitch;
-//
-//                        Log.d(LOG, "onTouchEvent: navPitch = " + navPitch + " | navHeading = " + navHeading);
-//
-//                        Log.d(LOG, "                                                     ---                                                   ");
-//
-//                        Matrix locTransform =  matrixMath.MatrixMultiply(matrixMath.MatrixRotateY(navHeading), matrixMath.MatrixRotateZ(navPitch));
-//                        navTransform = matrixMath.MatrixMultiply(matrixMath.MatrixTranslate(navLocation), locTransform);
-//
-//                        toBuffer();
-//                    } else if(pointerCount == 2){
-//                        Log.d(LOG, "onTouchEvent: ACTION_MOVE, pointerCount == 2");
-//
-//                        // location of second finger
-//                        event.getPointerCoords(1,pointerCoords);
-//
-//                        double dy = pointerCoords.y - fingerDownY;
-//
-//                        double dist = -dy;
-//
-//                        navLocation[0] = downLocation[0] + dist * navTransform.get(0,0);
-//                        navLocation[1] = downLocation[1] + dist * navTransform.get(0,1);
-//                        navLocation[2] = downLocation[2] + dist * navTransform.get(0,2);
-//
-//                        navTransform.set(3,0, navLocation[0]);
-//                        navTransform.set(3,1, navLocation[1]);
-//                        navTransform.set(3,2, navLocation[2]);
-//
-//                        toBuffer();
-//                    }
-//                }
-//                return true;
-//            case (MotionEvent.ACTION_UP) :
-//                isFingerDown = false;
-//                return true;
-//            case (MotionEvent.ACTION_CANCEL) :
-//                return true;
-//            case (MotionEvent.ACTION_OUTSIDE) :
-//                return true;
-//            default :
-//                return super.onTouchEvent(event);
-//        }
-//    }
 
     /**
      * Takes movement data (from matrix) and creates a byte buffer to send to the server
@@ -232,41 +214,6 @@ public class VideoRendererWithControls extends SurfaceViewRenderer implements Se
         DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, false);
         mListener.sendTransform(buffer);
     }
-
-//    public boolean touchDown (float x, float y, int pointer, int button) {
-//        if (pointer > 1) return false;
-//
-//        if (pointer == 0) {
-//            pointer1.set(x, y);
-//            gestureStartTime = Gdx.input.getCurrentEventTime();
-//            tracker.start(x, y, gestureStartTime);
-//            if (Gdx.input.isTouched(1)) {
-//                // Start pinch.
-//                inTapSquare = false;
-//                pinching = true;
-//                initialPointer1.set(pointer1);
-//                initialPointer2.set(pointer2);
-//                longPressTask.cancel();
-//            } else {
-//                // Normal touch down.
-//                inTapSquare = true;
-//                pinching = false;
-//                longPressFired = false;
-//                tapSquareCenterX = x;
-//                tapSquareCenterY = y;
-//                if (!longPressTask.isScheduled()) Timer.schedule(longPressTask, longPressSeconds);
-//            }
-//        } else {
-//            // Start pinch.
-//            pointer2.set(x, y);
-//            inTapSquare = false;
-//            pinching = true;
-//            initialPointer1.set(pointer1);
-//            initialPointer2.set(pointer2);
-//            longPressTask.cancel();
-//        }
-//        return listener.touchDown(x, y, pointer, button);
-//    }
 
 
     @Override

@@ -91,7 +91,7 @@ public class ConnectActivity extends AppCompatActivity implements
     public MediaConstraints peerConnectionConstraints;
     public SessionDescription localSdp; // either offer or answer SDP
     public VideoRendererWithControls remoteVideoRenderer;
-    public final EglBase rootEglBase = EglBase.create();
+    public EglBase rootEglBase = EglBase.create();
     public SensorManager sManager;
 
     //Fragment variables
@@ -448,11 +448,7 @@ public class ConnectActivity extends AppCompatActivity implements
             peerConnectionFactory = null;
         }
         if(rootEglBase != null){
-            try {
-                rootEglBase.release();
-            } catch (RuntimeException e){
-                logAndToast(this, e.toString());
-            }
+            rootEglBase = null;
         }
         if(serverListFragment != null){
             serverListFragment.onDestroy();
