@@ -49,6 +49,13 @@ public class PeerListDropdownAdapter : MonoBehaviour
 
     private void Update()
     {
+        if (this.PeerList.SelectedPeer != null)
+        {
+            // close the open menu (the one we sit inside of)
+            this.GetComponentInParent<MenuStack.MenuRoot>().CloseAsync();
+            return;
+        }
+
         bool isDirty = false;
         foreach (var peer in this.PeerList.Peers)
         {

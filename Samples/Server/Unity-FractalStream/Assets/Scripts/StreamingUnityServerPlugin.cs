@@ -122,26 +122,54 @@ namespace Microsoft.Toolkit.ThreeD
         private GenericDelegate<string>.Handler pinnedIceCandidate;
         private GenericDelegate<bool>.Handler pinnedIceConnectionReceivingChange;
 
-        private void OnInputUpdate(string val0){ if (this.InputUpdate != null) this.InputUpdate(val0); }
-        private void OnLog(int val0, string val1) { if (Log != null) this.Log(val0, val1); }
-        private void OnPeerConnect(int val0, string val1) { if (PeerConnect != null) this.PeerConnect(val0, val1); }
-        private void OnPeerDisconnect(int val0) { if (this.PeerDisconnect != null) this.PeerDisconnect(val0); }
-        private void OnSignIn() { if (this.SignIn != null) this.SignIn(); }
-        private void OnDisconnect() { if (this.Disconnect != null) this.Disconnect(); }
-        private void OnMessageFromPeer(int val0, string val1){ if (MessageFromPeer != null) this.MessageFromPeer(val0, val1); }
-        private void OnMessageSent(int val0) { if (this.MessageSent != null) this.MessageSent(val0); }
-        private void OnServerConnectionFailure() { if (this.ServerConnectionFailure != null) this.ServerConnectionFailure(); }
-        private void OnSignalingChange(int val0) { if (this.SignalingChange != null) this.SignalingChange(val0); }
-        private void OnAddStream(string val0) { if (this.AddStream != null) this.AddStream(val0); }
-        private void OnRemoveStream(string val0) { if (this.RemoveStream != null) this.RemoveStream(val0); }
-        private void OnDataChannel(string val0) { if (this.DataChannel != null) this.DataChannel(val0); }
-        private void OnRenegotiationNeeded(){ if (this.RenegotiationNeeded != null) this.RenegotiationNeeded(); }
-        private void OnIceConnectionChange(int val0) { if (this.IceConnectionChange != null) this.IceConnectionChange(val0); }
-        private void OnIceGatheringChange(int val0) { if (this.IceGatheringChange != null) this.IceGatheringChange(val0); }
-        private void OnIceCandidate(string val0) { if (this.IceCandidate != null) this.IceCandidate(val0); }
-        private void OnIceConnectionReceivingChange(bool val0) { if (this.IceConnectionReceivingChange != null) this.IceConnectionReceivingChange(val0); }
+        private void OnInputUpdate(string val0) { ErrorOnFailure(() => { if (this.InputUpdate != null) this.InputUpdate(val0); }); }
+        private void OnLog(int val0, string val1) { ErrorOnFailure(() => { if (Log != null) this.Log(val0, val1); }); }
+        private void OnPeerConnect(int val0, string val1) { ErrorOnFailure(() => { if (PeerConnect != null) this.PeerConnect(val0, val1); }); }
+        private void OnPeerDisconnect(int val0) { ErrorOnFailure(() => { if (this.PeerDisconnect != null) this.PeerDisconnect(val0); }); }
+        private void OnSignIn() { ErrorOnFailure(() => { if (this.SignIn != null) this.SignIn(); }); }
+        private void OnDisconnect() { ErrorOnFailure(() => { if (this.Disconnect != null) this.Disconnect(); }); }
+        private void OnMessageFromPeer(int val0, string val1){ ErrorOnFailure(() => { if (MessageFromPeer != null) this.MessageFromPeer(val0, val1); }); }
+        private void OnMessageSent(int val0) { ErrorOnFailure(() => { if (this.MessageSent != null) this.MessageSent(val0); }); }
+        private void OnServerConnectionFailure() { ErrorOnFailure(() => { if (this.ServerConnectionFailure != null) this.ServerConnectionFailure(); }); }
+        private void OnSignalingChange(int val0) { ErrorOnFailure(() => { if (this.SignalingChange != null) this.SignalingChange(val0); }); }
+        private void OnAddStream(string val0) { ErrorOnFailure(() => { if (this.AddStream != null) this.AddStream(val0); }); }
+        private void OnRemoveStream(string val0) { ErrorOnFailure(() => { if (this.RemoveStream != null) this.RemoveStream(val0); }); }
+        private void OnDataChannel(string val0) { ErrorOnFailure(() => { if (this.DataChannel != null) this.DataChannel(val0); }); }
+        private void OnRenegotiationNeeded(){ ErrorOnFailure(() => { if (this.RenegotiationNeeded != null) this.RenegotiationNeeded(); }); }
+        private void OnIceConnectionChange(int val0) { ErrorOnFailure(() => { if (this.IceConnectionChange != null) this.IceConnectionChange(val0); }); }
+        private void OnIceGatheringChange(int val0) { ErrorOnFailure(() => { if (this.IceGatheringChange != null) this.IceGatheringChange(val0); }); }
+        private void OnIceCandidate(string val0) { ErrorOnFailure(() => { if (this.IceCandidate != null) this.IceCandidate(val0); }); }
+        private void OnIceConnectionReceivingChange(bool val0) { ErrorOnFailure(() => { if (this.IceConnectionReceivingChange != null) this.IceConnectionReceivingChange(val0); }); }
 
         #endregion
+
+        /// <summary>
+        /// Fired when a managed error occurs but is triggered by native code
+        /// </summary>
+        /// <remarks>
+        /// This occurs, for example, when an event handler throws, but the event was 
+        /// raised by native code
+        /// </remarks>
+        public event GenericDelegate<Exception>.Handler Error;
+
+        /// <summary>
+        /// Executes a chunk of work and emitted an <see cref="Error"/> event on failure
+        /// </summary>
+        /// <param name="action">chunk of work</param>
+        private void ErrorOnFailure(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch(Exception ex)
+            {
+                if (this.Error != null)
+                {
+                    this.Error(ex);
+                }
+            }
+        }
 
         /// <summary>
         /// Default ctor

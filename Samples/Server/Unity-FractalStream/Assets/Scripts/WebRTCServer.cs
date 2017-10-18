@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using UnityEngine;
 
 namespace Microsoft.Toolkit.ThreeD
@@ -77,6 +78,19 @@ namespace Microsoft.Toolkit.ThreeD
         private PeerListState.Peer previousPeer = null;
 
         /// <summary>
+        /// Internal tracking id for the peer we're trying to connect to for video/data
+        /// </summary>
+        /// <remarks>
+        /// We use this to know who is connected on <see cref="StreamingUnityServerPlugin.AddStream"/>
+        /// </remarks>
+        private int? offerPeer = null;
+
+        /// <summary>
+        /// Internal tracking bool for indicating if the peer offer succeeded
+        /// </summary>
+        private bool offerSucceeded = false;
+
+        /// <summary>
         /// Unity engine object Awake() hook
         /// </summary>
         private void Awake()
@@ -129,6 +143,15 @@ namespace Microsoft.Toolkit.ThreeD
             // encode the entire render texture at the end of the frame
             StartCoroutine(Plugin.EncodeAndTransmitFrame());
             
+            // if we got an offer, track that we're connected to them
+            // in a way that won't trip our connection logic (we don't
+            // want to accidently make them an offer, just an answer)
+            if (offerPeer.HasValue && offerSucceeded)
+            {
+                previousPeer = PeerList.Peers.First(p => p.Id == offerPeer.Value);
+                PeerList.SelectedPeer = previousPeer;
+            }
+
             // check if we need to connect to a peer, and if so, do it
             if ((previousPeer == null && PeerList.SelectedPeer != null) ||
                 (previousPeer != null && PeerList.SelectedPeer != null && !previousPeer.Equals(PeerList.SelectedPeer)))
@@ -179,6 +202,39 @@ namespace Microsoft.Toolkit.ThreeD
                 // TODO(bengreenier): this can be optimized to stop at the first match
                 PeerList.Peers.RemoveAll(p => p.Id == peerId);
             };
+
+            // when we get a message, check if it's an offer and if it is track who it's
+            // from so that we can use it to determine who we're connected to in AddStream
+            Plugin.MessageFromPeer += (int peer, string message) =>
+            {
+                try
+                {
+                    var msg = SimpleJSON.JSON.Parse(message);
+
+                    Debug.Log("sdp:" + msg["sdp"].IsNull + " " + msg["type"].Value);
+
+                    if (!msg["sdp"].IsNull && msg["type"].Value == "offer")
+                    {
+                        offerPeer = peer;
+                    }
+                }
+                catch (Exception)
+                {
+                    // swallow
+                }
+            };
+
+            // when we add a stream successfully, track that
+            Plugin.AddStream += (string streamLabel) =>
+            {
+                offerSucceeded = true;
+            };
+
+            // when we remove a stream, track that
+            Plugin.RemoveStream += (string streamLabel) =>
+            {
+                offerSucceeded = false;
+            };
         }
 
         /// <summary>
@@ -203,9 +259,7 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 var node = SimpleJSON.JSON.Parse(data);
                 string messageType = node["type"];
-
-                Debug.Log(data);
-
+                
                 switch (messageType)
                 {
                     case "stereo-rendering":
@@ -217,9 +271,7 @@ namespace Microsoft.Toolkit.ThreeD
                         {
                             break;
                         }
-
-                        Debug.Log("iss:" + isStereo);
-
+                        
                         // the visible eyes value needs to be set to Two only when isStereo is true (value of 1)
                         // and the total eyes known by the scene is two (meaning we have a second camera available)
                         this.Eyes.VisibleEyes = (isStereo == 1 && this.Eyes.TotalEyes == WebRTCEyes.EyeCount.Two) ?

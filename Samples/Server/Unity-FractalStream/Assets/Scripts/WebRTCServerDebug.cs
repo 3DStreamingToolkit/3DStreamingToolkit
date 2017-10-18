@@ -53,11 +53,25 @@ namespace Microsoft.Toolkit.ThreeD
         {
             var plugin = this.GetComponent<WebRTCServer>().Plugin;
 
-            // if it has a plugin, and should log, then attach to it's log event
-            if (plugin != null && shouldLog)
+            // hook plugin internals if plugin exists
+            if (plugin != null)
             {
-                plugin.Log += OnLogData;
+                plugin.Error += OnError;
+
+                if (shouldLog)
+                {
+                    plugin.Log += OnLogData;
+                }
             }
+        }
+
+        /// <summary>
+        /// Handles error data and writes it to the debug console
+        /// </summary>
+        /// <param name="ex">plugin exception data</param>
+        private void OnError(Exception ex)
+        {
+            Debug.LogError(ex.Message + ":" + ex.StackTrace);
         }
 
         /// <summary>
