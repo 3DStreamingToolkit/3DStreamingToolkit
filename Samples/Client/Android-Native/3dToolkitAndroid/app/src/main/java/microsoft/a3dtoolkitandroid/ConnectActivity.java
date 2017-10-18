@@ -3,8 +3,11 @@ package microsoft.a3dtoolkitandroid;
 
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -89,6 +92,7 @@ public class ConnectActivity extends AppCompatActivity implements
     public SessionDescription localSdp; // either offer or answer SDP
     public VideoRendererWithControls remoteVideoRenderer;
     public final EglBase rootEglBase = EglBase.create();
+    public SensorManager sManager;
 
     //Fragment variables
     public FragmentManager fragmentManager;
@@ -161,29 +165,35 @@ public class ConnectActivity extends AppCompatActivity implements
      */
     private void createMediaConstraints() {
         runOnUiThread(() -> {
-                    //Android flags for video UI
-                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                            | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-                    getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+            //Android flags for video UI
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
 
-                    //create video renderer and initialize it
-                    remoteVideoRenderer = findViewById(R.id.remote_video_view);
-                    remoteVideoRenderer.init(rootEglBase.getEglBaseContext(), null);
-                    remoteVideoRenderer.setEventListener(new VideoRendererWithControls.OnMotionEventListener() {
-                        /**
-                         * Sends gesture control buffer from {@link VideoRendererWithControls}
-                         *
-                         * @param buffer: DataChannel buffer to send to server
-                         */
-                        @Override
-                        public void sendTransform(DataChannel.Buffer buffer) {
-                            if (inputChannel != null) {
-                                inputChannel.send(buffer);
-                            }
-                        }
-                    });
-                });
+            //start accelerometer
+            sManager = (SensorManager) this.getSystemService(SENSOR_SERVICE);
+
+            //create video renderer and initialize it
+            remoteVideoRenderer = findViewById(R.id.remote_video_view);
+            remoteVideoRenderer.init(rootEglBase.getEglBaseContext(), null);
+            remoteVideoRenderer.setEventListener(new VideoRendererWithControls.OnMotionEventListener() {
+                /**
+                 * Sends gesture control buffer from {@link VideoRendererWithControls}
+                 *
+                 * @param buffer: DataChannel buffer to send to server
+                 */
+                @Override
+                public void sendTransform(DataChannel.Buffer buffer) {
+                    if (inputChannel != null) {
+                        inputChannel.send(buffer);
+                    }
+                }
+            }, this);
+
+            sManager.registerListener(remoteVideoRenderer, sManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_NORMAL);
+            sManager.registerListener(remoteVideoRenderer, sManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD),SensorManager.SENSOR_DELAY_NORMAL);
+        });
 
         // Create peer connection constraints.
         peerConnectionConstraints = new MediaConstraints();

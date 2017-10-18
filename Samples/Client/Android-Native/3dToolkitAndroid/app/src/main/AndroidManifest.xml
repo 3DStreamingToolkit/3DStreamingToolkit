@@ -26,7 +26,8 @@
             android:label="@string/title_activity_serverList"
             android:screenOrientation="fullUser"
             android:configChanges="orientation|smallestScreenSize|screenSize|screenLayout"
-            >
+            android:parentActivityName=".SignInActivity"
+        >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".SignInActivity" />

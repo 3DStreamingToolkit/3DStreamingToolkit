@@ -53,5 +53,5 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.0'
     compile group: 'gov.nist.math', name: 'jama', version: '1.0.3'
     compile group: 'org.json', name: 'json', version: '20170516'
-
-}
+    compile group: 'com.badlogicgames.gdx', name: 'gdx', version: '1.9.6'
+    compile group: 'com.badlogicgames.gdx', name: 'gdx-backend-android', version: '1.9.6'}
