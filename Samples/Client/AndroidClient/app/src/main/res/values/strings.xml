@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">3dToolkitAndroid</string>
+
+    <string name="title_activity_connect">Connect</string>
+    <string name="title_activity_serverList">Server List</string>
+    <string name="name">Android Client</string>
+    <string name="connect">Connect</string>
+    <string name="name_field">Name:</string>
+    <string name="server">Server:</string>
+    <string name="url">http://localhost:3001</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+</resources>
