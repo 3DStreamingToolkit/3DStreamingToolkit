@@ -13,5 +13,5 @@ public class Config {
     public static String credential = "password";
     // Set this to PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK or
     // PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_SECURE
-    public static PeerConnection.TlsCertPolicy tlsCertPolicy = PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK;
+    public static PeerConnection.TlsCertPolicy tlsCertPolicy = PeerConnection.TlsCertPolicy.TLS_CERT_POLICY_SECURE;
 }
