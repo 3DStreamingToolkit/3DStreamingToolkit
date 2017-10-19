@@ -36,7 +36,7 @@ public class MatrixMath {
     }
 
     public Matrix MatrixTranslate(double[] v) {
-        double[][] output = { { 1, 0, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 }, { v[0], v[1], v[2], 1 } };
+        double[][] output = { { 1.0, 0.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0, 0.0 }, { 0.0, 0.0, 1.0, 0.0 }, { v[0], v[1], v[2], 1.0 } };
         return new Matrix(output);
     }
 
@@ -44,7 +44,7 @@ public class MatrixMath {
         double s = (float) Math.sin(radians);
         double c = (float) Math.cos(radians);
 
-        double[][] output = { { 1, 0, 0, 0 }, { 0, c, s, 0 }, { 0, -s, c, 0 }, { 0, 0, 0, 1 } };
+        double[][] output = { { 1.0, 0.0, 0.0, 0.0}, { 0.0, c, s, 0.0 }, { 0.0, -s, c, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } };
         return new Matrix(output);
     }
 
@@ -52,7 +52,7 @@ public class MatrixMath {
         double s = (float) Math.sin(radians);
         double c = (float) Math.cos(radians);
 
-        double[][] output = { { c, 0, -s, 0 }, { 0, 1, 0, 0 }, { s, 0, c, 0 }, { 0, 0, 0, 1 } };
+        double[][] output = { { c, 0.0, -s, 0.0 }, { 0.0, 1.0, 0.0, 0.0 }, { s, 0.0, c, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } };
         return new Matrix(output);
     }
 
@@ -60,7 +60,7 @@ public class MatrixMath {
         double s = (float) Math.sin(radians);
         double c = (float) Math.cos(radians);
 
-        double[][] output = { { c, s, 0, 0 }, { -s, c, 0, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 1 } };
+        double[][] output = { { c, s, 0.0, 0.0 }, { -s, c, 0.0, 0.0 }, { 0.0, 0.0, 1.0, 0.0 }, { 0.0, 0.0, 0.0, 1.0 } };
         return new Matrix(output);
     }
 }
