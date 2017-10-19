@@ -11,72 +11,45 @@ PeerConnectionMultiObserver::~PeerConnectionMultiObserver()
 
 void PeerConnectionMultiObserver::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnSignalingChange(new_state);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnSignalingChange(new_state); });
 }
 
 void PeerConnectionMultiObserver::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnAddStream(stream);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnAddStream(stream); });
 }
 
 void PeerConnectionMultiObserver::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnRemoveStream(stream);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnRemoveStream(stream); });
 }
 
 void PeerConnectionMultiObserver::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnDataChannel(channel);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnDataChannel(channel); });
 }
 
 void PeerConnectionMultiObserver::OnRenegotiationNeeded()
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnRenegotiationNeeded();
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnRenegotiationNeeded(); });
 }
 
 void PeerConnectionMultiObserver::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnIceConnectionChange(new_state);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnIceConnectionChange(new_state); });
 }
 
 void PeerConnectionMultiObserver::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnIceGatheringChange(new_state);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnIceGatheringChange(new_state); });
 }
 
 void PeerConnectionMultiObserver::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnIceCandidate(candidate);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnIceCandidate(candidate); });
 }
 
 void PeerConnectionMultiObserver::OnIceConnectionReceivingChange(bool receiving)
 {
-	for (auto it = observers_.rbegin(); it != observers_.rend(); it++)
-	{
-		(*it)->OnIceConnectionReceivingChange(receiving);
-	}
+	std::for_each(observers_.rbegin(), observers_.rend(), [&](auto o) { o->OnIceConnectionReceivingChange(receiving); });
 }

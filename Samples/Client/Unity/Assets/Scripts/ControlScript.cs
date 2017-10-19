@@ -250,19 +250,6 @@ public class ControlScript : MonoBehaviour
 #endif
     }
 
-#if !UNITY_EDITOR
-    private IEnumerator DelayStereoMessage()
-    {
-        yield return new WaitForSeconds(3);
-        var msg = "{" +
-            "  \"type\":\"stereo-rendering\"," +
-            "  \"body\":\"1\"" +
-            "}";
-
-        _webRtcControl.SendPeerDataChannelMessage(msg);
-    }
-#endif
-
     private void GetPlaybackTextureFromPlugin()
     {
         IntPtr nativeTex = IntPtr.Zero;

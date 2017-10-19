@@ -11,12 +11,40 @@ namespace Microsoft.Toolkit.ThreeD
     /// Adding this component requires an <c>nvEncConfig.json</c> and <c>webrtcConfig.json</c> in the run directory
     /// To see debug information from this component, add a <see cref="WebRTCServerDebug"/> to the same object
     /// </remarks>
-    [RequireComponent(typeof(WebRTCEyes))]
     public class WebRTCServer : MonoBehaviour
     {
         /// <summary>
+        /// The left eye camera
+        /// </summary>
+        /// <remarks>
+        /// This camera is always needed, even if running in mono
+        /// </remarks>
+        [Tooltip("The left eye camera, or the only camera in a mono setup")]
+        public Camera LeftEye;
+
+        /// <summary>
+        /// The right eye camera
+        /// </summary>
+        /// <remarks>
+        /// This camera is only needed if running in stereo
+        /// </remarks>
+        [Tooltip("The right eye camera, only used in a stereo setup")]
+        public Camera RightEye;
+
+        /// <summary>
+        /// Indicates the current rendering approach
+        /// </summary>
+        /// <remarks>
+        /// When this is <c>true</c> stereo rendering using <see cref="LeftEye"/> and <see cref="RightEye"/> will be used
+        /// When this is <c>false</c> mono rendering using <see cref="LeftEye"/> will be used
+        /// </remarks>
+        [Tooltip("Flag indicating if we are currently rendering in stereo")]
+        public bool IsStereo = false;
+
+        /// <summary>
         /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
         /// </summary>
+        [Tooltip("A mutable peers list that we'll keep updated, and derive connect/disconnect operations from")]
         public PeerListState PeerList = null;
 
         /// <summary>
@@ -27,20 +55,13 @@ namespace Microsoft.Toolkit.ThreeD
         /// application directory (where Unity.exe) lives, and requires a native plugin
         /// for the architecture of the editor (x64 vs x86).
         /// </remarks>
+        [Tooltip("Flag indicating if we should load the native plugin in the editor")]
         public bool UseEditorNativePlugin = false;
 
         /// <summary>
         /// Instance that represents the underlying native plugin that powers the webrtc experience
         /// </summary>
         public StreamingUnityServerPlugin Plugin = null;
-
-        /// <summary>
-        /// Internal reference to the eyes component
-        /// </summary>
-        /// <remarks>
-        /// Since <see cref="WebRTCEyes"/> is a required component, we just set this value in <see cref="Awake"/>
-        /// </remarks>
-        private WebRTCEyes Eyes = null;
 
         /// <summary>
         /// The location to be placed at as determined by client control
@@ -91,6 +112,11 @@ namespace Microsoft.Toolkit.ThreeD
         private bool offerSucceeded = false;
 
         /// <summary>
+        /// Flag indicating if we were stereo on the last <see cref="SetupActiveEyes"/> call
+        /// </summary>
+        private bool? lastSetupVisibleEyes = null;
+
+        /// <summary>
         /// Unity engine object Awake() hook
         /// </summary>
         private void Awake()
@@ -98,8 +124,8 @@ namespace Microsoft.Toolkit.ThreeD
             // make sure that the render window continues to render when the game window does not have focus
             Application.runInBackground = true;
 
-            // capture the attached eyes into a member variable
-            Eyes = this.GetComponent<WebRTCEyes>();
+            // setup the eyes for the first time
+            SetupActiveEyes();
 
             // open the connection
             Open();
@@ -125,13 +151,20 @@ namespace Microsoft.Toolkit.ThreeD
                 transform.LookAt(lookAt, up);
 
                 // apply stereo projection if needed
-                if (this.Eyes.TotalEyes == WebRTCEyes.EyeCount.Two &&
+                if (this.IsStereo &&
                     !stereoLeftProjection.isIdentity &&
                     !stereoRightProjection.isIdentity)
                 {
-                    this.Eyes.EyeOne.SetStereoProjectionMatrix(Camera.StereoscopicEye.Left, stereoLeftProjection * this.Eyes.EyeOne.worldToCameraMatrix);
-                    this.Eyes.EyeTwo.SetStereoProjectionMatrix(Camera.StereoscopicEye.Right, stereoRightProjection * this.Eyes.EyeOne.worldToCameraMatrix);
+                    this.LeftEye.SetStereoProjectionMatrix(Camera.StereoscopicEye.Left, stereoLeftProjection * this.LeftEye.worldToCameraMatrix);
+                    this.RightEye.SetStereoProjectionMatrix(Camera.StereoscopicEye.Right, stereoRightProjection * this.RightEye.worldToCameraMatrix);
                 }
+            }
+
+            // if the eye config changes, reconfigure
+            if (this.lastSetupVisibleEyes.HasValue &&
+                this.lastSetupVisibleEyes.Value != this.IsStereo)
+            {
+                SetupActiveEyes();
             }
 
             // check if we're in the editor, and fail out if we aren't loading the plugin in editor
@@ -211,8 +244,6 @@ namespace Microsoft.Toolkit.ThreeD
                 {
                     var msg = SimpleJSON.JSON.Parse(message);
 
-                    Debug.Log("sdp:" + msg["sdp"].IsNull + " " + msg["type"].Value);
-
                     if (!msg["sdp"].IsNull && msg["type"].Value == "offer")
                     {
                         offerPeer = peer;
@@ -271,12 +302,10 @@ namespace Microsoft.Toolkit.ThreeD
                         {
                             break;
                         }
-                        
+
                         // the visible eyes value needs to be set to Two only when isStereo is true (value of 1)
                         // and the total eyes known by the scene is two (meaning we have a second camera available)
-                        this.Eyes.VisibleEyes = (isStereo == 1 && this.Eyes.TotalEyes == WebRTCEyes.EyeCount.Two) ?
-                            WebRTCEyes.EyeCount.Two :
-                            WebRTCEyes.EyeCount.One;
+                        this.IsStereo = (isStereo == 1 && this.RightEye != null) ? true : false;
 
                         break;
 
@@ -348,6 +377,27 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 Debug.LogWarning("InputUpdate threw " + ex.Message + "\r\n" + ex.StackTrace);
             }
+        }
+
+        /// <summary>
+        /// Setup eye cameras based on number of eyes
+        /// </summary>
+        private void SetupActiveEyes()
+        {
+            if (this.IsStereo)
+            {
+                this.LeftEye.stereoTargetEye = StereoTargetEyeMask.Left;
+                this.RightEye.enabled = true;
+            }
+            else
+            {
+                // none means use the eye like a single camera, which is what we want here
+                this.LeftEye.stereoTargetEye = StereoTargetEyeMask.None;
+                this.RightEye.enabled = false;
+            }
+
+            // update our last setup visible eye value
+            this.lastSetupVisibleEyes = this.IsStereo;
         }
     }
 }
