@@ -188,6 +188,7 @@ namespace StreamingToolkit
 			else
 			{
 				texture = buffer_renderer_->Capture();
+
 				if (!texture)
 				{
 					return;

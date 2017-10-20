@@ -30,9 +30,24 @@ public class Fractals : MonoBehaviour {
         Quaternion.Euler(-90f, 0f, 0f)
     };
     
-    void Start () {
-        gameObject.AddComponent<MeshFilter>().mesh = mesh;
-        gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
+    void Start ()
+    {
+        MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
+        if (meshFilter == null)
+        {
+            meshFilter = gameObject.AddComponent<MeshFilter>();
+        }
+
+        meshFilter.mesh = mesh;
+
+        MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+        if (meshRenderer == null)
+        {
+            meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        }
+
+        meshRenderer.sharedMaterial = material;
+
         rotationSpeed = Random.Range(-maxRotationSpeed, maxRotationSpeed);
         spawnFractals();
     }
