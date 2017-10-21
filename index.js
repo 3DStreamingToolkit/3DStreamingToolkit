@@ -23,18 +23,8 @@ import ThreeDStreamingClient from './ThreeDStreamingClient.js';
 
 import Config from './config';
 
-var streamingClient = new ThreeDStreamingClient({
-  'serverUrl': 'https://signaling-server591a.azurewebsites.net',
-  'peerConnectionConfig': {
-      'iceServers': [{
-          'urls': 'turn:turnserver3dstreaming.centralus.cloudapp.azure.com:5349',
-          'username': 'user',
-          'credential': '3Dtoolkit072017',
-          'credentialType': 'password'
-      }],
-      'iceTransportPolicy': 'relay'
-  }
-}, {
+var streamingClient = new ThreeDStreamingClient(Config, 
+{
   RTCPeerConnection: window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection,
   RTCSessionDescription: window.mozRTCSessionDescription || window.RTCSessionDescription || RTCSessionDescription,
   RTCIceCandidate: window.mozRTCIceCandidate || window.RTCIceCandidate || RTCIceCandidate
@@ -44,11 +34,16 @@ export default class rn3dtksample extends Component {
   constructor(props) {
     super(props);
 
-  streamingClient.signIn('ReactClient')
+  streamingClient.signIn('ReactClient', 
+    {
+      onaddstream: this.onRemoteStreamAdded.bind(this),
+      onremovestream: this.onRemoteStreamRemoved,
+      onopen: this.onSessionOpened,
+      onconnecting: this.onSessionConnecting
+    })
   .then((this.updatePeerList).bind(this))
   .then(streamingClient.startHeartbeat.bind(streamingClient))
   .then(streamingClient.pollSignalingServer.bind(streamingClient, true));
-
 
   this.state = {otherPeers: streamingClient.otherPeers, 
                 currentPeerId: 0,
@@ -86,12 +81,7 @@ export default class rn3dtksample extends Component {
 
   joinPeer() {
     // Join a peer
-    streamingClient.joinPeer(this.state.currentPeerId, {
-      onaddstream: this.onRemoteStreamAdded.bind(this),
-      onremovestream: this.onRemoteStreamRemoved,
-      onopen: this.onSessionOpened,
-      onconnecting: this.onSessionConnecting
-    });
+    streamingClient.joinPeer(this.state.currentPeerId);
   }
 
   render() {

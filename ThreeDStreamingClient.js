@@ -20,9 +20,13 @@ class ThreeDStreamingClient {
     this.peerConnection = null;
     this.inputChannel = null;
     this.repeatLongPoll = false;
+    this.onconnecting = null;
+    this.onopen = null;
+    this.onaddstream = null;
+    this.onremovestream = null;
   }
 
-  signIn(peerName) {
+  signIn(peerName, {onconnecting = null, onopen = null, onaddstream = null, onremovestream = null}) {
     // First part of the hand shake
     const fetchOptions = {
       method: 'GET',
@@ -30,6 +34,12 @@ class ThreeDStreamingClient {
         'Peer-Type': 'Client' // Apparently this is useless by @bengreenier
       }
     };
+
+    this.onconnecting = onconnecting;
+    this.onopen = onopen;
+    this.onaddstream = onaddstream;
+    this.onremovestream = onremovestream;
+
     return fetch(`${this.serverUrl}/sign_in?peer_name=${peerName}`, fetchOptions)
       .then((response) => response.text())
       .then((responseText) => {
@@ -211,7 +221,7 @@ class ThreeDStreamingClient {
     console.log('BODDY OF ICE CANDIATE: ' + body);
     var dataJson = JSON.parse(body);
     console.log('Adding ICE candiate ', dataJson);
-    var candidate = new this.WebRTC.RTCIceCandidate({ sdpMLineIndex: dataJson.sdpMLineIndex, candidate: dataJson.candidate });
+    var candidate = new this.WebRTC.RTCIceCandidate({ sdpMLineIndex: dataJson.sdpMLineIndex, candidate: dataJson.candidate, sdpMid: dataJson.sdpMid });
     if(candidate.sdpMid != null)
     {
       this.peerConnection.addIceCandidate(candidate);      
@@ -250,7 +260,7 @@ class ThreeDStreamingClient {
     }
   }
 
-  _createPeerConnection(peer_id, {onconnecting = null, onopen = null, onaddstream = null, onremovestream = null}) {
+  _createPeerConnection(peer_id) {
     try {
       // Destroy existing peer connection. This class does not support multiple streams.
       if (this.peerConnection !== null){
@@ -272,10 +282,10 @@ class ThreeDStreamingClient {
           console.log('End of candidates.');
         }
       };
-      this.peerConnection.onconnecting = onconnecting;
-      this.peerConnection.onopen = onopen;
-      this.peerConnection.onaddstream = onaddstream;
-      this.peerConnection.onremovestream = onremovestream;
+      this.peerConnection.onconnecting = this.onconnecting;
+      this.peerConnection.onopen = this.onopen;
+      this.peerConnection.onaddstream = this.onaddstream;
+      this.peerConnection.onremovestream = this.onremovestream;
 
       this.peerConnection.ondatachannel = (ev) => {
         this.inputChannel = ev.channel;
@@ -341,39 +351,12 @@ class ThreeDStreamingClient {
       offerToReceiveVideo: 1
     };
 
-    //TODO: THIS IS BROKEN ON REACT-NATIVE-WEBRTC.
-    /*
-    this.peerConnection.createOffer((offer) => {
-      offer.sdp = offer.sdp.replace('96 98 100 102', '100 96 98 102');
-      var offerMsg = JSON.stringify(offer);
-
-      // This forces WebRTC to use H264 codec instead of VP8
-      // https://stackoverflow.com/questions/26924430/how-can-i-change-the-default-codec-used-in-webrtc
-      //NOTE: WTF IS THIS MAGIC NUMBER
-      //offerMsg = offerMsg.replace('96 98 100 102', '100 96 98 102');
-
-      // Re-create the new offer object
-      //receivedOffer = JSON.parse(offerMsg);
-      //console.log(offerMsg);
-
-      // Set local description
-      this.peerConnection.setLocalDescription(offer, ()=>{}, (e) => {console.log(e);});
-
-      // Send offer to signaling server
-      this.sendToPeer(peer_id, JSON.stringify(offer));
-    }, (p, e) =>{
-      console.log(e);
-    }, offerOptions); */
-
     var receivedOffer = '';
     this.peerConnection.createOffer(offerOptions).then((offer) => {
 
       // This forces WebRTC to use H264 codec instead of VP8
       // https://stackoverflow.com/questions/26924430/how-can-i-change-the-default-codec-used-in-webrtc
-      // offer.sdp = offer.sdp.replace('96 98 100 127 125', '125 98 100 127 96');
-
-      // Re-create the new offer object
-      // receivedOffer = JSON.parse(offerMsg);
+      offer.sdp = offer.sdp.replace('96 98 100 127 125', '125 98 100 127 96');
 
       // Set local description
       this.peerConnection.setLocalDescription(offer);
