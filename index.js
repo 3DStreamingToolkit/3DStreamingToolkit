@@ -39,9 +39,9 @@ export default class rn3dtksample extends Component {
       onaddstream: this.onRemoteStreamAdded.bind(this),
       onremovestream: this.onRemoteStreamRemoved,
       onopen: this.onSessionOpened,
-      onconnecting: this.onSessionConnecting
+      onconnecting: this.onSessionConnecting,
+      onupdatepeers: this.updatePeerList.bind(this)
     })
-  .then((this.updatePeerList).bind(this))
   .then(streamingClient.startHeartbeat.bind(streamingClient))
   .then(streamingClient.pollSignalingServer.bind(streamingClient, true));
 

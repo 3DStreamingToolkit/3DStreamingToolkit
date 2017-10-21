@@ -24,9 +24,10 @@ class ThreeDStreamingClient {
     this.onopen = null;
     this.onaddstream = null;
     this.onremovestream = null;
+    this.onupdatepeers = null;
   }
 
-  signIn(peerName, {onconnecting = null, onopen = null, onaddstream = null, onremovestream = null}) {
+  signIn(peerName, {onconnecting = null, onopen = null, onaddstream = null, onremovestream = null, onupdatepeers = null}) {
     // First part of the hand shake
     const fetchOptions = {
       method: 'GET',
@@ -39,6 +40,7 @@ class ThreeDStreamingClient {
     this.onopen = onopen;
     this.onaddstream = onaddstream;
     this.onremovestream = onremovestream;
+    this.onupdatepeers = onupdatepeers;
 
     return fetch(`${this.serverUrl}/sign_in?peer_name=${peerName}`, fetchOptions)
       .then((response) => response.text())
@@ -55,6 +57,8 @@ class ThreeDStreamingClient {
 
           }
         }
+
+        this.onupdatepeers();
       });
   }
 
@@ -177,6 +181,8 @@ class ThreeDStreamingClient {
       console.log('New peer added.');
       this.otherPeers[parseInt(parsed[1], 10)] = parsed[0];
     }
+
+    this.onupdatepeers();
   }
 
   // PRIVATE
