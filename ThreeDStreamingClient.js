@@ -212,7 +212,10 @@ class ThreeDStreamingClient {
     var dataJson = JSON.parse(body);
     console.log('Adding ICE candiate ', dataJson);
     var candidate = new this.WebRTC.RTCIceCandidate({ sdpMLineIndex: dataJson.sdpMLineIndex, candidate: dataJson.candidate });
-    this.peerConnection.addIceCandidate(candidate);
+    if(candidate.sdpMid != null)
+    {
+      this.peerConnection.addIceCandidate(candidate);      
+    }
     /*.then(() => {
       // Do nothing
     }).catch(e => {
@@ -367,7 +370,7 @@ class ThreeDStreamingClient {
 
       // This forces WebRTC to use H264 codec instead of VP8
       // https://stackoverflow.com/questions/26924430/how-can-i-change-the-default-codec-used-in-webrtc
-      offer.sdp = offer.sdp.replace('96 98 100 127 125', '125 98 100 127 96');
+      // offer.sdp = offer.sdp.replace('96 98 100 127 125', '125 98 100 127 96');
 
       // Re-create the new offer object
       // receivedOffer = JSON.parse(offerMsg);
