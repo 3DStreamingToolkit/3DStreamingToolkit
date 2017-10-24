@@ -73,7 +73,7 @@ class HomeScreen extends Component {
   onRemoteStreamAdded(event) {
     // this.setState({videoURL: event.stream.toURL()});
 
-    this.props.navigation.navigate('VideoPlayback', { videoURL: event.stream.toURL() })
+    this.props.navigation.navigate('VideoPlayback', { videoURL: event.stream.toURL(), sendInputData: streamingClient.sendInputChannelData.bind(streamingClient) });
   }
 
   onRemoteStreamRemoved(event) {

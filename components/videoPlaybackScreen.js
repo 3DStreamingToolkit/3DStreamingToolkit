@@ -9,6 +9,11 @@ import {
     Dimensions 
   } from 'react-native';
 
+  import {
+    createIdentityMatrix
+  } from './matrixMath';
+  
+const LookatMatrixGestureHandler = require('./LookatMatrixGestureHandler');
 const window = Dimensions.get('window');
 
 var WebRTC = require('react-native-webrtc');
@@ -20,13 +25,39 @@ class VideoPlaybackScreen extends React.Component {
 
     constructor(props) {
         super(props);
-        this.videoUrl = props.navigation.state.params.videoURL;
+        this.state = {
+          lookat: createIdentityMatrix(),
+          moveGesture: 'pan',
+          videoUrl: props.navigation.state.params.videoURL,
+          sendInputData:props.navigation.state.params.sendInputData
+        };
+    }
+
+    _onLookatChanged = matrix => {
+      this.setState({
+        lookat: matrix,
+      });
+
+      let json = { type: "camera-transform-lookat", 
+      body: (-matrix[12]) + ',' + (-matrix[13]) + ',' + (-matrix[14]) + ',' +
+            (-matrix[0]) + ',' + (-matrix[1]) + ',' + (matrix[2]) + ',' +
+            (matrix[4]) + ',' + matrix[5] + ',' + (matrix[6]) };
+  
+      this.state.sendInputData(json);
     }
 
     render() {
+      let _cameraHandler;
       const { navigate } = this.props.navigation;
       return (
-        <RTCView streamURL={this.videoUrl} style={styles.remoteView}/>
+        <LookatMatrixGestureHandler
+        ref={(cameraHandler) => { _cameraHandler = cameraHandler; }}
+        moveGesture={this.state.moveGesture}
+        onLookatChanged={this._onLookatChanged}>
+        <View style={styles.gestureContainer}>
+          <RTCView streamURL={this.state.videoUrl} style={styles.remoteView}/>
+        </View>
+      </LookatMatrixGestureHandler>
       );
     }
   }
@@ -36,6 +67,13 @@ const styles = StyleSheet.create({
       height: window.height,
       width: window.width
     },
+    gestureContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      alignSelf: 'stretch',
+      backgroundColor: '#C3C2C5',
+    }
   });
 
 export default VideoPlaybackScreen;
