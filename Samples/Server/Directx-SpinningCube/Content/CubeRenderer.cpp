@@ -277,9 +277,6 @@ void CubeRenderer::InitConstantBuffers(bool isStereo)
 
 void CubeRenderer::Update()
 {
-	// Converts to radians.
-	float radians = XMConvertToRadians(m_degreesPerSecond++);
-
 	// Updates the cube vertice indices.
 	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
 		m_indexBuffer,
@@ -290,8 +287,24 @@ void CubeRenderer::Update()
 		0,
 		0);
 
+	// Rotates the cube.
+	float radians = XMConvertToRadians(m_degreesPerSecond++);
+	const XMMATRIX modelRotation = XMMatrixRotationY(radians);
+
+#ifdef TEST_RUNNER
+	const XMMATRIX modelTransform = modelRotation;
+#else // TEST_RUNNER
+	// Positions the cube.
+	const XMMATRIX modelTranslation = XMMatrixTranslationFromVector(XMLoadFloat3(&m_position));
+
+	// Multiply to get the transform matrix.
+	// Note that this transform does not enforce a particular coordinate system. The calling
+	// class is responsible for rendering this content in a consistent manner.
+	const XMMATRIX modelTransform = XMMatrixMultiply(modelRotation, modelTranslation);
+#endif // TEST_RUNNER
+
 	// Prepares to pass the updated model matrix to the shader.
-	XMStoreFloat4x4(&m_modelConstantBufferData.model, XMMatrixTranspose(XMMatrixRotationY(radians)));
+	XMStoreFloat4x4(&m_modelConstantBufferData.model, XMMatrixTranspose(modelTransform));
 	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
 		m_modelConstantBuffer, 0, NULL, &m_modelConstantBufferData, 0, 0, 0);
 }
