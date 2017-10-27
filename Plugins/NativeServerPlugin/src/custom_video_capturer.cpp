@@ -226,7 +226,7 @@ namespace StreamingToolkit
 			// For hardware encoder, setting the video frame texture.
 			if (!use_software_encoder_)
 			{
-				frame.SetID3D11Texture2D(texture);
+				frame.set_staging_frame_buffer(texture);
 			}
 
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
