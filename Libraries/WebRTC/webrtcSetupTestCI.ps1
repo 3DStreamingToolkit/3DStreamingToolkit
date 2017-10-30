@@ -89,6 +89,8 @@ CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\nvencoder.patch")
 CMD /C 'git commit -am "nvencoder patch"'
 CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\videoframemetadata.patch")
 CMD /C 'git commit -am "videoframemetadata patch"'
+CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\nvencodernobuffer.patch")
+CMD /C 'git commit -am "nvencodernobuffer patch"'
 
 CMD /C 'gn gen citest/Win32/Release  --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_initialize_ffmpeg=true is_official_build=true"'
 CMD /C 'gn gen citest/Win32/Debug    --ide=vs --args="use_rtti=true target_cpu=\"x86\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_initialize_ffmpeg=true"'

@@ -1,0 +1,22 @@
+diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
+index 5705428a1..845571137 100644
+--- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
++++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
+@@ -320,7 +320,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
+ 
+ 		// Creates the encoder.
+ 		m_pNvHWEncoder->CreateEncoder(&m_encodeConfig);
+-		m_uEncodeBufferCount = 4;
++		m_uEncodeBufferCount = 1;
+ 
+ 		AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height);
+ 	}
+@@ -635,6 +635,8 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
+ 	{
+ 		return;
+ 	}
++
++	FlushEncoder();
+ }
+ 
+ NVENCSTATUS H264EncoderImpl::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight)
