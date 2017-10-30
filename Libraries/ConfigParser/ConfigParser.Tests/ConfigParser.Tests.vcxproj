@@ -23,7 +23,7 @@
     <ProjectGuid>{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>ConfigParserTests</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
     <ProjectSubType>NativeUnitTestProject</ProjectSubType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
