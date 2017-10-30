@@ -1,0 +1,13 @@
+{
+    "serverConfig": {
+        "height": 1234,
+        "width": 5678,
+        "systemService": true
+    },
+    "serviceConfig": {
+        "name": "test",
+        "displayName": "test",
+        "serviceAccount": "test\\test",
+        "servicePassword": "test"
+    }
+}

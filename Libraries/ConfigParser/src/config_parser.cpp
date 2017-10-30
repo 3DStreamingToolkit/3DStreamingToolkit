@@ -10,26 +10,7 @@
 using namespace StreamingToolkit;
 
 const char* ConfigParser::kWebrtcConfigPath = "webrtcConfig.json";
-const char* ConfigParser::kServerConfigPath = "serviceConfig.json";
-
-void ConfigParser::ConfigureConfigFactories()
-{
-	CppFactory::Object<StreamingToolkit::WebRTCConfig>::RegisterAllocator([] {
-		auto config = new StreamingToolkit::WebRTCConfig();
-
-		ConfigParser::ParseWebRTCConfig(ConfigParser::kWebrtcConfigPath, config);
-
-		return std::shared_ptr<StreamingToolkit::WebRTCConfig>(config);
-	});
-
-	CppFactory::Object<StreamingToolkit::ServerConfig>::RegisterAllocator([] {
-		auto config = new StreamingToolkit::ServerConfig();
-
-		ConfigParser::ParseServerConfig(ConfigParser::kServerConfigPath, config);
-
-		return std::shared_ptr<StreamingToolkit::ServerConfig>(config);
-	});
-}
+const char* ConfigParser::kServerConfigPath = "serverConfig.json";
 
 std::string ConfigParser::GetAbsolutePath(const std::string& file_name)
 {
@@ -39,11 +20,33 @@ std::string ConfigParser::GetAbsolutePath(const std::string& file_name)
 	return std::string(buffer).substr(0, pos + 1) + file_name;
 }
 
+void ConfigParser::ConfigureConfigFactories()
+{
+	ConfigureConfigFactories(GetAbsolutePath(""));
+}
+
+void ConfigParser::ConfigureConfigFactories(const std::string& baseFilePath)
+{
+	CppFactory::Object<StreamingToolkit::WebRTCConfig>::RegisterAllocator([=] {
+		auto config = new StreamingToolkit::WebRTCConfig();
+
+		ConfigParser::ParseWebRTCConfig(baseFilePath + std::string(ConfigParser::kWebrtcConfigPath), config);
+
+		return std::shared_ptr<StreamingToolkit::WebRTCConfig>(config);
+	});
+
+	CppFactory::Object<StreamingToolkit::ServerConfig>::RegisterAllocator([=] {
+		auto config = new StreamingToolkit::ServerConfig();
+
+		ConfigParser::ParseServerConfig(baseFilePath + std::string(ConfigParser::kServerConfigPath), config);
+
+		return std::shared_ptr<StreamingToolkit::ServerConfig>(config);
+	});
+}
 
 void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::WebRTCConfig* webrtcConfig)
 {
-	std::string file = GetAbsolutePath(path);
-	std::ifstream fileStream(file);
+	std::ifstream fileStream(path);
 	Json::Reader reader;
 	Json::Value root = NULL;
 	if (fileStream.good())
@@ -136,8 +139,7 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 
 void ConfigParser::ParseServerConfig(const std::string& path, StreamingToolkit::ServerConfig* serverConfig)
 {
-	std::string file = GetAbsolutePath(path);
-	std::ifstream fileStream(file);
+	std::ifstream fileStream(path);
 	Json::Reader reader;
 	Json::Value root = NULL;
 	if (fileStream.good())

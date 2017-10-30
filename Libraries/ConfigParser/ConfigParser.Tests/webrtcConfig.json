@@ -1,0 +1,22 @@
+{
+    "iceConfiguration": "test",
+    "turnServer": {
+        "uri": "test:test:1234",
+        "username": "test",
+        "password": "test"
+    },
+    "stunServer": {
+        "uri": "test:test:1234"
+    },
+    "server": "test",
+    "port": 5678,
+    "heartbeat": 91011,
+    "authentication": {
+        "authority": "test://test",
+        "clientId": "00000000-0000-0000-0000-000000000000",
+        "clientSecret": "test",
+        "codeUri": "test://test",
+        "pollUri": "test://test",
+        "resource": "00000000-0000-0000-0000-000000000000"
+    }
+}

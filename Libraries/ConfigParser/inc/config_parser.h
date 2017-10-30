@@ -5,10 +5,10 @@
 
 #include "structs.h"
 
+using namespace CppFactory;
+
 namespace StreamingToolkit
 {
-	using namespace CppFactory;
-
 	/// <summary>
 	/// Configuration parser
 	/// </summary>
@@ -44,6 +44,22 @@ namespace StreamingToolkit
 		/// instances of these types.
 		/// </remarks>
 		static void ConfigureConfigFactories();
+
+		/// <summary>
+		/// Configures CppFactory object support for our toplevel configuration models
+		/// <see cref="WebRTCConfig"/> and <see cref="ServerConfig"/> respectively
+		/// </summary>
+		/// <remarks>
+		/// Expected to be called on application start, as this enables our factory injection
+		/// of Object&lt;WebRTCConfig&gt; Object&lt;ServerConfig&gt; to contain valid values
+		/// read from disk on the first Get() call.
+		/// 
+		/// Note: this this configures injection for the default zone, as config objects
+		/// are just representation of disk values, so there's no value in having unique
+		/// instances of these types.
+		/// </remarks>
+		/// <param name="baseFilePath">a base path to look for configuration files in</param>
+		static void ConfigureConfigFactories(const std::string& baseFilePath);
 
 		/// <summary>
 		/// Get the absolute path for a relative file
