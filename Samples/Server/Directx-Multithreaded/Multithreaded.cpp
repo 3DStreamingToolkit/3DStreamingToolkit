@@ -394,8 +394,9 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 VideoTestRunner*			g_videoTestRunner = nullptr;
 #else
 BufferRenderer*				g_bufferRenderer = nullptr;
+bool						g_renderingModeSet = false;
+int64_t						g_lastTimestamp = -1;
 #endif // TEST_RUNNER
-
 
 //--------------------------------------------------------------------------------------
 // Forward declarations 
@@ -511,6 +512,12 @@ bool AppMain(BOOL stopping)
 	std::function<void()> frameRenderFunc = ([&]
 	{
 		DXUTRender3DEnvironment();
+
+		// Always send the video frame in mono rendering mode.
+		if (g_renderingModeSet && !g_CameraResources.IsStereo())
+		{
+			g_bufferRenderer->Lock();
+		}
 	});
 
 	ID3D11Texture2D* frameBuffer = nullptr;
@@ -567,39 +574,39 @@ bool AppMain(BOOL stopping)
 			{
 				getline(datastream, token, ',');
 				bool isStereo = stoi(token) == 1;
-				if (isStereo == g_CameraResources.IsStereo())
+				if (isStereo != g_CameraResources.IsStereo())
 				{
-					return;
+					g_bufferRenderer->Release();
+					g_CameraResources.SetStereo(isStereo);
+					DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
+					int width = deviceSettings.d3d11.sd.BufferDesc.Width;
+					int height = deviceSettings.d3d11.sd.BufferDesc.Height;
+					int newWidth = isStereo ? width << 1 : width >> 1;
+					DXUTResizeDXGIBuffers(newWidth, height, false);
+					if (!serverConfig->server_config.system_service)
+					{
+						ID3D11Texture2D* frameBuffer = nullptr;
+						SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+
+						// Gets the frame buffer from the swap chain.
+						HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
+							0,
+							__uuidof(ID3D11Texture2D),
+							reinterpret_cast<void**>(&frameBuffer));
+
+						g_bufferRenderer->Resize(frameBuffer);
+
+						// Makes sure to release the frame buffer reference.
+						SAFE_RELEASE(frameBuffer);
+					}
+					else
+					{
+						g_bufferRenderer->Resize(newWidth, height);
+						DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
+					}
 				}
 
-				g_bufferRenderer->Release();
-				g_CameraResources.SetStereo(isStereo);
-				DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
-				int width = deviceSettings.d3d11.sd.BufferDesc.Width;
-				int height = deviceSettings.d3d11.sd.BufferDesc.Height;
-				int newWidth = isStereo ? width << 1 : width >> 1;
-				DXUTResizeDXGIBuffers(newWidth, height, false);
-				if (!serverConfig->server_config.system_service)
-				{
-					ID3D11Texture2D* frameBuffer = nullptr;
-					SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
-
-					// Gets the frame buffer from the swap chain.
-					HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(&frameBuffer));
-
-					g_bufferRenderer->Resize(frameBuffer);
-
-					// Makes sure to release the frame buffer reference.
-					SAFE_RELEASE(frameBuffer);
-				}
-				else
-				{
-					g_bufferRenderer->Resize(newWidth, height);
-					DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
-				}
+				g_renderingModeSet = true;
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{
@@ -636,6 +643,11 @@ bool AppMain(BOOL stopping)
 			}
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
+				if (!g_renderingModeSet || g_bufferRenderer->IsLocked())
+				{
+					return;
+				}
+
 				// Parses the left view projection matrix.
 				DirectX::XMFLOAT4X4 viewProjectionLeft;
 				for (int i = 0; i < 4; i++)
@@ -658,12 +670,23 @@ bool AppMain(BOOL stopping)
 					}
 				}
 
-				// Updates the camera's matrices.
-				XMFLOAT4X4 id;
-				XMStoreFloat4x4(&id, XMMatrixIdentity());
-				g_CameraResources.SetViewMatrix(id, id);
-				g_CameraResources.SetProjMatrix(viewProjectionLeft, viewProjectionRight);
-				g_Camera.FrameMove(0);
+				// Parses the prediction timestamp.
+				getline(datastream, token, ',');
+				int64_t timestamp = stoll(token);
+				if (timestamp != g_lastTimestamp)
+				{
+					g_lastTimestamp = timestamp;
+
+					// Updates the camera's matrices.
+					XMFLOAT4X4 id;
+					XMStoreFloat4x4(&id, XMMatrixIdentity());
+					g_CameraResources.SetViewMatrix(id, id);
+					g_CameraResources.SetProjMatrix(viewProjectionLeft, viewProjectionRight);
+					g_Camera.FrameMove(0);
+
+					g_bufferRenderer->SetPredictionTimestamp(timestamp);
+					g_bufferRenderer->Lock();
+				}
 			}
 		}
 	});

@@ -19,7 +19,8 @@ BufferRenderer::BufferRenderer(
 		height_(height),
 		d3d_device_(device),
 		frame_render_func_(frame_render_func),
-		frame_buffer_(frame_buffer)
+		frame_buffer_(frame_buffer),
+		sending_lock_(false)
 {
 	// Gets the device context.
 	d3d_device_->GetImmediateContext(&d3d_context_);
@@ -201,4 +202,34 @@ void BufferRenderer::Resize(int width, int height)
 
 	// Creates the render target view.
 	d3d_device_->CreateRenderTargetView(frame_buffer_.Get(), nullptr, &d3d_render_target_view_);
+}
+
+void BufferRenderer::SetPredictionTimestamp(int64_t prediction_timestamp)
+{
+	auto lock = buffer_lock_.Lock();
+	prediction_timestamp_ = prediction_timestamp;
+}
+
+int64_t BufferRenderer::GetPredictionTimestamp()
+{
+	auto lock = buffer_lock_.Lock();
+	return prediction_timestamp_;
+}
+
+void BufferRenderer::Lock()
+{
+	auto lock = buffer_lock_.Lock();
+	sending_lock_ = true;
+}
+
+void BufferRenderer::Unlock()
+{
+	auto lock = buffer_lock_.Lock();
+	sending_lock_ = false;
+}
+
+bool BufferRenderer::IsLocked()
+{
+	auto lock = buffer_lock_.Lock();
+	return sending_lock_;
 }

@@ -200,7 +200,7 @@ void DX::DeviceResources::Present(HolographicFrame^ frame)
 	// Holographic apps should wait for the previous frame to finish before
 	// starting work on a new frame. This allows for better results from
 	// holographic frame predictions.
-	HolographicFramePresentResult presentResult = frame->PresentUsingCurrentPrediction();
+	HolographicFramePresentResult presentResult = frame->PresentUsingCurrentPrediction(HolographicFramePresentWaitBehavior::DoNotWaitForFrameToFinish);
 
 	HolographicFramePrediction^ prediction = frame->CurrentPrediction;
 	UseHolographicCameraResources<void>([this, prediction](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)

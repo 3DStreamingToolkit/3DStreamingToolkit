@@ -34,6 +34,17 @@ namespace StreamingToolkit
 		void Resize(ID3D11Texture2D* frame_buffer);
 		void Resize(int width, int height);
 
+		// Prediction timestamp
+		int64_t GetPredictionTimestamp();
+		void SetPredictionTimestamp(int64_t prediction_timestamp);
+		void Lock();
+		void Unlock();
+		bool IsLocked();
+
+		// D3D Accessors.
+		ID3D11Device* GetD3DDevice() const					{ return d3d_device_.Get();  }
+		ID3D11DeviceContext* GetD3DDeviceContext() const	{ return d3d_context_.Get(); }
+
 	private:
 		void UpdateStagingBuffer();
 
@@ -47,5 +58,7 @@ namespace StreamingToolkit
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> frame_buffer_;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> staging_frame_buffer_;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> d3d_render_target_view_;
+		int64_t prediction_timestamp_;
+		bool sending_lock_;
 	};
 }

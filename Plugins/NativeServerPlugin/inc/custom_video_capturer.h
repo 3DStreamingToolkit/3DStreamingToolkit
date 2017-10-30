@@ -152,6 +152,7 @@ namespace StreamingToolkit
 		SinkWantsObserver* sink_wants_observer_ GUARDED_BY(&lock_);
 		rtc::CriticalSection lock_;
 		StreamingToolkit::BufferRenderer* buffer_renderer_;
+		ID3D11Texture2D* staging_video_texture_;
 
 		int64_t first_frame_capture_time_;
 

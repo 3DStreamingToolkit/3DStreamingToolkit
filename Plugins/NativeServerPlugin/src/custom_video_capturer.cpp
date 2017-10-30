@@ -89,6 +89,7 @@ namespace StreamingToolkit
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		buffer_renderer_(buffer_renderer),
+		staging_video_texture_(nullptr),
 		first_frame_capture_time_(-1),
 		task_queue_("FrameGenCapQ",
 			rtc::TaskQueue::Priority::HIGH)
@@ -131,8 +132,8 @@ namespace StreamingToolkit
 		Json::Reader reader;
 		Json::Value root = NULL;
 
-		auto encoderConfigPath = ExePath("nvEncConfig.json");
-		std::ifstream file(encoderConfigPath);
+		auto encoder_config_path = ExePath("nvEncConfig.json");
+		std::ifstream file(encoder_config_path);
 		if (file.good())
 		{
 			file >> root;
@@ -166,35 +167,37 @@ namespace StreamingToolkit
 		rtc::CritScope cs(&lock_);
 		if (sending_) 
 		{
-			rtc::scoped_refptr<webrtc::I420Buffer> buffer;
-			void* pFrameBuffer = nullptr;
-			ID3D11Texture2D* texture = nullptr;
-			int width = 0;
-			int height = 0;
-
 			// Updates buffer renderer.
 			buffer_renderer_->Render();
+
+			if (!buffer_renderer_->IsLocked())
+			{
+				return;
+			}
+
+			rtc::scoped_refptr<webrtc::I420Buffer> buffer;
+			ID3D11Texture2D* captured_texture = nullptr;
+			void* frame_buffer = nullptr;
+			int width = 0;
+			int height = 0;
 
 			// Captures buffer renderer.
 			if (use_software_encoder_)
 			{
-				int frameSizeInBytes = 0;
-				buffer_renderer_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
-				if (frameSizeInBytes == 0)
+				int frame_size_in_bytes = 0;
+				buffer_renderer_->Capture(&frame_buffer, &frame_size_in_bytes, &width, &height);
+				if (frame_size_in_bytes == 0)
 				{
 					return;
 				}
 			}
 			else
 			{
-				texture = buffer_renderer_->Capture();
-
-				if (!texture)
+				captured_texture = buffer_renderer_->Capture();
+				if (!captured_texture)
 				{
 					return;
 				}
-
-				texture->AddRef();
 			}
 
 			// Creates video frame buffer.
@@ -205,7 +208,7 @@ namespace StreamingToolkit
 			if (use_software_encoder_)
 			{
 				libyuv::ABGRToI420(
-					(uint8_t*)pFrameBuffer,
+					(uint8_t*)frame_buffer,
 					width * 4,
 					buffer.get()->MutableDataY(),
 					buffer.get()->StrideY(),
@@ -216,19 +219,43 @@ namespace StreamingToolkit
 					width,
 					height);
 			}
-
-			// Updates time stamp.
-			auto timeStamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-
-			// Creates video frame.
-			auto frame = webrtc::VideoFrame(buffer, fake_rotation_, timeStamp);
-
-			// For hardware encoder, setting the video frame texture.
-			if (!use_software_encoder_)
+			else
 			{
-				frame.set_staging_frame_buffer(texture);
+				if (!staging_video_texture_)
+				{
+					D3D11_TEXTURE2D_DESC captured_texture_desc;
+					captured_texture->GetDesc(&captured_texture_desc);
+
+					D3D11_TEXTURE2D_DESC texture_desc = { 0 };
+					texture_desc.ArraySize = captured_texture_desc.ArraySize;
+					texture_desc.Usage = D3D11_USAGE_DEFAULT;
+					texture_desc.Format = captured_texture_desc.Format;
+					texture_desc.Width = captured_texture_desc.Width;
+					texture_desc.Height = captured_texture_desc.Height;
+					texture_desc.MipLevels = captured_texture_desc.MipLevels;
+					texture_desc.SampleDesc.Count = captured_texture_desc.SampleDesc.Count;
+					buffer_renderer_->GetD3DDevice()->CreateTexture2D(
+						&texture_desc, nullptr, &staging_video_texture_);
+				}
+
+				buffer_renderer_->GetD3DDeviceContext()->CopyResource(
+					staging_video_texture_, captured_texture);
 			}
 
+			// Updates time stamp.
+			auto time_stamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+			// Creates video frame.
+			auto frame = webrtc::VideoFrame(buffer, fake_rotation_, time_stamp);
+
+			// For hardware encoder, setting the video frame texture to send.
+			if (!use_software_encoder_)
+			{
+				staging_video_texture_->AddRef();
+				frame.set_staging_frame_buffer(staging_video_texture_);
+			}
+
+			frame.set_prediction_timestamp(buffer_renderer_->GetPredictionTimestamp());
 			frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 			frame.set_rotation(fake_rotation_);
 			if (first_frame_capture_time_ == -1) 
@@ -244,6 +271,8 @@ namespace StreamingToolkit
 			{
 				OnFrame(frame, width, height);
 			}
+
+			buffer_renderer_->Unlock();
 		}
 	}
 

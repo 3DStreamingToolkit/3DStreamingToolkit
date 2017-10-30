@@ -70,6 +70,6 @@ namespace StreamingToolkitSample
 
 		// Variables used with the rendering loop.
 		float									m_degreesPerSecond;
-		Windows::Foundation::Numerics::float3   m_position = { 0.f, 0.f, 3.f };
+		Windows::Foundation::Numerics::float3   m_position = { 0.f, 0.f, 0.f };
 	};
 }

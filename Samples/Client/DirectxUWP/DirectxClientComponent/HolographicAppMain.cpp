@@ -215,7 +215,7 @@ bool HolographicAppMain::Render(
     {
         // Up-to-date frame predictions enhance the effectiveness of 
 		// image stablization and allow more accurate positioning of holograms.
-        holographicFrame->UpdateCurrentPrediction();
+        //holographicFrame->UpdateCurrentPrediction();
         HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
         bool atLeastOneCameraRendered = false;
