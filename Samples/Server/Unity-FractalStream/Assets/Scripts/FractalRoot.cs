@@ -1,13 +1,9 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-
-
-public class FractalRoot : MonoBehaviour {
+public class FractalRoot : MonoBehaviour
+{
 
     Fractals rootSettings;
-    VoiceManager voiceManager;
 
     public int absMinimumDrop = 2;
     public int absMaximumBoost = 8;
@@ -16,12 +12,6 @@ public class FractalRoot : MonoBehaviour {
     void Start()
     {
         rootSettings = this.GetComponent<Fractals>();
-
-        if ( isHL)
-        {
-            voiceManager = this.GetComponent<VoiceManager>();
-            voiceManager.OnVoiceCommand += VoiceManager_OnVoiceCommand;
-        }
     }
 
     private void VoiceManager_OnVoiceCommand(string command)

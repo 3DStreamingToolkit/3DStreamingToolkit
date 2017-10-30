@@ -41,8 +41,7 @@ using namespace StreamingToolkitSample;
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
-void RegisterService();
-void RemoveService();
+void StartRenderService();
 
 //--------------------------------------------------------------------------------------
 // Global Variables
@@ -54,35 +53,35 @@ CubeRenderer*		g_cubeRenderer = nullptr;
 VideoTestRunner*	g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
 BufferRenderer*		g_bufferRenderer = nullptr;
+ServerConfig		g_serverConfig;
+ServiceConfig		g_serviceConfig;
+WebRTCConfig		g_webrtcConfig;
 #endif // TESTRUNNER
 
 #ifndef TEST_RUNNER
 
 bool AppMain(BOOL stopping)
 {
-	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
-	auto serverConfig = GlobalObject<ServerConfig>::Get();
-
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
-	authInfo.authority = webrtcConfig->authentication.authority;
-	authInfo.resource = webrtcConfig->authentication.resource;
-	authInfo.clientId = webrtcConfig->authentication.client_id;
-	authInfo.clientSecret = webrtcConfig->authentication.client_secret;
+	authInfo.authority = g_webrtcConfig.authentication.authority;
+	authInfo.resource = g_webrtcConfig.authentication.resource;
+	authInfo.clientId = g_webrtcConfig.authentication.client_id;
+	authInfo.clientSecret = g_webrtcConfig.authentication.client_secret;
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ServerMainWindow wnd(
-		webrtcConfig->server.c_str(),
-		webrtcConfig->port,
+		g_webrtcConfig.server.c_str(),
+		g_webrtcConfig.port,
 		FLAG_autoconnect,
 		FLAG_autocall,
 		false,
-		serverConfig->server_config.width,
-		serverConfig->server_config.height);
+		g_serverConfig.width,
+		g_serverConfig.height);
 
-	if (!serverConfig->server_config.system_service && !wnd.Create())
+	if (!g_serverConfig.system_service && !wnd.Create())
 	{
 		RTC_NOTREACHED();
 		return -1;
@@ -101,7 +100,7 @@ bool AppMain(BOOL stopping)
 		g_cubeRenderer->Update();
 
 		// For system service, we render to buffer instead of swap chain.
-		if (serverConfig->server_config.system_service)
+		if (g_serverConfig.system_service)
 		{
 			g_cubeRenderer->Render(g_bufferRenderer->GetRenderTargetView());
 		}
@@ -112,7 +111,7 @@ bool AppMain(BOOL stopping)
 	});
 
 	ID3D11Texture2D* frameBuffer = nullptr;
-	if (!serverConfig->server_config.system_service)
+	if (!g_serverConfig.system_service)
 	{
 		// Gets the frame buffer from the swap chain.
 		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
@@ -123,8 +122,8 @@ bool AppMain(BOOL stopping)
 
 	// Initializes the buffer renderer.
 	g_bufferRenderer = new BufferRenderer(
-		serverConfig->server_config.width,
-		serverConfig->server_config.height,
+		g_serverConfig.width,
+		g_serverConfig.height,
 		g_deviceResources->GetD3DDevice(),
 		frameRenderFunc,
 		frameBuffer);
@@ -138,7 +137,7 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
+		&client, &wnd, &g_webrtcConfig, g_bufferRenderer));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -172,7 +171,7 @@ bool AppMain(BOOL stopping)
 				g_deviceResources->SetStereo(isStereo);
 				
 				// Updates the new frame buffer.
-				if (!serverConfig->server_config.system_service)
+				if (!g_serverConfig.system_service)
 				{
 					ID3D11Texture2D* frameBuffer = nullptr;
 					HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
@@ -255,7 +254,7 @@ bool AppMain(BOOL stopping)
 	});
 
 	conductor->SetInputDataHandler(&inputHandler);
-	client.SetHeartbeatMs(webrtcConfig->heartbeat);
+	client.SetHeartbeatMs(g_webrtcConfig.heartbeat);
 
 	// configure callbacks (which may or may not be used)
 	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data)
@@ -272,9 +271,9 @@ bool AppMain(BOOL stopping)
 
 			// For system service, automatically connect to the signaling server
 			// after successful authentication.
-			if (serverConfig->server_config.system_service)
+			if (g_serverConfig.system_service)
 			{
-				conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
+				conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
 			}
 		}
 	});
@@ -297,16 +296,16 @@ bool AppMain(BOOL stopping)
 
 		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
 	}
-	else if (serverConfig->server_config.system_service)
+	else if (g_serverConfig.system_service)
 	{
 		// For system service, automatically connect to the signaling server.
-		conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
+		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
 	}
 
 	// configure turn, if needed
-	if (!webrtcConfig->turn_server.provider.empty())
+	if (!g_webrtcConfig.turn_server.provider.empty())
 	{
-		turnProvider.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider));
+		turnProvider.reset(new TurnCredentialProvider(g_webrtcConfig.turn_server.provider));
 		turnProvider->SignalCredentialsRetrieved.connect(
 			&credentialsRetrieved,
 			&TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
@@ -345,9 +344,9 @@ bool AppMain(BOOL stopping)
 	}
 
 	// For system service, automatically connect to the signaling server.
-	if (serverConfig->server_config.system_service)
+	if (g_serverConfig.system_service)
 	{
-		conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
+		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
 	}
 
 	// Main loop.
@@ -356,7 +355,7 @@ bool AppMain(BOOL stopping)
 	while (!stopping && (gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
 	{
 		// For system service, ignore window and swap chain.
-		if (serverConfig->server_config.system_service)
+		if (g_serverConfig.system_service)
 		{
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
@@ -389,75 +388,30 @@ bool AppMain(BOOL stopping)
 //--------------------------------------------------------------------------------------
 // System service
 //--------------------------------------------------------------------------------------
-void RegisterService()
+void StartRenderService()
 {
-	auto serverConfig = GlobalObject<ServerConfig>::Get();
-
 	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
 	if (schSCManager)
 	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			serverConfig->service_config.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService == NULL)
-		{
-			// If the service isn't already present, install it.
-			RenderService::InstallService(
-				serverConfig->service_config.name,
-				serverConfig->service_config.display_name,
-				serverConfig->service_config.service_account,
-				serverConfig->service_config.service_password);
-		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
-
-		// Init service.
+		// Init service's main function.
 		const std::function<void(BOOL*)> serviceMainFunc = [&](BOOL* stopping)
 		{
 			AppMain(*stopping);
 		};
 
-		// TODO: In order to start the service, it cannot be in the same location as 
-		// the running exe.  For auto-running of the service,  the app needs to be 
-		// stopped first, then service started externally.  Alternatively, running
-		// this app from one location, then copying all pertinent files to another
-		// location and then registering and running will work correctly.
+		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
 
-		//RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
-
-		//// Starts the service to run the app persistently.
-		//if (!CServiceBase::Run(service))
-		//{
-		//	wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
-		//}
-
-		CloseServiceHandle(schSCManager);
-		schSCManager = NULL;
-	}
-}
-
-void RemoveService()
-{
-	auto serverConfig = GlobalObject<ServerConfig>::Get();
-
-	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
-	if (schSCManager)
-	{
-		SC_HANDLE schService = OpenService(
-			schSCManager,
-			serverConfig->service_config.name.c_str(),
-			SERVICE_QUERY_STATUS);
-
-		if (schService)
+		// Starts the service to run the app persistently.
+		if (!CServiceBase::Run(service))
 		{
-			RenderService::RemoveService(serverConfig->service_config.name.c_str());
+			wprintf(L"Service failed to run w/err 0x%08lx\n", GetLastError());
+			MessageBox(
+				NULL,
+				L"Service needs to be initialized using PowerShell scripts.",
+				L"Error",
+				MB_ICONERROR
+			);
 		}
-
-		CloseServiceHandle(schService);
-		schService = NULL;
 
 		CloseServiceHandle(schSCManager);
 		schSCManager = NULL;
@@ -626,21 +580,17 @@ int WINAPI wWinMain(
 
 	return (int)msg.wParam;
 #else // TEST_RUNNER
-
-	// this must occur before any config access
+	
+	// setup the config parsers
 	ConfigParser::ConfigureConfigFactories();
 
-	if (!GlobalObject<ServerConfig>::Get()->server_config.system_service)
+	if (!g_serverConfig.system_service)
 	{
-		// If the app isn't defined as a system service, remove it if present.
-		RemoveService();
-
-		// Starts the app main.
 		return AppMain(FALSE);
 	}
 	else
 	{
-		RegisterService();
+		StartRenderService();
 		return 0;
 	}
 #endif // TEST_RUNNER

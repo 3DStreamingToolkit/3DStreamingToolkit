@@ -102,11 +102,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="inc\authentication_provider.h" />
+    <ClInclude Include="inc\peer_connection_multi_observer.h" />
     <ClInclude Include="inc\ssl_capable_socket.h" />
     <ClInclude Include="inc\peer_connection_client.h" />
     <ClInclude Include="inc\turn_credential_provider.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\peer_connection_multi_observer.cpp" />
     <ClCompile Include="src\ssl_capable_socket.cpp" />
     <ClCompile Include="src\peer_connection_client.cpp" />
     <ClCompile Include="src\turn_credential_provider.cpp" />
