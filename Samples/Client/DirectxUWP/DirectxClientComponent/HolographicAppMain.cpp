@@ -147,19 +147,6 @@ HolographicFrame^ HolographicAppMain::Update()
     SpatialCoordinateSystem^ currentCoordinateSystem = 
 		m_referenceFrame->CoordinateSystem;
 
-    m_timer.Tick([&] ()
-    {
-        //
-        // Update scene objects.
-        //
-        // Put time-based updates here. By default this code will run once per frame,
-        // but if you change the StepTimer to use a fixed time step this code will
-        // run as many times as needed to get to the current step.
-        //
-
-        m_videoRenderer->Update(m_timer);
-    });
-
     // We complete the frame update by using information about our content positioning
     // to set the focus point.
 
@@ -180,7 +167,7 @@ HolographicFrame^ HolographicAppMain::Update()
         // hologram is at a fixed point so we only need to indicate its position.
         renderingParameters->SetFocusPoint(
             currentCoordinateSystem,
-            m_videoRenderer->GetPosition());
+            m_videoRenderer->GetFocusPoint());
     }
 
     // The holographic frame will be used to get up-to-date view and
@@ -194,12 +181,6 @@ HolographicFrame^ HolographicAppMain::Update()
 bool HolographicAppMain::Render(
 	Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
 {
-    // Don't try to render anything before the first Update.
-    if (m_timer.GetFrameCount() == 0)
-    {
-        return false;
-    }
-
     //
     // TODO: Add code for pre-pass rendering here.
     //

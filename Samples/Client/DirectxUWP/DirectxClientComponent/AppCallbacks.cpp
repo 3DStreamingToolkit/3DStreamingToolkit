@@ -8,10 +8,17 @@ using namespace DirectX;
 using namespace Microsoft::WRL::Wrappers;
 using namespace Platform;
 using namespace Windows::Graphics::Holographic;
+using namespace Windows::Perception;
 using namespace Windows::Perception::Spatial;
+using namespace Windows::System::Threading;
 
 #define VIDEO_FRAME_WIDTH	1280 * 2
 #define VIDEO_FRAME_HEIGHT	720
+#define INPUT_RATE			1000 / 30
+
+#define MAX_FRAMES 10000
+HolographicFrame^ holographicFrames[MAX_FRAMES];
+int currentFrameId = 0;
 
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
@@ -51,34 +58,32 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 
 void AppCallbacks::Run()
 {
+	// Starts the timer to send input data.
+	TimeSpan period;
+	period.Duration = INPUT_RATE * 10000;
+	ThreadPoolTimer^ PeriodicTimer = ThreadPoolTimer::CreatePeriodicTimer(
+		ref new TimerElapsedHandler([this](ThreadPoolTimer^ source)
+		{
+			if (m_videoRenderer)
+			{
+				auto lock = m_lock.Lock();
+				SendInputData();
+			}
+		}),
+		period);
+
+	// Starts the main loop.
 	while (true)
 	{
 		CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(
-			CoreProcessEventsOption::ProcessAllIfPresent);
-
-		if (m_videoRenderer)
-		{
-			// Updates.
-			HolographicFrame^ holographicFrame = m_main->Update();
-
-			// Renders.
-			if (m_main->Render(holographicFrame))
-			{
-				// The holographic frame has an API that presents the swap chain for each
-				// holographic camera.
-				m_deviceResources->Present(holographicFrame);
-
-				// Sends view matrix.
-				SendInputData(holographicFrame);
-			}
-		}
+			CoreProcessEventsOption::ProcessOneAndAllPending);
 	}
 }
 
 void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle)
 {
-	m_mediaSource =
-		reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
+	auto lock = m_lock.Lock();
+	m_mediaSource = reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
 
 	if (m_mediaSource != nullptr)
 	{
@@ -91,29 +96,59 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
 
 		// Initializes the video render.
-		InitVideoRender(m_deviceResources, textureView);
+		m_videoRenderer = new VideoRenderer(m_deviceResources, VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT);
+		m_main->SetVideoRender(m_videoRenderer);
+
+		// Sets the frame transfer callback.
+		m_player->FrameTransferred += ref new MEPlayer::VideoFrameTransferred(
+			[&](MEPlayer^ mc, int width, int height, Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, LONGLONG pts)
+		{
+			auto lock = m_lock.Lock();
+			if (!m_framePredictionTimestamp.empty())
+			{
+				int frameId = (pts % 10000) + 1;
+				int64_t predictionTimestamp = m_framePredictionTimestamp.at(frameId);
+				//OutputDebugString((L"FrameTransferred: " + predictionTimestamp + L"\r\n")->Data());
+
+				for (int i = 0; i < MAX_FRAMES; i++)
+				{
+					if (!holographicFrames[i])
+					{
+						continue;
+					}
+
+					PerceptionTimestamp^ perceptionTimestamp = holographicFrames[i]->CurrentPrediction->Timestamp;
+					if (predictionTimestamp == perceptionTimestamp->TargetTime.UniversalTime)
+					{
+						m_deviceResources->GetD3DDeviceContext()->CopyResource(
+							m_videoRenderer->GetVideoFrame(), texture.Get());
+
+						if (m_main->Render(holographicFrames[i]))
+						{
+							// The holographic frame has an API that presents the swap chain for each
+							// holographic camera.
+							m_deviceResources->Present(holographicFrames[i]);
+							holographicFrames[i] = nullptr;
+						}
+
+						break;
+					}
+				}
+			}
+		});
 	}
 }
 
-void AppCallbacks::InitVideoRender(
-	std::shared_ptr<DX::DeviceResources> deviceResources,
-	ID3D11ShaderResourceView* textureView)
+void AppCallbacks::OnSampleTimestamp(int64_t timestamp)
 {
-	// Initializes the video renderer.
-	m_videoRenderer = new VideoRenderer(m_deviceResources, textureView);
-
-	// Initializes the new video texture
-	m_main->SetVideoRender(m_videoRenderer);
+	auto lock = m_lock.Lock();
+	m_framePredictionTimestamp.push_back(timestamp);
 }
 
-void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
+void AppCallbacks::SendInputData()
 {
-	HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
-	SpatialCoordinateSystem^ currentCoordinateSystem =
-		m_main->GetReferenceFrame()->CoordinateSystem;
-
-	// Attempt to set server to stereo mode
-	if (!m_sentStereoMode && m_mediaSource)
+	// Attempts to set server to stereo mode.
+	if (!m_sentStereoMode)
 	{
 		String^ msg =
 			"{" +
@@ -121,7 +156,7 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 			"  \"body\":\"1\"" +
 			"}";
 
-		if (m_sendInputDataHandler(msg))
+		if (m_mediaSource && m_sendInputDataHandler(msg))
 		{
 			// The server is now in stereo mode. Start receiving frames.
 			// This is required to avoid corrupt frames at startup.
@@ -129,9 +164,23 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 			m_player->Play();
 			m_sentStereoMode = true;
 		}
+		else
+		{
+			return;
+		}
 	}
 
-	for (auto cameraPose : prediction->CameraPoses)
+	HolographicFrame^ newFrame = m_main->Update();
+	if (currentFrameId == MAX_FRAMES)
+	{
+		currentFrameId = 0;
+	}
+
+	holographicFrames[currentFrameId++] = newFrame;
+	SpatialCoordinateSystem^ currentCoordinateSystem = m_main->GetReferenceFrame()->CoordinateSystem;
+	XMFLOAT4X4 leftViewMatrix;
+	XMFLOAT4X4 rightViewMatrix;
+	for (auto cameraPose : newFrame->CurrentPrediction->CameraPoses)
 	{
 		HolographicStereoTransform cameraProjectionTransform =
 			cameraPose->ProjectionTransform;
@@ -144,43 +193,40 @@ void AppCallbacks::SendInputData(HolographicFrame^ holographicFrame)
 			HolographicStereoTransform viewCoordinateSystemTransform =
 				viewTransformContainer->Value;
 
-			XMFLOAT4X4 leftViewProjectionMatrix;
 			XMStoreFloat4x4(
-				&leftViewProjectionMatrix,
+				&leftViewMatrix,
 				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
 			);
 
-			XMFLOAT4X4 rightViewProjectionMatrix;
 			XMStoreFloat4x4(
-				&rightViewProjectionMatrix,
+				&rightViewMatrix,
 				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
 			);
-
-			// Builds the camera transform message.
-			String^ leftCameraTransform = "";
-			String^ rightCameraTransform = "";
-			for (int i = 0; i < 4; i++)
-			{
-				for (int j = 0; j < 4; j++)
-				{
-					leftCameraTransform += leftViewProjectionMatrix.m[i][j] + ",";
-					rightCameraTransform += rightViewProjectionMatrix.m[i][j];
-					if (i != 3 || j != 3)
-					{
-						rightCameraTransform += ",";
-					}
-				}
-			}
-
-			String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
-			String^ msg =
-				"{" +
-				"  \"type\":\"camera-transform-stereo\"," +
-				"  \"body\":\"" + cameraTransformBody + "\"" +
-				"}";
-
-			m_sendInputDataHandler(msg);
 		}
 	}
+
+	// Builds the camera transform message.
+	String^ leftCameraTransform = "";
+	String^ rightCameraTransform = "";
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			leftCameraTransform += leftViewMatrix.m[i][j] + ",";
+			rightCameraTransform += rightViewMatrix.m[i][j] + ",";
+		}
+	}
+
+	String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
+
+	// Adds the current prediction timestamp.
+	cameraTransformBody += newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
+	String^ msg =
+		"{" +
+		"  \"type\":\"camera-transform-stereo\"," +
+		"  \"body\":\"" + cameraTransformBody + "\"" +
+		"}";
+
+	m_sendInputDataHandler(msg);
 }
 

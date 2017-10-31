@@ -87,7 +87,12 @@ ref class MEPlayer: public MediaEngineNotifyCallback
 
 internal:
 
-	delegate void VideoFrameTransferred(MEPlayer^ sender, int width, int height);
+	delegate void VideoFrameTransferred(
+		MEPlayer^ sender, 
+		int width, 
+		int height, 
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture,
+		LONGLONG pts);
 
     MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice);
 
