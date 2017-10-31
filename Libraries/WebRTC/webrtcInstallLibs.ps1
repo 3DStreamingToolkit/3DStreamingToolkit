@@ -140,6 +140,6 @@ Test-Nano()
 }
 
 
-DecompressZip -filename "m58patch_headers"
-DecompressZip -filename "m58patch_x64"
-DecompressZip -filename "m58patch_Win32"
+DecompressZip -filename "m58patch_timestamp_headers"
+DecompressZip -filename "m58patch_timestamp_x64"
+DecompressZip -filename "m58patch_timestamp_Win32"
