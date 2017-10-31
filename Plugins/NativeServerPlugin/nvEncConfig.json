@@ -3,7 +3,7 @@
   "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
     "bitrate": 5500000,
-    "minBitrate": 3500000,
+    "minBitrate": 0,
     "fps": 60,
     "qp": 5,
     "intraRefreshPeriod": 60,
