@@ -7,8 +7,8 @@ import {
   AppRegistry
 } from 'react-native';
 
-import HomeScreen from "./components/homeScreen.js"
-import VideoPlaybackScreen from "./components/videoPlaybackScreen.js"
+import HomeScreen from "./components/HomeScreen.js"
+import VideoPlaybackScreen from "./components/VideoPlaybackScreen.js"
 
 const rn3dtksample = StackNavigator({
   Home: { screen: HomeScreen },

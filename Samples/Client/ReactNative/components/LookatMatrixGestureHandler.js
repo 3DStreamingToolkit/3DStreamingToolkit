@@ -13,7 +13,7 @@ import {
   createRotateYMatrix,
   createRotateZMatrix,
   matrixMultiply,
-} from './matrixMath';
+} from './MatrixMath';
 
 const PropTypes = require('prop-types');
 
