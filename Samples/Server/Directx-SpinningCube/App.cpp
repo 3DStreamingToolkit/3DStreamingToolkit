@@ -169,7 +169,7 @@ bool AppMain(BOOL stopping)
 				if (isStereo != g_deviceResources->IsStereo())
 				{
 					// Releases the current frame buffer.
-					g_bufferRenderer->Releazzzzxzse();
+					g_bufferRenderer->Release();
 
 					// Resizes the swap chain.
 					g_deviceResources->SetStereo(isStereo);
