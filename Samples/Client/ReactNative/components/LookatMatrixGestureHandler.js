@@ -68,8 +68,8 @@ class LookatMatrixGestureHandler extends Component {
     let dy = -event.nativeEvent.translationY;
 
     // update the navigation origin
-    let lookat = cloneMatrix(this.state.lookat);   
-    let location = [0.0, 0.0, 0.0]; 
+    let lookat = cloneMatrix(this.state.lookat);
+    let location = [0.0, 0.0, 0.0];
     location[0] = this.state.downLocation[0] + dy * lookat[0];
     location[1] = this.state.downLocation[1] + dy * lookat[1];
     location[2] = this.state.downLocation[2] + dy * lookat[2];
@@ -92,8 +92,8 @@ class LookatMatrixGestureHandler extends Component {
     dy *= 100;
 
     // update the navigation origin
-    let lookat = cloneMatrix(this.state.lookat);   
-    let location = [0.0, 0.0, 0.0]; 
+    let lookat = cloneMatrix(this.state.lookat);
+    let location = [0.0, 0.0, 0.0];
     location[0] = this.state.downLocation[0] + dy * lookat[0];
     location[1] = this.state.downLocation[1] + dy * lookat[1];
     location[2] = this.state.downLocation[2] + dy * lookat[2];
@@ -122,12 +122,12 @@ class LookatMatrixGestureHandler extends Component {
   }
 
   reset = () => {
-    const lookat = createIdentityMatrix(); 
+    const lookat = createIdentityMatrix();
     this.setState({
       heading: 0.0,
       pitch: 0.0,
       lookat: lookat,
-      location: [0.0, 0.0, 0.0]      
+      location: [0.0, 0.0, 0.0]
     });
 
     this.props.onLookatChanged && this.props.onLookatChanged(lookat);

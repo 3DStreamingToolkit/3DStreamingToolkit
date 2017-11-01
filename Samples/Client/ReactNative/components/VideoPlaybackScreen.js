@@ -1,18 +1,14 @@
 import React, { Component } from 'react';
 import {
-    AppRegistry,
-    StyleSheet,
-    Text,
-    View,
-    Button,
-    Picker,
-    Dimensions 
-  } from 'react-native';
+  StyleSheet,
+  View,
+  Dimensions
+} from 'react-native';
 
-  import {
-    createIdentityMatrix
-  } from './matrixMath';
-  
+import {
+  createIdentityMatrix
+} from './MatrixMath';
+
 const LookatMatrixGestureHandler = require('./LookatMatrixGestureHandler');
 const window = Dimensions.get('window');
 
@@ -21,7 +17,7 @@ var {
   RTCView
 } = WebRTC;
 
-class VideoPlaybackScreen extends React.Component {
+class VideoPlaybackScreen extends Component {
 
     constructor(props) {
         super(props);
@@ -38,11 +34,11 @@ class VideoPlaybackScreen extends React.Component {
         lookat: matrix,
       });
 
-      let json = { type: "camera-transform-lookat", 
+      let json = { type: 'camera-transform-lookat',
       body: (-matrix[12]) + ',' + (-matrix[13]) + ',' + (-matrix[14]) + ',' +
             (-matrix[0]) + ',' + (-matrix[1]) + ',' + (matrix[2]) + ',' +
             (matrix[4]) + ',' + matrix[5] + ',' + (matrix[6]) };
-  
+
       this.state.sendInputData(json);
     }
 

@@ -1,8 +1,5 @@
 import React, { Component } from 'react';
 import {
-  AppRegistry,
-  StyleSheet,
-  Text,
   View,
   Button,
   Picker
@@ -13,17 +10,12 @@ var {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
-  RTCView,
-  MediaStream,
-  MediaStreamTrack,
-  getUserMedia,
 } = WebRTC;
 
 import ThreeDStreamingClient from '../ThreeDStreamingClient.js';
-
 import Config from '../config';
 
-var streamingClient = new ThreeDStreamingClient(Config, 
+var streamingClient = new ThreeDStreamingClient(Config,
 {
   RTCPeerConnection: window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection,
   RTCSessionDescription: window.mozRTCSessionDescription || window.RTCSessionDescription || RTCSessionDescription,
@@ -38,7 +30,7 @@ class HomeScreen extends Component {
   constructor(props) {
     super(props);
 
-  streamingClient.signIn('ReactClient', 
+  streamingClient.signIn('ReactClient',
     {
       onaddstream: this.onRemoteStreamAdded.bind(this),
       onremovestream: this.onRemoteStreamRemoved,
@@ -49,7 +41,7 @@ class HomeScreen extends Component {
   .then(streamingClient.startHeartbeat.bind(streamingClient))
   .then(streamingClient.pollSignalingServer.bind(streamingClient, true));
 
-  this.state = {otherPeers: streamingClient.otherPeers, 
+  this.state = {otherPeers: streamingClient.otherPeers,
                 currentPeerId: 0,
                 videoURL: null};
   }
@@ -62,8 +54,7 @@ class HomeScreen extends Component {
   updatePeerList() {
     let peers = streamingClient.otherPeers;
 
-    if(peers)
-    {
+    if (peers) {
       this.setState({currentPeerId: Object.keys(peers)[0]});
     }
 
@@ -99,7 +90,7 @@ class HomeScreen extends Component {
             {this.renderPeers()}
         </Picker>
         <Button title="Join peer" onPress={this.joinPeer.bind(this)}>Join Peer</Button>
-        
+
       </View>
     );
   }
