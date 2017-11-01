@@ -12,7 +12,7 @@ using namespace Windows::Perception;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::System::Threading;
 
-#define VIDEO_FRAME_WIDTH	1280 * 2
+#define VIDEO_FRAME_WIDTH	1280
 #define VIDEO_FRAME_HEIGHT	720
 #define INPUT_RATE			1000 / 30
 

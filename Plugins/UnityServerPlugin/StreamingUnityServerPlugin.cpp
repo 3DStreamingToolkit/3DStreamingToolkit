@@ -80,6 +80,8 @@ rtc::Thread *rtcMainThread;
 
 std::string s_server = "signalingserveruri";
 uint32_t s_port = 3000;
+int64_t s_lastTimestamp = -1;
+bool s_encodingStereo = false;
 
 bool s_closing = false;
 
@@ -312,6 +314,57 @@ void InitWebRTC()
 
 			(*s_callbackMap.onInputUpdate)(message.c_str());
 		}
+
+		// we only process the following logic if we're encoding stereo
+		// data as determined/communicated by the unity side of things
+		// and the renderer isn't locked
+		if (!s_encodingStereo || s_bufferRenderer->IsLocked())
+		{
+			return;
+		}
+
+		// manually parse and determine if we've got a camera transform
+		Json::Reader reader;
+		Json::Value msg = NULL;
+		reader.parse(message, msg, false);
+
+		if (msg == NULL)
+		{
+			return;
+		}
+
+		auto type = msg.get("type", NULL);
+
+		if (type == NULL)
+		{
+			return;
+		}
+
+		if (type.asString().compare("camera-transform-stereo") == 0)
+		{
+			auto body = msg.get("body", NULL);
+
+			if (body == NULL)
+			{
+				return;
+			}
+
+			// if it has timing data in it - if we do, we need to set the prediction information
+			auto str = body.asString();
+
+			// parse just the timestamp from the message body
+			// it's the last entry, so from the final , to the end
+			auto timestampStr = str.substr(str.find_last_of(',') + 1);
+			int64_t timestamp = stoll(timestampStr);
+
+			// inform the renderer about our timestamp
+			if (timestamp != s_lastTimestamp)
+			{
+				s_lastTimestamp = timestamp;
+				s_bufferRenderer->SetPredictionTimestamp(timestamp);
+				s_bufferRenderer->Lock();
+			}
+		}
 	});
 
 	s_conductor->SetInputDataHandler(&inputHandler);
@@ -451,7 +504,12 @@ static void UNITY_INTERFACE_API OnEncode(int eventID)
 				// Render loop.
 				std::function<void()> frameRenderFunc = ([&]
 				{
-					// do nothing
+					// if we're encoding stereo we need to wait so
+					// that the prediction logic can kick in
+					if (s_encodingStereo)
+					{
+						s_bufferRenderer->Lock();
+					}
 				});
 
 				// initializes the buffer renderer, texture size will be auto-determined
@@ -552,6 +610,11 @@ extern "C" UnityRenderingEvent UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API GetRen
 	ULOG(INFO, __FUNCTION__);
 
 	return OnEncode;
+}
+
+extern "C" __declspec(dllexport) void SetEncodingStereo(bool encodingStereo)
+{
+	s_encodingStereo = encodingStereo;
 }
 
 extern "C" __declspec(dllexport) void SetCallbackMap(StrParamFuncType onInputUpdate,

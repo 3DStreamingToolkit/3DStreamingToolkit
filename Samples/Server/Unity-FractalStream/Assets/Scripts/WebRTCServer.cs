@@ -123,12 +123,12 @@ namespace Microsoft.Toolkit.ThreeD
         {
             // make sure that the render window continues to render when the game window does not have focus
             Application.runInBackground = true;
-
-            // setup the eyes for the first time
-            SetupActiveEyes();
-
+            
             // open the connection
             Open();
+            
+            // setup the eyes for the first time
+            SetupActiveEyes();
         }
 
         /// <summary>
@@ -398,6 +398,12 @@ namespace Microsoft.Toolkit.ThreeD
 
             // update our last setup visible eye value
             this.lastSetupVisibleEyes = this.IsStereo;
+
+            // notify the plugin of the potential stereo change as well
+            if (this.Plugin != null)
+            {
+                this.Plugin.EncodingStereo = this.IsStereo;
+            }
         }
     }
 }

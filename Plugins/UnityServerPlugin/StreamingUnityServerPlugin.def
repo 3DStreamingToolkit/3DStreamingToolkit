@@ -4,6 +4,7 @@ EXPORTS
    UnityPluginLoad
    UnityPluginUnload
    GetRenderEventFunc
+   SetEncodingStereo
    SetCallbackMap
    ConnectToPeer
    DisconnectFromPeer
