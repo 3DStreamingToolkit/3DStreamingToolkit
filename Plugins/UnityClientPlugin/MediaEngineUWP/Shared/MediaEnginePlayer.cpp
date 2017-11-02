@@ -899,12 +899,14 @@ void MEPlayer::OnTimer()
 		LONGLONG pts;
 		if (m_spMediaEngine->OnVideoStreamTick(&pts) == S_OK)
 		{
-			//OutputDebugString((L"Presentation time: " + ((int)pts) + L"\r\n")->Data());
 			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), &m_nRect, &m_rcTarget, &m_bkgColor)
 			);
 
-			FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom, m_primaryMediaTexture, pts);
+			// Parses the timestamp id from MediaSourceHelper.
+			int timestampId = pts & 0xFF;
+			FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom,
+				m_primaryMediaTexture, timestampId);
 		}
 	}
 

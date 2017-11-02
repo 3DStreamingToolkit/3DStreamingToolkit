@@ -6,10 +6,14 @@
 #include "HolographicAppMain.h"
 #include "MediaEnginePlayer.h"
 
+using namespace Microsoft::WRL;
 using namespace Platform;
+using namespace Platform::Collections;
 using namespace Windows::ApplicationModel::Core;
 using namespace Windows::ApplicationModel::Activation;
 using namespace Windows::Foundation;
+using namespace Windows::Graphics::Holographic;
+using namespace Windows::Media::Core;
 using namespace Windows::UI::Core;
 
 namespace DirectXClientComponent
@@ -28,9 +32,9 @@ namespace DirectXClientComponent
 
 		void Run();
 
-		void SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource^ mediaSourceHandle);
+		void SetMediaStreamSource(IMediaStreamSource^ mediaSourceHandle);
 
-		void OnSampleTimestamp(int64_t timestamp);
+		void OnSampleTimestamp(int id, int64_t timestamp);
 
 	private:
 		void SendInputData();
@@ -42,8 +46,11 @@ namespace DirectXClientComponent
 		std::unique_ptr<HolographicAppMain>						m_main;
 		SendInputDataHandler^									m_sendInputDataHandler;
 		bool													m_sentStereoMode;
-		Microsoft::WRL::ComPtr<ABI::Windows::Media::Core::IMediaStreamSource> m_mediaSource;
-		std::vector<int64_t>									m_framePredictionTimestamp;
+		ComPtr<ABI::Windows::Media::Core::IMediaStreamSource>	m_mediaSource;
+		
+		// Frame prediction
+		std::vector<HolographicFrame^>							m_holographicFrames;
+		std::map<int, int64_t>									m_framePredictionTimestamp;
 
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;

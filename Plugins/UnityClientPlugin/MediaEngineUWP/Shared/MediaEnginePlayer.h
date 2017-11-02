@@ -92,7 +92,7 @@ internal:
 		int width, 
 		int height, 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture,
-		LONGLONG pts);
+		int timestampId);
 
     MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice);
 
