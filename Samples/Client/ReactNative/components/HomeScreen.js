@@ -24,7 +24,7 @@ var streamingClient = new ThreeDStreamingClient(Config,
 
 class HomeScreen extends Component {
   static navigationOptions = {
-        title: 'Rn3dtksample',
+        title: 'React Native 3D Streaming Toolkit Sample'
       };
 
   constructor(props) {
@@ -36,7 +36,8 @@ class HomeScreen extends Component {
       onremovestream: this.onRemoteStreamRemoved,
       onopen: this.onSessionOpened,
       onconnecting: this.onSessionConnecting,
-      onupdatepeers: this.updatePeerList.bind(this)
+      onupdatepeers: this.updatePeerList.bind(this),
+      onremotepeerconnected: this.onremotepeerconnected.bind(this)
     })
   .then(streamingClient.startHeartbeat.bind(streamingClient))
   .then(streamingClient.pollSignalingServer.bind(streamingClient, true));
@@ -51,6 +52,14 @@ class HomeScreen extends Component {
   componentWillUpdate(props, nextState) {
   }
 
+  componentWillReceiveProps(nextProps) {
+  }
+
+  onremotepeerconnected(peer_id)
+  {
+    this.setState({currentPeerId: peer_id});
+  }
+
   updatePeerList() {
     let peers = streamingClient.otherPeers;
 
@@ -62,9 +71,10 @@ class HomeScreen extends Component {
   }
 
   onRemoteStreamAdded(event) {
-    // this.setState({videoURL: event.stream.toURL()});
-
-    this.props.navigation.navigate('VideoPlayback', { videoURL: event.stream.toURL(), sendInputData: streamingClient.sendInputChannelData.bind(streamingClient) });
+    this.props.navigation.navigate('VideoPlayback', 
+                          { videoURL: event.stream.toURL(), 
+                            sendInputData: streamingClient.sendInputChannelData.bind(streamingClient),
+                            peerTitle: this.state.otherPeers[this.state.currentPeerId] });
   }
 
   onRemoteStreamRemoved(event) {

@@ -27,7 +27,7 @@ class ThreeDStreamingClient {
     this.onupdatepeers = null;
   }
 
-  signIn(peerName, {onconnecting = null, onopen = null, onaddstream = null, onremovestream = null, onupdatepeers = null}) {
+  signIn(peerName, {onconnecting = null, onopen = null, onaddstream = null, onremovestream = null, onupdatepeers = null, onremotepeerconnected = null}) {
     // First part of the hand shake
     const fetchOptions = {
       method: 'GET',
@@ -41,6 +41,7 @@ class ThreeDStreamingClient {
     this.onaddstream = onaddstream;
     this.onremovestream = onremovestream;
     this.onupdatepeers = onupdatepeers;
+    this.onremotepeerconnected = onremotepeerconnected;
 
     return fetch(`${this.serverUrl}/sign_in?peer_name=${peerName}`, fetchOptions)
       .then((response) => response.text())
@@ -197,6 +198,7 @@ class ThreeDStreamingClient {
     };
     let dataJson = JSON.parse(body);
     this._createPeerConnection(peer_id);
+    this.onremotepeerconnected(peer_id);
     this.peerConnection.setRemoteDescription(new this.WebRTC.RTCSessionDescription(dataJson),
       () => {console.log('Successfully set remote description');},
       (event) => {console.log(`Failed to set remote description on ${event.name}: ${event.message}`);}

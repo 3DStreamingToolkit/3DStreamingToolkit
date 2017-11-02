@@ -18,9 +18,13 @@ var {
 } = WebRTC;
 
 class VideoPlaybackScreen extends Component {
+  static navigationOptions = ({ navigation }) => ({
+    title: navigation.state.params.peerTitle
+  });
 
     constructor(props) {
         super(props);
+
         this.state = {
           lookat: createIdentityMatrix(),
           moveGesture: 'pan',
