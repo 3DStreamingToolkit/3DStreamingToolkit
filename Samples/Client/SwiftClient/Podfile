@@ -1,0 +1,13 @@
+use_frameworks!
+
+def install_pods
+    pod 'WebRTC', '~> 58.17.16937'
+end
+
+target 'SwiftClient' do
+    install_pods
+end
+
+target 'SwiftClientTests' do
+    install_pods
+end

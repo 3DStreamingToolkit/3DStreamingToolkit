@@ -36,8 +36,7 @@ namespace
 }
 
 PeerConnectionClient::PeerConnectionClient() :
-	callback_(NULL),
-    resolver_(NULL),
+	resolver_(NULL),
     state_(NOT_CONNECTED),
     my_id_(-1),
 	heartbeat_tick_ms_(kHeartbeatDefault),
@@ -87,9 +86,8 @@ const Peers& PeerConnectionClient::peers() const
 }
 
 void PeerConnectionClient::RegisterObserver(PeerConnectionClientObserver* callback)
-{
-	RTC_DCHECK(!callback_);
-	callback_ = callback;
+{;
+	callbacks_.push_back(callback);
 }
 
 void PeerConnectionClient::Connect(const std::string& server, int port, 
@@ -101,19 +99,19 @@ void PeerConnectionClient::Connect(const std::string& server, int port,
 	if (state_ != NOT_CONNECTED)
 	{
 		LOG(WARNING) << "The client must not be connected before you can call Connect()";
-		callback_->OnServerConnectionFailure();
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnServerConnectionFailure(); });
 		return;
 	}
 
 	if (server.empty() || client_name.empty())
 	{
-		callback_->OnServerConnectionFailure();
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnServerConnectionFailure(); });
 		return;
 	}
 
 	if (port <= 0)
 	{
-		callback_->OnServerConnectionFailure();
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnServerConnectionFailure(); });
 		return;
 	}
 
@@ -151,7 +149,7 @@ void PeerConnectionClient::OnResolveResult(rtc::AsyncResolverInterface* resolver
 {
 	if (resolver_->GetError() != 0)
 	{
-		callback_->OnServerConnectionFailure();
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnServerConnectionFailure(); });
 		resolver_->Destroy(false);
 		resolver_ = NULL;
 		state_ = NOT_CONNECTED;
@@ -209,7 +207,7 @@ void PeerConnectionClient::DoConnect()
 
 	if (!ret) 
 	{
-		callback_->OnServerConnectionFailure();
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnServerConnectionFailure(); });
 	}
 }
 
@@ -357,11 +355,11 @@ void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& mes
 	if (message.length() == (sizeof(kByeMessage) - 1) && 
 		message.compare(kByeMessage) == 0)
 	{
-		callback_->OnPeerDisconnected(peer_id);
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerDisconnected(peer_id); });
 	}
 	else
 	{
-		callback_->OnMessageFromPeer(peer_id, message);
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnMessageFromPeer(peer_id, message); });
 	}
 }
 
@@ -488,7 +486,7 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 							&name, &id, &connected) && id != my_id_)
 						{
 							peers_[id] = name;
-							callback_->OnPeerConnected(id, name);
+							std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerConnected(id, name); });
 						}
 
 						pos = eol + 1;
@@ -496,12 +494,12 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 				}
 
 				RTC_DCHECK(is_connected());
-				callback_->OnSignedIn();
+				std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnSignedIn(); });
 			}
 			else if (state_ == SIGNING_OUT)
 			{
 				Close();
-				callback_->OnDisconnected();
+				std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnDisconnected(); });
 			} 
 			else if (state_ == SIGNING_OUT_WAITING)
 			{
@@ -524,7 +522,7 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			else
 			{
 				Close();
-				callback_->OnDisconnected();
+				std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnDisconnected(); });
 				control_data_.clear();
 			}
 		}
@@ -569,12 +567,12 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 					if (connected) 
 					{
 						peers_[id] = name;
-						callback_->OnPeerConnected(id, name);
+						std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerConnected(id, name); });
 					} 
 					else 
 					{
 						peers_.erase(id);
-						callback_->OnPeerDisconnected(id);
+						std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerDisconnected(id); });
 					}
 				}
 			} 
@@ -597,7 +595,7 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 			else
 			{
 				Close();
-				callback_->OnDisconnected();
+				std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnDisconnected(); });
 			}
 		}
 
@@ -705,7 +703,7 @@ void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err)
 		} 
 		else 
 		{
-			callback_->OnMessageSent(err);
+			std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnMessageSent(err); });
 		}
 	} 
 	else 
@@ -718,7 +716,7 @@ void PeerConnectionClient::OnClose(rtc::AsyncSocket* socket, int err)
 		else 
 		{
 			Close();
-			callback_->OnDisconnected();
+			std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnDisconnected(); });
 		}
 	}
 }

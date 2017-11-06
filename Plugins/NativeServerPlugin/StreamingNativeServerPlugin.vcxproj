@@ -185,22 +185,23 @@
     <ClCompile Include="src\conductor.cpp" />
     <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
-    <ClCompile Include="src\default_data_channel_observer.cpp" />
-    <ClCompile Include="src\default_main_window.cpp" />
-    <ClCompile Include="src\video_helper.cpp" />
+    <ClCompile Include="src\input_data_channel_observer.cpp" />
+    <ClCompile Include="src\buffer_renderer.cpp" />
+    <ClCompile Include="src\render_service.cpp" />
+    <ClCompile Include="src\service_base.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\conductor.h" />
     <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
-    <ClInclude Include="inc\default_data_channel_observer.h" />
-    <ClInclude Include="inc\default_main_window.h" />
+    <ClInclude Include="inc\input_data_channel_observer.h" />
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
-    <ClInclude Include="inc\main_window.h" />
-    <ClInclude Include="inc\pch.h" />
-    <ClInclude Include="inc\video_helper.h" />
+    <ClInclude Include="inc\buffer_renderer.h" />
+    <ClInclude Include="inc\service\render_service.h" />
+    <ClInclude Include="inc\service\service_base.h" />
+    <ClInclude Include="inc\service\thread_pool.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
@@ -208,13 +209,30 @@
     <None Include="nvEncConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="serverConfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="webrtcConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="serviceRegister.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serviceStart.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serviceStop.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="serviceDelete.ps1">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>	
     <None Include="webrtcConfigStunTemplate.json" />
   </ItemGroup>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\UserInterface\exports.props" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\ConfigParser\exports.props" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

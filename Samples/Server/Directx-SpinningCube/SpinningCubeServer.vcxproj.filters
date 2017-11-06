@@ -42,5 +42,14 @@
     <ClInclude Include="server_renderer.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="Common\DeviceResources.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DirectXHelper.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\CubeRenderer.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

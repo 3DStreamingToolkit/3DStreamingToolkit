@@ -7,5 +7,11 @@
   },
   "server": "https://signalingserveruri",
   "port": 443,
-  "heartbeat": 5000
+  "heartbeat": 5000,
+  "authentication": {
+    "authority": "https://aadauthorityuri",
+    "resource": "00000000-0000-0000-0000-000000000000",
+    "clientId": "00000000-0000-0000-0000-000000000000",
+    "clientSecret": "aadsecretstring"
+  }
 }
