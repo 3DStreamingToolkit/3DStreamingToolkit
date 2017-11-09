@@ -16,7 +16,6 @@ using namespace Windows::System::Threading;
 
 #define VIDEO_FRAME_WIDTH	1280 * 2
 #define VIDEO_FRAME_HEIGHT	720
-#define DEFAULT_FRAME_RATE	30
 
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
@@ -56,25 +55,16 @@ void AppCallbacks::SetWindow(CoreWindow^ window)
 
 void AppCallbacks::Run()
 {
-	// Starts the timer to send input data.
-	TimeSpan period;
-	period.Duration = (1000 / DEFAULT_FRAME_RATE) * 10000;
-	ThreadPoolTimer^ PeriodicTimer = ThreadPoolTimer::CreatePeriodicTimer(
-		ref new TimerElapsedHandler([this](ThreadPoolTimer^ source)
-		{
-			if (m_videoRenderer)
-			{
-				auto lock = m_lock.Lock();
-				SendInputData();
-			}
-		}),
-		period);
-
-	// Starts the main loop.
 	while (true)
 	{
 		CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(
-			CoreProcessEventsOption::ProcessOneAndAllPending);
+			CoreProcessEventsOption::ProcessAllIfPresent);
+
+		if (m_videoRenderer)
+		{
+			SendInputData();
+			m_player->OnTimerVSync();
+		}
 	}
 }
 
@@ -86,7 +76,7 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 	if (m_mediaSource != nullptr)
 	{
 		// Initializes the media engine player.
-		m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice());
+		m_player = ref new MEPlayer(m_deviceResources->GetD3DDevice(), false);
 
 		// Creates a dummy renderer and texture until the first frame is received from WebRTC
 		ID3D11ShaderResourceView* textureView;
@@ -94,7 +84,7 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
 
 		// Initializes the video render.
-		m_videoRenderer = new VideoRenderer(m_deviceResources, VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT);
+		m_videoRenderer = new VideoRenderer(m_deviceResources, textureView);
 		m_main->SetVideoRender(m_videoRenderer);
 
 		// Sets the frame transfer callback.
@@ -120,9 +110,6 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 					PerceptionTimestamp^ perceptionTimestamp = frame->CurrentPrediction->Timestamp;
 					if (predictionTimestamp == perceptionTimestamp->TargetTime.UniversalTime)
 					{
-						m_deviceResources->GetD3DDeviceContext()->CopyResource(
-							m_videoRenderer->GetVideoFrame(), texture.Get());
-
 						if (m_main->Render(frame))
 						{
 							// The holographic frame has an API that presents the swap chain for each

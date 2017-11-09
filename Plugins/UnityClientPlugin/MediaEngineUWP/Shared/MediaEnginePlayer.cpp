@@ -94,7 +94,7 @@ public:
 	}
 };
 
-MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice) :
+MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice, BOOL useVSyncTimer) :
 	m_spDX11Device(nullptr),
 	m_spDX11UnityDevice(unityD3DDevice),
 	m_spDX11DeviceContext(nullptr),
@@ -112,7 +112,8 @@ MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice) :
 	m_d3dFormat(DXGI_FORMAT_B8G8R8A8_UNORM),
 	m_fInitSuccess(FALSE),
 	m_fExitApp(FALSE),
-	m_fUseDX(TRUE)
+	m_fUseDX(TRUE),
+	m_fUseVSyncTimer(useVSyncTimer)
 {
 	memset(&m_bkgColor, 0, sizeof(MFARGB));
 
@@ -830,12 +831,15 @@ void MEPlayer::StartTimer()
 	m_fStopTimer = FALSE;
 
 	auto vidPlayer = this;
-	task<void> workItem(ThreadPool::RunAsync(ref new WorkItemHandler([=](IAsyncAction^ /*sender*/) {
-		vidPlayer->RealVSyncTimer();
+	if (m_fUseVSyncTimer)
+	{
+		task<void> workItem(ThreadPool::RunAsync(ref new WorkItemHandler(
+			[=](IAsyncAction^ /*sender*/) 
+			{
+				vidPlayer->RealVSyncTimer();
+			}),
+			WorkItemPriority::High));
 	}
-	),
-		WorkItemPriority::High
-		));
 
 	return;
 }
@@ -911,8 +915,21 @@ void MEPlayer::OnTimer()
 	}
 
 	LeaveCriticalSection(&m_critSec);
+}
 
-	return;
+//+-----------------------------------------------------------------------------
+//
+//  Function:   OnTimerVSync
+//
+//  Synopsis:   Wait for VBlank and invoke OnTimer method.
+//
+//------------------------------------------------------------------------------
+void MEPlayer::OnTimerVSync()
+{
+	if (m_spDXGIOutput && SUCCEEDED(m_spDXGIOutput->WaitForVBlank()))
+	{
+		OnTimer();
+	}
 }
 
 //+-----------------------------------------------------------------------------

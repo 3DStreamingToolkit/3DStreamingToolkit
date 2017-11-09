@@ -167,13 +167,13 @@ namespace StreamingToolkit
 		rtc::CritScope cs(&lock_);
 		if (sending_) 
 		{
-			// Updates buffer renderer.
-			buffer_renderer_->Render();
-
 			if (!buffer_renderer_->IsLocked())
 			{
 				return;
 			}
+
+			// Updates buffer renderer.
+			buffer_renderer_->Render();
 
 			rtc::scoped_refptr<webrtc::I420Buffer> buffer;
 			ID3D11Texture2D* captured_texture = nullptr;

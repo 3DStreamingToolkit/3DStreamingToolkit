@@ -66,24 +66,25 @@ ref class MEPlayer: public MediaEngineNotifyCallback
     Microsoft::WRL::ComPtr<IMFMediaEngine>              m_spMediaEngine;
     Microsoft::WRL::ComPtr<IMFMediaEngineEx>            m_spEngineEx;
 
-    BSTR                                    m_bstrURL;
-    BOOL                                    m_fPlaying;
-    BOOL                                    m_fLoop;
-    BOOL                                    m_fEOS;
-    BOOL                                    m_fStopTimer;
-    RECT                                    m_rcTarget;
-	MFVideoNormalizedRect					m_nRect;
-    DXGI_FORMAT                             m_d3dFormat;
-    MFARGB                                  m_bkgColor;
+    BSTR												m_bstrURL;
+    BOOL												m_fPlaying;
+    BOOL												m_fLoop;
+    BOOL												m_fEOS;
+    BOOL												m_fStopTimer;
+    RECT												m_rcTarget;
+	MFVideoNormalizedRect								m_nRect;
+    DXGI_FORMAT											m_d3dFormat;
+    MFARGB												m_bkgColor;
 
-    HANDLE                                  m_TimerThreadHandle;
-    CRITICAL_SECTION                        m_critSec;
+    HANDLE												m_TimerThreadHandle;
+    CRITICAL_SECTION									m_critSec;
 
     concurrency::task<Windows::Storage::StorageFile^>   m_pickFileTask;
     concurrency::cancellation_token_source              m_tcs;
     BOOL                                                m_fInitSuccess;    
     BOOL                                                m_fExitApp;
     BOOL                                                m_fUseDX;
+	BOOL                                                m_fUseVSyncTimer;
 
 internal:
 
@@ -94,7 +95,7 @@ internal:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture,
 		int timestampId);
 
-    MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice);
+    MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice, BOOL useVSyncTimer = true);
 
     // DX11 related
     void CreateDX11Device();
@@ -184,6 +185,7 @@ internal:
     void StartTimer();
     void StopTimer();	
     void OnTimer();
+	void OnTimerVSync();
     DWORD RealVSyncTimer();
 
 	// State related to calculating FPS.

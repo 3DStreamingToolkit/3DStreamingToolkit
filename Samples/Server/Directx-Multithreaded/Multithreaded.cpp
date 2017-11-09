@@ -604,6 +604,10 @@ bool AppMain(BOOL stopping)
 						g_bufferRenderer->Resize(newWidth, height);
 						DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
 					}
+
+					// Do not present swapchain in stereo mode since 
+					// it affects the frame prediction.
+					DXUTSetNoSwapChainPresent(isStereo);
 				}
 
 				g_renderingModeSet = true;
