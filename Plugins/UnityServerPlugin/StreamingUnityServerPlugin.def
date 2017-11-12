@@ -3,7 +3,8 @@ LIBRARY
 EXPORTS
    UnityPluginLoad
    UnityPluginUnload
-   GetRenderEventFunc
+   InitializeBufferRenderer
+   LockFrameBuffer
    SetEncodingStereo
    SetCallbackMap
    ConnectToPeer

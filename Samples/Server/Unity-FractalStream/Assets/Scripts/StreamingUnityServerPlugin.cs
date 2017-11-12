@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Runtime.InteropServices;
-using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Microsoft.Toolkit.ThreeD
 {
@@ -25,7 +23,14 @@ namespace Microsoft.Toolkit.ThreeD
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern IntPtr GetRenderEventFunc();
+            public static extern void InitializeBufferRenderer(IntPtr renderTexture);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+#endif
+            public static extern void LockFrameBuffer(long predictionTimestamp);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
@@ -176,11 +181,6 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         public StreamingUnityServerPlugin()
         {
-            // set up the command buffer
-            EncodeAndTransmitCommand = new CommandBuffer();
-            EncodeAndTransmitCommand.name = PluginName + " Encoding";
-            EncodeAndTransmitCommand.IssuePluginEvent(Native.GetRenderEventFunc(), 0);
-
             // create null checking wrappers that we can always call on the native side
             this.pinnedInputUpdate = new GenericDelegate<string>.Handler(this.OnInputUpdate);
             this.pinnedLog = new GenericDelegate<int, string>.Handler(this.OnLog);
@@ -223,23 +223,6 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// The <see cref="CommandBuffer"/> needed to encode and transmit frame data
-        /// </summary>
-        /// <remarks>
-        /// This is consumed by <see cref="EncodeAndTransmitFrame"/> to encode the entire rendertexture
-        /// and can also be added to a camera command buffer to encode just that cameras view
-        /// </remarks>
-        /// <example>
-        /// var plugin = new StreamingUnityServerPlugin();
-        /// Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, plugin.EncodeAndTransmitCommand);
-        /// </example>
-        public CommandBuffer EncodeAndTransmitCommand
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
         /// Backing field for <see cref="EncodingStereo"/>
         /// </summary>
         private bool encodingStereo = false;
@@ -254,16 +237,24 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// <see cref="Coroutine"/> that encodes and transmits the current frame in it's entirety
+        /// Initializes the buffer renderer.
         /// </summary>
-        /// <returns>iterator for coroutine</returns>
-        public IEnumerator EncodeAndTransmitFrame()
+        /// <param name="renderTexture">The render texture.</param>
+        public IEnumerator InitializeBufferRenderer(IntPtr renderTexture)
         {
-            yield return new WaitForEndOfFrame();
-
-            Graphics.ExecuteCommandBuffer(EncodeAndTransmitCommand);
+            Native.InitializeBufferRenderer(renderTexture);
+            yield return null;
         }
-        
+
+        /// <summary>
+        /// Locks frame buffer and sends it to the encoder.
+        /// </summary>
+        /// <param name="predictionTimestamp">The prediction timestamp.</param>
+        public void LockFrameBuffer(long predictionTimestamp)
+        {
+            Native.LockFrameBuffer(predictionTimestamp);
+        }
+
         /// <summary>
         /// Connect to a peer identified by a given id
         /// </summary>
