@@ -51,11 +51,11 @@
 
 #ifndef TEST_RUNNER
 using namespace Microsoft::WRL;
+using namespace CppFactory;
 #endif // TEST_RUNNER
 
 using namespace DirectX;
 using namespace StreamingToolkit;
-using namespace CppFactory;
 
 // Extern method from DXUT.cpp
 void DXUTResizeDXGIBuffers(_In_ UINT Width, _In_ UINT Height, _In_ BOOL bFullscreen);
