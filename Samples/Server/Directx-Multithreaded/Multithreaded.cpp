@@ -55,6 +55,7 @@ using namespace Microsoft::WRL;
 
 using namespace DirectX;
 using namespace StreamingToolkit;
+using namespace CppFactory;
 
 // Extern method from DXUT.cpp
 void DXUTResizeDXGIBuffers(_In_ UINT Width, _In_ UINT Height, _In_ BOOL bFullscreen);
@@ -393,9 +394,6 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 VideoTestRunner*			g_videoTestRunner = nullptr;
 #else
 BufferRenderer*				g_bufferRenderer = nullptr;
-ServerConfig				g_serverConfig;
-ServiceConfig				g_serviceConfig;
-WebRTCConfig				g_webrtcConfig;
 #endif // TEST_RUNNER
 
 
@@ -472,8 +470,8 @@ bool AppMain(BOOL stopping)
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ServerMainWindow wnd(
-		g_webrtcConfig.server.c_str(),
-		g_webrtcConfig.port,
+		webrtcConfig->server.c_str(),
+		webrtcConfig->port,
 		FLAG_autoconnect,
 		FLAG_autocall,
 		false,
@@ -548,7 +546,7 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, &g_webrtcConfig, g_bufferRenderer));
+		&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -671,7 +669,7 @@ bool AppMain(BOOL stopping)
 	});
 
 	conductor->SetInputDataHandler(&inputHandler);
-	client.SetHeartbeatMs(g_webrtcConfig.heartbeat);
+	client.SetHeartbeatMs(webrtcConfig->heartbeat);
 
 	// configure callbacks (which may or may not be used)
 	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
@@ -689,7 +687,7 @@ bool AppMain(BOOL stopping)
 			// after successful authentication.
 			if (serverConfig->server_config.system_service)
 			{
-				conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
+				conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
 			}
 		}
 	});
@@ -715,13 +713,13 @@ bool AppMain(BOOL stopping)
 	else if (serverConfig->server_config.system_service)
 	{
 		// For system service, automatically connect to the signaling server.
-		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
+		conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
 	}
 
 	// configure turn, if needed
-	if (!g_webrtcConfig.turn_server.provider.empty())
+	if (!webrtcConfig->turn_server.provider.empty())
 	{
-		turnProvider.reset(new TurnCredentialProvider(g_webrtcConfig.turn_server.provider));
+		turnProvider.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider));
 		turnProvider->SignalCredentialsRetrieved.connect(
 			&credentialsRetrieved,
 			&TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
@@ -790,6 +788,8 @@ bool AppMain(BOOL stopping)
 //--------------------------------------------------------------------------------------
 void StartRenderService()
 {
+	auto serverConfig = GlobalObject<ServerConfig>::Get();
+	
 	SC_HANDLE schSCManager = OpenSCManager(NULL, NULL, SC_MANAGER_CONNECT);
 	if (schSCManager)
 	{
@@ -799,7 +799,7 @@ void StartRenderService()
 			AppMain(*stopping);
 		};
 
-		RenderService service((PWSTR)g_serviceConfig.name.c_str(), serviceMainFunc);
+		RenderService service((PWSTR)serverConfig->service_config.name.c_str(), serviceMainFunc);
 
 		// Starts the service to run the app persistently.
 		if (!CServiceBase::Run(service))
