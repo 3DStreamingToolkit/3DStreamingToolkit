@@ -26,6 +26,7 @@ http://stackoverflow.com/questions/3191978/how-to-use-glut-opengl-to-render-to-a
 
 enum Constants { SCREENSHOT_MAX_FILENAME = 256 };
 static GLubyte *pixels = NULL;
+static unsigned char *rgb = NULL;
 static GLuint fbo;
 static GLuint rbo_color;
 static GLuint rbo_depth;
@@ -120,7 +121,7 @@ static AVFrame *frame;
 static AVPacket pkt;
 static FILE *file;
 static struct SwsContext *sws_context = NULL;
-static uint8_t *rgb = NULL;
+
 
 static void ffmpeg_encoder_set_frame_yuv_from_rgb(uint8_t *rgb) {
 	const int in_linesize[1] = { 4 * c->width };
@@ -219,14 +220,15 @@ void ffmpeg_encoder_encode_frame(uint8_t *rgb) {
 		av_packet_unref(&pkt);
 	}
 }
+#endif
 
-void ffmpeg_encoder_glread_rgb(uint8_t **rgb, GLubyte **pixels, unsigned int width, unsigned int height) {
+void encoder_glread_rgb(unsigned char **rgb, GLubyte **pixels, unsigned int width, unsigned int height) {
 	size_t i, j, k, cur_gl, cur_rgb, nvals;
 	const size_t format_nchannels = 4;
 	nvals = format_nchannels * width * height;
-	*pixels = realloc(*pixels, nvals * sizeof(GLubyte));
-	*rgb = realloc(*rgb, nvals * sizeof(uint8_t));
-	/* Get RGBA to align to 32 bits instead of just 24 for RGB. May be faster for FFmpeg. */
+	*pixels = (GLubyte*)realloc(*pixels, nvals * sizeof(GLubyte));
+	*rgb = (unsigned char*)realloc(*rgb, nvals * sizeof(unsigned char));
+	/* Get RGBA to align to 32 bits instead of just 24 for RGB. Faster for h264 encoding */
 	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, *pixels);
 	for (i = 0; i < height; i++) {
 		for (j = 0; j < width; j++) {
@@ -237,7 +239,6 @@ void ffmpeg_encoder_glread_rgb(uint8_t **rgb, GLubyte **pixels, unsigned int wid
 		}
 	}
 }
-#endif
 
 static int model_init(void) {
 	angle = 0;

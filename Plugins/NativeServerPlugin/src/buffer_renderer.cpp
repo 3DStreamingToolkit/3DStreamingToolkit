@@ -73,6 +73,17 @@ BufferRenderer::BufferRenderer(
 	d3d_device_->CreateTexture2D(&staging_frame_buffer_desc_, nullptr, &staging_frame_buffer_);
 }
 
+StreamingToolkit::BufferRenderer::BufferRenderer(int width, int height, const std::function<unsigned char*()>& get_frame_buffer, const std::function<void()>& frame_render_func):
+	width_(width),
+	height_(height),
+	frame_render_func_(frame_render_func),
+	get_frame_buffer_(get_frame_buffer),
+	frame_buffer_(nullptr),
+	staging_frame_buffer_(nullptr)
+{
+	frame_buffer_gl = new byte[width * height * 4];
+}
+
 // Destructor for BufferRenderer.
 BufferRenderer::~BufferRenderer()
 {
@@ -129,24 +140,34 @@ void BufferRenderer::Capture(void** buffer, int* size, int* width, int* height)
 {
 	auto lock = buffer_lock_.Lock();
 
-	if (!frame_buffer_ || !staging_frame_buffer_)
+	if ((!frame_buffer_ || !staging_frame_buffer_) && !frame_buffer_gl)
 	{
 		return;
 	}
 
-	// Updates the staging buffer before capturing.
-	UpdateStagingBuffer();
-
-	D3D11_MAPPED_SUBRESOURCE mapped;
-	if (SUCCEEDED(d3d_context_.Get()->Map(staging_frame_buffer_.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+	if (frame_buffer_ || staging_frame_buffer_)
 	{
-		*buffer = mapped.pData;
+		// Updates the staging buffer before capturing.
+		UpdateStagingBuffer();
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		if (SUCCEEDED(d3d_context_.Get()->Map(staging_frame_buffer_.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+		{
+			*buffer = mapped.pData;
+			*size = mapped.RowPitch * staging_frame_buffer_desc_.Height;
+			*width = staging_frame_buffer_desc_.Width;
+			*height = staging_frame_buffer_desc_.Height;
+		}
+
+		d3d_context_->Unmap(staging_frame_buffer_.Get(), 0);
+	}
+	else
+	{
+		*buffer = get_frame_buffer_();
 		*size = mapped.RowPitch * staging_frame_buffer_desc_.Height;
 		*width = staging_frame_buffer_desc_.Width;
 		*height = staging_frame_buffer_desc_.Height;
 	}
-
-	d3d_context_->Unmap(staging_frame_buffer_.Get(), 0);
 }
 
 void BufferRenderer::UpdateStagingBuffer()

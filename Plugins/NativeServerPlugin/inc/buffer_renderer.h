@@ -23,6 +23,10 @@ namespace StreamingToolkit
 			const std::function<void()>& frame_render_func,
 			ID3D11Texture2D* frame_buffer = nullptr);
 
+		BufferRenderer(int width, int height,
+			const std::function<unsigned char*()>& get_frame_buffer,
+			const std::function<void()>& frame_render_func);
+
 		~BufferRenderer();
 	
 		void GetDimension(int* width, int* height);
@@ -41,10 +45,12 @@ namespace StreamingToolkit
 		int width_;
 		int height_;
 		std::function<void()> frame_render_func_;
+		std::function<unsigned char*()> get_frame_buffer_;
 		D3D11_TEXTURE2D_DESC staging_frame_buffer_desc_;
 		Microsoft::WRL::ComPtr<ID3D11Device> d3d_device_;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3d_context_;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> frame_buffer_;
+		byte* frame_buffer_gl;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> staging_frame_buffer_;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> d3d_render_target_view_;
 	};
