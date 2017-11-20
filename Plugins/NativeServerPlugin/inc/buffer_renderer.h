@@ -24,8 +24,7 @@ namespace StreamingToolkit
 			ID3D11Texture2D* frame_buffer = nullptr);
 
 		BufferRenderer(int width, int height,
-			const std::function<unsigned char*()>& get_frame_buffer,
-			const std::function<void()>& frame_render_func);
+			const std::function<unsigned char*()>& get_frame_buffer);
 
 		~BufferRenderer();
 	

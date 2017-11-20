@@ -73,10 +73,9 @@ BufferRenderer::BufferRenderer(
 	d3d_device_->CreateTexture2D(&staging_frame_buffer_desc_, nullptr, &staging_frame_buffer_);
 }
 
-StreamingToolkit::BufferRenderer::BufferRenderer(int width, int height, const std::function<unsigned char*()>& get_frame_buffer, const std::function<void()>& frame_render_func):
+StreamingToolkit::BufferRenderer::BufferRenderer(int width, int height, const std::function<unsigned char*()>& get_frame_buffer):
 	width_(width),
 	height_(height),
-	frame_render_func_(frame_render_func),
 	get_frame_buffer_(get_frame_buffer),
 	frame_buffer_(nullptr),
 	staging_frame_buffer_(nullptr)
@@ -119,7 +118,7 @@ ID3D11Texture2D* BufferRenderer::Capture(int* width, int* height)
 {
 	auto lock = buffer_lock_.Lock();
 
-	if (!frame_buffer_)
+	if (!frame_buffer_ && !frame_buffer_gl)
 	{
 		return nullptr;
 	}
@@ -164,9 +163,9 @@ void BufferRenderer::Capture(void** buffer, int* size, int* width, int* height)
 	else
 	{
 		*buffer = get_frame_buffer_();
-		*size = mapped.RowPitch * staging_frame_buffer_desc_.Height;
-		*width = staging_frame_buffer_desc_.Width;
-		*height = staging_frame_buffer_desc_.Height;
+		*size = width_ * height_ * 4;
+		*width = width_;
+		*height = height_;
 	}
 }
 
