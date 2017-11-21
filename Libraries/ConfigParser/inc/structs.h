@@ -5,7 +5,7 @@
 
 namespace StreamingToolkit
 {
-	/* 
+	/*
 	 * Server app configuration
 	 */
 	typedef struct
@@ -18,7 +18,7 @@ namespace StreamingToolkit
 
 		/* Running the app as a system service			*/
 		bool			system_service;
-	} ServerConfig;
+	} ServerAppConfig;
 
 	/*
 	 * System service configuration
@@ -37,6 +37,18 @@ namespace StreamingToolkit
 		/* The service password							*/
 		std::wstring	service_password;
 	} ServiceConfig;
+
+	/* 
+	 * Server options configuration wrapper
+	 */
+	typedef struct
+	{
+		/* App config for server apps					*/
+		ServerAppConfig server_config;
+
+		/* service config for running as a service      */
+		ServiceConfig service_config;
+	} ServerConfig;
 
 	/*
 	 * Turn server configuration

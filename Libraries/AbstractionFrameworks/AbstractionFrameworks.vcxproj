@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}</ProjectGuid>
-    <RootNamespace>ConfigParser</RootNamespace>
+    <ProjectGuid>{1C69A47E-1C30-433C-8320-148AADBE93AA}</ProjectGuid>
+    <RootNamespace>AbstractionFrameworks</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -152,19 +152,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="exports.props">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="exports.props" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inc\config_parser.h" />
-    <ClInclude Include="inc\structs.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\config_parser.cpp" />
+    <ClInclude Include="inc\CppFactory.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Project="$(MSBuildThisFileDirectory)..\AbstractionFrameworks\exports.props" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

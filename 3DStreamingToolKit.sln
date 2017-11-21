@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.26430.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StreamingNativeServerPlugin", "Plugins\NativeServerPlugin\StreamingNativeServerPlugin.vcxproj", "{6BC9C817-FD14-4540-A9C0-63CF16F770A6}"
 EndProject
@@ -66,6 +66,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UserInterface", "Libraries\UserInterface\UserInterface.vcxproj", "{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConfigParser", "Libraries\ConfigParser\ConfigParser.vcxproj", "{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AbstractionFrameworks", "Libraries\AbstractionFrameworks\AbstractionFrameworks.vcxproj", "{1C69A47E-1C30-433C-8320-148AADBE93AA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConfigParser.Tests", "Libraries\ConfigParser\ConfigParser.Tests\ConfigParser.Tests.vcxproj", "{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -351,6 +355,30 @@ Global
 		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x64.Build.0 = Release|x64
 		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x86.ActiveCfg = Release|Win32
 		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82}.Release|x86.Build.0 = Release|Win32
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Debug|x64.ActiveCfg = Debug|x64
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Debug|x64.Build.0 = Debug|x64
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Debug|x86.ActiveCfg = Debug|Win32
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Debug|x86.Build.0 = Debug|Win32
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Profile|x64.ActiveCfg = Release|x64
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Profile|x64.Build.0 = Release|x64
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Profile|x86.ActiveCfg = Release|Win32
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Profile|x86.Build.0 = Release|Win32
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Release|x64.ActiveCfg = Release|x64
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Release|x64.Build.0 = Release|x64
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Release|x86.ActiveCfg = Release|Win32
+		{1C69A47E-1C30-433C-8320-148AADBE93AA}.Release|x86.Build.0 = Release|Win32
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Debug|x64.ActiveCfg = Debug|x64
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Debug|x64.Build.0 = Debug|x64
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Debug|x86.ActiveCfg = Debug|Win32
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Debug|x86.Build.0 = Debug|Win32
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Profile|x64.ActiveCfg = Release|x64
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Profile|x64.Build.0 = Release|x64
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Profile|x86.ActiveCfg = Release|Win32
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Profile|x86.Build.0 = Release|Win32
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x64.ActiveCfg = Release|x64
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x64.Build.0 = Release|x64
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x86.ActiveCfg = Release|Win32
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -383,5 +411,10 @@ Global
 		{0BF47A53-06E2-4102-B789-C36F46D95DC7} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
 		{95EB9544-2E62-4F54-8567-D55CD1DFD8FE} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
 		{38E8FA5F-07BE-4022-AE99-EE8E7B45EB82} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
+		{1C69A47E-1C30-433C-8320-148AADBE93AA} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
+		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2} = {C1D9AA9A-9247-44AB-B59A-DEDA3DAD5C55}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D1D23C28-E2E0-4076-BE92-AE4E2CC868F5}
 	EndGlobalSection
 EndGlobal
