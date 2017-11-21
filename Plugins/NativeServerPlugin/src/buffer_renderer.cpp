@@ -2,8 +2,8 @@
 
 #include "pch.h"
 #include "buffer_renderer.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/nvFileIO.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/nvUtils.h"
+#include "third_party/nvencode/inc/nvFileIO.h"
+#include "third_party/nvencode/inc/nvUtils.h"
 
 using namespace StreamingToolkit;
 using namespace Microsoft::WRL;
@@ -78,7 +78,8 @@ StreamingToolkit::BufferRenderer::BufferRenderer(int width, int height, const st
 	height_(height),
 	get_frame_buffer_(get_frame_buffer),
 	frame_buffer_(nullptr),
-	staging_frame_buffer_(nullptr)
+	staging_frame_buffer_(nullptr),
+	d3d_device_(nullptr)
 {
 	frame_buffer_gl = new byte[width * height * 4];
 }
@@ -221,4 +222,9 @@ void BufferRenderer::Resize(int width, int height)
 
 	// Creates the render target view.
 	d3d_device_->CreateRenderTargetView(frame_buffer_.Get(), nullptr, &d3d_render_target_view_);
+}
+
+bool StreamingToolkit::BufferRenderer::IsD3DEnabled()
+{
+	return d3d_device_ != nullptr;
 }

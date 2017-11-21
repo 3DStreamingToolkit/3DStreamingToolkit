@@ -6,8 +6,8 @@
 #include <functional>
 
 #include "plugindefs.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/nvEncodeAPI.h"
-#include "webrtc/modules/video_coding/codecs/h264/include/nvCPUOPSys.h"
+#include "third_party/nvencode/inc/nvEncodeAPI.h"
+#include "third_party/nvencode/inc/nvCPUOPSys.h"
 
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 
@@ -36,6 +36,7 @@ namespace StreamingToolkit
 		void Release();
 		void Resize(ID3D11Texture2D* frame_buffer);
 		void Resize(int width, int height);
+		bool IsD3DEnabled();
 
 	private:
 		void UpdateStagingBuffer();

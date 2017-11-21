@@ -271,8 +271,6 @@ bool AppMain(BOOL stopping)
 		conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
 	}
 
-	conductor->StartLogin(g_webrtcConfig.server, g_webrtcConfig.port);
-
 	// configure turn, if needed
 	if (!g_webrtcConfig.turn_server.provider.empty())
 	{

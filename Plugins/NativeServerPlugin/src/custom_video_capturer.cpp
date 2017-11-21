@@ -176,7 +176,7 @@ namespace StreamingToolkit
 			buffer_renderer_->Render();
 
 			// Captures buffer renderer.
-			if (use_software_encoder_)
+			if (use_software_encoder_ || !buffer_renderer_->IsD3DEnabled())
 			{
 				int frameSizeInBytes = 0;
 				buffer_renderer_->Capture(&pFrameBuffer, &frameSizeInBytes, &width, &height);
@@ -201,8 +201,8 @@ namespace StreamingToolkit
 			buffer_renderer_->GetDimension(&width, &height);
 			buffer = webrtc::I420Buffer::Create(width, height);
 
-			// For software encoder, converting to supported video format.
-			if (use_software_encoder_)
+			// For software encoder or CUDA, converting to supported video format.
+			if (use_software_encoder_ || !buffer_renderer_->IsD3DEnabled())
 			{
 				libyuv::ABGRToI420(
 					(uint8_t*)pFrameBuffer,
@@ -223,8 +223,8 @@ namespace StreamingToolkit
 			// Creates video frame.
 			auto frame = webrtc::VideoFrame(buffer, fake_rotation_, timeStamp);
 
-			// For hardware encoder, setting the video frame texture.
-			if (!use_software_encoder_)
+			// For hardware encoder in D3D mode, setting the video frame texture.
+			if (!use_software_encoder_ && buffer_renderer_->IsD3DEnabled())
 			{
 				frame.SetID3D11Texture2D(texture);
 			}

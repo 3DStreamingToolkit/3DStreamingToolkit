@@ -16,8 +16,8 @@ function DecompressZip {
     $response = $request.GetResponse()
     $etag = $response.Headers["ETag"] 
     $request.Abort()
-    $localFileName = ($filename + $etag + ".zip")
-    $localFullPath = ($PSScriptRoot + "\" + $localFileName)
+    $localFileName = ($filename + ".zip")
+    $localFullPath = ($PSScriptRoot + "\..\Libraries\" + $localFileName)
     
     Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
         if($_.Name -notmatch (".*" + $etag + ".*")) {
@@ -26,35 +26,14 @@ function DecompressZip {
         }
     }
 
-
-
-    if((Test-Path ($localFullPath)) -eq $false) {
+    if((Test-Path ($PSScriptRoot + "\..\Libraries\Freeglut")) -eq $false) {
         Write-Host ("Downloading " + $filename + " lib archive")
-        Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-        Write-Host ("Downloaded " + $filename + " lib archive")
-
-        $extractDir = ""
-
-        if($filename -like "*x64*") {
-            $extractDir = "\x64"
-        } 
-        if($filename -like "*Win32*") {
-            $extractDir = "\Win32"
+        if((Test-Path ($localFullPath)) -eq $false) {
+               Copy-File -SourcePath $uri -DestinationPath $localFullPath    
+               Write-Host ("Downloaded " + $filename + " lib archive")
         }
-        if($filename -like "*headers*") {
-            $extractDir = "\headers"
-        }
-        if($extractDir -eq "") {
-            return
-        }
-        
-        if((Test-Path ($PSScriptRoot + $extractDir)) -eq $true) {
-            Write-Host "Clearing existing $extractDir" 
-            Remove-Item -Recurse -Force ($PSScriptRoot + $extractDir)
-        }
-
         Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot)
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, ($PSScriptRoot + "\..\Libraries\"))
         Write-Host "Finished"
     }
 }
@@ -139,7 +118,5 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
+DecompressZip -filename "libOpenGL"
 
-DecompressZip -filename "m58patch_cuda_headers"
-DecompressZip -filename "m58patch_cuda_x64"
-DecompressZip -filename "m58patch_cuda_Win32"
