@@ -89,7 +89,6 @@ namespace StreamingToolkit
 		sink_wants_observer_(nullptr),
 		target_fps_(target_fps),
 		buffer_renderer_(buffer_renderer),
-		staging_video_texture_(nullptr),
 		first_frame_capture_time_(-1),
 		task_queue_("FrameGenCapQ",
 			rtc::TaskQueue::Priority::HIGH)
@@ -185,7 +184,7 @@ namespace StreamingToolkit
 			if (use_software_encoder_)
 			{
 				int frame_size_in_bytes = 0;
-				buffer_renderer_->Capture(&frame_buffer, &frame_size_in_bytes, &width, &height);
+				buffer_renderer_->Capture(&frame_buffer, &frame_size_in_bytes);
 				if (frame_size_in_bytes == 0)
 				{
 					return;
@@ -219,28 +218,6 @@ namespace StreamingToolkit
 					width,
 					height);
 			}
-			else
-			{
-				if (!staging_video_texture_)
-				{
-					D3D11_TEXTURE2D_DESC captured_texture_desc;
-					captured_texture->GetDesc(&captured_texture_desc);
-
-					D3D11_TEXTURE2D_DESC texture_desc = { 0 };
-					texture_desc.ArraySize = captured_texture_desc.ArraySize;
-					texture_desc.Usage = D3D11_USAGE_DEFAULT;
-					texture_desc.Format = captured_texture_desc.Format;
-					texture_desc.Width = captured_texture_desc.Width;
-					texture_desc.Height = captured_texture_desc.Height;
-					texture_desc.MipLevels = captured_texture_desc.MipLevels;
-					texture_desc.SampleDesc.Count = captured_texture_desc.SampleDesc.Count;
-					buffer_renderer_->GetD3DDevice()->CreateTexture2D(
-						&texture_desc, nullptr, &staging_video_texture_);
-				}
-
-				buffer_renderer_->GetD3DDeviceContext()->CopyResource(
-					staging_video_texture_, captured_texture);
-			}
 
 			// Updates time stamp.
 			auto time_stamp = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -251,8 +228,7 @@ namespace StreamingToolkit
 			// For hardware encoder, setting the video frame texture to send.
 			if (!use_software_encoder_)
 			{
-				staging_video_texture_->AddRef();
-				frame.set_staging_frame_buffer(staging_video_texture_);
+				frame.set_staging_frame_buffer(captured_texture);
 			}
 
 			frame.set_prediction_timestamp(buffer_renderer_->GetPredictionTimestamp());

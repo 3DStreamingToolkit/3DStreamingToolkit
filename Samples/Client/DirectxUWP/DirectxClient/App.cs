@@ -9,13 +9,12 @@ using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.Core;
 using Windows.Media.Core;
 using Windows.UI.Core;
-using Windows.UI.ViewManagement;
 
 namespace StreamingDirectXHololensClient
 {
     class App : IFrameworkView, IFrameworkViewSource
     {
-        private const int DEFAULT_FRAME_RATE = 30;
+        private const int DEFAULT_FRAME_RATE = 60;
         private const string DEFAULT_MEDIA_SOURCE_ID = "media";
 
         private AppCallbacks _appCallbacks;
@@ -45,9 +44,6 @@ namespace StreamingDirectXHololensClient
 
         public void SetWindow(CoreWindow window)
         {
-            ApplicationView.GetForCurrentView().TryEnterFullScreenMode();
-
-            // Initializes DirectX.
             _appCallbacks.SetWindow(window);
         }
 

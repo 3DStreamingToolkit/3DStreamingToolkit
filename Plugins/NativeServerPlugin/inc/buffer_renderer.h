@@ -27,8 +27,8 @@ namespace StreamingToolkit
 	
 		void GetDimension(int* width, int* height);
 		ID3D11RenderTargetView* GetRenderTargetView();
-		ID3D11Texture2D* Capture(int* width = nullptr, int* height = nullptr);
-		void Capture(void** buffer, int* size, int* width, int* height);
+		ID3D11Texture2D* Capture();
+		void Capture(void** buffer, int* size);
 		void Render();
 		void Release();
 		void Resize(ID3D11Texture2D* frame_buffer);

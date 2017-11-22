@@ -105,7 +105,7 @@ void BufferRenderer::Render()
 	}
 }
 
-ID3D11Texture2D* BufferRenderer::Capture(int* width, int* height)
+ID3D11Texture2D* BufferRenderer::Capture()
 {
 	auto lock = buffer_lock_.Lock();
 
@@ -114,19 +114,16 @@ ID3D11Texture2D* BufferRenderer::Capture(int* width, int* height)
 		return nullptr;
 	}
 
-	// Updates the staging buffer before capturing.
-	UpdateStagingBuffer();
+	// Updates frame buffer size.
+	D3D11_TEXTURE2D_DESC desc;
+	frame_buffer_->GetDesc(&desc);
+	width_ = desc.Width;
+	height_ = desc.Height;
 
-	if (width && height)
-	{
-		*width = width_;
-		*height = height_;
-	}
-
-	return staging_frame_buffer_.Get();
+	return frame_buffer_.Get();
 }
 
-void BufferRenderer::Capture(void** buffer, int* size, int* width, int* height)
+void BufferRenderer::Capture(void** buffer, int* size)
 {
 	auto lock = buffer_lock_.Lock();
 
@@ -143,8 +140,6 @@ void BufferRenderer::Capture(void** buffer, int* size, int* width, int* height)
 	{
 		*buffer = mapped.pData;
 		*size = mapped.RowPitch * staging_frame_buffer_desc_.Height;
-		*width = staging_frame_buffer_desc_.Width;
-		*height = staging_frame_buffer_desc_.Height;
 	}
 
 	d3d_context_->Unmap(staging_frame_buffer_.Get(), 0);

@@ -108,17 +108,12 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 				{
 					HolographicFrame^ frame = *it;
 					PerceptionTimestamp^ perceptionTimestamp = frame->CurrentPrediction->Timestamp;
-					if (predictionTimestamp == perceptionTimestamp->TargetTime.UniversalTime)
+					if (m_main->Render(frame))
 					{
-						if (m_main->Render(frame))
-						{
-							// The holographic frame has an API that presents the swap chain for each
-							// holographic camera.
-							m_deviceResources->Present(frame);
-						}
-
-						m_holographicFrames.erase(it);
+						m_deviceResources->Present(frame);
 					}
+
+					m_holographicFrames.erase(it);
 				}
 			}
 		});

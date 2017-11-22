@@ -1,22 +1,84 @@
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 5705428a1..845571137 100644
+index 5705428a1..15167ef45 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-@@ -320,7 +320,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
+@@ -37,6 +37,8 @@
+ #include "webrtc/base/bind.h"
+ #include "webrtc/base/asyncinvoker.h"
+ 
++#define BITSTREAM_BUFFER_SIZE	2 * 1024 * 1024
++
+ namespace webrtc {
+ 
+ namespace {
+@@ -320,8 +322,9 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
  
  		// Creates the encoder.
  		m_pNvHWEncoder->CreateEncoder(&m_encodeConfig);
 -		m_uEncodeBufferCount = 4;
-+		m_uEncodeBufferCount = 1;
  
++		// Allocates IO buffers.
++		m_uEncodeBufferCount = 1;
  		AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height);
  	}
-@@ -635,6 +635,8 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
+ 
+@@ -600,24 +603,8 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
+ 	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+ 	EncodeBuffer* pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
+ 
+-	if (!pEncodeBuffer)
+-	{
+-		pEncodeBuffer = m_EncodeBufferQueue.GetPending();
+-		m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
+-
+-		// UnMap the input buffer after frame done
+-		if (pEncodeBuffer->stInputBfr.hInputSurface)
+-		{
+-			nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+-			pEncodeBuffer->stInputBfr.hInputSurface = NULL;
+-		}
+-
+-		pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
+-	}
+-
+ 	// Copies the frame buffer to the encode input buffer.
+ 	m_d3dContext->CopyResource(pEncodeBuffer->stInputBfr.pARGBSurface, frameBuffer);
+-	frameBuffer->Release();
+ 	nvStatus = m_pNvHWEncoder->NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource, &pEncodeBuffer->stInputBfr.hInputSurface);
+ 	if (nvStatus != NV_ENC_SUCCESS)
+ 	{
+@@ -635,6 +622,18 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
  	{
  		return;
  	}
++	else
++	{
++		pEncodeBuffer = m_EncodeBufferQueue.GetPending();
++		m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
 +
-+	FlushEncoder();
++		// UnMap the input buffer after frame done
++		if (pEncodeBuffer->stInputBfr.hInputSurface)
++		{
++			nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
++			pEncodeBuffer->stInputBfr.hInputSurface = NULL;
++		}
++	}
  }
  
  NVENCSTATUS H264EncoderImpl::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight)
+@@ -693,12 +692,12 @@ NVENCSTATUS H264EncoderImpl::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uI
+ 		m_stEncodeBuffer[i].stInputBfr.pARGBSurface = pVPSurfaces[i];
+ 
+ 		// Initializes the output buffer.
+-		m_pNvHWEncoder->NvEncCreateBitstreamBuffer(2 * 1024 * 1024, &m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer);
+-		m_stEncodeBuffer[i].stOutputBfr.dwBitstreamBufferSize = 2 * 1024 * 1024;
++		m_pNvHWEncoder->NvEncCreateBitstreamBuffer(BITSTREAM_BUFFER_SIZE, &m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer);
++		m_stEncodeBuffer[i].stOutputBfr.dwBitstreamBufferSize = BITSTREAM_BUFFER_SIZE;
+ 
+ 		// Registers for the output event.
+ 		m_pNvHWEncoder->NvEncRegisterAsyncEvent(&m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
+-		m_stEncodeBuffer[i].stOutputBfr.bWaitOnEvent = true;
++		m_stEncodeBuffer[i].stOutputBfr.bWaitOnEvent = false;
+ 	}
+ 
+ 	m_stEOSOutputBfr.bEOSFlag = TRUE;

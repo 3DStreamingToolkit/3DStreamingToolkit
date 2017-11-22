@@ -154,6 +154,7 @@ namespace Microsoft.Toolkit.ThreeD
             // Make sure that the render window continues to render when the game window 
             // does not have focus
             Application.runInBackground = true;
+            //Application.targetFrameRate = 60;
 
             // Set screen resolution.
             Screen.SetResolution(VideoFrameWidth, VideoFrameHeight, false);
