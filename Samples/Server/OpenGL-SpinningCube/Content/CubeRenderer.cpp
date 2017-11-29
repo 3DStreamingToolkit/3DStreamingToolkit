@@ -47,9 +47,9 @@ PFNWGLGETSWAPINTERVALEXTPROC pwglGetSwapIntervalEXT = 0;
 #endif
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
-static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
-static const XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
-static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+static XMVECTORF32 eye = { 0.0f, 0.0f, 5.0f, 0.0f };
+static XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
+static XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 static int imgIndex = 0;
 static bool offscreen = 1;
@@ -182,6 +182,13 @@ void CubeRenderer::InitGraphics()
 	// window will be shown and display callback is triggered by events
 	// NOTE: this call never return main().
 	glutMainLoop(); /* Start GLUT event-processing loop */
+}
+
+void StreamingToolkitSample::CubeRenderer::SetCamera()
+{
+	//glMatrixMode(GL_MODELVIEW);
+	//glLoadIdentity();
+	//gluLookAt(eye[0], eye[1], eye[2], at[0], at[1], at[2], up[0], up[1], up[2]);
 }
 
 void timerCB(int millisec)
@@ -332,9 +339,7 @@ void StreamingToolkitSample::CubeRenderer::FirstRender(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	// tramsform camera
-	glTranslatef(0, 0, -cameraDistance);
-	glRotatef(cameraAngleX, 1, 0, 0);   // pitch
-	glRotatef(cameraAngleY, 0, 1, 0);   // heading
+	SetCamera();
 
 	// draw a cube
 	glPushMatrix();
@@ -395,11 +400,14 @@ void StreamingToolkitSample::CubeRenderer::ToPerspective()
 	// switch to modelview matrix in order to set scene
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	gluLookAt(eye[0], eye[1], eye[2], at[0], at[1], at[2], up[0], up[1], up[2]);
 }
 
-void CubeRenderer::UpdateView(const XMVECTORF32& eye, const XMVECTORF32& at, const XMVECTORF32& up)
+void CubeRenderer::UpdateView(const XMVECTORF32& eyeVec, const XMVECTORF32& atVec, const XMVECTORF32& upVec)
 {
-	//TODO - Update camera 
+	eye = eyeVec;
+	at = atVec;
+	up = upVec;
 }
 
 byte * StreamingToolkitSample::CubeRenderer::GrabRGBFrameBuffer()

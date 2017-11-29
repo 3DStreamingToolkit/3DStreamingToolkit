@@ -23,5 +23,6 @@ namespace StreamingToolkitSample
 		
 	private:
 		static void								InitGraphics();
+		static void								SetCamera();
 	};
 }
