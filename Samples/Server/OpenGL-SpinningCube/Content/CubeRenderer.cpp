@@ -47,7 +47,7 @@ PFNWGLGETSWAPINTERVALEXTPROC pwglGetSwapIntervalEXT = 0;
 #endif
 
 // Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
-static XMVECTORF32 eye = { 0.0f, 0.0f, 5.0f, 0.0f };
+static XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
 static XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
 static XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
@@ -57,6 +57,7 @@ static double angle;
 static double delta_angle = 0;
 static int index = 0;
 int nextIndex = 0;                  // pbo index used for next frame
+int frame_rate = 30;
 
 // constants
 const float CAMERA_DISTANCE = 5.0f;
@@ -186,13 +187,14 @@ void CubeRenderer::InitGraphics()
 
 void StreamingToolkitSample::CubeRenderer::SetCamera()
 {
-	//glMatrixMode(GL_MODELVIEW);
-	//glLoadIdentity();
-	//gluLookAt(eye[0], eye[1], eye[2], at[0], at[1], at[2], up[0], up[1], up[2]);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(eye[0] * CAMERA_DISTANCE, eye[1] * CAMERA_DISTANCE, eye[2] * CAMERA_DISTANCE, at[0] * CAMERA_DISTANCE, at[1] * CAMERA_DISTANCE, at[2] * CAMERA_DISTANCE, up[0] * CAMERA_DISTANCE, up[1] * CAMERA_DISTANCE, up[2] * CAMERA_DISTANCE);
 }
 
 void timerCB(int millisec)
 {
+	millisec = 1000 / frame_rate;
 	angle += delta_angle;
 	glutTimerFunc(millisec, timerCB, millisec);
 	glutPostRedisplay();
@@ -219,8 +221,8 @@ void StreamingToolkitSample::CubeRenderer::InitGLUT(int argc, char ** argv)
 												// register GLUT callback functions
 	glutDisplayFunc(FirstRender);            // we will render normal drawing first
 												// so, the first frame has a valid content
-
-	glutTimerFunc(33, timerCB, 33);             // redraw only every given millisec
+	unsigned int updateInMs = 1000 / frame_rate;
+	glutTimerFunc(updateInMs, timerCB, updateInMs);             // redraw based on desired framerate
 }
 
 void StreamingToolkitSample::CubeRenderer::InitGL()
@@ -338,7 +340,7 @@ void StreamingToolkitSample::CubeRenderer::FirstRender(void)
 	// clear buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	// tramsform camera
+	// Set camera lookat
 	SetCamera();
 
 	// draw a cube
@@ -400,7 +402,6 @@ void StreamingToolkitSample::CubeRenderer::ToPerspective()
 	// switch to modelview matrix in order to set scene
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(eye[0], eye[1], eye[2], at[0], at[1], at[2], up[0], up[1], up[2]);
 }
 
 void CubeRenderer::UpdateView(const XMVECTORF32& eyeVec, const XMVECTORF32& atVec, const XMVECTORF32& upVec)
@@ -413,4 +414,9 @@ void CubeRenderer::UpdateView(const XMVECTORF32& eyeVec, const XMVECTORF32& atVe
 byte * StreamingToolkitSample::CubeRenderer::GrabRGBFrameBuffer()
 {
 	return colorBuffer;
+}
+
+void StreamingToolkitSample::CubeRenderer::SetTargetFrameRate(int frameRate)
+{
+	frame_rate = frameRate;
 }

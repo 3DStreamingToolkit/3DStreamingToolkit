@@ -108,6 +108,12 @@ bool AppMain(BOOL stopping)
 		return g_cubeRenderer->GrabRGBFrameBuffer();
 	});
 
+	std::function<void(int)> setTargetFrameRate = ([&](int frameRate)
+	{
+		g_cubeRenderer->SetTargetFrameRate(frameRate);
+	});
+
+
 	ID3D11Texture2D* frameBuffer = nullptr;
 	if (!g_serverConfig.system_service)
 	{
@@ -122,7 +128,8 @@ bool AppMain(BOOL stopping)
 	g_bufferRenderer = new BufferRenderer(
 		g_serverConfig.width,
 		g_serverConfig.height,
-		grabFrameFunc
+		grabFrameFunc,
+		setTargetFrameRate
 		);
 
 	// Makes sure to release the frame buffer reference.

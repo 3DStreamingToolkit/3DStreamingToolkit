@@ -20,6 +20,7 @@ namespace StreamingToolkitSample
 		static void								ToPerspective();
 		void									UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
 		static byte*							GrabRGBFrameBuffer();
+		static void								SetTargetFrameRate(int frameRate);
 		
 	private:
 		static void								InitGraphics();

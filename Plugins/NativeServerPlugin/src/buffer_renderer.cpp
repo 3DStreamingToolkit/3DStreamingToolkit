@@ -73,10 +73,11 @@ BufferRenderer::BufferRenderer(
 	d3d_device_->CreateTexture2D(&staging_frame_buffer_desc_, nullptr, &staging_frame_buffer_);
 }
 
-StreamingToolkit::BufferRenderer::BufferRenderer(int width, int height, const std::function<unsigned char*()>& get_frame_buffer):
+StreamingToolkit::BufferRenderer::BufferRenderer(int width, int height, const std::function<unsigned char*()>& get_frame_buffer, const std::function<void(int)>& set_target_frame_rate_func):
 	width_(width),
 	height_(height),
 	get_frame_buffer_(get_frame_buffer),
+	set_target_frame_rate_func_(set_target_frame_rate_func),
 	frame_buffer_(nullptr),
 	staging_frame_buffer_(nullptr),
 	d3d_device_(nullptr)
@@ -227,4 +228,13 @@ void BufferRenderer::Resize(int width, int height)
 bool StreamingToolkit::BufferRenderer::IsD3DEnabled()
 {
 	return d3d_device_ != nullptr;
+}
+
+void StreamingToolkit::BufferRenderer::SetTargetFrameRate(int targetFrameRate)
+{
+	target_frame_rate_ = targetFrameRate;
+	if (!IsD3DEnabled())
+	{
+		set_target_frame_rate_func_(target_frame_rate_);
+	}
 }

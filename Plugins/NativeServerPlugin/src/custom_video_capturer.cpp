@@ -155,6 +155,7 @@ namespace StreamingToolkit
 		}
 
 		Init();
+		buffer_renderer_->SetTargetFrameRate(target_fps_);
 		running_ = true;
 		sending_ = true;
 		SetCaptureState(cricket::CS_RUNNING);

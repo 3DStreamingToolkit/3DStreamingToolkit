@@ -24,7 +24,8 @@ namespace StreamingToolkit
 			ID3D11Texture2D* frame_buffer = nullptr);
 
 		BufferRenderer(int width, int height,
-			const std::function<unsigned char*()>& get_frame_buffer);
+			const std::function<unsigned char*()>& get_frame_buffer,
+			const std::function<void(int)>& set_target_frame_rate_func);
 
 		~BufferRenderer();
 	
@@ -37,6 +38,7 @@ namespace StreamingToolkit
 		void Resize(ID3D11Texture2D* frame_buffer);
 		void Resize(int width, int height);
 		bool IsD3DEnabled();
+		void SetTargetFrameRate(int targetFrameRate);
 
 	private:
 		void UpdateStagingBuffer();
@@ -44,7 +46,9 @@ namespace StreamingToolkit
 		Microsoft::WRL::Wrappers::CriticalSection buffer_lock_;
 		int width_;
 		int height_;
+		int target_frame_rate_;
 		std::function<void()> frame_render_func_;
+		std::function<void(int)> set_target_frame_rate_func_;
 		std::function<unsigned char*()> get_frame_buffer_;
 		D3D11_TEXTURE2D_DESC staging_frame_buffer_desc_;
 		Microsoft::WRL::ComPtr<ID3D11Device> d3d_device_;
