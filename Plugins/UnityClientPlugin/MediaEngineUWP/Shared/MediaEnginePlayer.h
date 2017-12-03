@@ -56,7 +56,7 @@ ref class MEPlayer: public MediaEngineNotifyCallback
 {
     // DX11 related
     Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11Device;
-	Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11UnityDevice;
+	Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11ExternalD3DDevice;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext>         m_spDX11DeviceContext;
     Microsoft::WRL::ComPtr<IDXGIOutput>                 m_spDXGIOutput;
     Microsoft::WRL::ComPtr<IDXGISwapChain1>             m_spDX11SwapChain;
@@ -95,7 +95,7 @@ internal:
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture,
 		int timestampId);
 
-    MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice, BOOL useVSyncTimer = true);
+    MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice, BOOL useVSyncTimer = TRUE);
 
     // DX11 related
     void CreateDX11Device();
@@ -185,7 +185,6 @@ internal:
     void StartTimer();
     void StopTimer();	
     void OnTimer();
-	void OnTimerVSync();
     DWORD RealVSyncTimer();
 
 	// State related to calculating FPS.

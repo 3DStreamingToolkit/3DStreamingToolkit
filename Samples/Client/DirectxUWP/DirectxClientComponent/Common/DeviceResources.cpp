@@ -63,12 +63,6 @@ void DX::DeviceResources::CreateDeviceResources()
 	DX::ThrowIfFailed(
 		dxgiAdapter.As(&m_dxgiAdapter)
 	);
-
-	// Enables multithread protection.
-	ID3D11Multithread* multithread;
-	m_d3dDevice->QueryInterface(IID_PPV_ARGS(&multithread));
-	multithread->SetMultithreadProtected(true);
-	multithread->Release();
 }
 
 void DX::DeviceResources::SetHolographicSpace(HolographicSpace^ holographicSpace)
@@ -201,23 +195,4 @@ void DX::DeviceResources::Present(HolographicFrame^ frame)
 	// starting work on a new frame. This allows for better results from
 	// holographic frame predictions.
 	HolographicFramePresentResult presentResult = frame->PresentUsingCurrentPrediction(HolographicFramePresentWaitBehavior::DoNotWaitForFrameToFinish);
-
-	HolographicFramePrediction^ prediction = frame->CurrentPrediction;
-	UseHolographicCameraResources<void>([this, prediction](std::map<UINT32, std::unique_ptr<CameraResources>>& cameraResourceMap)
-	{
-		for (auto cameraPose : prediction->CameraPoses)
-		{
-			// This represents the device-based resources for a HolographicCamera.
-			DX::CameraResources* pCameraResources = cameraResourceMap[cameraPose->HolographicCamera->Id].get();
-
-			// Discard the contents of the render target.
-			// This is a valid operation only when the existing contents will be
-			// entirely overwritten. If dirty or scroll rects are used, this call
-			// should be removed.
-			m_d3dContext->DiscardView(pCameraResources->GetBackBufferRenderTargetView());
-
-			// Discard the contents of the depth stencil.
-			m_d3dContext->DiscardView(pCameraResources->GetDepthStencilView());
-		}
-	});
 }

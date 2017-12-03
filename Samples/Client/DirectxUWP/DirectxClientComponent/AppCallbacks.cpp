@@ -63,7 +63,7 @@ void AppCallbacks::Run()
 		if (m_videoRenderer)
 		{
 			SendInputData();
-			m_player->OnTimerVSync();
+			m_player->OnTimer();
 		}
 	}
 }
@@ -84,7 +84,7 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
 
 		// Initializes the video render.
-		m_videoRenderer = new VideoRenderer(m_deviceResources, textureView);
+		m_videoRenderer = new VideoRenderer(m_deviceResources, VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT);
 		m_main->SetVideoRender(m_videoRenderer);
 
 		// Sets the frame transfer callback.
@@ -106,8 +106,10 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 
 				if (it != m_holographicFrames.end())
 				{
+					m_deviceResources->GetD3DDeviceContext()->CopyResource(
+						m_videoRenderer->GetVideoFrame(), texture.Get());
+
 					HolographicFrame^ frame = *it;
-					PerceptionTimestamp^ perceptionTimestamp = frame->CurrentPrediction->Timestamp;
 					if (m_main->Render(frame))
 					{
 						m_deviceResources->Present(frame);
