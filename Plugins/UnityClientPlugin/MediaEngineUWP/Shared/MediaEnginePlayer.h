@@ -186,10 +186,12 @@ internal:
     void StopTimer();	
     void OnTimer();
     DWORD RealVSyncTimer();
+	int GetFrameRate();
 
 	// State related to calculating FPS.
-	int _frameCounter;
-	high_resolution_clock::time_point _lastTimeFPSCalculated;
+	int m_frameCounter;
+	high_resolution_clock::time_point m_lastTimeFPSCalculated;
+	int m_renderFps;
 
     // For calling IDXGIDevice3::Trim() when app is suspended
     HRESULT DXGIDeviceTrim();
@@ -202,7 +204,6 @@ private:
 	Microsoft::WRL::ComPtr<ABI::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface> m_primaryMediaSurface;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_primaryTextureSRV;
-
 };
 
 #endif /* MEPLAYER_H */

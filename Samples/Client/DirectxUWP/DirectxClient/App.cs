@@ -65,11 +65,22 @@ namespace StreamingDirectXHololensClient
                 var peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
                 if (peerVideoTrack != null)
                 {
+                    SampleTimestampDelegate sampleTimestampDelegate = (id, timestamp) =>
+                    {
+                        _appCallbacks.OnSampleTimestamp(id, timestamp);
+                    };
+
+                    FpsReportRequestedDelegate fpsReportRequestedDelegate = () =>
+                    {
+                        return _appCallbacks.OnFpsReportRequested();
+                    };
+
                     var media = Media.CreateMedia().CreateMediaStreamSource(
-                        peerVideoTrack, DEFAULT_FRAME_RATE, DEFAULT_MEDIA_SOURCE_ID, (id, timestamp) =>
-                        {
-                            _appCallbacks.OnSampleTimestamp(id, timestamp);
-                        });
+                        peerVideoTrack,
+                        DEFAULT_FRAME_RATE,
+                        DEFAULT_MEDIA_SOURCE_ID,
+                        sampleTimestampDelegate,
+                        fpsReportRequestedDelegate);
 
                     _appCallbacks.SetMediaStreamSource((MediaStreamSource)media);
                 }

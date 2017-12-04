@@ -128,6 +128,11 @@ void AppCallbacks::OnSampleTimestamp(int id, int64_t timestamp)
 	m_framePredictionTimestamp[id] = timestamp;
 }
 
+uint32 AppCallbacks::OnFpsReportRequested()
+{
+	return m_player->GetFrameRate();
+}
+
 void AppCallbacks::SendInputData()
 {
 	// Attempts to set server to stereo mode.

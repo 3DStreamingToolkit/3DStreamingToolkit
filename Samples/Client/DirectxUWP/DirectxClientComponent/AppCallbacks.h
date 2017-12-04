@@ -36,6 +36,8 @@ namespace DirectXClientComponent
 
 		void OnSampleTimestamp(int id, int64_t timestamp);
 
+		uint32 OnFpsReportRequested();
+
 	private:
 		void SendInputData();
 

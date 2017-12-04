@@ -113,7 +113,8 @@ MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> externalD3DDevice, BOOL 
 	m_fInitSuccess(FALSE),
 	m_fExitApp(FALSE),
 	m_fUseDX(TRUE),
-	m_fUseVSyncTimer(useVSyncTimer)
+	m_fUseVSyncTimer(useVSyncTimer),
+	m_renderFps(0)
 {
 	memset(&m_bkgColor, 0, sizeof(MFARGB));
 
@@ -286,7 +287,7 @@ void MEPlayer::CreateBackBuffers()
 	}
 
 	high_resolution_clock::time_point now = high_resolution_clock::now();
-	_lastTimeFPSCalculated = now;
+	m_lastTimeFPSCalculated = now;
 
 	LeaveCriticalSection(&m_critSec);
 
@@ -804,17 +805,23 @@ void MEPlayer::UpdateForWindowSizeChange(float width, float height)
 void MEPlayer::UpdateFrameRate()
 {
 	// Do FPS calculation and notification.
-	_frameCounter++;
+	m_frameCounter++;
 
 	high_resolution_clock::time_point now = high_resolution_clock::now();
-	duration<double, std::milli> time_span = now - _lastTimeFPSCalculated;
+	duration<double, std::milli> time_span = now - m_lastTimeFPSCalculated;
 	if (time_span.count() > 1000) {
 
 		_RPT1(0, "%d\n", _frameCounter);
 
-		_frameCounter = 0;
-		_lastTimeFPSCalculated = now;
+		m_renderFps = m_frameCounter;
+		m_frameCounter = 0;
+		m_lastTimeFPSCalculated = now;
 	}
+}
+
+int MEPlayer::GetFrameRate()
+{
+	return m_renderFps;
 }
 
 //+-----------------------------------------------------------------------------
@@ -916,6 +923,8 @@ void MEPlayer::OnTimer()
 		LONGLONG pts;
 		if (m_spMediaEngine->OnVideoStreamTick(&pts) == S_OK)
 		{
+			UpdateFrameRate();
+
 			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), &m_nRect, &m_rcTarget, &m_bkgColor)
 			);
