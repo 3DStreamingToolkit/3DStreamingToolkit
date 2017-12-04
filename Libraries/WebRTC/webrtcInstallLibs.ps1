@@ -29,6 +29,7 @@ function DecompressZip {
 
 
     if((Test-Path ($localFullPath)) -eq $false) {
+        Write-Host "Downloading $localFileName from $uri"
         Copy-File -SourcePath $uri -DestinationPath $localFullPath    
         Write-Host ("Downloaded " + $filename + " lib archive")
 
