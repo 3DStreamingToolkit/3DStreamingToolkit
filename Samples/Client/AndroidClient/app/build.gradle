@@ -1,0 +1,57 @@
+apply plugin: 'com.android.application'
+android {
+    compileSdkVersion 26
+    buildToolsVersion "26.0.2"
+    sourceSets {
+        test {
+            java.srcDirs += "$projectDir/src/sharedTestResources"
+        }
+
+        androidTest {
+            java.srcDirs += "$projectDir/src/sharedTestResources"
+        }
+    }
+    defaultConfig {
+        applicationId "microsoft.a3dtoolkitandroid"
+        minSdkVersion 16
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        jackOptions {
+            enabled true
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:appcompat-v7:26.0.1'
+    compile "com.android.support:recyclerview-v7:26.0.1"
+    androidTestCompile 'org.mockito:mockito-android:2.7.22'
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.volley:volley:1.0.0'
+    testCompile 'junit:junit:4.12'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.10.0'
+    compile 'com.facebook.stetho:stetho:1.5.0'
+    compile 'com.squareup.okhttp3:okhttp:3.9.0'
+    compile 'com.facebook.stetho:stetho-okhttp3:1.5.0'
+    compile 'org.apache.httpcomponents:httpcore:4.4.7'
+    compile project(':libwebrtc')
+    compile 'com.google.code.gson:gson:2.8.0'
+    compile group: 'gov.nist.math', name: 'jama', version: '1.0.3'
+    compile group: 'org.json', name: 'json', version: '20170516'
+    compile group: 'com.badlogicgames.gdx', name: 'gdx', version: '1.9.6'
+    compile group: 'com.badlogicgames.gdx', name: 'gdx-backend-android', version: '1.9.6'}

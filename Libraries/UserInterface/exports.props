@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LibraryPath>$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(MSBuildThisFileDirectory)..\DirectXTK\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_TURN_OFF_PLATFORM_STRING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\headers;$(MSBuildThisFileDirectory)..\WebRTCUWP\libyuv\inc;$(MSBuildThisFileDirectory)..\DirectXTK\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+    <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\DirectXTK\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTK.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)\UserInterface.vcxproj">
+      <Project>{95EB9544-2E62-4F54-8567-D55CD1DFD8FE}</Project>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
