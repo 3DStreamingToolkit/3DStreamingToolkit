@@ -138,3 +138,7 @@ Once finished building, for local use, copy the contents of
 C:\<path to source>\webrtv-checkout\dist
 ```
 to the `WebRTCLibs` folder in this repo.
+
+## Running Server on Azure
+To run the **MultithreadServer** on Azure N-Serier (specifically NV-Series), after starting the machine, you should run the following script:
+[./Scripts/AzureNVSeriesPrerequisites.ps1](./Scripts/AzureNVSeriesPrerequisites.ps1)
