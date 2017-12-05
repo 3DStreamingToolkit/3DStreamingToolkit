@@ -42,6 +42,66 @@ protected:
 	virtual ~MainWindowCallback() {}
 };
 
+class ThreadSafeMainWindowCallback : public MainWindowCallback
+{
+public:
+	ThreadSafeMainWindowCallback(MainWindowCallback* wrap, rtc::Thread* thread = nullptr) :
+		wrap_(wrap)
+	{
+		// thread or rtc::Thread::Current or WrapCurrentThread() depending on existence
+		captured_thread_ = thread == nullptr ?
+			rtc::Thread::Current() == nullptr ?
+			rtc::ThreadManager::Instance()->WrapCurrentThread()
+			: rtc::Thread::Current()
+			: thread;
+	}
+
+	virtual void StartLogin(const std::string& server, int port) override
+	{
+		captured_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+			wrap_->StartLogin(server, port);
+		});
+	}
+
+	virtual void DisconnectFromServer() override
+	{
+		captured_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+			wrap_->DisconnectFromServer();
+		});
+	}
+
+	virtual void ConnectToPeer(int peer_id) override
+	{
+		captured_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+			wrap_->ConnectToPeer(peer_id);
+		});
+	}
+
+	virtual void DisconnectFromCurrentPeer() override
+	{
+		captured_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+			wrap_->DisconnectFromCurrentPeer();
+		});
+	}
+
+	virtual void UIThreadCallback(int msg_id, void* data) override
+	{
+		captured_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+			wrap_->UIThreadCallback(msg_id, data);
+		});
+	}
+
+	virtual void Close() override
+	{
+		captured_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+			wrap_->Close();
+		});
+	}
+private:
+	MainWindowCallback* wrap_;
+	rtc::Thread* captured_thread_;
+};
+
 class VideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame>
 {
 public:

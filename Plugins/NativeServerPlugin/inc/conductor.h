@@ -163,6 +163,7 @@ private:
 
 	PeerConnectionClient* client_;
 	PeerConnectionMultiObserver* client_observer_;
+	ThreadSafeMainWindowCallback* thread_callback_;
 	rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 	std::unique_ptr<StreamingToolkit::InputDataChannelObserver> data_channel_observer_;
 	MainWindow* main_window_;

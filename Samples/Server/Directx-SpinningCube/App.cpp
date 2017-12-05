@@ -141,8 +141,6 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 
 	std::vector<std::thread*> threads;
-	std::vector<std::shared_ptr<PeerConnectionClient>> clients;
-	std::vector<rtc::scoped_refptr<Conductor>> conductors;
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -302,36 +300,38 @@ bool AppMain(BOOL stopping)
 
 			rtc::ThreadManager::Instance()->SetCurrentThread(&instanceThread);
 
-			auto client = std::make_shared<PeerConnectionClient>(std::to_string(i));
+			PeerConnectionClient client(std::to_string(i));
 			auto conductor = new rtc::RefCountedObject<Conductor>(
-				client.get(), &wnd, webrtcConfig.get(), g_bufferRenderer);
+				&client, &wnd, webrtcConfig.get(), g_bufferRenderer);
 
 			conductor->SetInputDataHandler(&inputHandler);
-			client->SetHeartbeatMs(webrtcConfig->heartbeat);
+			client.SetHeartbeatMs(webrtcConfig->heartbeat);
 
-			clients.push_back(client);
-			conductors.push_back(conductor);
-
-			// Main loop.
-			MSG msg;
-			BOOL gm;
-			while (!stopping && (gm = ::GetMessage(&msg, (HWND)-1, 0, 0)) != 0 && gm != -1)
+			while (!stopping)
 			{
-				// For system service, ignore window and swap chain.
-				if (serverConfig->server_config.system_service)
-				{
-					::TranslateMessage(&msg);
-					::DispatchMessage(&msg);
-				}
-				else
-				{
-					if (!wnd.PreTranslateMessage(&msg))
-					{
-						::TranslateMessage(&msg);
-						::DispatchMessage(&msg);
-					}
-				}
+				instanceThread.ProcessMessages(500);
 			}
+			
+			// Main loop.
+			//MSG msg;
+			//BOOL gm;
+			//while (!stopping && (gm = ::GetMessage(&msg, (HWND)-1, 0, 0)) != 0 && gm != -1)
+			//{
+			//	// For system service, ignore window and swap chain.
+			//	if (serverConfig->server_config.system_service)
+			//	{
+			//		::TranslateMessage(&msg);
+			//		::DispatchMessage(&msg);
+			//	}
+			//	else
+			//	{
+			//		if (!wnd.PreTranslateMessage(&msg))
+			//		{
+			//			::TranslateMessage(&msg);
+			//			::DispatchMessage(&msg);
+			//		}
+			//	}
+			//}
 		}));
 	}
 
@@ -482,6 +482,9 @@ bool AppMain(BOOL stopping)
 	//	}
 	//}
 
+	// TODO(bengreenier): is there a race condition here where until the threads above start executing
+	// their processing loop we shouldn't be allowed to do things to the window (like click connect)
+	//
 	// Main loop.
 	MSG msg;
 	BOOL gm;
