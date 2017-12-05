@@ -132,7 +132,7 @@ protected:
 	HWND wnd_;
 	UI current_ui_;
 	DWORD ui_thread_id_;
-	MainWindowCallback* callback_;
+	std::vector<MainWindowCallback*> callbacks_;
 	std::unique_ptr<VideoRenderer> local_video_renderer_;
 	std::unique_ptr<VideoRenderer> remote_video_renderer_;
 

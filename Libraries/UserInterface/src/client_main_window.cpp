@@ -192,15 +192,15 @@ bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 		}
 		else if (wParam == VK_ESCAPE)
 		{
-			if (callback_)
+			if (!callbacks_.empty())
 			{
 				if (current_ui_ == STREAMING)
 				{
-					callback_->DisconnectFromCurrentPeer();
+					std::for_each(callbacks_.begin(), callbacks_.end(), [](MainWindowCallback* callback) { callback->DisconnectFromCurrentPeer(); });
 				} 
 				else
 				{
-					callback_->DisconnectFromServer();
+					std::for_each(callbacks_.begin(), callbacks_.end(), [](MainWindowCallback* callback) { callback->DisconnectFromServer(); });
 				}
 
 				ret = true;
@@ -208,7 +208,7 @@ bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 		}
 	}
 
-	if (current_ui_ == STREAMING && callback_ && !ret)
+	if (current_ui_ == STREAMING && !callbacks_.empty() && !ret)
 	{
 		SignalDataChannelMessage.emit(msg);
 	}
@@ -216,9 +216,12 @@ bool ClientMainWindow::PreTranslateMessage(MSG* msg)
 	// UI callback
 	if (msg->hwnd == NULL && msg->message == UI_THREAD_CALLBACK)
 	{
-		callback_->UIThreadCallback(static_cast<int>(msg->wParam), 
-			reinterpret_cast<void*>(msg->lParam));
-
+		std::for_each(callbacks_.begin(), callbacks_.end(), [&](MainWindowCallback* callback)
+		{
+			callback->UIThreadCallback(static_cast<int>(msg->wParam),
+				reinterpret_cast<void*>(msg->lParam));
+		});
+		
 		ret = true;
 	}
 
@@ -308,7 +311,7 @@ void ClientMainWindow::OnPaint()
 
 void ClientMainWindow::OnDefaultAction()
 {
-	if (!callback_)
+	if (callbacks_.empty())
 	{
 		return;
 	}
@@ -318,7 +321,8 @@ void ClientMainWindow::OnDefaultAction()
 		std::string server(GetWindowText(edit1_));
 		std::string port_str(GetWindowText(edit2_));
 		int port = port_str.length() ? atoi(port_str.c_str()) : 0;
-		callback_->StartLogin(server, port);
+
+		std::for_each(callbacks_.begin(), callbacks_.end(), [&](MainWindowCallback* callback) { callback->StartLogin(server, port); });
 	}
 	else if (current_ui_ == LIST_PEERS)
 	{
@@ -326,9 +330,9 @@ void ClientMainWindow::OnDefaultAction()
 		if (sel != LB_ERR)
 		{
 			LRESULT peer_id = ::SendMessage(listbox_, LB_GETITEMDATA, sel, 0);
-			if (peer_id != -1 && callback_)
+			if (peer_id != -1 && !callbacks_.empty())
 			{
-				callback_->ConnectToPeer(peer_id);
+				std::for_each(callbacks_.begin(), callbacks_.end(), [&](MainWindowCallback* callback) { callback->ConnectToPeer(peer_id); });
 			}
 		}
 	}
