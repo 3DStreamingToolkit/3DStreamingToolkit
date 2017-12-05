@@ -301,7 +301,7 @@ bool AppMain(BOOL stopping)
 
 			rtc::ThreadManager::Instance()->SetCurrentThread(&instanceThread);
 
-			PeerConnectionClient client(std::to_string(i));
+			PeerConnectionClient client("[" + std::to_string(i) + "]");
 			rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
 				&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
 
