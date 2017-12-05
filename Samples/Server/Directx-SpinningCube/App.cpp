@@ -297,12 +297,13 @@ bool AppMain(BOOL stopping)
 		threads.push_back(new std::thread([&, i]()
 		{
 			rtc::Win32Thread instanceThread;
+			instanceThread.SetName("Instance[" + std::to_string(i) + "]", nullptr);
 
 			rtc::ThreadManager::Instance()->SetCurrentThread(&instanceThread);
 
 			PeerConnectionClient client(std::to_string(i));
-			auto conductor = new rtc::RefCountedObject<Conductor>(
-				&client, &wnd, webrtcConfig.get(), g_bufferRenderer);
+			rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
+				&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
 
 			conductor->SetInputDataHandler(&inputHandler);
 			client.SetHeartbeatMs(webrtcConfig->heartbeat);
