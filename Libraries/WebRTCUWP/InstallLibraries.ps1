@@ -6,42 +6,54 @@ function Get-ScriptDirectory
   $Invocation = (Get-Variable MyInvocation -Scope 1).Value
   Split-Path $Invocation.MyCommand.Path
 }
-
 function DecompressZip {
     param( [string] $filename, [string] $path, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
-
-    if((Test-Path ($PSScriptRoot + $path)) -eq $false) {
-        Write-Host "Extracting libyuv..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($PSScriptRoot + "\libyuv\libs.zip", $PSScriptRoot + $path)
-        Write-Host "Finished"
-    }
-    
     $uri = ($blobUri + $filename + ".zip")
     $request = [System.Net.HttpWebRequest]::Create($uri)
     $request.Timeout = 10000
     $response = $request.GetResponse()
     $etag = $response.Headers["ETag"] 
     $request.Abort()
-    $localFileName = ($filename + ".zip")
+    $localFileName = ($filename + $etag + ".zip")
     $localFullPath = ($PSScriptRoot +  $path + $localFileName)
+    $libRemoved = $false
     
-    Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
+    if($filename -like "*libyuv*") {
+        $extractDir = "\libs"
+    } 
+
+    if($filename -like "*Org.*") {
+        $extractDir = "\x86"
+    } 
+
+    if((Test-Path ($PSScriptRoot +  $path)) -eq $false) {
+        New-Item -Path ($PSScriptRoot +  $path) -ItemType Directory -Force 
+    }
+
+    Get-ChildItem -File -Path ($PSScriptRoot + $path) -Filter ("*" + $filename + "*") | ForEach-Object { #
         if($_.Name -notmatch (".*" + $etag + ".*")) {
                 Write-Host "Removing outdated lib"
                 Remove-Item * -Include $_.Name
+                $libRemoved = $true
         }
+    }
+        
+    if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true -and $libRemoved -eq $false) {
+        return
     }
 
-    if(((Test-Path ($PSScriptRoot + $path + "libs")) -eq $false) -and ((Test-Path ($PSScriptRoot + $path + "x64")) -eq $false))  {
-        Write-Host ("Downloading " + $filename + " lib archive")
-        if((Test-Path ($localFullPath)) -eq $false) {
-               Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-               Write-Host ("Downloaded " + $filename + " lib archive")
-        }
-        Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot + $path)
-        Write-Host "Finished"
+    if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true) {
+        Write-Host "Clearing existing $path" 
+        Remove-Item -Recurse -Force ($PSScriptRoot + $path + $extractDir)   
     }
+    
+    Write-Host "Downloading $localFileName from $uri"
+    Copy-File -SourcePath $uri -DestinationPath $localFullPath    
+    Write-Host ("Downloaded " + $filename + " lib archive")
+
+    Write-Host "Extracting..."
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, ($PSScriptRoot + $path))
+    Write-Host "Finished"
 }
 
 function

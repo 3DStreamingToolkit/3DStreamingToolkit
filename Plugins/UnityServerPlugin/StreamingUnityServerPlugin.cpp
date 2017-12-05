@@ -73,7 +73,6 @@ static rtc::scoped_refptr<Conductor> s_conductor = nullptr;
 
 static BufferRenderer*		s_bufferRenderer = nullptr;
 static ID3D11Texture2D*		s_frameBuffer = nullptr;
-static WebRTCConfig			s_webrtcConfig;
 
 ServerMainWindow *wnd;
 std::thread *messageThread;
@@ -257,14 +256,16 @@ void InitWebRTC()
 {
 	ULOG(INFO, __FUNCTION__);
 
-	// Loads webrtc config file.
-	ConfigParser::Parse("webrtcConfig.json", &s_webrtcConfig);
+	// setup the config parsers
+	ConfigParser::ConfigureConfigFactories();
+
+	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
-	authInfo.authority = s_webrtcConfig.authentication.authority;
-	authInfo.resource = s_webrtcConfig.authentication.resource;
-	authInfo.clientId = s_webrtcConfig.authentication.client_id;
-	authInfo.clientSecret = s_webrtcConfig.authentication.client_secret;
+	authInfo.authority = webrtcConfig->authentication.authority;
+	authInfo.resource = webrtcConfig->authentication.resource;
+	authInfo.clientId = webrtcConfig->authentication.client_id;
+	authInfo.clientSecret = webrtcConfig->authentication.client_secret;
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -288,14 +289,14 @@ void InitWebRTC()
 
 	wnd->Create();
 	
-	s_server = s_webrtcConfig.server;
-	s_port = s_webrtcConfig.port;
-	client.SetHeartbeatMs(s_webrtcConfig.heartbeat);
+	s_server = webrtcConfig->server;
+	s_port = webrtcConfig->port;
+	client.SetHeartbeatMs(webrtcConfig->heartbeat);
 
 	s_conductor = new rtc::RefCountedObject<Conductor>(
 		&client,
 		wnd,
-		&s_webrtcConfig,
+		webrtcConfig.get(),
 		s_bufferRenderer,
 		&s_clientObserver);
 
@@ -362,9 +363,9 @@ void InitWebRTC()
 	}
 
 	// configure turn, if needed
-	if (!s_webrtcConfig.turn_server.provider.empty())
+	if (!webrtcConfig->turn_server.provider.empty())
 	{
-		turnProvider.reset(new TurnCredentialProvider(s_webrtcConfig.turn_server.provider));
+		turnProvider.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider));
 
 		turnProvider->SignalCredentialsRetrieved.connect(&credentialsRetrieved, &TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
 	}
