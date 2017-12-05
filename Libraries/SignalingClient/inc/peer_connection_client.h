@@ -60,7 +60,7 @@ public:
 		SIGNING_OUT,
 	};
 
-	PeerConnectionClient(const std::string& clientNamePrefix);
+	PeerConnectionClient(const std::string& clientNamePostfix);
 
 	~PeerConnectionClient();
 
@@ -159,7 +159,7 @@ protected:
 	std::string control_data_;
 	std::string notification_data_;
 	std::string client_name_;
-	std::string client_name_prefix_;
+	std::string client_name_postfix_;
 	std::string authorization_header_;
 	Peers peers_;
 	State state_;
