@@ -784,14 +784,14 @@ void Conductor::OnFailure(const std::string& error)
 void Conductor::SendMessage(const std::string& json_object)
 {
 	std::string* msg = new std::string(json_object);
-	if (main_window_->IsWindow())
+	/*if (main_window_->IsWindow())
 	{
 		main_window_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, msg);
 	}
 	else
-	{
+	{*/
 		SendMessageToPeer(msg);
-	}
+	//}
 }
 
 void Conductor::NewStreamAdded(webrtc::MediaStreamInterface* stream)
