@@ -137,8 +137,18 @@ bool AppMain(BOOL stopping)
 
 	rtc::InitializeSSL();
 
-	std::shared_ptr<ServerAuthenticationProvider> authProvider;
-	std::shared_ptr<TurnCredentialProvider> turnProvider;
+	// allocate threads
+	for (auto i = 0; i < 2; ++i)
+	{
+		// create an instance, adding itself to instances and handles
+		// note: this is blocking until it's been added to the lists
+		CreateSingleInstanceThread(
+			"[" + std::to_string(i) + "]",
+			g_deviceResources,
+			&wnd,
+			instances
+		);
+	}
 
 	std::vector<std::thread*> threads;
 	volatile bool stopThreads = false;
