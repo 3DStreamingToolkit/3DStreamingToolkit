@@ -27,9 +27,12 @@ using Microsoft::WRL::ComPtr;
 
 namespace
 {
-const char kConnecting[] = "Connecting... ";
-const char kNoVideoStreams[] = "(no video streams either way)";
-const char kNoIncomingStream[] = "(no incoming video)";
+const char kConnecting[]		= "Connecting... ";
+const char kNoVideoStreams[]	= "(no video streams either way)";
+const char kNoIncomingStream[]	= "(no incoming video)";
+
+const WCHAR kFontName[]			= L"Verdana";
+const FLOAT kFontSize			= 20;
 
 void CalculateWindowSizeForText(HWND wnd, const wchar_t* text, size_t* width,
 	size_t* height)
@@ -92,6 +95,9 @@ ClientMainWindow::ClientMainWindow(
 		auth_uri_label_(NULL),
 		direct2d_factory_(NULL),
 		render_target_(NULL),
+		dwrite_factory_(NULL),
+		text_format_(NULL),
+		brush_(NULL),
 		server_(server),
 		auto_connect_(auto_connect),
 		auto_call_(auto_call),
@@ -104,6 +110,8 @@ ClientMainWindow::ClientMainWindow(
 	char buffer[10] = {0};
 	sprintfn(buffer, sizeof(buffer), "%i", port);
 	port_ = buffer;
+
+	wcscpy(fps_text_, L"FPS: 0");
 }
 
 ClientMainWindow::~ClientMainWindow()
@@ -111,6 +119,9 @@ ClientMainWindow::~ClientMainWindow()
 	RTC_DCHECK(!IsWindow());
 	SAFE_RELEASE(direct2d_factory_);
 	SAFE_RELEASE(render_target_);
+	SAFE_RELEASE(dwrite_factory_);
+	SAFE_RELEASE(text_format_);
+	SAFE_RELEASE(brush_);
 }
 
 bool ClientMainWindow::Create()
@@ -137,6 +148,35 @@ bool ClientMainWindow::Create()
 		return false;
 	}
 
+	// Create a DirectWrite factory.
+	hr = DWriteCreateFactory(
+		DWRITE_FACTORY_TYPE_SHARED,
+		__uuidof(dwrite_factory_),
+		reinterpret_cast<IUnknown **>(&dwrite_factory_)
+	);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// Create a DirectWrite text format object.
+	hr = dwrite_factory_->CreateTextFormat(
+		kFontName,
+		NULL,
+		DWRITE_FONT_WEIGHT_NORMAL,
+		DWRITE_FONT_STYLE_NORMAL,
+		DWRITE_FONT_STRETCH_NORMAL,
+		kFontSize,
+		L"", // locale
+		&text_format_
+	);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
 	RECT rc;
 	GetClientRect(wnd_, &rc);
 	D2D1_SIZE_U size = { rc.right - rc.left, rc.bottom - rc.top };
@@ -146,6 +186,17 @@ bool ClientMainWindow::Create()
 		D2D1::RenderTargetProperties(),
 		D2D1::HwndRenderTargetProperties(wnd_, size),
 		&render_target_
+	);
+
+	if (FAILED(hr))
+	{
+		return false;
+	}
+
+	// Creates a solid color brush.
+	hr = render_target_->CreateSolidColorBrush(
+		D2D1::ColorF(D2D1::ColorF::White, 1.0f),
+		&brush_
 	);
 
 	if (FAILED(hr))
@@ -257,6 +308,7 @@ void ClientMainWindow::OnPaint()
 		int height = abs(bmi.bmiHeader.biHeight);
 		int width = bmi.bmiHeader.biWidth;
 		const uint8_t* image = remote_renderer->image();
+		const int fps = ((ClientVideoRenderer*)remote_renderer)->fps();
 		if (image != NULL)
 		{
 			// Initializes the bitmap properties.
@@ -271,9 +323,23 @@ void ClientMainWindow::OnPaint()
 			D2D1_SIZE_U size = { width, height };
 			render_target_->CreateBitmap(size, image, width * 4, bitmapProps, &bitmap);
 			
-			// Renders the bitmap.
+			// Starts rendering.
 			render_target_->BeginDraw();
+
+			// Renders the video frame.
 			render_target_->DrawBitmap(bitmap, desRect);
+
+			// Draws the fps info.
+			wsprintf(fps_text_, L"FPS: %d", fps);
+			render_target_->DrawText(
+				fps_text_,
+				ARRAYSIZE(fps_text_) - 1,
+				text_format_,
+				desRect,
+				brush_
+			);
+
+			// Ends rendering.
 			render_target_->EndDraw();
 
 			// Releases the bitmap.
@@ -686,7 +752,9 @@ void ClientMainWindow::SetConnectButtonState(bool enabled)
 ClientMainWindow::ClientVideoRenderer::ClientVideoRenderer(HWND wnd, int width, int height,
     webrtc::VideoTrackInterface* track_to_render) :
 		wnd_(wnd),
-		rendered_track_(track_to_render)
+		rendered_track_(track_to_render),
+		time_tick_(0),
+		frame_counter_(0)
 {
 	::InitializeCriticalSection(&buffer_lock_);
 	ZeroMemory(&bmi_, sizeof(bmi_));
@@ -745,4 +813,13 @@ void ClientMainWindow::ClientVideoRenderer::OnFrame(const webrtc::VideoFrame& vi
 		buffer->width(), buffer->height());
 
 	InvalidateRect(wnd_, NULL, TRUE);
+
+	// Updates FPS.
+	frame_counter_++;
+	if (GetTickCount64() - time_tick_ >= 1000)
+	{
+		fps_ = frame_counter_;
+		frame_counter_ = 0;
+		time_tick_ = GetTickCount64();
+	}
 }
