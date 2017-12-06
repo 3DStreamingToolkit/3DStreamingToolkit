@@ -256,8 +256,17 @@ bool AppMain(BOOL stopping)
 				{
 					for (int j = 0; j < 4; j++)
 					{
-						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						auto mrv = instance->mostRecentView;
+						auto bc = instance->bufferCapturer;
+
+						// TODO(bengreenier): why does zero-ed crash?
+						if (!mrv->IsZeroed())
+						{
+							g_cubeRenderer->UpdateView(mrv->eye, mrv->lookAt, mrv->up);
+						}
+						g_cubeRenderer->Render();
+
+						bc->SendFrame(frameBuffer.Get());
 					}
 				}
 
