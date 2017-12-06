@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PeerConnection server test page</title>
+</head>
+
+
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+<link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans'>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+html,body,h1,h2,h3,h4,h5 {font-family: "Open Sans", sans-serif}
+</style>
+
+
+<body class="w3-theme-l5">
+<div class="w3-top">
+    <div class="w3-bar w3-theme-d2 w3-left-align w3-large">
+      <a class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-theme-d2" href="javascript:void(0);" onclick="openNav()"><i class="fa fa-bars"></i></a>
+      <a href="#" class="w3-bar-item w3-button w3-padding-large w3-theme-d4"><i class="fa fa-home w3-margin-right"></i>3D Toolkit Web Client</a>
+     </div>
+    </div>
+
+    <!-- Navbar on small screens -->
+    <div id="navDemo" class="w3-bar-block w3-theme-d2 w3-hide w3-hide-large w3-hide-medium w3-large">
+      <a href="#" class="w3-bar-item w3-button w3-padding-large">3D Toolkit Web Client</a>
+    </div>
+
+    <div id="container" class="w3-container w3-content" style="max-width:1400px;margin-top:80px">
+
+        <div class="w3-row">
+            <div class="w3-col m3">
+                <div class="w3-card-2 w3-round w3-white">
+                    <div class="w3-container">
+                        <h4 class="w3-center">Signal Server Login</h4>
+
+                        <br>
+                        <button id="connect">Connect</button>
+                        <button style="display:none" id="disconnect">Disconnect</button>
+                        <hr>
+                        <div id='cred'>
+                            Server:
+                            <br><input type="text" id="server" value="" />
+                            <br>
+                            <br> Your name:
+                            <br><input type="text" id="local" value="myclient" />
+                            <br>
+                            <br><input type="checkbox" id="turnTempPasswordEnabled" value="turnTempPasswordEnabled" /><label for="turnTempPasswordEnabled">Use temp passwords for TURN server</label>
+                            <br>
+                            <br>
+                        </div>
+
+                        <div id='renderers' style="display:none">
+                            <h4 class="w3-center">Available Render Servers</h4>
+                            <select id="peerList" style="max-width:150px">
+                            </select>
+                            <button id="join">Join</button>
+
+                            <br>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <br>
+                <br>
+            </div>
+
+            <div class="w3-col m9">
+                <div class="w3-row-padding">
+                    <div class="w3-col">
+                        <div class="w3-card-2 w3-round w3-white">
+                            <div class="w3-container w3-padding">
+                                <h4 class="w3-center">Render Stream</h4>
+                                <video id="remote-video" width="640" height="360"></video>
+                                <br>
+                                <h6>Drag Mouse to rotate view - Ctrl-Drag to translate</h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br>
+        <br>
+
+        <div class="w3-row">
+            <div class="w3-col3 w3-round w3-white m12">
+                    <div class="w3-container">
+                        <h4 class="w3-center">Connection Log</h4>
+                        <hr>
+                        <button onclick="document.getElementById('debug').innerHTML='';">Clear log</button>
+                        <pre id="debug"></pre>
+                        <br>
+                        <br>
+                        <br>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+    <script src="https://secure.aadcdn.microsoftonline-p.com/lib/0.1.1/js/msal.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.2.1.min.js"></script>
+    <script src="js-3dtoolkit.js"></script>
+    <script src="./matrixmath.js"></script>
+    <script src="./app.js"></script>
+</body>
+
+</html>
