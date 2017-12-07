@@ -55,6 +55,9 @@
     <ClCompile Include="src\directx_buffer_capturer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="inc\peer_conductor.hpp">
+      <Filter>Source\webrtc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
