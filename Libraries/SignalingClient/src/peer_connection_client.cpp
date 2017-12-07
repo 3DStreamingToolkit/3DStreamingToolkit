@@ -35,13 +35,12 @@ namespace
 	const int kHeartbeatDefault = -1;
 }
 
-PeerConnectionClient::PeerConnectionClient(const std::string& clientNamePostfix) :
+PeerConnectionClient::PeerConnectionClient() :
 	resolver_(NULL),
     state_(NOT_CONNECTED),
     my_id_(-1),
 	heartbeat_tick_ms_(kHeartbeatDefault),
-	server_address_ssl_(false),
-	client_name_postfix_(clientNamePostfix)
+	server_address_ssl_(false)
 {
 	// use the current thread or wrap a thread for signaling_thread_
 	auto thread = rtc::Thread::Current();
@@ -195,7 +194,7 @@ void PeerConnectionClient::DoConnect()
 	heartbeat_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 
 	InitSocketSignals();
-	std::string clientName = client_name_ + client_name_postfix_;
+	std::string clientName = client_name_;
 	std::string hostName = server_address_.hostname();
 	
 	onconnect_data_ = PrepareRequest("GET", "/sign_in?peer_name=" + clientName, { {"Host", hostName} });
