@@ -4,6 +4,7 @@
 
 #include <map>
 #include <string>
+#include <atomic>
 
 #include "peer_connection_client.h"
 #include "peer_conductor.hpp"
@@ -14,8 +15,11 @@ using namespace std;
 using namespace rtc;
 using namespace webrtc;
 
-class MultiPeerConductor : public PeerConnectionClientObserver
+class MultiPeerConductor : public PeerConnectionClientObserver,
+	public MessageHandler,
+	public Runnable
 {
+>>>>>>> threaded message queuing - seems more stable
 public:
 	MultiPeerConductor(shared_ptr<WebRTCConfig> config,
 		shared_ptr<BufferCapturer> bufferCapturer) :
@@ -25,6 +29,13 @@ public:
 	{
 		m_signallingClient.RegisterObserver(this);
 		m_peerFactory = webrtc::CreatePeerConnectionFactory();
+		m_processThread = rtc::Thread::Create();
+		m_processThread->Start(this);
+	}
+
+	~MultiPeerConductor()
+	{
+		m_processThread->Quit();
 	}
 
 	// Connect the signalling implementation to the signalling server
@@ -33,6 +44,7 @@ public:
 		m_signallingClient.Connect(m_webrtcConfig->server, m_webrtcConfig->port, clientName);
 	}
 
+<<<<<<< HEAD
 	// Triggered when the SignalingState changed.
 	virtual void OnSignalingChange(
 		PeerConnectionInterface::SignalingState new_state) override {}
@@ -68,12 +80,35 @@ public:
 
 	
 	virtual void OnSignedIn() override {}  // Called when we're logged on.
+=======
+	virtual void OnSignedIn() override
+	{
+		m_shouldProcessQueue.store(true);
+	}
+>>>>>>> threaded message queuing - seems more stable
 
-	virtual void OnDisconnected() override {}
+	virtual void OnDisconnected() override
+	{
+		m_shouldProcessQueue.store(false);
+	}
 
 	virtual void OnPeerConnected(int id, const string& name) override
 	{
+<<<<<<< HEAD
 		m_connectedPeers[id] = name;
+=======
+		m_connectedPeers[id] = new RefCountedObject<DirectXPeerConductor>(id,
+			name,
+			m_webrtcConfig,
+			m_peerFactory,
+			[&, id](const string& message)
+		{
+			m_messageQueue.push(MessageEntry(id, message));
+			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
+		},
+			m_d3dDevice,
+			m_enableSoftware);
+>>>>>>> threaded message queuing - seems more stable
 	}
 
 	virtual void OnPeerDisconnected(int peer_id) override
@@ -191,11 +226,46 @@ public:
 		}
 	}
 
-	virtual void OnMessageSent(int err) override {}
+	virtual void OnMessageSent(int err) override
+	{
+	}
 
 	virtual void OnServerConnectionFailure() override {}
 
+<<<<<<< HEAD
 	void OnPeerWebrtcConnected(int id)
+=======
+	virtual void OnMessage(Message* msg) override
+	{
+		if (!m_shouldProcessQueue.load() ||
+			m_messageQueue.size() == 0)
+		{
+			return;
+		}
+
+		auto peerMessage = m_messageQueue.front();
+
+		if (m_signallingClient.SendToPeer(peerMessage.peer, peerMessage.message))
+		{
+			m_messageQueue.pop();
+		}
+
+		if (m_messageQueue.size() > 0)
+		{
+			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
+		}
+	}
+
+	virtual void Run(Thread* thread) override
+	{
+		while (!thread->IsQuitting())
+		{
+			thread->ProcessMessages(500);
+		}
+	}
+
+	const map<int, scoped_refptr<DirectXPeerConductor>>& Peers() const
+>>>>>>> threaded message queuing - seems more stable
 	{
 		webrtc::PeerConnectionInterface::RTCConfiguration config;
 
@@ -282,6 +352,7 @@ private:
 	shared_ptr<WebRTCConfig> m_webrtcConfig;
 	shared_ptr<BufferCapturer> m_bufferCapturer;
 	scoped_refptr<PeerConnectionFactoryInterface> m_peerFactory;
+<<<<<<< HEAD
 	map<int, string> m_connectedPeers;
 	map<int, scoped_refptr<PeerConnectionInterface>> m_peerConnections;
 	map<int, scoped_refptr<webrtc::MediaStreamInterface>> m_peerStreams;
@@ -301,4 +372,17 @@ private:
 
 	// Names used for data channels
 	const char* kInputDataChannelName = "inputDataChannel";
+=======
+	map<int, scoped_refptr<DirectXPeerConductor>> m_connectedPeers;
+	
+	struct MessageEntry
+	{
+		int peer;
+		string message;
+		MessageEntry(int p, const string& s) : peer(p), message(s) {}
+	};
+
+	queue<MessageEntry> m_messageQueue;
+	atomic_bool m_shouldProcessQueue;
+	unique_ptr<Thread> m_processThread;
 };

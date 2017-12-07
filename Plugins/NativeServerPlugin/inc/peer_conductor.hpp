@@ -246,7 +246,7 @@ public:
 	void HandlePeerMessage(const string& message)
 	{
 		// if we don't know this peer, add it
-		if (m_peerConnection == nullptr)
+		if (m_peerConnection.get() == nullptr)
 		{
 			// this is just the init that sets the m_peerConnection value
 			AllocatePeerConnection();
