@@ -87,6 +87,26 @@ bool AppMain(BOOL stopping)
 		serverConfig->server_config.width,
 		serverConfig->server_config.height);
 
+	// give us a quick and dirty quit handler
+	struct wndHandler : public MainWindowCallback
+	{
+		virtual void StartLogin(const std::string& server, int port) override {};
+
+		virtual void DisconnectFromServer() override {}
+
+		virtual void ConnectToPeer(int peer_id) override {}
+
+		virtual void DisconnectFromCurrentPeer() override {}
+
+		virtual void UIThreadCallback(int msg_id, void* data) override {}
+
+		atomic_bool isClosing = false;
+		virtual void Close() override { isClosing.store(true); }
+	} wndHandler;
+	
+	// register the handler
+	wnd.RegisterObserver(&wndHandler);
+
 	if (!serverConfig->server_config.system_service && !wnd.Create())
 	{
 		RTC_NOTREACHED();
@@ -142,11 +162,13 @@ bool AppMain(BOOL stopping)
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
 	{
-		char type[256];
-		char body[1024];
-		Json::Reader reader;
-		Json::Value msg = NULL;
-		reader.parse(message, msg, false);
+		// if we're quitting, do so
+		if (wndHandler.isClosing)
+		{
+			break;
+		}
+
+		MSG msg = { 0 };
 
 		if (msg.isMember("type") && msg.isMember("body"))
 		{
@@ -156,12 +178,6 @@ bool AppMain(BOOL stopping)
 			std::string token;
 			if (strcmp(type, "stereo-rendering") == 0)
 			{
-				// TODO(bengreenier): this doesn't seem to work
-				if (msg.message == WM_CLOSE)
-				{
-					break;
-				}
-
 				if (!wnd.PreTranslateMessage(&msg))
 				{
 					ID3D11Texture2D* frameBuffer = nullptr;
