@@ -91,6 +91,9 @@
     <ClInclude Include="inc\directx_buffer_capturer.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
+    <ClInclude Include="inc\multi_peer_conductor.hpp">
+      <Filter>Source\webrtc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.props" />

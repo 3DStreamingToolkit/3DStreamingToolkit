@@ -78,7 +78,7 @@ namespace StreamingToolkit
 		Clock* const clock_;
 		bool use_software_encoder_;
 		bool running_;
-		rtc::VideoSinkInterface<VideoFrame>* sink_;
+		std::vector<rtc::VideoSinkInterface<VideoFrame>*> sinks_;
 		SinkWantsObserver* sink_wants_observer_;
 		rtc::CriticalSection lock_;
 	};

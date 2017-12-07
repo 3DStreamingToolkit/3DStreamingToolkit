@@ -9,7 +9,6 @@ namespace StreamingToolkit
 	BufferCapturer::BufferCapturer() :
 		clock_(webrtc::Clock::GetRealTimeClock()),
 		running_(false),
-		sink_(nullptr),
 		use_software_encoder_(false),
 		sink_wants_observer_(nullptr)
 	{
@@ -43,7 +42,10 @@ namespace StreamingToolkit
 		const rtc::VideoSinkWants& wants) 
 	{
 		rtc::CritScope cs(&lock_);
-		sink_ = sink;
+
+		RemoveSink(sink);
+		sinks_.push_back(sink);
+
 		if (sink_wants_observer_)
 		{
 			sink_wants_observer_->OnSinkWantsChanged(sink, wants);
@@ -69,7 +71,9 @@ namespace StreamingToolkit
 	void BufferCapturer::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) 
 	{
 		rtc::CritScope cs(&lock_);
-		sink_ = nullptr;
+
+		// see https://stackoverflow.com/questions/347441/erasing-elements-from-a-vector
+		sinks_.erase(std::remove(sinks_.begin(), sinks_.end(), sink), sinks_.end());
 	}
 
 	void BufferCapturer::EnableSoftwareEncoder(bool use_software_encoder)
@@ -85,9 +89,12 @@ namespace StreamingToolkit
 			return;
 		}
 
-		if (sink_)
+		if (sinks_.size() > 0)
 		{
-			sink_->OnFrame(video_frame);
+			for each (auto sink in sinks_)
+			{
+				sink->OnFrame(video_frame);
+			}
 		}
 		else
 		{

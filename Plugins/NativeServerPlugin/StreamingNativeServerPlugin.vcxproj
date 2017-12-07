@@ -196,6 +196,7 @@
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\directx_buffer_capturer.h" />
     <ClInclude Include="inc\input_data_channel_observer.h" />
+    <ClInclude Include="inc\multi_peer_conductor.hpp" />
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
