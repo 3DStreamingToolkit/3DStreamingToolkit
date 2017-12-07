@@ -164,6 +164,18 @@ protected:
 	State state_;
 	int my_id_;
 	int heartbeat_tick_ms_;
+
+	struct ScheduledPeerMessage
+	{
+		int peer;
+		std::string message;
+
+		ScheduledPeerMessage(int peer_id, const std::string& messageData) :
+			peer(peer_id), message(messageData)
+		{}
+	};
+
+	std::vector<ScheduledPeerMessage> scheduled_messages_;
 };
 
 #endif  // WEBRTC_PEER_CONNECTION_CLIENT_H_

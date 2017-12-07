@@ -31,6 +31,9 @@ namespace
 	// The message id we use when scheduling a heartbeat operation
 	const int kHeartbeatScheduleId = 1523U;
 
+	// the message id we use when scheduling a message process operation
+	const int kProcessMessageQueueId = 1783U;
+
 	// The default value for the tick heartbeat, used to disable the heartbeat
 	const int kHeartbeatDefault = -1;
 }
@@ -219,22 +222,16 @@ bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
 	}
 
 	RTC_DCHECK(is_connected());
-	RTC_DCHECK(control_socket_->GetState() == rtc::Socket::CS_CLOSED);
+	
 	if (!is_connected() || peer_id == -1)
 	{
 		return false;
 	}
 
-	onconnect_data_ = PrepareRequest("POST",
-		"/message?peer_id=" + std::to_string(my_id_) + "&to=" + std::to_string(peer_id),
-		{
-			{"Host", server_address_.hostname()},
-			{"Content-Length", std::to_string(message.length())},
-			{"Content-Type", "text/plain"}
-		});
+	scheduled_messages_.push_back(ScheduledPeerMessage(peer_id, message));
+	rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, kProcessMessageQueueId);
 
-	onconnect_data_ += message;
-	return ConnectControlSocket();
+	return true;
 }
 
 bool PeerConnectionClient::SendHangUp(int peer_id)
@@ -323,7 +320,11 @@ void PeerConnectionClient::Close()
 
 bool PeerConnectionClient::ConnectControlSocket() 
 {
-	RTC_DCHECK(control_socket_->GetState() == rtc::Socket::CS_CLOSED);
+	if (control_socket_->GetState() != rtc::Socket::CS_CLOSED)
+	{
+		return false;
+	}
+
 	int err = control_socket_->Connect(server_address_);
 	if (err == SOCKET_ERROR)
 	{
@@ -740,9 +741,42 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 
 		heartbeat_get_->Connect(server_address_);
 	}
+	else if (msg->message_id == kProcessMessageQueueId)
+	{
+		// see if we have scheduled messages to handle
+		if (scheduled_messages_.size() > 0)
+		{
+			auto scheduledMessage = scheduled_messages_.back();
+			scheduled_messages_.pop_back();
+
+			// try to send it
+			onconnect_data_ = PrepareRequest("POST",
+				"/message?peer_id=" + std::to_string(my_id_) + "&to=" + std::to_string(scheduledMessage.peer),
+				{
+					{ "Host", server_address_.hostname() },
+					{ "Content-Length", std::to_string(scheduledMessage.message.length()) },
+					{ "Content-Type", "text/plain" }
+				});
+
+			onconnect_data_ += scheduledMessage.message;
+
+			if (!ConnectControlSocket())
+			{
+				// if we fail, keep it in the list
+				scheduled_messages_.push_back(scheduledMessage);
+			}
+
+			// if we have more to send
+			if (scheduled_messages_.size() > 0)
+			{
+				// schedule again
+				rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, kProcessMessageQueueId);
+			}
+		}
+	}
 	else
 	{
-		// default case - other than the heartbeat message, there is only one other message ("retry")
+		// default case - there is only one other message ("retry")
 		DoConnect();
 	}
 }
