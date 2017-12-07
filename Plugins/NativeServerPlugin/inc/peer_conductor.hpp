@@ -64,7 +64,10 @@ struct PeerView
 
 	bool IsValid()
 	{
-		return lookAt != 0 && up != 0 && eye != 0;
+		return lookAt != 0 && up != 0 && eye != 0 &&
+			!DirectX::XMVector3Equal(lookAt, DirectX::XMVectorZero()) &&
+			!DirectX::XMVector3Equal(up, DirectX::XMVectorZero()) &&
+			!DirectX::XMVector3Equal(eye, DirectX::XMVectorZero());
 	}
 
 	DirectX::XMVECTORF32 lookAt;
@@ -140,7 +143,27 @@ public:
 		PeerConnectionInterface::IceGatheringState new_state) override {}
 
 	// A new ICE candidate has been gathered.
-	virtual void OnIceCandidate(const IceCandidateInterface* candidate) override {}
+	virtual void OnIceCandidate(const IceCandidateInterface* candidate) override
+	{
+		Json::StyledWriter writer;
+		Json::Value jmessage;
+
+		jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
+		jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
+		
+		string sdp;
+		if (!candidate->ToString(&sdp))
+		{
+			LOG(LS_ERROR) << "Failed to serialize candidate";
+			return;
+		}
+
+		jmessage[kCandidateSdpName] = sdp;
+
+		string message = writer.write(jmessage);
+
+		m_sendFunc(message);
+	}
 
 	void OnAddStream(
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
