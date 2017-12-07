@@ -175,7 +175,7 @@ protected:
 		{}
 	};
 
-	std::vector<ScheduledPeerMessage> scheduled_messages_;
+	std::queue<ScheduledPeerMessage> scheduled_messages_;
 };
 
 #endif  // WEBRTC_PEER_CONNECTION_CLIENT_H_

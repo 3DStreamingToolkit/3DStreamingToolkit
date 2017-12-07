@@ -228,7 +228,7 @@ bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
 		return false;
 	}
 
-	scheduled_messages_.push_back(ScheduledPeerMessage(peer_id, message));
+	scheduled_messages_.push(ScheduledPeerMessage(peer_id, message));
 	rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, kProcessMessageQueueId);
 
 	return true;
@@ -746,8 +746,7 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 		// see if we have scheduled messages to handle
 		if (scheduled_messages_.size() > 0)
 		{
-			auto scheduledMessage = scheduled_messages_.back();
-			scheduled_messages_.pop_back();
+			auto scheduledMessage = scheduled_messages_.front();
 
 			// try to send it
 			onconnect_data_ = PrepareRequest("POST",
@@ -760,10 +759,10 @@ void PeerConnectionClient::OnMessage(rtc::Message* msg)
 
 			onconnect_data_ += scheduledMessage.message;
 
-			if (!ConnectControlSocket())
+			if (ConnectControlSocket())
 			{
-				// if we fail, keep it in the list
-				scheduled_messages_.push_back(scheduledMessage);
+				// if we succeed, we can actually remove it from the list
+				scheduled_messages_.pop();
 			}
 
 			// if we have more to send

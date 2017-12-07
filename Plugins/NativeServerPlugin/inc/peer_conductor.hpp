@@ -119,7 +119,10 @@ public:
 	}
 
 
-	virtual void OnFailure(const string& error) override {}
+	virtual void OnFailure(const string& error) override
+	{
+		LOG(INFO) << "ICE Failure: " << error;
+	}
 
 	// Triggered when the SignalingState changed.
 	virtual void OnSignalingChange(
@@ -169,7 +172,10 @@ public:
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
 
 	void OnRemoveStream(
-		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
+		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override
+	{
+		stream->Release();
+	}
 
 	void OnDataChannel(
 		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override
