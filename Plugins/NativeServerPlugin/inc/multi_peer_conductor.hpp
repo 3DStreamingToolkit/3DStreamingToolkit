@@ -9,17 +9,20 @@
 #include "peer_connection_client.h"
 #include "peer_conductor.hpp"
 
+#include "webrtc/base/sigslot.h"
+
 using namespace StreamingToolkit;
 
 using namespace std;
 using namespace rtc;
 using namespace webrtc;
+using namespace sigslot;
 
 class MultiPeerConductor : public PeerConnectionClientObserver,
 	public MessageHandler,
-	public Runnable
+	public Runnable,
+	public has_slots<>
 {
->>>>>>> threaded message queuing - seems more stable
 public:
 	MultiPeerConductor(shared_ptr<WebRTCConfig> config,
 		shared_ptr<BufferCapturer> bufferCapturer) :
@@ -44,48 +47,20 @@ public:
 		m_signallingClient.Connect(m_webrtcConfig->server, m_webrtcConfig->port, clientName);
 	}
 
-<<<<<<< HEAD
-	// Triggered when the SignalingState changed.
-	virtual void OnSignalingChange(
-		PeerConnectionInterface::SignalingState new_state) override {}
+	// each peer can emit a signal that will in turn call this method
+	void OnIceConnectionChange(int peer_id, PeerConnectionInterface::IceConnectionState new_state)
+	{
+		// peer disconnected
+		if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
+		{
+			m_connectedPeers.erase(peer_id);
+		}
+	}
 
-	// Triggered when renegotiation is needed. For example, an ICE restart
-	// has begun.
-	virtual void OnRenegotiationNeeded() override {}
-
-	// Called any time the IceConnectionState changes.
-	//
-	// Note that our ICE states lag behind the standard slightly. The most
-	// notable differences include the fact that "failed" occurs after 15
-	// seconds, not 30, and this actually represents a combination ICE + DTLS
-	// state, so it may be "failed" if DTLS fails while ICE succeeds.
-	virtual void OnIceConnectionChange(
-		PeerConnectionInterface::IceConnectionState new_state) override {}
-
-	// Called any time the IceGatheringState changes.
-	virtual void OnIceGatheringChange(
-		PeerConnectionInterface::IceGatheringState new_state) override {}
-
-	// A new ICE candidate has been gathered.
-	virtual void OnIceCandidate(const IceCandidateInterface* candidate) override {}
-
-	void OnAddStream(
-		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
-
-	void OnRemoveStream(
-		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
-
-	void OnDataChannel(
-		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
-
-	
-	virtual void OnSignedIn() override {}  // Called when we're logged on.
-=======
 	virtual void OnSignedIn() override
 	{
 		m_shouldProcessQueue.store(true);
 	}
->>>>>>> threaded message queuing - seems more stable
 
 	virtual void OnDisconnected() override
 	{
@@ -94,9 +69,6 @@ public:
 
 	virtual void OnPeerConnected(int id, const string& name) override
 	{
-<<<<<<< HEAD
-		m_connectedPeers[id] = name;
-=======
 		m_connectedPeers[id] = new RefCountedObject<DirectXPeerConductor>(id,
 			name,
 			m_webrtcConfig,
@@ -108,7 +80,8 @@ public:
 		},
 			m_d3dDevice,
 			m_enableSoftware);
->>>>>>> threaded message queuing - seems more stable
+
+		m_connectedPeers[id]->SignalIceConnectionChange.connect(this, &MultiPeerConductor::OnIceConnectionChange);
 	}
 
 	virtual void OnPeerDisconnected(int peer_id) override
@@ -232,9 +205,6 @@ public:
 
 	virtual void OnServerConnectionFailure() override {}
 
-<<<<<<< HEAD
-	void OnPeerWebrtcConnected(int id)
-=======
 	virtual void OnMessage(Message* msg) override
 	{
 		if (!m_shouldProcessQueue.load() ||
@@ -265,7 +235,6 @@ public:
 	}
 
 	const map<int, scoped_refptr<DirectXPeerConductor>>& Peers() const
->>>>>>> threaded message queuing - seems more stable
 	{
 		webrtc::PeerConnectionInterface::RTCConfiguration config;
 
@@ -352,27 +321,6 @@ private:
 	shared_ptr<WebRTCConfig> m_webrtcConfig;
 	shared_ptr<BufferCapturer> m_bufferCapturer;
 	scoped_refptr<PeerConnectionFactoryInterface> m_peerFactory;
-<<<<<<< HEAD
-	map<int, string> m_connectedPeers;
-	map<int, scoped_refptr<PeerConnectionInterface>> m_peerConnections;
-	map<int, scoped_refptr<webrtc::MediaStreamInterface>> m_peerStreams;
-
-	const char* kAudioLabel = "audio_label";
-	const char* kVideoLabel = "video_label";
-	const char* kStreamLabel = "stream_label";
-
-	// Names used for a IceCandidate JSON object.
-	const char* kCandidateSdpMidName = "sdpMid";
-	const char* kCandidateSdpMlineIndexName = "sdpMLineIndex";
-	const char* kCandidateSdpName = "candidate";
-
-	// Names used for a SessionDescription JSON object.
-	const char* kSessionDescriptionTypeName = "type";
-	const char* kSessionDescriptionSdpName = "sdp";
-
-	// Names used for data channels
-	const char* kInputDataChannelName = "inputDataChannel";
-=======
 	map<int, scoped_refptr<DirectXPeerConductor>> m_connectedPeers;
 	
 	struct MessageEntry

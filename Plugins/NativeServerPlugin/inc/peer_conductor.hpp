@@ -12,6 +12,7 @@
 // from ConfigParser
 #include "structs.h"
 
+#include "webrtc/base/sigslot.h"
 #include "webrtc/base/json.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
@@ -21,6 +22,7 @@ using namespace std;
 using namespace webrtc;
 using namespace rtc;
 using namespace StreamingToolkit;
+using namespace sigslot;
 
 // Mock (does nothing) SetSessionDescriptionObserver
 class DummySetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObserver
@@ -96,6 +98,18 @@ public:
 
 	}
 
+	~PeerConductor()
+	{
+		LOG(INFO) << "dtor";
+
+		m_peerConnection->Close();
+		m_peerConnection = NULL;
+		m_peerStreams.clear();
+	}
+
+	// m_id, new_state, threadsafe per-instance 
+	signal2<int, PeerConnectionInterface::IceConnectionState, sigslot::multi_threaded_local> SignalIceConnectionChange;
+
 	// This callback transfers the ownership of the |desc|.
 	// TODO(deadbeef): Make this take an std::unique_ptr<> to avoid confusion
 	// around ownership.
@@ -139,7 +153,10 @@ public:
 	// seconds, not 30, and this actually represents a combination ICE + DTLS
 	// state, so it may be "failed" if DTLS fails while ICE succeeds.
 	virtual void OnIceConnectionChange(
-		PeerConnectionInterface::IceConnectionState new_state) override {}
+		PeerConnectionInterface::IceConnectionState new_state) override
+	{
+		SignalIceConnectionChange.emit(Id(), new_state);
+	}
 
 	// Called any time the IceGatheringState changes.
 	virtual void OnIceGatheringChange(
@@ -174,6 +191,9 @@ public:
 	void OnRemoveStream(
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override
 	{
+		// see https://stackoverflow.com/questions/347441/erasing-elements-from-a-vector
+		m_peerStreams.erase(std::remove(m_peerStreams.begin(), m_peerStreams.end(), stream), m_peerStreams.end());
+
 		stream->Release();
 	}
 
@@ -360,7 +380,7 @@ public:
 
 protected:
 	// Allocates a buffer capturer for a single video track
-	virtual BufferCapturer* AllocateBufferCapturer() = 0;
+	virtual unique_ptr<cricket::VideoCapturer> AllocateVideoCapturer() = 0;
 
 private:
 	void AllocatePeerConnection()
@@ -423,7 +443,7 @@ private:
 			m_peerFactory->CreateVideoTrack(
 				kVideoLabel,
 				m_peerFactory->CreateVideoSource(
-					std::unique_ptr<cricket::VideoCapturer>(AllocateBufferCapturer()),
+					AllocateVideoCapturer(),
 					NULL)));
 
 		rtc::scoped_refptr<webrtc::MediaStreamInterface> peerStream =
@@ -464,7 +484,8 @@ private:
 };
 
 // A PeerConductor using a DirectXBufferCapturer
-class DirectXPeerConductor : public PeerConductor
+class DirectXPeerConductor : public PeerConductor,
+	public has_slots<>
 {
 public:
 	DirectXPeerConductor(int id,
@@ -480,28 +501,50 @@ public:
 			peerFactory,
 			sendFunc
 		),
-		m_bufferCapturer(new DirectXBufferCapturer(d3dDevice))
+		m_d3dDevice(d3dDevice),
+		m_enableSoftware(enableSoftware)
 	{
-		m_bufferCapturer->Initialize();
 
-		if (enableSoftware)
-		{
-			m_bufferCapturer->EnableSoftwareEncoder();
-		}
 	}
 
 	void SendFrame(ID3D11Texture2D* frame_buffer)
 	{
-		m_bufferCapturer->SendFrame(frame_buffer);
+		for each (auto spy in m_spies)
+		{
+			spy->SendFrame(frame_buffer);
+		}
 	}
 
 protected:
 	// Provide the same buffer capturer for each single video track
-	virtual BufferCapturer* AllocateBufferCapturer() override
+	virtual unique_ptr<cricket::VideoCapturer> AllocateVideoCapturer() override
 	{
-		return m_bufferCapturer.get();
+		unique_ptr<DirectXBufferCapturer> ownedPtr(new DirectXBufferCapturer(m_d3dDevice));
+
+		ownedPtr->Initialize();
+
+		if (m_enableSoftware)
+		{
+			ownedPtr->EnableSoftwareEncoder();
+		}
+
+		// rely on the deleter signal to let us know when it's gone and we should stop updating it
+		ownedPtr->SignalDestroyed.connect(this, &DirectXPeerConductor::OnAllocatedPtrDeleted);
+
+		// spy on this pointer. this only works because webrtc doesn't std::move it
+		m_spies.push_back(ownedPtr.get());
+
+		return ownedPtr;
 	}
 
 private:
-	shared_ptr<DirectXBufferCapturer> m_bufferCapturer;
+	ID3D11Device* m_d3dDevice;
+	bool m_enableSoftware;
+	vector<DirectXBufferCapturer*> m_spies;
+
+	void OnAllocatedPtrDeleted(BufferCapturer* ptr)
+	{
+		// see https://stackoverflow.com/questions/347441/erasing-elements-from-a-vector
+		m_spies.erase(std::remove(m_spies.begin(), m_spies.end(), ptr), m_spies.end());
+	}
 };
