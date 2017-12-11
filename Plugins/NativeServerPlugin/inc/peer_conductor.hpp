@@ -48,8 +48,10 @@ protected:
 	~DummySetSessionDescriptionObserver() {}
 };
 
-struct PeerView
+class PeerView
 {
+public:
+
 	// dirextx vectors must be 16byte aligned
 	// so we override the operators to support
 	// new-ing this class
@@ -67,8 +69,6 @@ struct PeerView
 	bool IsValid()
 	{
 		return lookAt != 0 && up != 0 && eye != 0 &&
-			!DirectX::XMVector3Equal(lookAt, DirectX::XMVectorZero()) &&
-			!DirectX::XMVector3Equal(up, DirectX::XMVectorZero()) &&
 			!DirectX::XMVector3Equal(eye, DirectX::XMVectorZero());
 	}
 
@@ -373,7 +373,7 @@ public:
 		return m_peerStreams;
 	}
 
-	const shared_ptr<PeerView>& View() const
+	shared_ptr<PeerView> View()
 	{
 		return m_view;
 	}
