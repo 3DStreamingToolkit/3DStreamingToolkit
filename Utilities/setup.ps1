@@ -3,7 +3,7 @@ $err = $null
 $libCount = 0
 $libTotal = 4
 
-Set-Location -Path ($PSScriptRoot + "\..\Libraries\React3DToolkit")
+Set-Location -Path ($PSScriptRoot + "\..\Libraries\JavaScript3DToolkit")
 
 try {
     & .\webrtcInstallLibs.ps1
