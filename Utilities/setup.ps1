@@ -1,8 +1,22 @@
 Push-Location -Path .
 $err = $null
 $libCount = 0
-$libTotal = 3
+$libTotal = 4
 
+Set-Location -Path ($PSScriptRoot + "\..\Libraries\React3DToolkit")
+
+try {
+    & .\webrtcInstallLibs.ps1
+} catch {
+    $err = $_.Exception
+}
+
+if ($err) {
+    Write-Host ('Error retrieving React library: ' + $err.Message) -ForegroundColor Red
+}
+
+$libCount++
+Write-Host 'Finished Library '$libCount'/'$libTotal
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\WebRTC")
 
 try {
