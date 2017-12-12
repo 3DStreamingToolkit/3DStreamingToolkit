@@ -52,7 +52,7 @@ New-NetFirewallRule -DisplayName "3DStreamingServer" `
                     -EdgeTraversalPolicy Allow `
                     -Protocol TCP `
                     -LocalPort 80,443,3478,5349,19302 `
-                    -Program "($PathToExecutable + "\" + $ExeName)"
+                    -Program ($PathToExecutable + "\" + $ExeName)
 
 New-NetFirewallRule -DisplayName "3DStreamingServer" `
                     -Action Allow `
