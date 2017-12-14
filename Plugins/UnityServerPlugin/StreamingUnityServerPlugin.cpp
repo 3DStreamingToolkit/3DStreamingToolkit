@@ -1,5 +1,5 @@
-#define SUPPORT_D3D11 1
-#define WEBRTC_WIN 1
+#define SUPPORT_D3D11		1
+#define WEBRTC_WIN			1
 
 #define SHOW_CONSOLE 0
 #define ULOG(sev, msg)						\
@@ -22,7 +22,7 @@
 #include "IUnityGraphics.h"
 #include "IUnityInterface.h"
 
-#include "buffer_renderer.h"
+#include "directx_buffer_capturer.h"
 #include "conductor.h"
 #include "server_main_window.h"
 #include "flagdefs.h"
@@ -74,9 +74,8 @@ static ComPtr<ID3D11Device>			s_Device;
 static ComPtr<ID3D11DeviceContext>	s_Context;
 
 static rtc::scoped_refptr<Conductor> s_conductor			= nullptr;
-static BufferRenderer*				s_bufferRenderer		= nullptr;
 static ID3D11Texture2D*				s_frameBuffer			= nullptr;
-static WebRTCConfig					s_webrtcConfig;
+std::shared_ptr<DirectXBufferCapturer> s_bufferCapturer		= nullptr;
 
 static ServerMainWindow*			s_wnd;
 static std::thread*					s_messageThread;
@@ -272,14 +271,8 @@ void InitWebRTC()
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
-	rtc::InitializeSSL();
-
 	s_rtcMainThread = &w32_thread;
 
-	PeerConnectionClient client;
-	std::shared_ptr<ServerAuthenticationProvider> authProvider;
-	std::shared_ptr<TurnCredentialProvider> turnProvider;
-	
 	s_wnd = new ServerMainWindow(
 		FLAG_server,
 		FLAG_port,
@@ -290,16 +283,21 @@ void InitWebRTC()
 		0);
 
 	s_wnd->Create();
-	
+
+	rtc::InitializeSSL();
+	PeerConnectionClient client;
+	std::shared_ptr<ServerAuthenticationProvider> authProvider;
+	std::shared_ptr<TurnCredentialProvider> turnProvider;
+		
 	s_server = webrtcConfig->server;
 	s_port = webrtcConfig->port;
 	client.SetHeartbeatMs(webrtcConfig->heartbeat);
 
 	s_conductor = new rtc::RefCountedObject<Conductor>(
 		&client,
+		s_bufferCapturer.get(),
 		s_wnd,
 		webrtcConfig.get(),
-		s_bufferRenderer,
 		&s_clientObserver);
 
 	client.RegisterObserver(&s_clientObserver);
@@ -307,11 +305,6 @@ void InitWebRTC()
 	InputDataHandler inputHandler([&](const std::string& message)
 	{
 		ULOG(INFO, message.c_str());
-
-		if (s_bufferRenderer->IsLocked())
-		{
-			return;
-		}
 
 		if (s_callbackMap.onInputUpdate)
 		{
@@ -502,8 +495,9 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 	Close();
 }
 
-extern "C" __declspec(dllexport) void InitializeBufferRenderer(void* renderTexture)
+extern "C" __declspec(dllexport) void InitializeBufferCapturer(void* renderTexture)
 {
+	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 	s_frameBuffer = (ID3D11Texture2D*)renderTexture;
 
 	// Render loop.
@@ -512,21 +506,23 @@ extern "C" __declspec(dllexport) void InitializeBufferRenderer(void* renderTextu
 		// Do nothing since Unity has its old render loop.
 	});
 
-	// Initializes the buffer renderer, texture size will be auto-determined
-	s_bufferRenderer = new BufferRenderer(
-		0,
-		0,
-		s_Device.Get(),
-		frameRenderFunc,
-		s_frameBuffer);
+	// Creates and initializes the buffer capturer.
+	// Note: Conductor is responsible for cleaning up bufferCapturer object.
+	s_bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
+		new DirectXBufferCapturer(s_Device.Get()));
+
+	s_bufferCapturer->Initialize();
+	if (nvEncConfig->use_software_encoding)
+	{
+		s_bufferCapturer->EnableSoftwareEncoder();
+	}
 
 	s_messageThread = new std::thread(InitWebRTC);
 }
 
-extern "C" __declspec(dllexport) void LockFrameBuffer(int64_t predictionTimestamp)
+extern "C" __declspec(dllexport) void SendFrame(int64_t predictionTimestamp)
 {
-	s_bufferRenderer->SetPredictionTimestamp(predictionTimestamp);
-	s_bufferRenderer->Lock();
+	s_bufferCapturer->SendFrame(s_frameBuffer, predictionTimestamp);
 }
 
 extern "C" __declspec(dllexport) void SetEncodingStereo(bool encodingStereo)

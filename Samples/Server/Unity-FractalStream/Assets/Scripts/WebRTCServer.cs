@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 
@@ -49,7 +50,7 @@ namespace Microsoft.Toolkit.ThreeD
         /// When this is <c>false</c> mono rendering using <see cref="LeftEye"/> will be used
         /// </remarks>
         [Tooltip("Flag indicating if we are currently rendering in stereo")]
-        public bool IsStereo = true;
+        public bool IsStereo = false;
 
         /// <summary>
         /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
@@ -169,7 +170,7 @@ namespace Microsoft.Toolkit.ThreeD
             SetupActiveEyes();
 
             // Initializes the buffer renderer using render texture.
-            StartCoroutine(Plugin.InitializeBufferRenderer(LeftEye.targetTexture.GetNativeTexturePtr()));
+            StartCoroutine(Plugin.InitializeBufferCapturer(LeftEye.targetTexture.GetNativeTexturePtr()));
         }
 
         /// <summary>
@@ -192,21 +193,19 @@ namespace Microsoft.Toolkit.ThreeD
                 {
                     transform.position = location;
                     transform.LookAt(lookAt, up);
+                    this.LeftEye.Render();
+                    //StartCoroutine(Plugin.SendFrame(0));
                 }
-                else
+                else if (cameraNeedUpdated)
                 {
-                    if (cameraNeedUpdated)
-                    {
-                        // Invert Y-axis for rendering to texture.
-                        // Invert Z-axis for depth test.
-                        Matrix4x4 invertMatrix = Matrix4x4.Scale(new Vector3(1, -1, -1));
-                        this.LeftEye.projectionMatrix = this.LeftEye.worldToCameraMatrix * invertMatrix * stereoLeftProjection;
-                        this.RightEye.projectionMatrix = this.RightEye.worldToCameraMatrix * invertMatrix * stereoRightProjection;
-                        this.LeftEye.Render();
-                        this.RightEye.Render();
-                        Plugin.LockFrameBuffer(lastTimestamp);
-                        cameraNeedUpdated = false;
-                    }
+                    // Invert Y-axis for rendering to texture.
+                    // Invert Z-axis for depth test.
+                    Matrix4x4 invertMatrix = Matrix4x4.Scale(new Vector3(1, -1, -1));
+                    this.LeftEye.projectionMatrix = this.LeftEye.worldToCameraMatrix * invertMatrix * stereoLeftProjection;
+                    this.RightEye.projectionMatrix = this.RightEye.worldToCameraMatrix * invertMatrix * stereoRightProjection;
+                    this.LeftEye.Render();
+                    this.RightEye.Render();
+                    StartCoroutine(SendFrame());
                 }
             }
 
@@ -452,6 +451,8 @@ namespace Microsoft.Toolkit.ThreeD
 
                             if (timestamp != lastTimestamp)
                             {
+                                lastTimestamp = timestamp;
+
                                 var index = 0;
                                 for (int i = 0; i < 4; i++)
                                 {
@@ -464,7 +465,6 @@ namespace Microsoft.Toolkit.ThreeD
                                     }
                                 }
 
-                                lastTimestamp = timestamp;
                                 cameraNeedUpdated = true;
                             }
                         }
@@ -493,7 +493,7 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 // none means use the eye like a single camera, which is what we want here
                 this.LeftEye.stereoTargetEye = StereoTargetEyeMask.None;
-                this.LeftEye.enabled = true;
+                this.LeftEye.enabled = false;
                 this.RightEye.enabled = false;
             }
 
@@ -508,6 +508,16 @@ namespace Microsoft.Toolkit.ThreeD
 
             // Setup camera.
             SetupCameras();
+        }
+
+        /// <summary>
+        /// Sends frame buffer.
+        /// </summary>
+        private IEnumerator SendFrame()
+        {
+            yield return new WaitForEndOfFrame();
+            Plugin.SendFrame(lastTimestamp);
+            cameraNeedUpdated = false;
         }
     }
 }

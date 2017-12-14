@@ -309,6 +309,32 @@ void CubeRenderer::Update()
 		m_modelConstantBuffer, 0, NULL, &m_modelConstantBufferData, 0, 0, 0);
 }
 
+void CubeRenderer::Update(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
+{
+	m_projectionConstantBufferData[0].projection = viewProjectionLeft;
+	m_projectionConstantBufferData[1].projection = viewProjectionRight;
+	Update();
+}
+
+void CubeRenderer::Update(const XMVECTORF32& eye, const XMVECTORF32& at, const XMVECTORF32& up)
+{
+	// Updates the view matrix.
+	XMStoreFloat4x4(
+		&m_viewConstantBufferData.view,
+		XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
+
+	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+		m_viewConstantBuffer,
+		0,
+		NULL,
+		&m_viewConstantBufferData,
+		0,
+		0,
+		0);
+
+	Update();
+}
+
 void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
 {
 	// Gets the device context.
@@ -371,27 +397,4 @@ void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
 void CubeRenderer::Render()
 {
 	Render(m_deviceResources->GetBackBufferRenderTargetView());
-}
-
-void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
-{
-	m_projectionConstantBufferData[0].projection = viewProjectionLeft;
-	m_projectionConstantBufferData[1].projection = viewProjectionRight;
-}
-
-void CubeRenderer::UpdateView(const XMVECTORF32& eye, const XMVECTORF32& at, const XMVECTORF32& up)
-{
-	// Updates the view matrix.
-	XMStoreFloat4x4(
-		&m_viewConstantBufferData.view,
-		XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
-
-	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
-		m_viewConstantBuffer,
-		0,
-		NULL,
-		&m_viewConstantBufferData,
-		0,
-		0,
-		0);
 }

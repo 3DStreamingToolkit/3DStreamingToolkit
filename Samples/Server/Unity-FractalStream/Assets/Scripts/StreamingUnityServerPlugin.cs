@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace Microsoft.Toolkit.ThreeD
 {
@@ -23,14 +24,14 @@ namespace Microsoft.Toolkit.ThreeD
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern void InitializeBufferRenderer(IntPtr renderTexture);
+            public static extern void InitializeBufferCapturer(IntPtr renderTexture);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern void LockFrameBuffer(long predictionTimestamp);
+            public static extern void SendFrame(long predictionTimestamp);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
@@ -240,9 +241,9 @@ namespace Microsoft.Toolkit.ThreeD
         /// Initializes the buffer renderer.
         /// </summary>
         /// <param name="renderTexture">The render texture.</param>
-        public IEnumerator InitializeBufferRenderer(IntPtr renderTexture)
+        public IEnumerator InitializeBufferCapturer(IntPtr renderTexture)
         {
-            Native.InitializeBufferRenderer(renderTexture);
+            Native.InitializeBufferCapturer(renderTexture);
             yield return null;
         }
 
@@ -250,9 +251,9 @@ namespace Microsoft.Toolkit.ThreeD
         /// Locks frame buffer and sends it to the encoder.
         /// </summary>
         /// <param name="predictionTimestamp">The prediction timestamp.</param>
-        public void LockFrameBuffer(long predictionTimestamp)
+        public void SendFrame(long predictionTimestamp)
         {
-            Native.LockFrameBuffer(predictionTimestamp);
+            Native.SendFrame(predictionTimestamp);
         }
 
         /// <summary>

@@ -31,6 +31,11 @@ namespace StreamingToolkit
 		static const char* kServerConfigPath;
 
 		/// <summary>
+		/// Represents the relative path at which we expect nvEncConfig to exist
+		/// </summary>
+		static const char* kNvEncConfigPath;
+
+		/// <summary>
 		/// Configures CppFactory object support for our toplevel configuration models
 		/// <see cref="WebRTCConfig"/> and <see cref="ServerConfig"/> respectively
 		/// </summary>
@@ -74,5 +79,6 @@ namespace StreamingToolkit
 	private:
 		static void ParseWebRTCConfig(const std::string& path, StreamingToolkit::WebRTCConfig* webrtcConfig);
 		static void ParseServerConfig(const std::string& path, StreamingToolkit::ServerConfig* serverConfig);
+		static void ParseNvEncConfig(const std::string& path, StreamingToolkit::NvEncConfig* nvEncConfig);
 	};
 }

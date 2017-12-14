@@ -60,10 +60,10 @@ void AppCallbacks::Run()
 		CoreWindow::GetForCurrentThread()->Dispatcher->ProcessEvents(
 			CoreProcessEventsOption::ProcessAllIfPresent);
 
-		if (m_videoRenderer)
+		SendInputData();
+		if (m_player)
 		{
-			SendInputData();
-			m_player->OnTimer();
+			m_player->OnVSyncTimer();
 		}
 	}
 }
@@ -119,6 +119,9 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 				}
 			}
 		});
+
+		m_player->SetMediaStreamSource(m_mediaSource.Get());
+		m_player->Play();
 	}
 }
 
@@ -144,18 +147,12 @@ void AppCallbacks::SendInputData()
 			"  \"body\":\"1\"" +
 			"}";
 
-		if (m_mediaSource && m_sendInputDataHandler(msg))
-		{
-			// The server is now in stereo mode. Start receiving frames.
-			// This is required to avoid corrupt frames at startup.
-			m_player->SetMediaStreamSource(m_mediaSource.Get());
-			m_player->Play();
-			m_sentStereoMode = true;
-		}
-		else
+		if (!m_sendInputDataHandler(msg))
 		{
 			return;
 		}
+
+		m_sentStereoMode = true;
 	}
 
 	// Creates a new frame for input data.

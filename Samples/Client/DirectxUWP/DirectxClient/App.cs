@@ -14,11 +14,11 @@ namespace StreamingDirectXHololensClient
 {
     class App : IFrameworkView, IFrameworkViewSource
     {
-        private const int DEFAULT_FRAME_RATE = 60;
         private const string DEFAULT_MEDIA_SOURCE_ID = "media";
 
         private AppCallbacks _appCallbacks;
         private WebRtcControl _webRtcControl;
+        private IMediaSource _mediaSource;
 
         public App()
         {
@@ -65,6 +65,11 @@ namespace StreamingDirectXHololensClient
                 var peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
                 if (peerVideoTrack != null)
                 {
+                    MediaSourceReadyDelegate mediaSourceReadyDelegate = (mediaSource) =>
+                    {
+                        _appCallbacks.SetMediaStreamSource((MediaStreamSource)mediaSource);
+                    };
+
                     SampleTimestampDelegate sampleTimestampDelegate = (id, timestamp) =>
                     {
                         _appCallbacks.OnSampleTimestamp(id, timestamp);
@@ -75,14 +80,12 @@ namespace StreamingDirectXHololensClient
                         return _appCallbacks.OnFpsReportRequested();
                     };
 
-                    var media = Media.CreateMedia().CreateMediaStreamSource(
+                    Media.CreateMedia().CreateMediaStreamSource(
                         peerVideoTrack,
-                        DEFAULT_FRAME_RATE,
                         DEFAULT_MEDIA_SOURCE_ID,
+                        mediaSourceReadyDelegate,
                         sampleTimestampDelegate,
                         fpsReportRequestedDelegate);
-
-                    _appCallbacks.SetMediaStreamSource((MediaStreamSource)media);
                 }
 
                 _webRtcControl.IsReadyToDisconnect = true;

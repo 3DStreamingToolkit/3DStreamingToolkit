@@ -36,10 +36,10 @@ namespace StreamingToolkitSample
 
 		void									InitConstantBuffers(bool isStereo);
 		void									Update();
+		void									Update(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
+		void									Update(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
 		void									Render();
 		void									Render(ID3D11RenderTargetView* renderTargetView);
-		void									UpdateView(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
-		void									UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
 
 		// Property accessors.
 		void									SetPosition(Windows::Foundation::Numerics::float3 pos) { m_position = pos; }

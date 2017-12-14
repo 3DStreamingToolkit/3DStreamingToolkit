@@ -941,6 +941,22 @@ void MEPlayer::OnTimer()
 
 //+-----------------------------------------------------------------------------
 //
+//  Function:   OnTimer with VSync.
+//
+//  Synopsis:   Called at 60Hz - we simply call the media engine and draw
+//              a new frame to the screen if told to do so.
+//
+//------------------------------------------------------------------------------
+void MEPlayer::OnVSyncTimer()
+{
+	if (m_spDXGIOutput && SUCCEEDED(m_spDXGIOutput->WaitForVBlank()))
+	{
+		OnTimer();
+	}
+}
+
+//+-----------------------------------------------------------------------------
+//
 //  Function:   DXGIDeviceTrim
 //
 //  Synopsis:   Calls IDXGIDevice3::Trim() (requirement when app is suspended)

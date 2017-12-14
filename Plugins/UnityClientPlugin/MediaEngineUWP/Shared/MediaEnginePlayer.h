@@ -185,6 +185,7 @@ internal:
     void StartTimer();
     void StopTimer();	
     void OnTimer();
+	void OnVSyncTimer();
     DWORD RealVSyncTimer();
 	int GetFrameRate();
 
