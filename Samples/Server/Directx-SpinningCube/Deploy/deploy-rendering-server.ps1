@@ -19,7 +19,7 @@ if($vmSize.Contains("NV") -eq $true)
 	{
 		$gpuDriverURI = "https://gpudrivers.file.core.windows.net/nvinstance/Windows/385.41_grid_win8_win7_server2012R2_server2008R2_64bit_international.exe?st=2017-11-07T23%3A44%3A00Z&se=2018-11-08T23%3A44%3A00Z&sp=rl&sv=2017-04-17&sr=s&sig=obSf0OAxdIxvQdDBBpwhE4FBpRFIAe1RbuJrLW9EtnI%3D"
 	}
-	$gpuDriverFileName = $gpuDriver.Substring($gpuDriver.IndexOf("Windows/") + 8, $gpuDriver.IndexOf("?"))
+	$gpuDriverFileName = $gpuDriverURI.Substring($gpuDriverURI.IndexOf("Windows/") + 8, $gpuDriverURI.IndexOf("?") - $gpuDriverURI.IndexOf("Windows/") - 8)
 } else {
 	if($windowsOsVersion.Contains("2016") -eq $true)
 	{
@@ -29,7 +29,7 @@ if($vmSize.Contains("NV") -eq $true)
 	{
 		$gpuDriverURI = "http://us.download.nvidia.com/Windows/Quadro_Certified/376.84/376.84-tesla-desktop-winserver2008-2012r2-64bit-international-whql.exe"
 	}
-	$gpuDriverFileName = $gpuDriver.Substring($gpuDriver.IndexOf("Quadro_Certified/") + 17)
+	$gpuDriverFileName = $gpuDriverURI.Substring($gpuDriverURI.IndexOf("Quadro_Certified/") + 17)
 }
 
 # Expect that the contents of the zip will have an x86 and x64 folder at root, with exes contained within
