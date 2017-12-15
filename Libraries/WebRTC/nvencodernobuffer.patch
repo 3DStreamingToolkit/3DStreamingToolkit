@@ -1,5 +1,5 @@
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 5705428a1..15167ef45 100644
+index 5705428a1..9b1710122 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 @@ -37,6 +37,8 @@
@@ -11,7 +11,15 @@ index 5705428a1..15167ef45 100644
  namespace webrtc {
  
  namespace {
-@@ -320,8 +322,9 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
+@@ -184,6 +186,7 @@ H264EncoderImpl::H264EncoderImpl(const cricket::VideoCodec& codec)
+ 	packetization_mode_(H264PacketizationMode::SingleNalUnit),
+ 	max_payload_size_(0),
+ 	encoded_image_callback_(nullptr),
++	last_prediction_timestamp_(0),
+ 	has_reported_init_(false),
+ 	has_reported_error_(false) {
+ 	RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
+@@ -320,8 +323,9 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
  
  		// Creates the encoder.
  		m_pNvHWEncoder->CreateEncoder(&m_encodeConfig);
@@ -22,7 +30,7 @@ index 5705428a1..15167ef45 100644
  		AllocateIOBuffers(m_encodeConfig.width, m_encodeConfig.height);
  	}
  
-@@ -600,24 +603,8 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
+@@ -600,24 +604,8 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
  	NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
  	EncodeBuffer* pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
  
@@ -47,7 +55,7 @@ index 5705428a1..15167ef45 100644
  	nvStatus = m_pNvHWEncoder->NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource, &pEncodeBuffer->stInputBfr.hInputSurface);
  	if (nvStatus != NV_ENC_SUCCESS)
  	{
-@@ -635,6 +622,18 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
+@@ -635,6 +623,18 @@ void H264EncoderImpl::Capture(ID3D11Texture2D* frameBuffer, bool forceIntra)
  	{
  		return;
  	}
@@ -66,7 +74,7 @@ index 5705428a1..15167ef45 100644
  }
  
  NVENCSTATUS H264EncoderImpl::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uInputHeight)
-@@ -693,12 +692,12 @@ NVENCSTATUS H264EncoderImpl::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uI
+@@ -693,12 +693,12 @@ NVENCSTATUS H264EncoderImpl::AllocateIOBuffers(uint32_t uInputWidth, uint32_t uI
  		m_stEncodeBuffer[i].stInputBfr.pARGBSurface = pVPSurfaces[i];
  
  		// Initializes the output buffer.
@@ -82,3 +90,25 @@ index 5705428a1..15167ef45 100644
  	}
  
  	m_stEOSOutputBfr.bEOSFlag = TRUE;
+@@ -881,7 +881,8 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+ 	encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
+ 	encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
+ 	encoded_image_.rotation_ = input_frame.rotation();
+-	encoded_image_.prediction_timestamp_ = input_frame.prediction_timestamp();
++	encoded_image_.prediction_timestamp_ = last_prediction_timestamp_;
++	last_prediction_timestamp_ = input_frame.prediction_timestamp();
+ 
+ 	// Split encoded image up into fragments. This also updates |encoded_image_|.
+ 	if (m_use_software_encoding)
+diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
+index 5f00d28de..d94136329 100644
+--- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
++++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
+@@ -208,6 +208,7 @@ class H264EncoderImpl : public H264Encoder {
+   EncodedImage encoded_image_;
+   std::unique_ptr<uint8_t[]> encoded_image_buffer_;
+   EncodedImageCallback* encoded_image_callback_;
++  int64_t last_prediction_timestamp_;
+ 
+   bool has_reported_init_;
+   bool has_reported_error_;
