@@ -240,7 +240,9 @@ public class ControlScript : MonoBehaviour
                 // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
                 var source = Media.CreateMedia().CreateMediaStreamSource(
                     _peerVideoTrack,
-                    "media");
+                    "media",
+                    TextureWidth,
+                    TextureHeight);
 
                 Plugin.LoadMediaStreamSource((MediaStreamSource)source);
                 Plugin.Play();

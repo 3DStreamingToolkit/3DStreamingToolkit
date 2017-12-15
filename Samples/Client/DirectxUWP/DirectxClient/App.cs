@@ -15,6 +15,8 @@ namespace StreamingDirectXHololensClient
     class App : IFrameworkView, IFrameworkViewSource
     {
         private const string DEFAULT_MEDIA_SOURCE_ID = "media";
+        private const int VIDEO_FRAME_WIDTH = 1280 * 2;
+        private const int VIDEO_FRAME_HEIGHT = 720;
 
         private AppCallbacks _appCallbacks;
         private WebRtcControl _webRtcControl;
@@ -67,7 +69,10 @@ namespace StreamingDirectXHololensClient
                 {
                     MediaSourceReadyDelegate mediaSourceReadyDelegate = (mediaSource) =>
                     {
-                        _appCallbacks.SetMediaStreamSource((MediaStreamSource)mediaSource);
+                        _appCallbacks.SetMediaStreamSource(
+                            (MediaStreamSource)mediaSource,
+                            VIDEO_FRAME_WIDTH,
+                            VIDEO_FRAME_HEIGHT);
                     };
 
                     SampleTimestampDelegate sampleTimestampDelegate = (id, timestamp) =>
@@ -83,6 +88,8 @@ namespace StreamingDirectXHololensClient
                     Media.CreateMedia().CreateMediaStreamSource(
                         peerVideoTrack,
                         DEFAULT_MEDIA_SOURCE_ID,
+                        VIDEO_FRAME_WIDTH,
+                        VIDEO_FRAME_HEIGHT,
                         mediaSourceReadyDelegate,
                         sampleTimestampDelegate,
                         fpsReportRequestedDelegate);

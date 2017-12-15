@@ -14,9 +14,6 @@ using namespace Windows::Perception;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::System::Threading;
 
-#define VIDEO_FRAME_WIDTH	1280 * 2
-#define VIDEO_FRAME_HEIGHT	720
-
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
@@ -68,7 +65,7 @@ void AppCallbacks::Run()
 	}
 }
 
-void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle)
+void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource ^ mediaSourceHandle, int width, int height)
 {
 	auto lock = m_lock.Lock();
 	m_mediaSource = reinterpret_cast<ABI::Windows::Media::Core::IMediaStreamSource *>(mediaSourceHandle);
@@ -81,10 +78,10 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 		// Creates a dummy renderer and texture until the first frame is received from WebRTC
 		ID3D11ShaderResourceView* textureView;
 		HRESULT result = m_player->GetPrimaryTexture(
-			VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT, (void**)&textureView);
+			width, height, (void**)&textureView);
 
 		// Initializes the video render.
-		m_videoRenderer = new VideoRenderer(m_deviceResources, VIDEO_FRAME_WIDTH, VIDEO_FRAME_HEIGHT);
+		m_videoRenderer = new VideoRenderer(m_deviceResources, width, height);
 		m_main->SetVideoRender(m_videoRenderer);
 
 		// Sets the frame transfer callback.

@@ -32,7 +32,7 @@ namespace DirectXClientComponent
 
 		void Run();
 
-		void SetMediaStreamSource(IMediaStreamSource^ mediaSourceHandle);
+		void SetMediaStreamSource(IMediaStreamSource^ mediaSourceHandle, int width, int height);
 
 		void OnSampleTimestamp(int id, int64_t timestamp);
 
