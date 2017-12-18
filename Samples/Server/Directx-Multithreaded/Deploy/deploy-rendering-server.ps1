@@ -1,4 +1,4 @@
-if($args.Length -gt 0)
+if($args.Length -gt 1)
 {
 	$vmSize = "$($args[0])";
 	$windowsOsVersion = "$($args[1])";
