@@ -75,14 +75,14 @@ namespace Microsoft.Toolkit.ThreeD
         public StreamingUnityServerPlugin Plugin = null;
 
         /// <summary>
-        /// Stereo render texture for left and right cameras.
+        /// Render texture for the left camera.
         /// </summary>
-        private RenderTexture stereoRenderTexture;
+        private RenderTexture leftRenderTexture;
 
         /// <summary>
-        /// Render texture for left camera.
+        /// Render texture for the right camera.
         /// </summary>
-        private RenderTexture renderTexture;
+        private RenderTexture rightRenderTexture;
 
         /// <summary>
         /// The location to be placed at as determined by client control
@@ -102,12 +102,12 @@ namespace Microsoft.Toolkit.ThreeD
         /// <summary>
         /// The left stereo eye projection as determined by client control
         /// </summary>
-        private Matrix4x4 stereoLeftProjection = Matrix4x4.identity;
+        private Matrix4x4 stereoLeftProjectionMatrix = Matrix4x4.identity;
 
         /// <summary>
         /// The right stereo eye projection as determined by client control
         /// </summary>
-        private Matrix4x4 stereoRightProjection = Matrix4x4.identity;
+        private Matrix4x4 stereoRightProjectionMatrix = Matrix4x4.identity;
 
         /// <summary>
         /// Internal flag used to indicate we are shutting down
@@ -155,7 +155,7 @@ namespace Microsoft.Toolkit.ThreeD
             // Make sure that the render window continues to render when the game window 
             // does not have focus
             Application.runInBackground = true;
-            //Application.targetFrameRate = 60;
+            Application.targetFrameRate = 60;
 
             // Set screen resolution.
             Screen.SetResolution(VideoFrameWidth, VideoFrameHeight, false);
@@ -170,7 +170,9 @@ namespace Microsoft.Toolkit.ThreeD
             SetupActiveEyes();
 
             // Initializes the buffer renderer using render texture.
-            StartCoroutine(Plugin.InitializeBufferCapturer(LeftEye.targetTexture.GetNativeTexturePtr()));
+            StartCoroutine(Plugin.InitializeBufferCapturer(
+                LeftEye.targetTexture.GetNativeTexturePtr(),
+                RightEye.targetTexture.GetNativeTexturePtr()));
         }
 
         /// <summary>
@@ -191,21 +193,18 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 if (!IsStereo)
                 {
-                    transform.position = location;
-                    transform.LookAt(lookAt, up);
+                    LeftEye.transform.position = location;
+                    LeftEye.transform.LookAt(lookAt, up);
                     this.LeftEye.Render();
-                    //StartCoroutine(Plugin.SendFrame(0));
+                    StartCoroutine(SendFrame(false));
                 }
                 else if (cameraNeedUpdated)
                 {
-                    // Invert Y-axis for rendering to texture.
-                    // Invert Z-axis for depth test.
-                    Matrix4x4 invertMatrix = Matrix4x4.Scale(new Vector3(1, -1, -1));
-                    this.LeftEye.projectionMatrix = this.LeftEye.worldToCameraMatrix * invertMatrix * stereoLeftProjection;
-                    this.RightEye.projectionMatrix = this.RightEye.worldToCameraMatrix * invertMatrix * stereoRightProjection;
+                    this.LeftEye.projectionMatrix = stereoLeftProjectionMatrix;
+                    this.RightEye.projectionMatrix = stereoRightProjectionMatrix;
                     this.LeftEye.Render();
                     this.RightEye.Render();
-                    StartCoroutine(SendFrame());
+                    StartCoroutine(SendFrame(true));
                 }
             }
 
@@ -331,42 +330,19 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         private void InitializeRenderTextures()
         {
-            // Creates the stereo render texture.
-            stereoRenderTexture = new RenderTexture(
-                VideoFrameWidth * 2, VideoFrameHeight, 24, RenderTextureFormat.ARGB32);
-
-            stereoRenderTexture.Create();
-
-            // Creates the mono render texture.
-            renderTexture = new RenderTexture(
+            // Left.
+            leftRenderTexture = new RenderTexture(
                 VideoFrameWidth, VideoFrameHeight, 24, RenderTextureFormat.ARGB32);
 
-            renderTexture.Create();
-        }
+            leftRenderTexture.Create();
+            LeftEye.targetTexture = leftRenderTexture;
 
-        /// <summary>
-        /// Setup camera viewport and target texture.
-        /// </summary>
-        private void SetupCameras()
-        {
-            if (IsStereo)
-            {
-                // Viewport
-                LeftEye.rect = new Rect(0, 0, 0.5f, 1);
-                RightEye.rect = new Rect(0.5f, 0, 0.5f, 1);
+            // Right
+            rightRenderTexture = new RenderTexture(
+                VideoFrameWidth, VideoFrameHeight, 24, RenderTextureFormat.ARGB32);
 
-                // Target texture
-                LeftEye.targetTexture = stereoRenderTexture;
-                RightEye.targetTexture = stereoRenderTexture;
-            }
-            else
-            {
-                // Viewport
-                LeftEye.rect = new Rect(0, 0, 1, 1);
-
-                // Target texture
-                LeftEye.targetTexture = renderTexture;
-            }
+            rightRenderTexture.Create();
+            RightEye.targetTexture = rightRenderTexture;
         }
 
         /// <summary>
@@ -460,8 +436,8 @@ namespace Microsoft.Toolkit.ThreeD
                                     {
                                         // We are receiving 32 values for the left/right matrix.
                                         // The first 16 are for left followed by the right matrix.
-                                        stereoRightProjection[i, j] = float.Parse(coords[16 + index]);
-                                        stereoLeftProjection[i, j] = float.Parse(coords[index++]);
+                                        stereoRightProjectionMatrix[i, j] = float.Parse(coords[16 + index]);
+                                        stereoLeftProjectionMatrix[i, j] = float.Parse(coords[index++]);
                                     }
                                 }
 
@@ -505,18 +481,15 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 this.Plugin.EncodingStereo = this.IsStereo;
             }
-
-            // Setup camera.
-            SetupCameras();
         }
 
         /// <summary>
         /// Sends frame buffer.
         /// </summary>
-        private IEnumerator SendFrame()
+        private IEnumerator SendFrame(bool isStereo)
         {
             yield return new WaitForEndOfFrame();
-            Plugin.SendFrame(lastTimestamp);
+            Plugin.SendFrame(isStereo, lastTimestamp);
             cameraNeedUpdated = false;
         }
     }

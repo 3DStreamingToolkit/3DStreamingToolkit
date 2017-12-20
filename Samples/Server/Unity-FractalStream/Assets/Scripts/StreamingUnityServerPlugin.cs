@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Runtime.InteropServices;
-using UnityEngine;
 
 namespace Microsoft.Toolkit.ThreeD
 {
@@ -24,14 +23,14 @@ namespace Microsoft.Toolkit.ThreeD
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern void InitializeBufferCapturer(IntPtr renderTexture);
+            public static extern void InitializeBufferCapturer(IntPtr leftRT, IntPtr rightRT);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern void SendFrame(long predictionTimestamp);
+            public static extern void SendFrame(bool isStereo, long predictionTimestamp);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
@@ -238,22 +237,24 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// Initializes the buffer renderer.
+        /// Initializes the buffer capturer.
         /// </summary>
-        /// <param name="renderTexture">The render texture.</param>
-        public IEnumerator InitializeBufferCapturer(IntPtr renderTexture)
+        /// <param name="leftRT">The render texture for left eye.</param>
+        /// <param name="rightRT">The render texture for right eye.</param>
+        public IEnumerator InitializeBufferCapturer(IntPtr leftRT, IntPtr rightRT)
         {
-            Native.InitializeBufferCapturer(renderTexture);
+            Native.InitializeBufferCapturer(leftRT, rightRT);
             yield return null;
         }
 
         /// <summary>
         /// Locks frame buffer and sends it to the encoder.
         /// </summary>
+        /// <param name="isStereo">True for stereo output.</param>
         /// <param name="predictionTimestamp">The prediction timestamp.</param>
-        public void SendFrame(long predictionTimestamp)
+        public void SendFrame(bool isStereo, long predictionTimestamp)
         {
-            Native.SendFrame(predictionTimestamp);
+            Native.SendFrame(isStereo, predictionTimestamp);
         }
 
         /// <summary>

@@ -74,7 +74,8 @@ static ComPtr<ID3D11Device>			s_Device;
 static ComPtr<ID3D11DeviceContext>	s_Context;
 
 static rtc::scoped_refptr<Conductor> s_conductor			= nullptr;
-static ID3D11Texture2D*				s_frameBuffer			= nullptr;
+static ID3D11Texture2D*				s_leftFrameBuffer		= nullptr;
+static ID3D11Texture2D*				s_rightFrameBuffer		= nullptr;
 std::shared_ptr<DirectXBufferCapturer> s_bufferCapturer		= nullptr;
 
 static ServerMainWindow*			s_wnd;
@@ -495,10 +496,11 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 	Close();
 }
 
-extern "C" __declspec(dllexport) void InitializeBufferCapturer(void* renderTexture)
+extern "C" __declspec(dllexport) void InitializeBufferCapturer(void* leftRT, void* rightRT)
 {
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
-	s_frameBuffer = (ID3D11Texture2D*)renderTexture;
+	s_leftFrameBuffer = (ID3D11Texture2D*)leftRT;
+	s_rightFrameBuffer = (ID3D11Texture2D*)rightRT;
 
 	// Render loop.
 	std::function<void()> frameRenderFunc = ([&]
@@ -520,9 +522,16 @@ extern "C" __declspec(dllexport) void InitializeBufferCapturer(void* renderTextu
 	s_messageThread = new std::thread(InitWebRTC);
 }
 
-extern "C" __declspec(dllexport) void SendFrame(int64_t predictionTimestamp)
+extern "C" __declspec(dllexport) void SendFrame(bool isStereo, int64_t predictionTimestamp)
 {
-	s_bufferCapturer->SendFrame(s_frameBuffer, predictionTimestamp);
+	if (!isStereo)
+	{
+		s_bufferCapturer->SendFrame(s_leftFrameBuffer, predictionTimestamp);
+	}
+	else
+	{
+		s_bufferCapturer->SendFrame(s_leftFrameBuffer, s_rightFrameBuffer, predictionTimestamp);
+	}
 }
 
 extern "C" __declspec(dllexport) void SetEncodingStereo(bool encodingStereo)

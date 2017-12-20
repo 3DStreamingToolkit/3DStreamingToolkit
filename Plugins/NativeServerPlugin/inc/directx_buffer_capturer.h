@@ -30,8 +30,12 @@ namespace StreamingToolkit
 
 		void SendFrame(ID3D11Texture2D* frame_buffer, int64_t prediction_time_stamp = -1);
 
+		void SendFrame(ID3D11Texture2D* left_frame_buffer, ID3D11Texture2D* right_frame_buffer, int64_t prediction_time_stamp = -1);
+
 	private:
 		void UpdateStagingBuffer(ID3D11Texture2D* frame_buffer);
+
+		void UpdateStagingBuffer(ID3D11Texture2D* left_frame_buffer, ID3D11Texture2D* right_frame_buffer);
 
 		Microsoft::WRL::ComPtr<ID3D11Device> d3d_device_;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3d_context_;
