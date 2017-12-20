@@ -526,10 +526,18 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<DirectXBufferCapturer> bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
 		new DirectXBufferCapturer(DXUTGetD3D11Device()));
 
-	bufferCapturer->Initialize();
+	bufferCapturer->Initialize(serverConfig->server_config.system_service,
+		serverConfig->server_config.width, serverConfig->server_config.height);
+
 	if (nvEncConfig->use_software_encoding)
 	{
 		bufferCapturer->EnableSoftwareEncoder();
+	}
+
+	// For system service, we render to buffer instead of swap chain.
+	if (serverConfig->server_config.system_service)
+	{
+		DXUTSetD3D11RenderTargetView(bufferCapturer->GetRenderTargetView());
 	}
 
 	// Initializes the conductor.
@@ -580,15 +588,23 @@ bool AppMain(BOOL stopping)
 					int height = deviceSettings.d3d11.sd.BufferDesc.Height;
 					int newWidth = isStereo ? width << 1 : width >> 1;
 					DXUTResizeDXGIBuffers(newWidth, height, false);
-					SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
-					HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
-
-					if (FAILED(hr))
+					if (!serverConfig->server_config.system_service)
 					{
-						return hr;
+						SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+						HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
+							0,
+							__uuidof(ID3D11Texture2D),
+							reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+						if (FAILED(hr))
+						{
+							return hr;
+						}
+					}
+					else
+					{
+						bufferCapturer->ResizeRenderTexture(newWidth, height);
+						DXUTSetD3D11RenderTargetView(bufferCapturer->GetRenderTargetView());
 					}
 
 					// Do not present swapchain in stereo mode since 
@@ -759,70 +775,77 @@ bool AppMain(BOOL stopping)
 	{
 		MSG msg = { 0 };
 
-		// For system service, ignore window and swap chain.
-		if (serverConfig->server_config.system_service)
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			if (serverConfig->server_config.system_service ||
+				!wnd.PreTranslateMessage(&msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 		else
 		{
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			if (conductor->is_closing())
 			{
-				if (!wnd.PreTranslateMessage(&msg))
-				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
+				break;
 			}
-			else
+
+			if (conductor->connection_active() || client.is_connected())
 			{
-				if (conductor->is_closing())
+				ULONGLONG tick = GetTickCount64();
+				if (!g_CameraResources.IsStereo())
 				{
-					break;
-				}
-
-				if (conductor->connection_active() || client.is_connected())
-				{
-					ULONGLONG tick = GetTickCount64();
-					if (!g_CameraResources.IsStereo())
+					if (g_hasNewInputData)
 					{
-						if (g_hasNewInputData)
-						{
-							g_Camera.SetViewParams(g_eyeVector, g_lookAtVector, g_upVector);
-							g_Camera.FrameMove(0);
-							g_hasNewInputData = false;
-						}
-
-						DXUTRender3DEnvironment();
-						bufferCapturer->SendFrame(frameBuffer.Get());
-
-						// FPS limiter.
-						const int interval = 1000 / nvEncConfig->capture_fps;
-						ULONGLONG timeElapsed = GetTickCount64() - tick;
-						DWORD sleepAmount = 0;
-						if (timeElapsed < interval)
-						{
-							sleepAmount = interval - timeElapsed;
-						}
-
-						Sleep(sleepAmount);
-					}
-					// In stereo rendering mode, we only update frame whenever
-					// receiving any input data.
-					else if (g_hasNewInputData)
-					{
-						XMFLOAT4X4 id;
-						XMStoreFloat4x4(&id, XMMatrixIdentity());
-						g_CameraResources.SetViewMatrix(id, id);
-						g_CameraResources.SetProjMatrix(g_viewProjectionMatrixLeft,
-							g_viewProjectionMatrixRight);
-
+						g_Camera.SetViewParams(g_eyeVector, g_lookAtVector, g_upVector);
 						g_Camera.FrameMove(0);
-						DXUTRender3DEnvironment();
-						bufferCapturer->SendFrame(frameBuffer.Get(), g_lastTimestamp);
 						g_hasNewInputData = false;
 					}
+
+					DXUTRender3DEnvironment();
+					if (serverConfig->server_config.system_service)
+					{
+						bufferCapturer->SendFrame();
+					}
+					else
+					{
+						bufferCapturer->SendFrame(frameBuffer.Get());
+					}
+
+					// FPS limiter.
+					const int interval = 1000 / nvEncConfig->capture_fps;
+					ULONGLONG timeElapsed = GetTickCount64() - tick;
+					DWORD sleepAmount = 0;
+					if (timeElapsed < interval)
+					{
+						sleepAmount = interval - timeElapsed;
+					}
+
+					Sleep(sleepAmount);
+				}
+				// In stereo rendering mode, we only update frame whenever
+				// receiving any input data.
+				else if (g_hasNewInputData)
+				{
+					XMFLOAT4X4 id;
+					XMStoreFloat4x4(&id, XMMatrixIdentity());
+					g_CameraResources.SetViewMatrix(id, id);
+					g_CameraResources.SetProjMatrix(g_viewProjectionMatrixLeft,
+						g_viewProjectionMatrixRight);
+
+					g_Camera.FrameMove(0);
+					DXUTRender3DEnvironment();
+					if (serverConfig->server_config.system_service)
+					{
+						bufferCapturer->SendFrame(g_lastTimestamp);
+					}
+					else
+					{
+						bufferCapturer->SendFrame(frameBuffer.Get(), g_lastTimestamp);
+					}
+
+					g_hasNewInputData = false;
 				}
 			}
 		}

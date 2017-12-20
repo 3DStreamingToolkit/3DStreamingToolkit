@@ -115,7 +115,9 @@ bool AppMain(BOOL stopping)
 	std::shared_ptr<DirectXBufferCapturer> bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
 		new DirectXBufferCapturer(g_deviceResources->GetD3DDevice()));
 
-	bufferCapturer->Initialize();
+	bufferCapturer->Initialize(serverConfig->server_config.system_service,
+		serverConfig->server_config.width, serverConfig->server_config.height);
+
 	if (nvEncConfig->use_software_encoding)
 	{
 		bufferCapturer->EnableSoftwareEncoder();
@@ -164,14 +166,22 @@ bool AppMain(BOOL stopping)
 					// Resizes the swap chain.
 					frameBuffer.Reset();
 					g_deviceResources->SetStereo(isStereo);
-					HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
-
-					if (FAILED(hr))
+					if (!serverConfig->server_config.system_service)
 					{
-						return hr;
+						HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
+							0,
+							__uuidof(ID3D11Texture2D),
+							reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+						if (FAILED(hr))
+						{
+							return hr;
+						}
+					}
+					else
+					{
+						SIZE size = g_deviceResources->GetOutputSize();
+						bufferCapturer->ResizeRenderTexture(size.cx, size.cy);
 					}
 
 					if (isStereo)
@@ -356,71 +366,82 @@ bool AppMain(BOOL stopping)
 	{
 		MSG msg = { 0 };
 
-		// For system service, ignore window and swap chain.
-		if (serverConfig->server_config.system_service)
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			if (serverConfig->server_config.system_service ||
+				!wnd.PreTranslateMessage(&msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 		else
 		{
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			if (conductor->is_closing())
 			{
-				if (!wnd.PreTranslateMessage(&msg))
-				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
+				break;
 			}
-			else
+
+			if (conductor->connection_active() || client.is_connected())
 			{
-				if (conductor->is_closing())
+				ULONGLONG tick = GetTickCount64();
+				if (!g_deviceResources->IsStereo())
 				{
-					break;
-				}
-
-				if (conductor->connection_active() || client.is_connected())
-				{
-					ULONGLONG tick = GetTickCount64();
-					if (!g_deviceResources->IsStereo())
+					if (g_hasNewInputData)
 					{
-						if (g_hasNewInputData)
-						{
-							g_cubeRenderer->Update(g_eyeVector, g_lookAtVector, g_upVector);
-							g_hasNewInputData = false;
-						}
-						else
-						{
-							g_cubeRenderer->Update();
-						}
+						g_cubeRenderer->Update(g_eyeVector, g_lookAtVector, g_upVector);
+						g_hasNewInputData = false;
+					}
+					else
+					{
+						g_cubeRenderer->Update();
+					}
 
+					// For system service, we render to buffer instead of swap chain.
+					if (serverConfig->server_config.system_service)
+					{
+						g_cubeRenderer->Render(bufferCapturer->GetRenderTargetView());
+						bufferCapturer->SendFrame();
+					}
+					else
+					{
 						g_cubeRenderer->Render();
 						bufferCapturer->SendFrame(frameBuffer.Get());
 						g_deviceResources->Present();
-
-						// FPS limiter.
-						const int interval = 1000 / nvEncConfig->capture_fps;
-						ULONGLONG timeElapsed = GetTickCount64() - tick;
-						DWORD sleepAmount = 0;
-						if (timeElapsed < interval)
-						{
-							sleepAmount = interval - timeElapsed;
-						}
-
-						Sleep(sleepAmount);
 					}
-					// In stereo rendering mode, we only update frame whenever
-					// receiving any input data.
-					else if (g_hasNewInputData)
-					{
-						g_cubeRenderer->Update(g_viewProjectionMatrixLeft,
-							g_viewProjectionMatrixRight);
 
+					// FPS limiter.
+					const int interval = 1000 / nvEncConfig->capture_fps;
+					ULONGLONG timeElapsed = GetTickCount64() - tick;
+					DWORD sleepAmount = 0;
+					if (timeElapsed < interval)
+					{
+						sleepAmount = interval - timeElapsed;
+					}
+
+					Sleep(sleepAmount);
+				}
+				// In stereo rendering mode, we only update frame whenever
+				// receiving any input data.
+				else if (g_hasNewInputData)
+				{
+					g_cubeRenderer->Update(g_viewProjectionMatrixLeft,
+						g_viewProjectionMatrixRight);
+
+					// For system service, we render to buffer instead of swap chain.
+					if (serverConfig->server_config.system_service)
+					{
+						g_cubeRenderer->Render(bufferCapturer->GetRenderTargetView());
+						bufferCapturer->SendFrame(g_lastTimestamp);
+					}
+					else
+					{
 						g_cubeRenderer->Render();
 						bufferCapturer->SendFrame(frameBuffer.Get(), g_lastTimestamp);
 						//g_deviceResources->Present();
-						g_hasNewInputData = false;
 					}
+
+					g_hasNewInputData = false;
 				}
 			}
 		}
