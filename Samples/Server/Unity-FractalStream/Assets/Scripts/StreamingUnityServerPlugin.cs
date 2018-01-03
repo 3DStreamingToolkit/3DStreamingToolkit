@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace Microsoft.Toolkit.ThreeD
 {
@@ -223,7 +224,7 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// Backing field for <see cref="EncodingStereo"/>
+        /// true for stereo encoding, false otherwise
         /// </summary>
         private bool encodingStereo = false;
 
@@ -252,8 +253,9 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         /// <param name="isStereo">True for stereo output.</param>
         /// <param name="predictionTimestamp">The prediction timestamp.</param>
-        public void SendFrame(bool isStereo, long predictionTimestamp)
+        public IEnumerator SendFrame(bool isStereo, long predictionTimestamp)
         {
+            yield return new WaitForEndOfFrame();
             Native.SendFrame(isStereo, predictionTimestamp);
         }
 

@@ -1,7 +1,7 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
-// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
-
+﻿///
+/// When rendering the scene to a RenderTexture, the y-axis is inverted so we need to
+/// correct it.
+///
 Shader "Hidden/FlipYShader"
 {
 	Properties

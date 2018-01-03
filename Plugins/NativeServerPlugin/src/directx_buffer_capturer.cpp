@@ -42,6 +42,13 @@ void DirectXBufferCapturer::SendFrame(int64_t prediction_time_stamp)
 {
 	if (!headless_)
 	{
+		MessageBox(
+			NULL,
+			L"Headless mode hasn't been initialized.",
+			L"Error",
+			MB_ICONERROR
+		);
+
 		return;
 	}
 
@@ -50,6 +57,7 @@ void DirectXBufferCapturer::SendFrame(int64_t prediction_time_stamp)
 
 void DirectXBufferCapturer::SendFrame(ID3D11Texture2D* frame_buffer, int64_t prediction_time_stamp)
 {
+	// The video capturer hasn't started since there is no active connection.
 	if (!running_)
 	{
 		return;
@@ -109,6 +117,7 @@ void DirectXBufferCapturer::SendFrame(ID3D11Texture2D* frame_buffer, int64_t pre
 
 void DirectXBufferCapturer::SendFrame(ID3D11Texture2D* left_frame_buffer, ID3D11Texture2D* right_frame_buffer, int64_t prediction_time_stamp)
 {
+	// The video capturer hasn't started since there is no active connection.
 	if (!running_)
 	{
 		return;

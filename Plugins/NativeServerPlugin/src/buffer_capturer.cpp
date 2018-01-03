@@ -79,6 +79,7 @@ namespace StreamingToolkit
 
 	void BufferCapturer::SendFrame(webrtc::VideoFrame video_frame)
 	{
+		// The video capturer hasn't started since there is no active connection.
 		if (!running_)
 		{
 			return;

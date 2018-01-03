@@ -221,7 +221,7 @@ public class ControlScript : MonoBehaviour
 
         cameraTransformBody =
            "{" +
-           "  \"type\":\"camera-transform-stereo\"," +
+           "  \"type\":\"camera-transform-stereo-prediction\"," +
            "  \"body\":\"" + cameraTransformBody + "\"" +
            "}";
 

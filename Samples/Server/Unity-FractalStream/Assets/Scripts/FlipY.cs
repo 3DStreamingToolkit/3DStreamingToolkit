@@ -1,5 +1,9 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Flip the rendered image vertically using shader. This is needed when rendering
+/// to texture.
+/// </summary>
 public class FlipY : MonoBehaviour
 {
     public Material matRT;

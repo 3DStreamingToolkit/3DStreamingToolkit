@@ -251,6 +251,34 @@ bool AppMain(BOOL stopping)
 					}
 				}
 
+				g_viewProjectionMatrixLeft = viewProjectionLeft;
+				g_viewProjectionMatrixRight = viewProjectionRight;
+				g_hasNewInputData = true;
+			}
+			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
+			{
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
 				// Parses the prediction timestamp.
 				getline(datastream, token, ',');
 				int64_t timestamp = stoll(token);

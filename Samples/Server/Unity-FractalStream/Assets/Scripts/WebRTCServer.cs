@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleJSON;
+using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
@@ -23,6 +24,14 @@ namespace Microsoft.Toolkit.ThreeD
         /// The video frame height.
         /// </summary>
         public int VideoFrameHeight = 720;
+
+        /// <summary>
+        /// If this flag is set to true, the target texture of the camera is generated
+        /// automatically using <see cref="InitializeRenderTextures"/>. Otherwise, the
+        /// target texture must be created and assigned manually in Editor using 
+        /// <see cref="RenderTexture"/>
+        /// </summary>
+        public bool GenerateTargetTexture = true;
 
         /// <summary>
         /// The left eye camera
@@ -157,11 +166,11 @@ namespace Microsoft.Toolkit.ThreeD
             Application.runInBackground = true;
             Application.targetFrameRate = 60;
 
-            // Set screen resolution.
-            Screen.SetResolution(VideoFrameWidth, VideoFrameHeight, false);
-
-            // Initializes render textures.
-            InitializeRenderTextures();
+            // Initializes render textures if needed.
+            if (GenerateTargetTexture)
+            {
+                InitializeRenderTextures();
+            }
 
             // Open the connection.
             Open();
@@ -169,10 +178,19 @@ namespace Microsoft.Toolkit.ThreeD
             // Setup the eyes for the first time.
             SetupActiveEyes();
 
-            // Initializes the buffer renderer using render texture.
-            StartCoroutine(Plugin.InitializeBufferCapturer(
-                LeftEye.targetTexture.GetNativeTexturePtr(),
-                RightEye.targetTexture.GetNativeTexturePtr()));
+            // Validates target texture of camera.
+            if (LeftEye.targetTexture == null || LeftEye.targetTexture.format != RenderTextureFormat.ARGB32 ||
+                RightEye.targetTexture == null || RightEye.targetTexture.format != RenderTextureFormat.ARGB32)
+            {
+                throw new ArgumentException("Invalid target texture of camera.");
+            }
+            else
+            {
+                // Initializes the buffer renderer using render texture.
+                StartCoroutine(Plugin.InitializeBufferCapturer(
+                    LeftEye.targetTexture.GetNativeTexturePtr(),
+                    RightEye.targetTexture.GetNativeTexturePtr()));
+            }
         }
 
         /// <summary>
@@ -353,9 +371,10 @@ namespace Microsoft.Toolkit.ThreeD
         {
             try
             {
-                var node = SimpleJSON.JSON.Parse(data);
+                JSONNode node = SimpleJSON.JSON.Parse(data);
                 string messageType = node["type"];
-                
+                string camera = "";
+
                 switch (messageType)
                 {
                     case "stereo-rendering":
@@ -375,14 +394,14 @@ namespace Microsoft.Toolkit.ThreeD
                         break;
 
                     case "keyboard-event":
-                        var kbBody = node["body"];
+                        JSONNode kbBody = node["body"];
                         int kbMsg = kbBody["msg"];
                         int kbWParam = kbBody["wParam"];
 
                         break;
 
                     case "mouse-event":
-                        var mouseBody = node["body"];
+                        JSONNode mouseBody = node["body"];
                         int mouseMsg = mouseBody["msg"];
                         int mouseWParam = mouseBody["wParam"];
                         int mouseLParam = mouseBody["lParam"];
@@ -390,10 +409,10 @@ namespace Microsoft.Toolkit.ThreeD
                         break;
 
                     case "camera-transform-lookat":
-                        string cam = node["body"];
-                        if (cam != null && cam.Length > 0)
+                        camera = node["body"];
+                        if (camera != null && camera.Length > 0)
                         {
-                            string[] sp = cam.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                            string[] sp = camera.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
 
                             Vector3 loc = new Vector3();
                             loc.x = float.Parse(sp[0]);
@@ -417,10 +436,32 @@ namespace Microsoft.Toolkit.ThreeD
                         break;
 
                     case "camera-transform-stereo":
-                        string camera = node["body"];
+                        camera = node["body"];
                         if (!cameraNeedUpdated && camera != null && camera.Length > 0)
                         {
-                            var coords = camera.Split(',');
+                            string[] coords = camera.Split(',');
+                            int index = 0;
+                            for (int i = 0; i < 4; i++)
+                            {
+                                for (int j = 0; j < 4; j++)
+                                {
+                                    // We are receiving 32 values for the left/right matrix.
+                                    // The first 16 are for left followed by the right matrix.
+                                    stereoRightProjectionMatrix[i, j] = float.Parse(coords[16 + index]);
+                                    stereoLeftProjectionMatrix[i, j] = float.Parse(coords[index++]);
+                                }
+                            }
+
+                            cameraNeedUpdated = true;
+                        }
+                        
+                        break;
+
+                    case "camera-transform-stereo-prediction":
+                        camera = node["body"];
+                        if (!cameraNeedUpdated && camera != null && camera.Length > 0)
+                        {
+                            string[] coords = camera.Split(',');
 
                             // Parse the prediction timestamp from the message body.
                             long timestamp = long.Parse(coords[32]);
@@ -429,7 +470,7 @@ namespace Microsoft.Toolkit.ThreeD
                             {
                                 lastTimestamp = timestamp;
 
-                                var index = 0;
+                                int index = 0;
                                 for (int i = 0; i < 4; i++)
                                 {
                                     for (int j = 0; j < 4; j++)
@@ -444,7 +485,7 @@ namespace Microsoft.Toolkit.ThreeD
                                 cameraNeedUpdated = true;
                             }
                         }
-                        
+
                         break;
                 }
             }
@@ -455,7 +496,9 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// Setup eye cameras based on number of eyes
+        /// Setup eye cameras based on number of eyes.
+        /// Cameras are disabled as we we take control of render order ourselves, see
+        /// https://docs.unity3d.com/ScriptReference/Camera.Render.html for more info
         /// </summary>
         private void SetupActiveEyes()
         {
@@ -488,8 +531,7 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         private IEnumerator SendFrame(bool isStereo)
         {
-            yield return new WaitForEndOfFrame();
-            Plugin.SendFrame(isStereo, lastTimestamp);
+            yield return Plugin.SendFrame(isStereo, lastTimestamp);
             cameraNeedUpdated = false;
         }
     }

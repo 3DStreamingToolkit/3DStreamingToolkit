@@ -203,7 +203,7 @@ void AppCallbacks::SendInputData()
 	cameraTransformBody += newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
 	String^ msg =
 		"{" +
-		"  \"type\":\"camera-transform-stereo\"," +
+		"  \"type\":\"camera-transform-stereo-prediction\"," +
 		"  \"body\":\"" + cameraTransformBody + "\"" +
 		"}";
 
