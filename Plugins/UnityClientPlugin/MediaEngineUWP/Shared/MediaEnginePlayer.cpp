@@ -811,7 +811,7 @@ void MEPlayer::UpdateFrameRate()
 	duration<double, std::milli> time_span = now - m_lastTimeFPSCalculated;
 	if (time_span.count() > 1000) {
 
-		_RPT1(0, "%d\n", _frameCounter);
+		_RPT1(0, "%d\n", m_frameCounter);
 
 		m_renderFps = m_frameCounter;
 		m_frameCounter = 0;
