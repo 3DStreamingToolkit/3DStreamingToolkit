@@ -141,47 +141,37 @@ HolographicFrame^ HolographicAppMain::Update()
     // resource views and depth buffers as needed.
     m_deviceResources->EnsureCameraResources(holographicFrame, prediction);
 
-    // Next, we get a coordinate system from the attached frame of reference that is
-    // associated with the current frame. Later, this coordinate system is used for
-    // for creating the stereo view matrices when rendering the sample content.
-    SpatialCoordinateSystem^ currentCoordinateSystem = 
-		m_referenceFrame->CoordinateSystem;
+	if (m_videoRenderer)
+	{
+		// Next, we get a coordinate system from the attached frame of reference that is
+		// associated with the current frame. Later, this coordinate system is used for
+		// for creating the stereo view matrices when rendering the sample content.
+		SpatialCoordinateSystem^ currentCoordinateSystem =
+			m_referenceFrame->CoordinateSystem;
 
-    m_timer.Tick([&] ()
-    {
-        //
-        // Update scene objects.
-        //
-        // Put time-based updates here. By default this code will run once per frame,
-        // but if you change the StepTimer to use a fixed time step this code will
-        // run as many times as needed to get to the current step.
-        //
+		// We complete the frame update by using information about our content positioning
+		// to set the focus point.
 
-        m_videoRenderer->Update(m_timer);
-    });
+		for (auto cameraPose : prediction->CameraPoses)
+		{
+			// The HolographicCameraRenderingParameters class provides access to set
+			// the image stabilization parameters.
+			HolographicCameraRenderingParameters^ renderingParameters =
+				holographicFrame->GetRenderingParameters(cameraPose);
 
-    // We complete the frame update by using information about our content positioning
-    // to set the focus point.
-
-    for (auto cameraPose : prediction->CameraPoses)
-    {
-        // The HolographicCameraRenderingParameters class provides access to set
-        // the image stabilization parameters.
-        HolographicCameraRenderingParameters^ renderingParameters = 
-			holographicFrame->GetRenderingParameters(cameraPose);
-
-        // SetFocusPoint informs the system about a specific point in your scene to
-        // prioritize for image stabilization. The focus point is set independently
-        // for each holographic camera.
-        // You should set the focus point near the content that the user is looking at.
-        // In this example, we put the focus point at the center of the sample hologram,
-        // since that is the only hologram available for the user to focus on.
-        // You can also set the relative velocity and facing of that content; the sample
-        // hologram is at a fixed point so we only need to indicate its position.
-        renderingParameters->SetFocusPoint(
-            currentCoordinateSystem,
-            m_videoRenderer->GetPosition());
-    }
+			// SetFocusPoint informs the system about a specific point in your scene to
+			// prioritize for image stabilization. The focus point is set independently
+			// for each holographic camera.
+			// You should set the focus point near the content that the user is looking at.
+			// In this example, we put the focus point at the center of the sample hologram,
+			// since that is the only hologram available for the user to focus on.
+			// You can also set the relative velocity and facing of that content; the sample
+			// hologram is at a fixed point so we only need to indicate its position.
+			renderingParameters->SetFocusPoint(
+				currentCoordinateSystem,
+				m_videoRenderer->GetFocusPoint());
+		}
+	}
 
     // The holographic frame will be used to get up-to-date view and
 	// projection matrices and to present the swap chain.
@@ -194,12 +184,6 @@ HolographicFrame^ HolographicAppMain::Update()
 bool HolographicAppMain::Render(
 	Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
 {
-    // Don't try to render anything before the first Update.
-    if (m_timer.GetFrameCount() == 0)
-    {
-        return false;
-    }
-
     //
     // TODO: Add code for pre-pass rendering here.
     //
@@ -215,7 +199,7 @@ bool HolographicAppMain::Render(
     {
         // Up-to-date frame predictions enhance the effectiveness of 
 		// image stablization and allow more accurate positioning of holograms.
-        holographicFrame->UpdateCurrentPrediction();
+        //holographicFrame->UpdateCurrentPrediction();
         HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
 
         bool atLeastOneCameraRendered = false;

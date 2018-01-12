@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
@@ -12,7 +9,6 @@ using Microsoft.Toolkit.ThreeD;
 using Org.WebRtc;
 using WebRtcWrapper;
 using PeerConnectionClient.Signalling;
-using Windows.Media.Playback;
 using Windows.Media.Core;
 #endif
 
@@ -46,9 +42,10 @@ public class ControlScript : MonoBehaviour
     private WebRtcControl _webRtcControl;
     
     private bool enabledStereo = false;
+    private long timestamp = 0;
 #endif
 
-	#region Graphics Low-Level Plugin DLL Setup
+    #region Graphics Low-Level Plugin DLL Setup
 #if !UNITY_EDITOR
     private MediaVideoTrack _peerVideoTrack;
 #endif
@@ -213,22 +210,22 @@ public class ControlScript : MonoBehaviour
             for (int j = 0; j < 4; j++)
             {
                 leftCameraTransform += leftViewProjection[i, j] + ",";
-                rightCameraTransform += rightViewProjection[i, j];
-                if (i != 3 || j != 3)
-                {
-                    rightCameraTransform += ",";
-                }
+                rightCameraTransform += rightViewProjection[i, j] + ",";
             }
         }
 
         var cameraTransformBody = leftCameraTransform + rightCameraTransform;
-        cameraTransformMsg =
+
+        // Adds dummy prediction timestamp.
+        cameraTransformBody += timestamp++;
+
+        cameraTransformBody =
            "{" +
-           "  \"type\":\"camera-transform-stereo\"," +
+           "  \"type\":\"camera-transform-stereo-prediction\"," +
            "  \"body\":\"" + cameraTransformBody + "\"" +
            "}";
 
-        _webRtcControl.SendPeerDataChannelMessage(cameraTransformMsg);
+        _webRtcControl.SendPeerDataChannelMessage(cameraTransformBody);
         
         if (!enabledStereo && _peerVideoTrack != null)
         {
@@ -241,7 +238,12 @@ public class ControlScript : MonoBehaviour
             if (_webRtcControl.SendPeerDataChannelMessage(msg))
             {
                 // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
-                var source = Media.CreateMedia().CreateMediaStreamSource(_peerVideoTrack, FrameRate, "media");
+                var source = Media.CreateMedia().CreateMediaStreamSource(
+                    _peerVideoTrack,
+                    "media",
+                    TextureWidth,
+                    TextureHeight);
+
                 Plugin.LoadMediaStreamSource((MediaStreamSource)source);
                 Plugin.Play();
                 enabledStereo = true;

@@ -11,6 +11,7 @@ using namespace StreamingToolkit;
 
 const char* ConfigParser::kWebrtcConfigPath = "webrtcConfig.json";
 const char* ConfigParser::kServerConfigPath = "serverConfig.json";
+const char* ConfigParser::kNvEncConfigPath = "nvEncConfig.json";
 
 std::string ConfigParser::GetAbsolutePath(const std::string& file_name)
 {
@@ -41,6 +42,14 @@ void ConfigParser::ConfigureConfigFactories(const std::string& baseFilePath)
 		ConfigParser::ParseServerConfig(baseFilePath + std::string(ConfigParser::kServerConfigPath), config);
 
 		return std::shared_ptr<StreamingToolkit::ServerConfig>(config);
+	});
+
+	CppFactory::Object<StreamingToolkit::NvEncConfig>::RegisterAllocator([=] {
+		auto config = new StreamingToolkit::NvEncConfig();
+
+		ConfigParser::ParseNvEncConfig(baseFilePath + std::string(ConfigParser::kNvEncConfigPath), config);
+
+		return std::shared_ptr<StreamingToolkit::NvEncConfig>(config);
 	});
 }
 
@@ -190,6 +199,26 @@ void ConfigParser::ParseServerConfig(const std::string& path, StreamingToolkit::
 				std::string servicePassword = serviceConfigNode.get("servicePassword", "").asString();
 				serverConfig->service_config.service_password.assign(servicePassword.begin(), servicePassword.end());
 			}
+		}
+	}
+}
+
+void ConfigParser::ParseNvEncConfig(const std::string& path, StreamingToolkit::NvEncConfig* nvEncConfig)
+{
+	std::ifstream fileStream(path);
+	Json::Reader reader;
+	Json::Value root = NULL;
+	if (fileStream.good())
+	{
+		reader.parse(fileStream, root, true);
+		if (root.isMember("useSoftwareEncoding"))
+		{
+			nvEncConfig->use_software_encoding = root.get("useSoftwareEncoding", NULL).asBool();
+		}
+
+		if (root.isMember("serverFrameCaptureFPS"))
+		{
+			nvEncConfig->capture_fps = root.get("serverFrameCaptureFPS", NULL).asInt();
 		}
 	}
 }

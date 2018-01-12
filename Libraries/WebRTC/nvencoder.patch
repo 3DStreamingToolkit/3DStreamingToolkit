@@ -7636,7 +7636,7 @@ index 0000000..418548a
 +    memset(&m_lockBitstreamData, 0, sizeof(m_lockBitstreamData));
 +    SET_VER(m_lockBitstreamData, NV_ENC_LOCK_BITSTREAM);
 +	m_lockBitstreamData.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
-+	m_lockBitstreamData.doNotWait = false;
++	m_lockBitstreamData.doNotWait = true;
 +
 +    nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &m_lockBitstreamData);
 +    if (nvStatus == NV_ENC_SUCCESS)
