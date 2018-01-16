@@ -17,17 +17,18 @@
 #include <set>
 #include <string>
 
-#include "buffer_renderer.h"
-#include "peer_connection_client.h"
-#include "peer_connection_multi_observer.h"
+#include "buffer_capturer.h"
+#include "config_parser.h"
 #include "input_data_channel_observer.h"
 #include "main_window.h"
-#include "config_parser.h"
+#include "peer_connection_client.h"
+#include "peer_connection_multi_observer.h"
+
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 
-class Conductor : public webrtc::PeerConnectionObserver,
-	public webrtc::CreateSessionDescriptionObserver,
+class Conductor : public PeerConnectionObserver,
+	public CreateSessionDescriptionObserver,
     public PeerConnectionClientObserver,
 	public MainWindowCallback
 {
@@ -43,12 +44,14 @@ public:
 
 	Conductor(
 		PeerConnectionClient* client,
+		StreamingToolkit::BufferCapturer* buffer_capturer,
 		MainWindow* main_window,
 		StreamingToolkit::WebRTCConfig* webrtc_config,
-		StreamingToolkit::BufferRenderer* buffer_renderer,
 		PeerConnectionObserver* connection_observer = nullptr);
 
 	bool connection_active() const;
+
+	bool is_closing() const;
 
 	void SetTurnCredentials(const std::string& username, const std::string& password);
 
@@ -154,6 +157,7 @@ private:
 
 	int peer_id_;
 	bool loopback_;
+	bool is_closing_;
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
 	rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> peer_connection_factory_;
 
@@ -164,7 +168,7 @@ private:
 	MainWindow* main_window_;
 	StreamingToolkit::WebRTCConfig* webrtc_config_;
 	StreamingToolkit::InputDataHandler* input_data_handler_;
-	StreamingToolkit::BufferRenderer* buffer_renderer_;
+	StreamingToolkit::BufferCapturer* buffer_capturer_;
 	std::deque<std::string*> pending_messages_;
 	std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> active_streams_;
 

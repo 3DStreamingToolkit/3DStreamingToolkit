@@ -8,12 +8,15 @@ using namespace DirectXClientComponent;
 
 VideoRenderer::VideoRenderer(
 	const std::shared_ptr<DX::DeviceResources>& deviceResources,
-	ID3D11ShaderResourceView* textureView) :
+	int width,
+	int height) :
 		m_deviceResources(deviceResources),
-		m_textureView(textureView),
+		m_width(width),
+		m_height(height),
 		m_usingVprtShaders(false)
 {
-	m_position = { 0.f, 0.f, -2.f };
+	// Sets a fixed focus point two meters in front of user for image stabilization.
+	m_focusPoint = { 0.f, 0.f, -2.f };
 
 	CreateDeviceDependentResources();
 }
@@ -26,20 +29,20 @@ void VideoRenderer::CreateDeviceDependentResources()
 	VertexPositionTexture vertices[] =
 	{
 		// Left camera.
-		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3( 0.0f,	0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(0.0f,	0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
 		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
-		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 
 		// Right camera
-		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3( 0.0f,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(0.0f,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
 		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
-		{ XMFLOAT3( 0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
 	};
 
 	D3D11_BUFFER_DESC bufferDesc = { 0 };
@@ -48,6 +51,35 @@ void VideoRenderer::CreateDeviceDependentResources()
 	D3D11_SUBRESOURCE_DATA subresourceData = { vertices , 0, 0 };
 	m_deviceResources->GetD3DDevice()->CreateBuffer(
 		&bufferDesc, &subresourceData, &m_vertexBuffer);
+
+	// Initializes the video texture.
+	D3D11_TEXTURE2D_DESC videoTextureDesc = { 0 };
+	videoTextureDesc.ArraySize = 1;
+	videoTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	videoTextureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	videoTextureDesc.Width = m_width;
+	videoTextureDesc.Height = m_height;
+	videoTextureDesc.MipLevels = 1;
+	videoTextureDesc.SampleDesc.Count = 1;
+	videoTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	m_deviceResources->GetD3DDevice()->CreateTexture2D(
+		&videoTextureDesc, nullptr, &m_videoFrame);
+
+	// Creates the shader resource view so that shaders may use it.
+	D3D11_SHADER_RESOURCE_VIEW_DESC textureViewDesc;
+	ZeroMemory(&textureViewDesc, sizeof(textureViewDesc));
+	textureViewDesc.Format = videoTextureDesc.Format;
+	textureViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	textureViewDesc.Texture2D.MipLevels = videoTextureDesc.MipLevels;
+	textureViewDesc.Texture2D.MostDetailedMip = 0;
+
+	DX::ThrowIfFailed(
+		m_deviceResources->GetD3DDevice()->CreateShaderResourceView(
+			m_videoFrame.Get(),
+			&textureViewDesc,
+			&m_textureView
+		)
+	);
 
 	// Creates the sampler.
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -168,10 +200,6 @@ void VideoRenderer::ReleaseDeviceDependentResources()
 	m_pixelShader.Reset();
 	m_vertexBuffer.Reset();
 	m_geometryShader.Reset();
-}
-
-void VideoRenderer::Update(DX::StepTimer timer)
-{
 }
 
 void VideoRenderer::Render()

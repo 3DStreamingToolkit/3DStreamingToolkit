@@ -1,0 +1,467 @@
+diff --git a/webrtc/api/video/video_frame.h b/webrtc/api/video/video_frame.h
+index d990a25e0..c4a6d7862 100644
+--- a/webrtc/api/video/video_frame.h
++++ b/webrtc/api/video/video_frame.h
+@@ -80,6 +80,12 @@ class VideoFrame {
+   // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
+   int64_t ntp_time_ms() const { return ntp_time_ms_; }
+ 
++  // Set prediction timestamp in 100-nanosecond intervals.
++  void set_prediction_timestamp(int64_t prediction_timestamp) { prediction_timestamp_ = prediction_timestamp; }
++
++  // Get prediction timestamp in 100-nanosecond intervals.
++  int64_t prediction_timestamp() const { return prediction_timestamp_; }
++
+   // Naming convention for Coordination of Video Orientation. Please see
+   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/ts_126114v120700p.pdf
+   //
+@@ -107,15 +113,11 @@ class VideoFrame {
+     return video_frame_buffer()->native_handle() != nullptr;
+   }
+ 
+-  void SetID3D11Texture2D(ID3D11Texture2D* texture)
+-  {
+-	  m_stagingFrameBuffer = texture;
+-  }
++  // Set staging frame buffer.
++  void set_staging_frame_buffer(ID3D11Texture2D* staging_frame_buffer) { staging_frame_buffer_ = staging_frame_buffer; }
+ 
+-  ID3D11Texture2D* GetID3D11Texture2D() const
+-  {
+-	  return m_stagingFrameBuffer;
+-  }
++  // Get staging frame buffer.
++  ID3D11Texture2D* staging_frame_buffer() const { return staging_frame_buffer_; }
+ 
+  private:
+   // An opaque reference counted handle that stores the pixel data.
+@@ -124,7 +126,8 @@ class VideoFrame {
+   int64_t ntp_time_ms_;
+   int64_t timestamp_us_;
+   VideoRotation rotation_;
+-  ID3D11Texture2D* m_stagingFrameBuffer;
++  ID3D11Texture2D* staging_frame_buffer_;
++  int64_t prediction_timestamp_;
+ };
+ 
+ }  // namespace webrtc
+diff --git a/webrtc/call/call.cc b/webrtc/call/call.cc
+index e2b1e709a..25999fa82 100644
+--- a/webrtc/call/call.cc
++++ b/webrtc/call/call.cc
+@@ -404,6 +404,11 @@ rtc::Optional<RtpPacketReceived> Call::ParseRtpPacket(
+     return rtc::Optional<RtpPacketReceived>();
+ 
+   auto it = receive_rtp_config_.find(parsed_packet.Ssrc());
++
++  // Enable video frame metadata extenstion.
++  it->second.extensions.RegisterByUri(
++	  webrtc::RtpExtension::kVideoFrameMetadataDefaultId, webrtc::RtpExtension::kVideoFrameMetadataUri);
++
+   if (it != receive_rtp_config_.end())
+     parsed_packet.IdentifyExtensions(it->second.extensions);
+ 
+diff --git a/webrtc/common_types.h b/webrtc/common_types.h
+index faa875a40..93fcf403c 100644
+--- a/webrtc/common_types.h
++++ b/webrtc/common_types.h
+@@ -778,6 +778,7 @@ struct RTPHeaderExtension {
+   // ts_126114v120700p.pdf
+   bool hasVideoRotation;
+   VideoRotation videoRotation;
++  int64_t prediction_timestamp;
+ 
+   PlayoutDelay playout_delay = {-1, -1};
+ };
+diff --git a/webrtc/config.cc b/webrtc/config.cc
+index e0c490d1e..3535e993b 100644
+--- a/webrtc/config.cc
++++ b/webrtc/config.cc
+@@ -60,6 +60,9 @@ const int RtpExtension::kAbsSendTimeDefaultId = 3;
+ const char* RtpExtension::kVideoRotationUri = "urn:3gpp:video-orientation";
+ const int RtpExtension::kVideoRotationDefaultId = 4;
+ 
++const char* RtpExtension::kVideoFrameMetadataUri = "urn:3gpp:video-frame-metadata";
++const int RtpExtension::kVideoFrameMetadataDefaultId = 7;
++
+ const char* RtpExtension::kTransportSequenceNumberUri =
+     "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
+ const int RtpExtension::kTransportSequenceNumberDefaultId = 5;
+@@ -81,11 +84,12 @@ bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
+ }
+ 
+ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
+-  return uri == webrtc::RtpExtension::kTimestampOffsetUri ||
+-         uri == webrtc::RtpExtension::kAbsSendTimeUri ||
+-         uri == webrtc::RtpExtension::kVideoRotationUri ||
+-         uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
+-         uri == webrtc::RtpExtension::kPlayoutDelayUri;
++	return uri == webrtc::RtpExtension::kTimestampOffsetUri ||
++		uri == webrtc::RtpExtension::kAbsSendTimeUri ||
++		uri == webrtc::RtpExtension::kVideoRotationUri ||
++		uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
++		uri == webrtc::RtpExtension::kPlayoutDelayUri ||
++		uri == webrtc::RtpExtension::kVideoFrameMetadataUri;
+ }
+ 
+ VideoStream::VideoStream()
+diff --git a/webrtc/config.h b/webrtc/config.h
+index f8c9e8b79..0271ab5f3 100644
+--- a/webrtc/config.h
++++ b/webrtc/config.h
+@@ -88,6 +88,10 @@ struct RtpExtension {
+   static const char* kVideoRotationUri;
+   static const int kVideoRotationDefaultId;
+ 
++  // Header extension for video frame metadata
++  static const char* kVideoFrameMetadataUri;
++  static const int kVideoFrameMetadataDefaultId;
++
+   // Header extension for transport sequence number, see url for details:
+   // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
+   static const char* kTransportSequenceNumberUri;
+diff --git a/webrtc/media/engine/webrtcvideoengine2.cc b/webrtc/media/engine/webrtcvideoengine2.cc
+index 8e2c1649f..7c22eb879 100644
+--- a/webrtc/media/engine/webrtcvideoengine2.cc
++++ b/webrtc/media/engine/webrtcvideoengine2.cc
+@@ -502,6 +502,9 @@ RtpCapabilities WebRtcVideoEngine2::GetCapabilities() const {
+   capabilities.header_extensions.push_back(
+       webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri,
+                            webrtc::RtpExtension::kPlayoutDelayDefaultId));
++  capabilities.header_extensions.push_back(
++	  webrtc::RtpExtension(webrtc::RtpExtension::kVideoFrameMetadataUri,
++		  webrtc::RtpExtension::kVideoFrameMetadataDefaultId));
+   return capabilities;
+ }
+ 
+@@ -1232,6 +1235,10 @@ void WebRtcVideoChannel2::ConfigureReceiverRtp(
+ 
+   config->rtp.extensions = recv_rtp_extensions_;
+ 
++  // Enable video frame metadata extenstion.
++  config->rtp.extensions.push_back(webrtc::RtpExtension(
++	  webrtc::RtpExtension::kVideoFrameMetadataUri, webrtc::RtpExtension::kVideoFrameMetadataDefaultId));
++
+   // TODO(brandtr): Generalize when we add support for multistream protection.
+   if (sp.GetFecFrSsrc(ssrc, &flexfec_config->remote_ssrc)) {
+     flexfec_config->protected_media_ssrcs = {ssrc};
+diff --git a/webrtc/modules/include/module_common_types.h b/webrtc/modules/include/module_common_types.h
+index 98f7a38af..d34c117f4 100644
+--- a/webrtc/modules/include/module_common_types.h
++++ b/webrtc/modules/include/module_common_types.h
+@@ -55,6 +55,7 @@ struct RTPVideoHeader {
+   uint16_t width;  // size
+   uint16_t height;
+   VideoRotation rotation;
++  int64_t prediction_timestamp;
+ 
+   PlayoutDelay playout_delay;
+ 
+diff --git a/webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h b/webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h
+index a489018d2..0fa94f786 100644
+--- a/webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h
++++ b/webrtc/modules/rtp_rtcp/include/rtp_rtcp_defines.h
+@@ -75,6 +75,7 @@ enum RTPExtensionType {
+   kRtpExtensionVideoRotation,
+   kRtpExtensionTransportSequenceNumber,
+   kRtpExtensionPlayoutDelay,
++  kRtpExtensionVideoFrameMetadata,
+   kRtpExtensionNumberOfExtensions,
+ };
+ 
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_header_extension.cc b/webrtc/modules/rtp_rtcp/source/rtp_header_extension.cc
+index bbbb1438d..d4b31993c 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_header_extension.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_header_extension.cc
+@@ -39,6 +39,7 @@ constexpr ExtensionInfo kExtensions[] = {
+     CreateExtensionInfo<VideoOrientation>(),
+     CreateExtensionInfo<TransportSequenceNumber>(),
+     CreateExtensionInfo<PlayoutDelayLimits>(),
++	CreateExtensionInfo<VideoFrameMetadata>()
+ };
+ 
+ // Because of kRtpExtensionNone, NumberOfExtension is 1 bigger than the actual
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc b/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc
+index 167f29ee9..a18d84679 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.cc
+@@ -162,6 +162,22 @@ bool VideoOrientation::Write(uint8_t* data, uint8_t value) {
+   return true;
+ }
+ 
++// Coordination of video frame metadata in RTP streams.
++//
++constexpr RTPExtensionType VideoFrameMetadata::kId;
++constexpr uint8_t VideoFrameMetadata::kValueSizeBytes;
++constexpr const char* VideoFrameMetadata::kUri;
++
++bool VideoFrameMetadata::Parse(const uint8_t* data, int64_t* value) {
++	*value = ByteReader<int64_t>::ReadBigEndian(data);
++	return true;
++}
++
++bool VideoFrameMetadata::Write(uint8_t* data, int64_t value) {
++	ByteWriter<int64_t>::WriteBigEndian(data, value);
++	return true;
++}
++
+ //   0                   1                   2                   3
+ //   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ //  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h b/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h
+index ea6f9dbc9..8e9f2e3c0 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h
++++ b/webrtc/modules/rtp_rtcp/source/rtp_header_extensions.h
+@@ -78,6 +78,16 @@ class VideoOrientation {
+   static bool Write(uint8_t* data, uint8_t value);
+ };
+ 
++class VideoFrameMetadata {
++public:
++	static constexpr RTPExtensionType kId = kRtpExtensionVideoFrameMetadata;
++	static constexpr uint8_t kValueSizeBytes = 8;
++	static constexpr const char* kUri = "urn:3gpp:video-frame-metadata";
++
++	static bool Parse(const uint8_t* data, int64_t* value);
++	static bool Write(uint8_t* data, int64_t value);
++};
++
+ class PlayoutDelayLimits {
+  public:
+   static constexpr RTPExtensionType kId = kRtpExtensionPlayoutDelay;
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_packet.cc b/webrtc/modules/rtp_rtcp/source/rtp_packet.cc
+index e720eebc4..23a5814bc 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_packet.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_packet.cc
+@@ -164,6 +164,7 @@ void Packet::GetHeader(RTPHeader* header) const {
+       &header->extension.voiceActivity, &header->extension.audioLevel);
+   header->extension.hasVideoRotation =
+       GetExtension<VideoOrientation>(&header->extension.videoRotation);
++  GetExtension<VideoFrameMetadata>(&header->extension.prediction_timestamp);
+ }
+ 
+ size_t Packet::headers_size() const {
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.cc b/webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
+index 32109842b..272417cd4 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
+@@ -41,6 +41,8 @@ RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
+     return kRtpExtensionTransportSequenceNumber;
+   if (extension == RtpExtension::kPlayoutDelayUri)
+     return kRtpExtensionPlayoutDelay;
++  if (extension == RtpExtension::kVideoFrameMetadataUri)
++	  return kRtpExtensionVideoFrameMetadata;
+   RTC_NOTREACHED() << "Looking up unsupported RTP extension.";
+   return kRtpExtensionNone;
+ }
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_sender.cc b/webrtc/modules/rtp_rtcp/source/rtp_sender.cc
+index 44d6ff88e..3ce906511 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_sender.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_sender.cc
+@@ -193,6 +193,7 @@ int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
+     case kRtpExtensionAbsoluteSendTime:
+     case kRtpExtensionAudioLevel:
+     case kRtpExtensionTransportSequenceNumber:
++	case kRtpExtensionVideoFrameMetadata:
+       return rtp_header_extension_map_.Register(type, id);
+     case kRtpExtensionNone:
+     case kRtpExtensionNumberOfExtensions:
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_sender_video.cc b/webrtc/modules/rtp_rtcp/source/rtp_sender_video.cc
+index 849ed78ea..4e16b4c2f 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_sender_video.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_sender_video.cc
+@@ -324,6 +324,7 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
+           current_rotation != kVideoRotation_0)
+         rtp_header->SetExtension<VideoOrientation>(current_rotation);
+       last_rotation_ = current_rotation;
++	  rtp_header->SetExtension<VideoFrameMetadata>(video_header->prediction_timestamp);
+     }
+ 
+     // FEC settings.
+diff --git a/webrtc/modules/rtp_rtcp/source/rtp_utility.cc b/webrtc/modules/rtp_rtcp/source/rtp_utility.cc
+index def431f17..e8d68bf08 100644
+--- a/webrtc/modules/rtp_rtcp/source/rtp_utility.cc
++++ b/webrtc/modules/rtp_rtcp/source/rtp_utility.cc
+@@ -446,6 +446,15 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
+               max_playout_delay * PlayoutDelayLimits::kGranularityMs;
+           break;
+         }
++		case kRtpExtensionVideoFrameMetadata: {
++			if (len != 7) {
++				LOG(LS_WARNING) << "Incorrect video metadata len: " << len;
++				return;
++			}
++
++			header->extension.prediction_timestamp = ByteReader<int64_t>::ReadBigEndian(ptr);
++			break;
++		}
+         case kRtpExtensionNone:
+         case kRtpExtensionNumberOfExtensions: {
+           RTC_NOTREACHED() << "Invalid extension type: " << type;
+diff --git a/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc
+index c26b94c04..ca82ed518 100644
+--- a/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc
++++ b/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc
+@@ -356,6 +356,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
+   RTC_CHECK_EQ(av_frame_->data[kVPlaneIndex],
+                video_frame->video_frame_buffer()->DataV());
+   video_frame->set_timestamp(input_image._timeStamp);
++  video_frame->set_prediction_timestamp(input_image.prediction_timestamp_);
+ 
+   int32_t ret;
+ 
+@@ -374,6 +375,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
+     VideoFrame cropped_frame(
+         cropped_buf, video_frame->timestamp(), video_frame->render_time_ms(),
+         video_frame->rotation());
++	cropped_frame.set_prediction_timestamp(input_image.prediction_timestamp_);
+     // TODO(nisse): Timestamp and rotation are all zero here. Change decoder
+     // interface to pass a VideoFrameBuffer instead of a VideoFrame?
+     ret = decoded_image_callback_->Decoded(cropped_frame);
+diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
+index 0bbbf9cfa..5705428a1 100644
+--- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
++++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
+@@ -822,7 +822,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+ 		void* pFrameBuffer = nullptr;
+ 		int frameSizeInBytes = 0;
+ 		_NV_ENC_PIC_TYPE frameType;
+-		auto texture = input_frame.GetID3D11Texture2D();
++		auto texture = input_frame.staging_frame_buffer();
+ 		if (texture == nullptr)
+ 			return WEBRTC_VIDEO_CODEC_OK;
+ 
+@@ -881,6 +881,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
+ 	encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
+ 	encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
+ 	encoded_image_.rotation_ = input_frame.rotation();
++	encoded_image_.prediction_timestamp_ = input_frame.prediction_timestamp();
+ 
+ 	// Split encoded image up into fragments. This also updates |encoded_image_|.
+ 	if (m_use_software_encoding)
+diff --git a/webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc b/webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
+index 89752a9b8..46c874c57 100644
+--- a/webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
++++ b/webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc
+@@ -1149,7 +1149,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
+   vpx_codec_err_t vpx_ret =
+       vpx_codec_control(decoder_, VPXD_GET_LAST_QUANTIZER, &qp);
+   RTC_DCHECK_EQ(vpx_ret, VPX_CODEC_OK);
+-  ret = ReturnFrame(img, input_image._timeStamp, input_image.ntp_time_ms_, qp);
++  ret = ReturnFrame(img, input_image._timeStamp, input_image.ntp_time_ms_, input_image.prediction_timestamp_, qp);
+   if (ret != 0) {
+     // Reset to avoid requesting key frames too often.
+     if (ret < 0 && propagation_cnt_ > 0)
+@@ -1210,6 +1210,7 @@ int VP8DecoderImpl::Decode(const EncodedImage& input_image,
+ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
+                                 uint32_t timestamp,
+                                 int64_t ntp_time_ms,
++								int64_t prediction_timestamp,
+                                 int qp) {
+   if (img == NULL) {
+     // Decoder OK and NULL image => No show frame
+@@ -1237,6 +1238,7 @@ int VP8DecoderImpl::ReturnFrame(const vpx_image_t* img,
+ 
+   VideoFrame decoded_image(buffer, timestamp, 0, kVideoRotation_0);
+   decoded_image.set_ntp_time_ms(ntp_time_ms);
++  decoded_image.set_prediction_timestamp(prediction_timestamp);
+   decode_complete_callback_->Decoded(decoded_image, rtc::Optional<int32_t>(),
+                                      rtc::Optional<uint8_t>(qp));
+ 
+diff --git a/webrtc/modules/video_coding/codecs/vp8/vp8_impl.h b/webrtc/modules/video_coding/codecs/vp8/vp8_impl.h
+index 77e1dc459..d51dcf3a1 100644
+--- a/webrtc/modules/video_coding/codecs/vp8/vp8_impl.h
++++ b/webrtc/modules/video_coding/codecs/vp8/vp8_impl.h
+@@ -150,6 +150,7 @@ class VP8DecoderImpl : public VP8Decoder {
+   int ReturnFrame(const vpx_image_t* img,
+                   uint32_t timeStamp,
+                   int64_t ntp_time_ms,
++				  int64_t prediction_timestamp,
+                   int qp);
+ 
+   I420BufferPool buffer_pool_;
+diff --git a/webrtc/modules/video_coding/frame_object.cc b/webrtc/modules/video_coding/frame_object.cc
+index 70b0a0286..cf8bb821e 100644
+--- a/webrtc/modules/video_coding/frame_object.cc
++++ b/webrtc/modules/video_coding/frame_object.cc
+@@ -46,6 +46,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
+   _completeFrame = true;
+   _payloadType = first_packet->payloadType;
+   _timeStamp = first_packet->timestamp;
++  prediction_timestamp_ = first_packet->video_header.prediction_timestamp;
+   ntp_time_ms_ = first_packet->ntp_time_ms_;
+ 
+   // Since FFmpeg use an optimized bitstream reader that reads in chunks of
+diff --git a/webrtc/video/payload_router.cc b/webrtc/video/payload_router.cc
+index f2f430904..75e7483b5 100644
+--- a/webrtc/video/payload_router.cc
++++ b/webrtc/video/payload_router.cc
+@@ -129,6 +129,7 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
+   if (codec_specific_info)
+     CopyCodecSpecific(codec_specific_info, &rtp_video_header);
+   rtp_video_header.rotation = encoded_image.rotation_;
++  rtp_video_header.prediction_timestamp = encoded_image.prediction_timestamp_;
+   rtp_video_header.playout_delay = encoded_image.playout_delay_;
+ 
+   int stream_index = rtp_video_header.simulcastIdx;
+diff --git a/webrtc/video/rtp_stream_receiver.cc b/webrtc/video/rtp_stream_receiver.cc
+index b68e5e24c..1f25293a9 100644
+--- a/webrtc/video/rtp_stream_receiver.cc
++++ b/webrtc/video/rtp_stream_receiver.cc
+@@ -139,7 +139,7 @@ RtpStreamReceiver::RtpStreamReceiver(
+ 
+   for (size_t i = 0; i < config_.rtp.extensions.size(); ++i) {
+     EnableReceiveRtpHeaderExtension(config_.rtp.extensions[i].uri,
+-                                    config_.rtp.extensions[i].id);
++		config_.rtp.extensions[i].id);
+   }
+ 
+   static const int kMaxPacketAgeToNack = 450;
+@@ -284,6 +284,8 @@ int32_t RtpStreamReceiver::OnReceivedPayloadData(
+     packet.dataPtr = data;
+   }
+ 
++  packet.video_header.prediction_timestamp = rtp_header->header.extension.prediction_timestamp;
++
+   packet_buffer_->InsertPacket(&packet);
+   return 0;
+ }
+diff --git a/webrtc/video/video_send_stream.cc b/webrtc/video/video_send_stream.cc
+index 3f2bba866..259e3d54d 100644
+--- a/webrtc/video/video_send_stream.cc
++++ b/webrtc/video/video_send_stream.cc
+@@ -825,13 +825,19 @@ VideoSendStreamImpl::VideoSendStreamImpl(
+   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_)
+     packet_router_->AddRtpModule(rtp_rtcp);
+ 
+-  for (size_t i = 0; i < config_->rtp.extensions.size(); ++i) {
+-    const std::string& extension = config_->rtp.extensions[i].uri;
+-    int id = config_->rtp.extensions[i].id;
++  // Enable video frame metadata extenstion.
++  std::vector<RtpExtension> extensions = config_->rtp.extensions;
++  extensions.push_back(RtpExtension(
++	  RtpExtension::kVideoFrameMetadataUri, RtpExtension::kVideoFrameMetadataDefaultId));
++
++  for (size_t i = 0; i < extensions.size(); ++i) {
++    const std::string& extension = extensions[i].uri;
++    int id = extensions[i].id;
+     // One-byte-extension local identifiers are in the range 1-14 inclusive.
+     RTC_DCHECK_GE(id, 1);
+     RTC_DCHECK_LE(id, 14);
+     RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
++
+     for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
+       RTC_CHECK_EQ(0, rtp_rtcp->RegisterSendRtpHeaderExtension(
+                           StringToRtpExtensionType(extension), id));
+diff --git a/webrtc/video_frame.h b/webrtc/video_frame.h
+index 3b0c16c12..53663de81 100644
+--- a/webrtc/video_frame.h
++++ b/webrtc/video_frame.h
+@@ -60,6 +60,7 @@ class EncodedImage {
+   bool _completeFrame = false;
+   AdaptReason adapt_reason_;
+   int qp_ = -1;  // Quantizer value.
++  int64_t prediction_timestamp_;
+ 
+   // When an application indicates non-zero values here, it is taken as an
+   // indication that all future frames will be constrained with those limits

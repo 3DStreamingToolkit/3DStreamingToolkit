@@ -40,13 +40,7 @@
     <ClCompile Include="src\defaults.cpp">
       <Filter>Source\webrtc</Filter>
     </ClCompile>
-    <ClCompile Include="src\custom_video_capturer.cpp">
-      <Filter>Source\StreamingToolkit</Filter>
-    </ClCompile>
     <ClCompile Include="src\input_data_channel_observer.cpp">
-      <Filter>Source\StreamingToolkit</Filter>
-    </ClCompile>
-    <ClCompile Include="src\buffer_renderer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
     <ClCompile Include="src\render_service.cpp">
@@ -54,6 +48,12 @@
     </ClCompile>
     <ClCompile Include="src\service_base.cpp">
       <Filter>Source\service</Filter>
+    </ClCompile>
+    <ClCompile Include="src\buffer_capturer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\directx_buffer_capturer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -67,9 +67,6 @@
     <ClInclude Include="inc\flagdefs.h">
       <Filter>Headers\webrtc</Filter>
     </ClInclude>
-    <ClInclude Include="inc\custom_video_capturer.h">
-      <Filter>Headers\StreamingToolkit</Filter>
-    </ClInclude>
     <ClInclude Include="inc\macros.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
@@ -77,9 +74,6 @@
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
     <ClInclude Include="inc\input_data_channel_observer.h">
-      <Filter>Headers\StreamingToolkit</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\buffer_renderer.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
     <ClInclude Include="inc\service\render_service.h">
@@ -90,6 +84,12 @@
     </ClInclude>
     <ClInclude Include="inc\service\thread_pool.h">
       <Filter>Headers\service</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\buffer_capturer.h">
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\directx_buffer_capturer.h">
+      <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

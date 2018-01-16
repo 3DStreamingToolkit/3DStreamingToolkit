@@ -27,12 +27,7 @@
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "winmm.lib")
 
-//--------------------------------------------------------------------------------------
-// Global vars
-//--------------------------------------------------------------------------------------
 using namespace StreamingToolkit;
-
-WebRTCConfig	g_webrtcConfig;
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing 
@@ -47,16 +42,19 @@ int WINAPI wWinMain(
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
-	// Loads webrtc config file.
-	ConfigParser::Parse("webrtcConfig.json", &g_webrtcConfig);
+	// this must occur before any config access
+	ConfigParser::ConfigureConfigFactories();
+
+	// get and keep a reference to webrtc config, we're going to use it alot below
+	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ClientMainWindow wnd(
-		g_webrtcConfig.server.c_str(),
-		g_webrtcConfig.port,
+		webrtcConfig->server.c_str(),
+		webrtcConfig->port,
 		FLAG_autoconnect,
 		FLAG_autocall,
 		false,
@@ -72,11 +70,11 @@ int WINAPI wWinMain(
 	rtc::InitializeSSL();
 
 	std::unique_ptr<OAuth24DProvider> oauth;
-	if (!g_webrtcConfig.authentication.code_uri.empty() &&
-		!g_webrtcConfig.authentication.poll_uri.empty())
+	if (!webrtcConfig->authentication.code_uri.empty() &&
+		!webrtcConfig->authentication.poll_uri.empty())
 	{
 		oauth.reset(new OAuth24DProvider(
-			g_webrtcConfig.authentication.code_uri, g_webrtcConfig.authentication.poll_uri));
+			webrtcConfig->authentication.code_uri, webrtcConfig->authentication.poll_uri));
 	}
 	else
 	{
@@ -88,15 +86,15 @@ int WINAPI wWinMain(
 	std::unique_ptr<TurnCredentialProvider> turn;
 
 	if (oauth.get() != nullptr &&
-		g_webrtcConfig.turn_server.provider != FLAG_turnUri &&
-		!g_webrtcConfig.turn_server.provider.empty())
+		webrtcConfig->turn_server.provider != FLAG_turnUri &&
+		!webrtcConfig->turn_server.provider.empty())
 	{
-		turn.reset(new TurnCredentialProvider(g_webrtcConfig.turn_server.provider));
+		turn.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider));
 	}
 
 	PeerConnectionClient client;
 	rtc::scoped_refptr<Conductor> conductor(
-		new rtc::RefCountedObject<Conductor>(&client, &wnd, &g_webrtcConfig));
+		new rtc::RefCountedObject<Conductor>(&client, &wnd, webrtcConfig.get()));
 
 	Win32DataChannelHandler dcHandler(conductor.get());
 
@@ -104,7 +102,7 @@ int WINAPI wWinMain(
 	wnd.SignalDataChannelMessage.connect(&dcHandler, &Win32DataChannelHandler::ProcessMessage);
 
 	// set our client heartbeat interval
-	client.SetHeartbeatMs(g_webrtcConfig.heartbeat);
+	client.SetHeartbeatMs(webrtcConfig->heartbeat);
 
 	// create (but not necessarily use) async callbacks
 	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& data)

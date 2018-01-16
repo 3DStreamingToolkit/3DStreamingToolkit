@@ -56,7 +56,7 @@ ref class MEPlayer: public MediaEngineNotifyCallback
 {
     // DX11 related
     Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11Device;
-	Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11UnityDevice;
+	Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11ExternalD3DDevice;
     Microsoft::WRL::ComPtr<ID3D11DeviceContext>         m_spDX11DeviceContext;
     Microsoft::WRL::ComPtr<IDXGIOutput>                 m_spDXGIOutput;
     Microsoft::WRL::ComPtr<IDXGISwapChain1>             m_spDX11SwapChain;
@@ -66,30 +66,36 @@ ref class MEPlayer: public MediaEngineNotifyCallback
     Microsoft::WRL::ComPtr<IMFMediaEngine>              m_spMediaEngine;
     Microsoft::WRL::ComPtr<IMFMediaEngineEx>            m_spEngineEx;
 
-    BSTR                                    m_bstrURL;
-    BOOL                                    m_fPlaying;
-    BOOL                                    m_fLoop;
-    BOOL                                    m_fEOS;
-    BOOL                                    m_fStopTimer;
-    RECT                                    m_rcTarget;
-	MFVideoNormalizedRect					m_nRect;
-    DXGI_FORMAT                             m_d3dFormat;
-    MFARGB                                  m_bkgColor;
+    BSTR												m_bstrURL;
+    BOOL												m_fPlaying;
+    BOOL												m_fLoop;
+    BOOL												m_fEOS;
+    BOOL												m_fStopTimer;
+    RECT												m_rcTarget;
+	MFVideoNormalizedRect								m_nRect;
+    DXGI_FORMAT											m_d3dFormat;
+    MFARGB												m_bkgColor;
 
-    HANDLE                                  m_TimerThreadHandle;
-    CRITICAL_SECTION                        m_critSec;
+    HANDLE												m_TimerThreadHandle;
+    CRITICAL_SECTION									m_critSec;
 
     concurrency::task<Windows::Storage::StorageFile^>   m_pickFileTask;
     concurrency::cancellation_token_source              m_tcs;
     BOOL                                                m_fInitSuccess;    
     BOOL                                                m_fExitApp;
     BOOL                                                m_fUseDX;
+	BOOL                                                m_fUseVSyncTimer;
 
 internal:
 
-	delegate void VideoFrameTransferred(MEPlayer^ sender, int width, int height);
+	delegate void VideoFrameTransferred(
+		MEPlayer^ sender, 
+		int width, 
+		int height, 
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture,
+		int timestampId);
 
-    MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice);
+    MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice, BOOL useVSyncTimer = TRUE);
 
     // DX11 related
     void CreateDX11Device();
@@ -179,11 +185,14 @@ internal:
     void StartTimer();
     void StopTimer();	
     void OnTimer();
+	void OnVSyncTimer();
     DWORD RealVSyncTimer();
+	int GetFrameRate();
 
 	// State related to calculating FPS.
-	int _frameCounter;
-	high_resolution_clock::time_point _lastTimeFPSCalculated;
+	int m_frameCounter;
+	high_resolution_clock::time_point m_lastTimeFPSCalculated;
+	int m_renderFps;
 
     // For calling IDXGIDevice3::Trim() when app is suspended
     HRESULT DXGIDeviceTrim();
@@ -196,7 +205,6 @@ private:
 	Microsoft::WRL::ComPtr<ABI::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface> m_primaryMediaSurface;
 
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_primaryTextureSRV;
-
 };
 
 #endif /* MEPLAYER_H */

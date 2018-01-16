@@ -120,7 +120,7 @@ class VideoStreamViewController: UIViewController {
             let peers = stringData.components(separatedBy: "\n")
             self.myId = Int(peers[0].components(separatedBy: ",")[1])!
             for (index, peer) in peers.enumerated() {
-                if index >= 1 && peer.characters.count > 0 {
+                if index >= 1 && peer.count > 0 {
                     let parsed = peer.components(separatedBy: ",")
                     self.otherPeers[Int(parsed[1])!] = parsed[0]
                 }
@@ -233,7 +233,7 @@ class VideoStreamViewController: UIViewController {
         peerConnection = peerConnectionFactory.peerConnection(with: rtcConfig, constraints: defaultPeerConnectionConstraints, delegate: self)
     }
     
-    func handlePan(_ recognizer: UIPanGestureRecognizer) {
+    @objc func handlePan(_ recognizer: UIPanGestureRecognizer) {
         switch recognizer.state {
         case .began:
             navOnFingerDown(recognizer: recognizer)
@@ -246,7 +246,7 @@ class VideoStreamViewController: UIViewController {
         }
     }
     
-    func handleAccelerometerButton(button: UIButton) {
+    @objc func handleAccelerometerButton(button: UIButton) {
         if isAccelerometerEnabled {
             button.setTitle(VideoStreamViewController.accelerometerButtonEnableTitle, for: .normal)
             button.backgroundColor = .green
@@ -467,7 +467,7 @@ class VideoStreamViewController: UIViewController {
     
     func parseIntHeader(r: HTTPURLResponse, name: String) -> Int {
         let val = r.allHeaderFields[name] as? String
-        if let val = val, val.characters.count > 0 {
+        if let val = val, val.count > 0 {
             return Int(val)!
         } else {
             return -1
@@ -509,7 +509,7 @@ class VideoStreamViewController: UIViewController {
         hangingGet.resume()
     }
     
-    func heartBeatTimerFunc() {
+    @objc func heartBeatTimerFunc() {
         startHeartBeatAsync(completionHandler: nil)
     }
     

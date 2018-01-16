@@ -152,7 +152,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="exports.props" />
+    <None Include="exports.props">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\config_parser.h" />
@@ -162,6 +164,7 @@
     <ClCompile Include="src\config_parser.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\AbstractionFrameworks\exports.props" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>
