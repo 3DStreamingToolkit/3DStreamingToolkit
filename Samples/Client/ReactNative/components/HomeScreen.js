@@ -12,7 +12,7 @@ var {
   RTCSessionDescription,
 } = WebRTC;
 
-import ThreeDStreamingClient from '../js-3dtoolkit.js';
+const { ThreeDStreamingClient } = require('js-3dtoolkit');
 import Config from '../config';
 
 var streamingClient = new ThreeDStreamingClient(Config,

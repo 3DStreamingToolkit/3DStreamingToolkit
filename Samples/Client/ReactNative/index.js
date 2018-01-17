@@ -1,4 +1,3 @@
-import 'babel-polyfill';
 import {
   StackNavigator,
 } from 'react-navigation';
