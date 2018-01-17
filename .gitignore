@@ -259,6 +259,7 @@ paket-files/
 *.cso
 *.zip
 js-3dtoolkit.*
+sdputils.*
 
 # Mac Files
 .DS_Store

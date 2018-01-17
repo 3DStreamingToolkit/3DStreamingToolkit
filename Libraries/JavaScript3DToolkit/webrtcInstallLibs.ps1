@@ -8,7 +8,7 @@ function Get-ScriptDirectory
 }
 
 function DecompressZip {
-    param( [string] $filename, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
+    param( [string] $filename, [string] $samplePath, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
     
     $uri = ($blobUri + $filename + ".zip")
     $request = [System.Net.HttpWebRequest]::Create($uri)
@@ -18,7 +18,7 @@ function DecompressZip {
     $request.Abort()
     $localFileName = ($filename + $etag + ".zip")
     $localFullPath = ($PSScriptRoot + "\" + $localFileName)
-    $sampleFullPath = ($PSScriptRoot + "\..\..\Samples\Client\WebClient")
+    $sampleFullPath = ($PSScriptRoot + "\..\..\" + $samplePath)
     
     if((Test-Path ($sampleFullPath + "/" + "$filename" + ".*")) -eq $false) {
 
@@ -113,4 +113,5 @@ Test-Nano()
 }
 
 
-DecompressZip -filename "js-3dtoolkit"
+DecompressZip -filename "js-3dtoolkit" -samplePath "Samples\Client\WebClient"
+DecompressZip -filename "react-native-3dtoolkit" -samplePath "Samples\Client\ReactNative"

@@ -2,7 +2,10 @@ import React, { Component } from 'react';
 import {
   StyleSheet,
   View,
-  Dimensions
+  Dimensions,
+  TouchableOpacity,
+  Image,
+  Text
 } from 'react-native';
 
 import {
@@ -59,6 +62,14 @@ class VideoPlaybackScreen extends Component {
         moveGesture={this.state.moveGesture}
         onLookatChanged={this._onLookatChanged}>
         <View style={styles.gestureContainer}>
+        <TouchableOpacity onPress={() => navigate('Home', {disconnect: true})} style={{
+          position: 'absolute',
+          paddingTop: 1,
+          paddingHorizontal: 10,
+          zIndex: 10
+        }}>
+        <Image source={require('./../images/back-button.png')} />
+        </TouchableOpacity>
           <RTCView streamURL={this.state.videoUrl} style={styles.remoteView}/>
         </View>
       </LookatMatrixGestureHandler>
@@ -73,8 +84,6 @@ const styles = StyleSheet.create({
     },
     gestureContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
       alignSelf: 'stretch',
       backgroundColor: '#C3C2C5',
     }

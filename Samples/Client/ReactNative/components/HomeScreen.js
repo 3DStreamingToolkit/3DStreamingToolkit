@@ -12,39 +12,47 @@ var {
   RTCSessionDescription,
 } = WebRTC;
 
-import ThreeDStreamingClient from '../ThreeDStreamingClient.js';
+import ThreeDStreamingClient from '../js-3dtoolkit.js';
 import Config from '../config';
 
 var streamingClient = new ThreeDStreamingClient(Config,
-{
-  RTCPeerConnection: window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection,
-  RTCSessionDescription: window.mozRTCSessionDescription || window.RTCSessionDescription || RTCSessionDescription,
-  RTCIceCandidate: window.mozRTCIceCandidate || window.RTCIceCandidate || RTCIceCandidate
-});
+  {
+    RTCPeerConnection: window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection,
+    RTCSessionDescription: window.mozRTCSessionDescription || window.RTCSessionDescription || RTCSessionDescription,
+    RTCIceCandidate: window.mozRTCIceCandidate || window.RTCIceCandidate || RTCIceCandidate
+  });
 
 class HomeScreen extends Component {
   static navigationOptions = {
-        title: 'React Native 3D Streaming Toolkit Sample'
-      };
+    title: 'React Native 3D Streaming Toolkit Sample'
+  };
 
   constructor(props) {
     super(props);
 
-  streamingClient.signIn('ReactClient',
-    {
-      onaddstream: this.onRemoteStreamAdded.bind(this),
-      onremovestream: this.onRemoteStreamRemoved,
-      onopen: this.onSessionOpened,
-      onconnecting: this.onSessionConnecting,
-      onupdatepeers: this.updatePeerList.bind(this),
-      onremotepeerconnected: this.onremotepeerconnected.bind(this)
-    })
-  .then(streamingClient.startHeartbeat.bind(streamingClient))
-  .then(streamingClient.pollSignalingServer.bind(streamingClient, true));
+    if (streamingClient && props.navigation.state.params && props.navigation.state.params.disconnect) {
+      streamingClient.disconnect();
+    }
+    else {
+      streamingClient.signIn('ReactClient',
+        {
+          onaddstream: this.onRemoteStreamAdded.bind(this),
+          onremovestream: this.onRemoteStreamRemoved,
+          onopen: this.onSessionOpened,
+          onclose: this.onSessionClosed,
+          onconnecting: this.onSessionConnecting,
+          onupdatepeers: this.updatePeerList.bind(this),
+          onremotepeerconnected: this.onremotepeerconnected.bind(this)
+        })
+        .then(streamingClient.startHeartbeat.bind(streamingClient))
+        .then(streamingClient.pollSignalingServer.bind(streamingClient, true));
+    }
 
-  this.state = {otherPeers: streamingClient.otherPeers,
-                currentPeerId: 0,
-                videoURL: null};
+    this.state = {
+      otherPeers: streamingClient.otherPeers,
+      currentPeerId: streamingClient.otherPeers ? Object.keys(streamingClient.otherPeers)[0] : 0,
+      videoURL: null
+    };
   }
   componentWillMount() {
 
@@ -55,32 +63,36 @@ class HomeScreen extends Component {
   componentWillReceiveProps(nextProps) {
   }
 
-  onremotepeerconnected(peer_id)
-  {
-    this.setState({currentPeerId: peer_id});
+  onremotepeerconnected(peer_id) {
+    this.setState({ currentPeerId: peer_id });
   }
 
   updatePeerList() {
     let peers = streamingClient.otherPeers;
 
     if (peers) {
-      this.setState({currentPeerId: Object.keys(peers)[0]});
+      this.setState({ currentPeerId: Object.keys(peers)[0] });
     }
 
-    this.setState({otherPeers: streamingClient.otherPeers});
+    this.setState({ otherPeers: streamingClient.otherPeers });
   }
 
   onRemoteStreamAdded(event) {
-    this.props.navigation.navigate('VideoPlayback', 
-                          { videoURL: event.stream.toURL(), 
-                            sendInputData: streamingClient.sendInputChannelData.bind(streamingClient),
-                            peerTitle: this.state.otherPeers[this.state.currentPeerId] });
+    this.props.navigation.navigate('VideoPlayback',
+      {
+        videoURL: event.stream.toURL(),
+        sendInputData: streamingClient.sendInputChannelData.bind(streamingClient),
+        peerTitle: this.state.otherPeers[this.state.currentPeerId]
+      });
   }
 
   onRemoteStreamRemoved(event) {
   }
 
   onSessionOpened(event) {
+  }
+
+  onSessionClosed(event) {
   }
 
   onSessionConnecting(event) {
@@ -96,8 +108,8 @@ class HomeScreen extends Component {
       <View>
         <Picker
           selectedValue={this.state.currentPeerId}
-          onValueChange={(itemValue, itemIndex) => this.setState({currentPeerId: itemValue})}>
-            {this.renderPeers()}
+          onValueChange={(itemValue, itemIndex) => this.setState({ currentPeerId: itemValue })}>
+          {this.renderPeers()}
         </Picker>
         <Button title="Join peer" onPress={this.joinPeer.bind(this)}>Join Peer</Button>
 
