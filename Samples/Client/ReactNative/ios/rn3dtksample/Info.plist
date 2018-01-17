@@ -12,10 +12,10 @@
 	<string>org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
-  <key>NSCameraUsageDescription</key>
-  <string>Camera Permission</string>
-  <key>NSMicrophoneUsageDescription</key>
-  <string>Microphone Permission</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera Permission</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone Permission</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
@@ -36,8 +36,6 @@
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
@@ -45,7 +43,6 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>NSAppTransportSecurity</key>
-	<!--See http://ste.vn/2015/06/10/configuring-app-transport-security-ios-9-osx-10-11/ -->
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
@@ -56,15 +53,12 @@
 			</dict>
 			<key>3dtoolkit-signaling-server.azurewebsites.net</key>
 			<dict>
-			<!--Include to allow subdomains-->
-			<key>NSIncludesSubdomains</key>
-			<true/>
-			<!--Include to allow HTTP requests-->
-			<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-			<true/>
-			<!--Include to specify minimum TLS version-->
-			<key>NSTemporaryExceptionMinimumTLSVersion</key>
-			<string>TLSv1.1</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSTemporaryExceptionMinimumTLSVersion</key>
+				<string>TLSv1.1</string>
 			</dict>
 		</dict>
 	</dict>
