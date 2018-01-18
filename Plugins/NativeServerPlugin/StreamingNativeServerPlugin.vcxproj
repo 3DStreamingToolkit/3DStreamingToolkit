@@ -91,7 +91,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>
@@ -112,7 +112,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -134,7 +134,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>
@@ -157,7 +157,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -187,6 +187,7 @@
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\directx_buffer_capturer.cpp" />
     <ClCompile Include="src\input_data_channel_observer.cpp" />
+    <ClCompile Include="src\opengl_buffer_capturer.cpp" />
     <ClCompile Include="src\render_service.cpp" />
     <ClCompile Include="src\service_base.cpp" />
   </ItemGroup>
@@ -196,6 +197,9 @@
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\directx_buffer_capturer.h" />
     <ClInclude Include="inc\input_data_channel_observer.h" />
+    <ClInclude Include="inc\multi_peer_conductor.hpp" />
+    <ClInclude Include="inc\opengl_buffer_capturer.h" />
+    <ClInclude Include="inc\peer_conductor.hpp" />
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />

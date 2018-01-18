@@ -6,83 +6,25 @@
 #include <thread> 
 #endif // TEST_RUNNER
 
-using namespace DirectX;
-using namespace DX;
 using namespace StreamingToolkitSample;
 
 #ifndef TEST_RUNNER
 using namespace StreamingToolkit;
 #endif // TEST_RUNNER
 
-// function pointers for PBO Extension
-// Windows needs to get function pointers from ICD OpenGL drivers,
-// because opengl32.dll does not support extensions higher than v1.1.
-#ifdef _WIN32
-PFNGLGENBUFFERSARBPROC pglGenBuffersARB = 0;                     // VBO Name Generation Procedure
-PFNGLBINDBUFFERARBPROC pglBindBufferARB = 0;                     // VBO Bind Procedure
-PFNGLBUFFERDATAARBPROC pglBufferDataARB = 0;                     // VBO Data Loading Procedure
-PFNGLBUFFERSUBDATAARBPROC pglBufferSubDataARB = 0;               // VBO Sub Data Loading Procedure
-PFNGLDELETEBUFFERSARBPROC pglDeleteBuffersARB = 0;               // VBO Deletion Procedure
-PFNGLGETBUFFERPARAMETERIVARBPROC pglGetBufferParameterivARB = 0; // return various parameters of VBO
-PFNGLMAPBUFFERARBPROC pglMapBufferARB = 0;                       // map VBO procedure
-PFNGLUNMAPBUFFERARBPROC pglUnmapBufferARB = 0;                   // unmap VBO procedure
-#define glGenBuffersARB           pglGenBuffersARB
-#define glBindBufferARB           pglBindBufferARB
-#define glBufferDataARB           pglBufferDataARB
-#define glBufferSubDataARB        pglBufferSubDataARB
-#define glDeleteBuffersARB        pglDeleteBuffersARB
-#define glGetBufferParameterivARB pglGetBufferParameterivARB
-#define glMapBufferARB            pglMapBufferARB
-#define glUnmapBufferARB          pglUnmapBufferARB
-#endif
+std::function<void()> CaptureFrame;
 
-// function pointers for WGL_EXT_swap_control
-#ifdef _WIN32
-typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
-typedef int (WINAPI * PFNWGLGETSWAPINTERVALEXTPROC) (void);
-PFNWGLSWAPINTERVALEXTPROC pwglSwapIntervalEXT = 0;
-PFNWGLGETSWAPINTERVALEXTPROC pwglGetSwapIntervalEXT = 0;
-#define wglSwapIntervalEXT      pwglSwapIntervalEXT
-#define wglGetSwapIntervalEXT   pwglGetSwapIntervalEXT
-#endif
+static double _angle;
+static double _delta_angle = 0;
+int _frameRate = 60;
+float _eyeX = 0, _eyeY = 0, _eyeZ = 5, _lookAtX = 0, _lookAtY = 0, _lookAtZ = 0, _upX = 0, _upY = 1, _upZ = 0;
+int _width, _height;
 
-// Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
-static XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
-static XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
-static XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-
-static int imgIndex = 0;
-static bool offscreen = 1;
-static double angle;
-static double delta_angle = 0;
-static int index = 0;
-int nextIndex = 0;                  // pbo index used for next frame
-int frame_rate = 30;
-
-// constants
-const float CAMERA_DISTANCE = 5.0f;
-const int CHANNEL_COUNT = 4;
-const int DATA_SIZE = DEFAULT_FRAME_BUFFER_WIDTH * DEFAULT_FRAME_BUFFER_HEIGHT * CHANNEL_COUNT;
-const GLenum PIXEL_FORMAT = GL_BGRA;
-const int PBO_COUNT = 2;
-
-// global variables
-void *font = GLUT_BITMAP_8_BY_13;
-GLuint pboIds[PBO_COUNT];           // IDs of PBOs
-bool mouseLeftDown;
-bool mouseRightDown;
-float mouseX, mouseY;
-float cameraAngleX;
-float cameraAngleY;
-float cameraDistance;
-bool pboSupported;
-bool pboUsed;
-int drawMode = 0;
-float readTime, processTime;
-GLubyte* colorBuffer = 0;
-
-CubeRenderer::CubeRenderer() 
+CubeRenderer::CubeRenderer(const std::function<void()>& capture_frame, int width, int height)
 {
+	CaptureFrame = capture_frame;
+	_width = width;
+	_height = height;
 	std::thread func1(InitGraphics);
 	func1.detach();
 }
@@ -93,95 +35,12 @@ void CubeRenderer::InitGraphics()
 	int argc = 1;
 	argv[0] = _strdup("SpinningCubeServerGL");
 
-	cameraAngleX = cameraAngleY = 0.0f;
-	cameraDistance = CAMERA_DISTANCE;
-
-	mouseX = mouseY = 0;
-	mouseLeftDown = mouseRightDown = false;
-
-	drawMode = 0; // 0:fill, 1:wireframe, 2:point
-	angle = 0;
-	delta_angle = 1;
-
-	// allocate buffers to store frames
-	colorBuffer = new GLubyte[DATA_SIZE];
-	memset(colorBuffer, 255, DATA_SIZE);
+	_angle = 0;
+	_delta_angle = 1;
 
 	// init GLUT and GL
 	InitGLUT(argc, argv);
 	InitGL();
-
-	// get OpenGL info
-	glInfo glInfo;
-	glInfo.getInfo();
-	glInfo.printSelf();
-
-#ifdef _WIN32
-	// check PBO is supported by your video card
-	if (glInfo.isExtensionSupported("GL_ARB_pixel_buffer_object"))
-	{
-		// get pointers to GL functions
-		glGenBuffersARB = (PFNGLGENBUFFERSARBPROC)wglGetProcAddress("glGenBuffersARB");
-		glBindBufferARB = (PFNGLBINDBUFFERARBPROC)wglGetProcAddress("glBindBufferARB");
-		glBufferDataARB = (PFNGLBUFFERDATAARBPROC)wglGetProcAddress("glBufferDataARB");
-		glBufferSubDataARB = (PFNGLBUFFERSUBDATAARBPROC)wglGetProcAddress("glBufferSubDataARB");
-		glDeleteBuffersARB = (PFNGLDELETEBUFFERSARBPROC)wglGetProcAddress("glDeleteBuffersARB");
-		glGetBufferParameterivARB = (PFNGLGETBUFFERPARAMETERIVARBPROC)wglGetProcAddress("glGetBufferParameterivARB");
-		glMapBufferARB = (PFNGLMAPBUFFERARBPROC)wglGetProcAddress("glMapBufferARB");
-		glUnmapBufferARB = (PFNGLUNMAPBUFFERARBPROC)wglGetProcAddress("glUnmapBufferARB");
-
-		// check once again PBO extension
-		if (glGenBuffersARB && glBindBufferARB && glBufferDataARB && glBufferSubDataARB &&
-			glMapBufferARB && glUnmapBufferARB && glDeleteBuffersARB && glGetBufferParameterivARB)
-		{
-			pboSupported = pboUsed = true;
-		}
-		else
-		{
-			pboSupported = pboUsed = false;
-		}
-	}
-
-	// check EXT_swap_control is supported
-	if (glInfo.isExtensionSupported("WGL_EXT_swap_control"))
-	{
-		// get pointers to WGL functions
-		wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-		wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)wglGetProcAddress("wglGetSwapIntervalEXT");
-		if (wglSwapIntervalEXT && wglGetSwapIntervalEXT)
-		{
-			// disable v-sync
-			wglSwapIntervalEXT(0);
-		}
-	}
-
-#else // for linux, do not need to get function pointers, it is up-to-date
-	if (glInfo.isExtensionSupported("GL_ARB_pixel_buffer_object"))
-	{
-		pboSupported = pboUsed = true;
-	}
-	else
-	{
-		pboSupported = pboUsed = false;
-	}
-#endif
-
-	if (pboSupported)
-	{
-		// create 2 pixel buffer objects, you need to delete them when program exits.
-		// glBufferDataARB with NULL pointer reserves only memory space.
-		glGenBuffersARB(PBO_COUNT, pboIds);
-		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboIds[0]);
-		glBufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, DATA_SIZE, 0, GL_STREAM_READ_ARB);
-		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboIds[1]);
-		glBufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, DATA_SIZE, 0, GL_STREAM_READ_ARB);
-
-		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
-	}
-
-	// the last GLUT call (LOOP)
-	// window will be shown and display callback is triggered by events
-	// NOTE: this call never return main().
 	glutMainLoop(); /* Start GLUT event-processing loop */
 }
 
@@ -189,13 +48,13 @@ void StreamingToolkitSample::CubeRenderer::SetCamera()
 {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(eye[0] * CAMERA_DISTANCE, eye[1] * CAMERA_DISTANCE, eye[2] * CAMERA_DISTANCE, at[0] * CAMERA_DISTANCE, at[1] * CAMERA_DISTANCE, at[2] * CAMERA_DISTANCE, up[0] * CAMERA_DISTANCE, up[1] * CAMERA_DISTANCE, up[2] * CAMERA_DISTANCE);
+	gluLookAt(_eyeX, _eyeY, _eyeZ, _lookAtX, _lookAtY, _lookAtZ, _upX, _upY, _upZ);
 }
 
 void timerCB(int millisec)
 {
-	millisec = 1000 / frame_rate;
-	angle += delta_angle;
+	millisec = 1000 / _frameRate;
+	_angle += _delta_angle;
 	glutTimerFunc(millisec, timerCB, millisec);
 	glutPostRedisplay();
 }
@@ -209,7 +68,7 @@ void StreamingToolkitSample::CubeRenderer::InitGLUT(int argc, char ** argv)
 
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_ALPHA); // display mode
 
-	glutInitWindowSize(DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT);    // window size
+	glutInitWindowSize(_width, _height);    // window size
 
 	glutInitWindowPosition(100, 100);           // window location
 
@@ -220,8 +79,8 @@ void StreamingToolkitSample::CubeRenderer::InitGLUT(int argc, char ** argv)
 
 												// register GLUT callback functions
 	glutDisplayFunc(FirstRender);            // we will render normal drawing first
-												// so, the first frame has a valid content
-	unsigned int updateInMs = 1000 / frame_rate;
+											 // so, the first frame has a valid content
+	unsigned int updateInMs = 1000 / _frameRate;
 	glutTimerFunc(updateInMs, timerCB, updateInMs);             // redraw based on desired framerate
 }
 
@@ -265,73 +124,73 @@ void StreamingToolkitSample::CubeRenderer::InitGL()
 
 void CubeRenderer::Render(void)
 {
-	glRotatef(angle, 0.0f, 1.0f, 0.0f);
+	glRotatef(_angle, 0.0f, 1.0f, 0.0f);
 	glBegin(GL_QUADS);
-		// face v0-v1-v2-v3
-		glNormal3f(0, 0, 1);
-		glColor3f(1, 1, 1);
-		glVertex3f(1, 1, 1);
-		glColor3f(1, 1, 0);
-		glVertex3f(-1, 1, 1);
-		glColor3f(1, 0, 0);
-		glVertex3f(-1, -1, 1);
-		glColor3f(1, 0, 1);
-		glVertex3f(1, -1, 1);
+	// face v0-v1-v2-v3
+	glNormal3f(0, 0, 1);
+	glColor3f(1, 1, 1);
+	glVertex3f(1, 1, 1);
+	glColor3f(1, 1, 0);
+	glVertex3f(-1, 1, 1);
+	glColor3f(1, 0, 0);
+	glVertex3f(-1, -1, 1);
+	glColor3f(1, 0, 1);
+	glVertex3f(1, -1, 1);
 
-		// face v0-v3-v4-v6
-		glNormal3f(1, 0, 0);
-		glColor3f(1, 1, 1);
-		glVertex3f(1, 1, 1);
-		glColor3f(1, 0, 1);
-		glVertex3f(1, -1, 1);
-		glColor3f(0, 0, 1);
-		glVertex3f(1, -1, -1);
-		glColor3f(0, 1, 1);
-		glVertex3f(1, 1, -1);
+	// face v0-v3-v4-v6
+	glNormal3f(1, 0, 0);
+	glColor3f(1, 1, 1);
+	glVertex3f(1, 1, 1);
+	glColor3f(1, 0, 1);
+	glVertex3f(1, -1, 1);
+	glColor3f(0, 0, 1);
+	glVertex3f(1, -1, -1);
+	glColor3f(0, 1, 1);
+	glVertex3f(1, 1, -1);
 
-		// face v0-v5-v6-v1
-		glNormal3f(0, 1, 0);
-		glColor3f(1, 1, 1);
-		glVertex3f(1, 1, 1);
-		glColor3f(0, 1, 1);
-		glVertex3f(1, 1, -1);
-		glColor3f(0, 1, 0);
-		glVertex3f(-1, 1, -1);
-		glColor3f(1, 1, 0);
-		glVertex3f(-1, 1, 1);
+	// face v0-v5-v6-v1
+	glNormal3f(0, 1, 0);
+	glColor3f(1, 1, 1);
+	glVertex3f(1, 1, 1);
+	glColor3f(0, 1, 1);
+	glVertex3f(1, 1, -1);
+	glColor3f(0, 1, 0);
+	glVertex3f(-1, 1, -1);
+	glColor3f(1, 1, 0);
+	glVertex3f(-1, 1, 1);
 
-		// face  v1-v6-v7-v2
-		glNormal3f(-1, 0, 0);
-		glColor3f(1, 1, 0);
-		glVertex3f(-1, 1, 1);
-		glColor3f(0, 1, 0);
-		glVertex3f(-1, 1, -1);
-		glColor3f(0, 0, 0);
-		glVertex3f(-1, -1, -1);
-		glColor3f(1, 0, 0);
-		glVertex3f(-1, -1, 1);
+	// face  v1-v6-v7-v2
+	glNormal3f(-1, 0, 0);
+	glColor3f(1, 1, 0);
+	glVertex3f(-1, 1, 1);
+	glColor3f(0, 1, 0);
+	glVertex3f(-1, 1, -1);
+	glColor3f(0, 0, 0);
+	glVertex3f(-1, -1, -1);
+	glColor3f(1, 0, 0);
+	glVertex3f(-1, -1, 1);
 
-		// face v7-v4-v3-v2
-		glNormal3f(0, -1, 0);
-		glColor3f(0, 0, 0);
-		glVertex3f(-1, -1, -1);
-		glColor3f(0, 0, 1);
-		glVertex3f(1, -1, -1);
-		glColor3f(1, 0, 1);
-		glVertex3f(1, -1, 1);
-		glColor3f(1, 0, 0);
-		glVertex3f(-1, -1, 1);
+	// face v7-v4-v3-v2
+	glNormal3f(0, -1, 0);
+	glColor3f(0, 0, 0);
+	glVertex3f(-1, -1, -1);
+	glColor3f(0, 0, 1);
+	glVertex3f(1, -1, -1);
+	glColor3f(1, 0, 1);
+	glVertex3f(1, -1, 1);
+	glColor3f(1, 0, 0);
+	glVertex3f(-1, -1, 1);
 
-		// face v4-v7-v6-v5
-		glNormal3f(0, 0, -1);
-		glColor3f(0, 0, 1);
-		glVertex3f(1, -1, -1);
-		glColor3f(0, 0, 0);
-		glVertex3f(-1, -1, -1);
-		glColor3f(0, 1, 0);
-		glVertex3f(-1, 1, -1);
-		glColor3f(0, 1, 1);
-		glVertex3f(1, 1, -1);
+	// face v4-v7-v6-v5
+	glNormal3f(0, 0, -1);
+	glColor3f(0, 0, 1);
+	glVertex3f(1, -1, -1);
+	glColor3f(0, 0, 0);
+	glVertex3f(-1, -1, -1);
+	glColor3f(0, 1, 0);
+	glVertex3f(-1, 1, -1);
+	glColor3f(0, 1, 1);
+	glVertex3f(1, 1, -1);
 	glEnd();
 }
 
@@ -351,72 +210,40 @@ void StreamingToolkitSample::CubeRenderer::FirstRender(void)
 	ToPerspective();
 	glRasterPos2i(0, 0);
 
-	// set the framebuffer to read
-	glReadBuffer(GL_FRONT);
-
-	// increment current index first then get the next index
-	// "index" is used to read pixels from a framebuffer to a PBO
-	// "nextIndex" is used to process pixels in the other PBO
-	index = (index + 1) % 2;
-	nextIndex = (index + 1) % 2;
-
-	if (pboUsed) // with PBO
-	{
-		// OpenGL should perform asynch DMA transfer, so glReadPixels() will return immediately.
-		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboIds[index]);
-		glReadPixels(0, 0, DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT, PIXEL_FORMAT, GL_UNSIGNED_BYTE, 0);
-
-		// map the PBO that contain framebuffer pixels before processing it
-		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboIds[nextIndex]);
-		GLubyte* src = (GLubyte*)glMapBufferARB(GL_PIXEL_PACK_BUFFER_ARB, GL_READ_ONLY_ARB);
-		if (src)
-		{
-			// copy buffer 
-			memcpy(&colorBuffer, &src, sizeof(src));
-
-			// release pointer to the mapped buffer
-			glUnmapBufferARB(GL_PIXEL_PACK_BUFFER_ARB);     
-		}
-
-		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
-	}
-	else 
-	{
-		// read framebuffer 
-		glReadPixels(0, 0, DEFAULT_FRAME_BUFFER_WIDTH, DEFAULT_FRAME_BUFFER_HEIGHT, PIXEL_FORMAT, GL_UNSIGNED_BYTE, colorBuffer);
-	}
-
+	// Capture frame
+	CaptureFrame();
 	glutSwapBuffers();
 }
 
 void StreamingToolkitSample::CubeRenderer::ToPerspective()
 {
 	// set viewport to be the entire window
-	glViewport(0, 0, (GLsizei)DEFAULT_FRAME_BUFFER_WIDTH, (GLsizei)DEFAULT_FRAME_BUFFER_HEIGHT);
+	glViewport(0, 0, (GLsizei)_width, (GLsizei)_height);
 
 	// set perspective viewing frustum
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(60.0f, (float)(DEFAULT_FRAME_BUFFER_WIDTH) / DEFAULT_FRAME_BUFFER_HEIGHT, 0.1f, 1000.0f); // FOV, AspectRatio, NearClip, FarClip
+	gluPerspective(60.0f, (float)(_width) / _height, 0.1f, 1000.0f); // FOV, AspectRatio, NearClip, FarClip
 
-	// switch to modelview matrix in order to set scene
+																	 // switch to modelview matrix in order to set scene
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 }
 
-void CubeRenderer::UpdateView(const XMVECTORF32& eyeVec, const XMVECTORF32& atVec, const XMVECTORF32& upVec)
+void CubeRenderer::UpdateView(float eyeX, float eyeY, float eyeZ, float lookX, float lookY, float lookZ, float upX, float upY, float upZ)
 {
-	eye = eyeVec;
-	at = atVec;
-	up = upVec;
-}
-
-byte * StreamingToolkitSample::CubeRenderer::GrabRGBFrameBuffer()
-{
-	return colorBuffer;
+	_eyeX = eyeX;
+	_eyeY = eyeY;
+	_eyeZ = eyeZ;
+	_lookAtX = lookX;
+	_lookAtY = lookY;
+	_lookAtZ = lookZ;
+	_upX = upX;
+	_upY = -upY;
+	_upZ = upZ;
 }
 
 void StreamingToolkitSample::CubeRenderer::SetTargetFrameRate(int frameRate)
 {
-	frame_rate = frameRate;
+	_frameRate = frameRate;
 }

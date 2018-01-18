@@ -4,7 +4,6 @@
 #include <shellapi.h>
 #include <fstream>
 
-#include "DeviceResources.h"
 #include "CubeRenderer.h"
 #include "macros.h"
 
@@ -14,9 +13,9 @@
 #include "server_main_window.h"
 #include "server_authentication_provider.h"
 #include "turn_credential_provider.h"
-#include "server_renderer.h"
 #include "webrtc.h"
 #include "config_parser.h"
+#include "opengl_buffer_capturer.h"
 #include "service/render_service.h"
 #endif // TEST_RUNNER
 
@@ -34,7 +33,6 @@
 using namespace Microsoft::WRL;
 #endif // TEST_RUNNER
 
-using namespace DX;
 using namespace StreamingToolkit;
 using namespace StreamingToolkitSample;
 
@@ -47,12 +45,9 @@ void StartRenderService();
 // Global Variables
 //--------------------------------------------------------------------------------------
 HWND				g_hWnd = nullptr;
-DeviceResources*	g_deviceResources = nullptr;
-CubeRenderer*		g_cubeRenderer = nullptr;
+CubeRenderer*		g_CubeRenderer = nullptr;
 #ifdef TEST_RUNNER
 VideoTestRunner*	g_videoTestRunner = nullptr;
-#else // TEST_RUNNER
-BufferRenderer*		g_bufferRenderer = nullptr;
 #endif // TESTRUNNER
 
 #ifndef TEST_RUNNER
@@ -87,52 +82,27 @@ bool AppMain(BOOL stopping)
 		return -1;
 	}
 
-	// Initializes the device resources.
-	g_deviceResources = new DeviceResources();
-	g_deviceResources->SetWindow(wnd.handle());
+	// Creates and initializes the buffer capturer.
+	// Note: Conductor is responsible for cleaning up bufferCapturer object.
+	OpenGLBufferCapturer* bufferCapturer = new OpenGLBufferCapturer();
+	bufferCapturer->Initialize(true, serverConfig->server_config.width, serverConfig->server_config.height);
+
+	std::function<void()> captureFrame = ([&]
+	{
+		bufferCapturer->SendFrame();
+	});
 
 	// Initializes the cube renderer.
-	g_cubeRenderer = new CubeRenderer();
-
-	std::function<unsigned char*()> grabFrameFunc = ([&]
-	{
-		return g_cubeRenderer->GrabRGBFrameBuffer();
-	});
-
-	std::function<void(int)> setTargetFrameRate = ([&](int frameRate)
-	{
-		g_cubeRenderer->SetTargetFrameRate(frameRate);
-	});
-
-
-	ID3D11Texture2D* frameBuffer = nullptr;
-	if (!serverConfig->server_config.system_service)
-	{
-		// Gets the frame buffer from the swap chain.
-		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-			0,
-			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(&frameBuffer));
-	}
-
-	// Initializes the buffer renderer.
-	g_bufferRenderer = new BufferRenderer(
-		serverConfig->server_config.width,
-		serverConfig->server_config.height,
-		grabFrameFunc,
-		setTargetFrameRate
-		);
-
-	// Makes sure to release the frame buffer reference.
-	SAFE_RELEASE(frameBuffer);
-
+	g_CubeRenderer = new CubeRenderer(captureFrame, serverConfig->server_config.width, serverConfig->server_config.height);
 	rtc::InitializeSSL();
 
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
+
+	// Initializes the conductor.
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
+		&client, bufferCapturer, &wnd, webrtcConfig.get()));
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -150,43 +120,7 @@ bool AppMain(BOOL stopping)
 			std::istringstream datastream(body);
 			std::string token;
 
-			if (strcmp(type, "stereo-rendering") == 0)
-			{
-				getline(datastream, token, ',');
-				bool isStereo = stoi(token) == 1;
-				if (isStereo == g_deviceResources->IsStereo())
-				{
-					return;
-				}
-
-				// Releases the current frame buffer.
-				g_bufferRenderer->Release();
-
-				// Resizes the swap chain.
-				g_deviceResources->SetStereo(isStereo);
-				
-				// Updates the new frame buffer.
-				if (!serverConfig->server_config.system_service)
-				{
-					ID3D11Texture2D* frameBuffer = nullptr;
-					HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(&frameBuffer));
-
-					g_bufferRenderer->Resize(frameBuffer);
-
-					// Makes sure to release the frame buffer reference.
-					SAFE_RELEASE(frameBuffer);
-				}
-				else
-				{
-					SIZE size = g_deviceResources->GetOutputSize();
-					g_bufferRenderer->Resize(size.cx, size.cy);
-				}
-
-			}
-			else if (strcmp(type, "camera-transform-lookat") == 0)
+			if (strcmp(type, "camera-transform-lookat") == 0)
 			{
 				// Eye point.
 				getline(datastream, token, ',');
@@ -212,10 +146,7 @@ bool AppMain(BOOL stopping)
 				getline(datastream, token, ',');
 				float upZ = stof(token);
 
-				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-				g_cubeRenderer->UpdateView(eye, lookAt, up);
+				g_CubeRenderer->UpdateView(eyeX, eyeY, eyeZ, focusX, focusY, focusZ, upX, upY, upZ);
 			}
 		}
 	});
@@ -268,6 +199,8 @@ bool AppMain(BOOL stopping)
 		// For system service, automatically connect to the signaling server.
 		conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
 	}
+
+	conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
 
 	// configure turn, if needed
 	if (!webrtcConfig->turn_server.provider.empty())
@@ -334,20 +267,13 @@ bool AppMain(BOOL stopping)
 				::TranslateMessage(&msg);
 				::DispatchMessage(&msg);
 			}
-
-			if (conductor->connection_active() || client.is_connected())
-			{
-				g_deviceResources->Present();
-			}
 		}
 	}
 
 	rtc::CleanupSSL();
 
 	// Cleanup.
-	delete g_bufferRenderer;
-	delete g_cubeRenderer;
-	delete g_deviceResources;
+	delete g_CubeRenderer;
 
 	return 0;
 }
@@ -513,10 +439,10 @@ int WINAPI wWinMain(
 	// Creates and initializes the video test runner library.
 	g_videoTestRunner = new VideoTestRunner(
 		g_deviceResources->GetD3DDevice(),
-		g_deviceResources->GetD3DDeviceContext()); 
+		g_deviceResources->GetD3DDeviceContext());
 
 	g_videoTestRunner->StartTestRunner(g_deviceResources->GetSwapChain());
-	
+
 	// Main message loop.
 	MSG msg = { 0 };
 	while (WM_QUIT != msg.message)
@@ -536,7 +462,7 @@ int WINAPI wWinMain(
 			}
 
 			g_videoTestRunner->TestCapture();
-			if (g_videoTestRunner->IsNewTest()) 
+			if (g_videoTestRunner->IsNewTest())
 			{
 				delete g_cubeRenderer;
 				g_cubeRenderer = new CubeRenderer(g_deviceResources);

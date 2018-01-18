@@ -55,6 +55,9 @@
     <ClCompile Include="src\directx_buffer_capturer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="src\opengl_buffer_capturer.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -89,6 +92,11 @@
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
     <ClInclude Include="inc\directx_buffer_capturer.h">
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\multi_peer_conductor.hpp" />
+    <ClInclude Include="inc\peer_conductor.hpp" />
+    <ClInclude Include="inc\opengl_buffer_capturer.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
   </ItemGroup>
