@@ -32,8 +32,10 @@
       "type": "string",
       "defaultValue": "2016-Datacenter-smalldisk",
       "allowedValues": [
-        "2016-Datacenter-Server-Core-smalldisk",
-        "2016-Datacenter-smalldisk"
+        "2016-Datacenter",
+        "2016-Datacenter-smalldisk",
+        "2016-Datacenter-Server-Core",
+        "2016-Datacenter-Server-Core-smalldisk"
       ],
       "metadata": {
         "description": "The Windows version for the VM. This will pick a fully patched image of this given Windows version."
@@ -77,7 +79,7 @@
     "vhdStorageAccountName": "[concat('vhdstorage', uniqueString(resourceGroup().id))]",
     "diagnosticsStorageAccountName": "[variables('vhdStorageAccountName')]",
     "wadmetricsresourceid": "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]",
-    "scriptCommand": "powershell.exe -ExecutionPolicy Unrestricted -File deploy-rendering-server.ps1 [parameters('serverType')]",
+    "scriptCommand": "powershell.exe -ExecutionPolicy Unrestricted -File deploy-rendering-server.ps1 [parameters('vmSize')] [parameters('windowsOSVersion')]",
     "scriptUri": "https://raw.githubusercontent.com/CatalystCode/3dtoolkit/master/Samples/Server/Directx-SpinningCube/Deploy/deploy-rendering-server.ps1"
   },
   "resources": [
@@ -232,7 +234,7 @@
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
-              "priority": 1030,
+              "priority": 1040,
               "direction": "Inbound"
             }
           },
@@ -245,7 +247,7 @@
               "sourceAddressPrefix": "*",
               "destinationAddressPrefix": "*",
               "access": "Allow",
-              "priority": 1040,
+              "priority": 1050,
               "direction": "Inbound"
             }
           }

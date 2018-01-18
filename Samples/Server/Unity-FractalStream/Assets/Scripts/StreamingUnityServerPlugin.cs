@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Microsoft.Toolkit.ThreeD
 {
@@ -25,13 +24,27 @@ namespace Microsoft.Toolkit.ThreeD
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern IntPtr GetRenderEventFunc();
+            public static extern void InitializeBufferCapturer(IntPtr leftRT, IntPtr rightRT);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+#endif
+            public static extern void SendFrame(bool isStereo, long predictionTimestamp);
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
             public static extern void Close();
+#endif
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+            public static extern void SetEncodingStereo(bool encodingStereo);
 #endif
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
@@ -169,11 +182,6 @@ namespace Microsoft.Toolkit.ThreeD
         /// </summary>
         public StreamingUnityServerPlugin()
         {
-            // set up the command buffer
-            EncodeAndTransmitCommand = new CommandBuffer();
-            EncodeAndTransmitCommand.name = PluginName + " Encoding";
-            EncodeAndTransmitCommand.IssuePluginEvent(Native.GetRenderEventFunc(), 0);
-
             // create null checking wrappers that we can always call on the native side
             this.pinnedInputUpdate = new GenericDelegate<string>.Handler(this.OnInputUpdate);
             this.pinnedLog = new GenericDelegate<int, string>.Handler(this.OnLog);
@@ -216,31 +224,39 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// The <see cref="CommandBuffer"/> needed to encode and transmit frame data
+        /// true for stereo encoding, false otherwise
         /// </summary>
-        /// <remarks>
-        /// This is consumed by <see cref="EncodeAndTransmitFrame"/> to encode the entire rendertexture
-        /// and can also be added to a camera command buffer to encode just that cameras view
-        /// </remarks>
-        /// <example>
-        /// var plugin = new StreamingUnityServerPlugin();
-        /// Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, plugin.EncodeAndTransmitCommand);
-        /// </example>
-        public CommandBuffer EncodeAndTransmitCommand
+        private bool encodingStereo = false;
+
+        /// <summary>
+        /// Informs the encoder if we are or are not going to be encoding stereo data
+        /// </summary>
+        public bool EncodingStereo
         {
-            get;
-            private set;
+            get { return encodingStereo; }
+            set { Native.SetEncodingStereo(value); encodingStereo = value; }
         }
 
         /// <summary>
-        /// <see cref="Coroutine"/> that encodes and transmits the current frame in it's entirety
+        /// Initializes the buffer capturer.
         /// </summary>
-        /// <returns>iterator for coroutine</returns>
-        public IEnumerator EncodeAndTransmitFrame()
+        /// <param name="leftRT">The render texture for left eye.</param>
+        /// <param name="rightRT">The render texture for right eye.</param>
+        public IEnumerator InitializeBufferCapturer(IntPtr leftRT, IntPtr rightRT)
+        {
+            Native.InitializeBufferCapturer(leftRT, rightRT);
+            yield return null;
+        }
+
+        /// <summary>
+        /// Locks frame buffer and sends it to the encoder.
+        /// </summary>
+        /// <param name="isStereo">True for stereo output.</param>
+        /// <param name="predictionTimestamp">The prediction timestamp.</param>
+        public IEnumerator SendFrame(bool isStereo, long predictionTimestamp)
         {
             yield return new WaitForEndOfFrame();
-
-            Graphics.ExecuteCommandBuffer(EncodeAndTransmitCommand);
+            Native.SendFrame(isStereo, predictionTimestamp);
         }
 
         /// <summary>

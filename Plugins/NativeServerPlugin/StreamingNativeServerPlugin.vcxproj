@@ -182,23 +182,23 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="src\buffer_capturer.cpp" />
     <ClCompile Include="src\conductor.cpp" />
-    <ClCompile Include="src\custom_video_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
+    <ClCompile Include="src\directx_buffer_capturer.cpp" />
     <ClCompile Include="src\input_data_channel_observer.cpp" />
-    <ClCompile Include="src\buffer_renderer.cpp" />
     <ClCompile Include="src\render_service.cpp" />
     <ClCompile Include="src\service_base.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="inc\buffer_capturer.h" />
     <ClInclude Include="inc\conductor.h" />
-    <ClInclude Include="inc\custom_video_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
+    <ClInclude Include="inc\directx_buffer_capturer.h" />
     <ClInclude Include="inc\input_data_channel_observer.h" />
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />
-    <ClInclude Include="inc\buffer_renderer.h" />
     <ClInclude Include="inc\service\render_service.h" />
     <ClInclude Include="inc\service\service_base.h" />
     <ClInclude Include="inc\service\thread_pool.h" />
@@ -226,7 +226,7 @@
     </None>
     <None Include="serviceDelete.ps1">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>	
+    </None>
     <None Include="webrtcConfigStunTemplate.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

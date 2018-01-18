@@ -128,6 +128,7 @@ protected:
 		bool  m_MinimizedWhileFullscreen;   // if true, the HWND is minimized due to a focus switch away when fullscreen mode
 		bool  m_IgnoreSizeChange;           // if true, DXUT won't reset the device upon HWND size change
 		bool  m_HeadlessMode;				// if true, DXUT won't create any window or swap chain
+		bool  m_NoSwapChainPresent;			// if true, DXUT won't call swap chain present
 
 		double m_Time;                      // current time in seconds
 		double m_AbsoluteTime;              // absolute time in seconds
@@ -282,6 +283,7 @@ public:
 		m_state.m_FPS = 1.0f;
 		m_state.m_MessageWhenD3D11NotAvailable = true;
 		m_state.m_HeadlessMode = false;
+		m_state.m_NoSwapChainPresent = false;
 	}
 
 	void Destroy()
@@ -343,6 +345,7 @@ public:
 	GET_SET_ACCESSOR(bool, MinimizedWhileFullscreen);
 	GET_SET_ACCESSOR(bool, IgnoreSizeChange);
 	GET_SET_ACCESSOR(bool, HeadlessMode);
+	GET_SET_ACCESSOR(bool, NoSwapChainPresent);
 
 	GET_SET_ACCESSOR(double, Time);
 	GET_SET_ACCESSOR(double, AbsoluteTime);
@@ -607,6 +610,7 @@ bool WINAPI DXUTGetAutomation() { return GetDXUTState().GetAutomation(); }
 bool WINAPI DXUTIsWindowed() { return DXUTGetIsWindowedFromDS(GetDXUTState().GetCurrentDeviceSettings()); }
 bool WINAPI DXUTIsInGammaCorrectMode() { return GetDXUTState().GetIsInGammaCorrectMode(); }
 bool WINAPI DXUTIsHeadlessMode() { return GetDXUTState().GetHeadlessMode(); }
+bool WINAPI DXUTNoSwapChainPresent() { return GetDXUTState().GetNoSwapChainPresent(); }
 IDXGIFactory1* WINAPI DXUTGetDXGIFactory() { DXUTDelayLoadDXGI(); return GetDXUTState().GetDXGIFactory(); }
 
 ID3D11Device* WINAPI DXUTGetD3D11Device() { return GetDXUTState().GetD3D11Device(); }
@@ -2935,7 +2939,7 @@ void WINAPI DXUTRender3DEnvironment()
 		dwFlags = GetDXUTState().GetCurrentDeviceSettings()->d3d11.PresentFlags;
 	UINT SyncInterval = GetDXUTState().GetCurrentDeviceSettings()->d3d11.SyncInterval;
 
-	if (!GetDXUTState().GetHeadlessMode())
+	if (!GetDXUTState().GetHeadlessMode() && !GetDXUTState().GetNoSwapChainPresent())
 	{
 		// Show the frame on the primary surface.
 		hr = pSwapChain->Present(SyncInterval, dwFlags);
@@ -4412,6 +4416,15 @@ void WINAPI DXUTSetIsInGammaCorrectMode(_In_ bool bGammaCorrect)
 void WINAPI DXUTSetHeadlessMode(_In_ bool bHeadlessMode)
 {
 	GetDXUTState().SetHeadlessMode(bHeadlessMode);
+}
+
+
+//--------------------------------------------------------------------------------------
+// Tells DXUT not to call swapchain present
+//--------------------------------------------------------------------------------------
+void WINAPI DXUTSetNoSwapChainPresent(_In_ bool bNoSwapChainPresent)
+{
+	GetDXUTState().SetNoSwapChainPresent(bNoSwapChainPresent);
 }
 
 

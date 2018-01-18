@@ -273,6 +273,7 @@ void    WINAPI DXUTShutdown(_In_ int nExitCode = 0);
 void    WINAPI DXUTSetIsInGammaCorrectMode(_In_ bool bGammaCorrect);
 bool    WINAPI DXUTGetMSAASwapChainCreated();
 void    WINAPI DXUTSetHeadlessMode(_In_ bool bHeadlessMode);
+void    WINAPI DXUTSetNoSwapChainPresent(_In_ bool bNoSwapChainPresent);
 
 
 //--------------------------------------------------------------------------------------

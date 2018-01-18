@@ -94,9 +94,9 @@ public:
 	}
 };
 
-MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice) :
+MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> externalD3DDevice, BOOL useVSyncTimer) :
 	m_spDX11Device(nullptr),
-	m_spDX11UnityDevice(unityD3DDevice),
+	m_spDX11ExternalD3DDevice(externalD3DDevice),
 	m_spDX11DeviceContext(nullptr),
 	m_spDXGIOutput(nullptr),
 	m_spDX11SwapChain(nullptr),
@@ -112,7 +112,9 @@ MEPlayer::MEPlayer(Microsoft::WRL::ComPtr<ID3D11Device> unityD3DDevice) :
 	m_d3dFormat(DXGI_FORMAT_B8G8R8A8_UNORM),
 	m_fInitSuccess(FALSE),
 	m_fExitApp(FALSE),
-	m_fUseDX(TRUE)
+	m_fUseDX(TRUE),
+	m_fUseVSyncTimer(useVSyncTimer),
+	m_renderFps(0)
 {
 	memset(&m_bkgColor, 0, sizeof(MFARGB));
 
@@ -212,7 +214,7 @@ void MEPlayer::CreateBackBuffers()
 	EnterCriticalSection(&m_critSec);
 
 	// make sure everything is released first;    
-	if (m_spDX11Device)
+	if (m_spDX11Device || m_spDX11ExternalD3DDevice)
 	{
 		// Acquire the DXGIdevice lock 
 		CAutoDXGILock DXGILock(m_spDXGIManager);
@@ -235,22 +237,22 @@ void MEPlayer::CreateBackBuffers()
 			spDXGIDevice->SetMaximumFrameLatency(1)
 		);
 
-		// create the video texture description based on texture format
+		// Create the video texture description based on texture format.
 		auto m_textureDesc = CD3D11_TEXTURE2D_DESC(DXGI_FORMAT_B8G8R8A8_UNORM, m_rcTarget.right, m_rcTarget.bottom);
 		m_textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 		m_textureDesc.MipLevels = 1;
 		m_textureDesc.MiscFlags = D3D11_RESOURCE_MISC_SHARED | D3D11_RESOURCE_MISC_SHARED_NTHANDLE;
 		m_textureDesc.Usage = D3D11_USAGE_DEFAULT;
 
-		// create staging texture on unity device
+		// Create the render texture.
 		ComPtr<ID3D11Texture2D> spTexture;
-		MEDIA::ThrowIfFailed(m_spDX11UnityDevice->CreateTexture2D(&m_textureDesc, nullptr, &spTexture));
+		MEDIA::ThrowIfFailed(m_spDX11ExternalD3DDevice->CreateTexture2D(&m_textureDesc, nullptr, &spTexture));
 
 		auto srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC(spTexture.Get(), D3D11_SRV_DIMENSION_TEXTURE2D);
 		ComPtr<ID3D11ShaderResourceView> spSRV;
-		MEDIA::ThrowIfFailed(m_spDX11UnityDevice->CreateShaderResourceView(spTexture.Get(), &srvDesc, &spSRV));
+		MEDIA::ThrowIfFailed(m_spDX11ExternalD3DDevice->CreateShaderResourceView(spTexture.Get(), &srvDesc, &spSRV));
 
-		// create shared texture from the unity texture
+		// Create the shared resource.
 		ComPtr<IDXGIResource1> spDXGIResource;
 		MEDIA::ThrowIfFailed(spTexture.As(&spDXGIResource));
 
@@ -262,6 +264,7 @@ void MEPlayer::CreateBackBuffers()
 			DXGI_SHARED_RESOURCE_READ | DXGI_SHARED_RESOURCE_WRITE,
 			L"SharedTextureHandle",
 			&sharedHandle);
+
 		if (SUCCEEDED(hr))
 		{
 			ComPtr<ID3D11Device1> spMediaDevice;
@@ -284,7 +287,7 @@ void MEPlayer::CreateBackBuffers()
 	}
 
 	high_resolution_clock::time_point now = high_resolution_clock::now();
-	_lastTimeFPSCalculated = now;
+	m_lastTimeFPSCalculated = now;
 
 	LeaveCriticalSection(&m_critSec);
 
@@ -313,17 +316,29 @@ void MEPlayer::Initialize(float width, float height)
 	try
 	{
 
-		// Create DX11 device.    
-		CreateDX11Device();
+		// Create DX11 device.
+		if (!m_spDX11ExternalD3DDevice)
+		{
+			CreateDX11Device();
+		}
 
 		UINT resetToken;
 		MEDIA::ThrowIfFailed(
 			MFCreateDXGIDeviceManager(&resetToken, &m_spDXGIManager)
 		);
 
-		MEDIA::ThrowIfFailed(
-			m_spDXGIManager->ResetDevice(m_spDX11Device.Get(), resetToken)
-		);
+		if (m_spDX11ExternalD3DDevice)
+		{
+			MEDIA::ThrowIfFailed(
+				m_spDXGIManager->ResetDevice(m_spDX11ExternalD3DDevice.Get(), resetToken)
+			);
+		}
+		else
+		{
+			MEDIA::ThrowIfFailed(
+				m_spDXGIManager->ResetDevice(m_spDX11Device.Get(), resetToken)
+			);
+		}
 
 		// Create our event callback object.
 		spNotify = new MediaEngineNotify(nullptr);
@@ -790,17 +805,23 @@ void MEPlayer::UpdateForWindowSizeChange(float width, float height)
 void MEPlayer::UpdateFrameRate()
 {
 	// Do FPS calculation and notification.
-	_frameCounter++;
+	m_frameCounter++;
 
 	high_resolution_clock::time_point now = high_resolution_clock::now();
-	duration<double, std::milli> time_span = now - _lastTimeFPSCalculated;
+	duration<double, std::milli> time_span = now - m_lastTimeFPSCalculated;
 	if (time_span.count() > 1000) {
 
-		_RPT1(0, "%d\n", _frameCounter);
+		_RPT1(0, "%d\n", m_frameCounter);
 
-		_frameCounter = 0;
-		_lastTimeFPSCalculated = now;
+		m_renderFps = m_frameCounter;
+		m_frameCounter = 0;
+		m_lastTimeFPSCalculated = now;
 	}
+}
+
+int MEPlayer::GetFrameRate()
+{
+	return m_renderFps;
 }
 
 //+-----------------------------------------------------------------------------
@@ -830,12 +851,15 @@ void MEPlayer::StartTimer()
 	m_fStopTimer = FALSE;
 
 	auto vidPlayer = this;
-	task<void> workItem(ThreadPool::RunAsync(ref new WorkItemHandler([=](IAsyncAction^ /*sender*/) {
-		vidPlayer->RealVSyncTimer();
+	if (m_fUseVSyncTimer)
+	{
+		task<void> workItem(ThreadPool::RunAsync(ref new WorkItemHandler(
+			[=](IAsyncAction^ /*sender*/) 
+			{
+				vidPlayer->RealVSyncTimer();
+			}),
+			WorkItemPriority::High));
 	}
-	),
-		WorkItemPriority::High
-		));
 
 	return;
 }
@@ -899,17 +923,36 @@ void MEPlayer::OnTimer()
 		LONGLONG pts;
 		if (m_spMediaEngine->OnVideoStreamTick(&pts) == S_OK)
 		{
+			UpdateFrameRate();
+
 			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), &m_nRect, &m_rcTarget, &m_bkgColor)
 			);
 
-			FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom);
+			// Parses the timestamp id from MediaSourceHelper.
+			int timestampId = pts & 0xFF;
+			FrameTransferred(this, m_rcTarget.right, m_rcTarget.bottom,
+				m_primaryMediaTexture, timestampId);
 		}
 	}
 
 	LeaveCriticalSection(&m_critSec);
+}
 
-	return;
+//+-----------------------------------------------------------------------------
+//
+//  Function:   OnTimer with VSync.
+//
+//  Synopsis:   Called at 60Hz - we simply call the media engine and draw
+//              a new frame to the screen if told to do so.
+//
+//------------------------------------------------------------------------------
+void MEPlayer::OnVSyncTimer()
+{
+	if (m_spDXGIOutput && SUCCEEDED(m_spDXGIOutput->WaitForVBlank()))
+	{
+		OnTimer();
+	}
 }
 
 //+-----------------------------------------------------------------------------

@@ -17,8 +17,11 @@
 #include "server_renderer.h"
 #include "webrtc.h"
 #include "config_parser.h"
+#include "directx_buffer_capturer.h"
 #include "service/render_service.h"
 #endif // TEST_RUNNER
+
+#define FOCUS_POINT		3.f
 
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
@@ -32,6 +35,7 @@
 
 #ifndef TEST_RUNNER
 using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
 #endif // TEST_RUNNER
 
 using namespace DX;
@@ -46,13 +50,19 @@ void StartRenderService();
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-HWND				g_hWnd = nullptr;
-DeviceResources*	g_deviceResources = nullptr;
-CubeRenderer*		g_cubeRenderer = nullptr;
+HWND					g_hWnd = nullptr;
+DeviceResources*		g_deviceResources = nullptr;
+CubeRenderer*			g_cubeRenderer = nullptr;
 #ifdef TEST_RUNNER
-VideoTestRunner*	g_videoTestRunner = nullptr;
+VideoTestRunner*		g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
-BufferRenderer*		g_bufferRenderer = nullptr;
+bool					g_hasNewInputData = false;
+int64_t					g_lastTimestamp = -1;
+DirectX::XMVECTORF32	g_lookAtVector;
+DirectX::XMVECTORF32	g_upVector;
+DirectX::XMVECTORF32	g_eyeVector;
+DirectX::XMFLOAT4X4		g_viewProjectionMatrixLeft;
+DirectX::XMFLOAT4X4		g_viewProjectionMatrixRight;
 #endif // TESTRUNNER
 
 #ifndef TEST_RUNNER
@@ -61,6 +71,7 @@ bool AppMain(BOOL stopping)
 {
 	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 	auto serverConfig = GlobalObject<ServerConfig>::Get();
+	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 	authInfo.authority = webrtcConfig->authentication.authority;
@@ -94,50 +105,42 @@ bool AppMain(BOOL stopping)
 	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
-	// Render loop.
-	std::function<void()> frameRenderFunc = ([&]
-	{
-		g_cubeRenderer->Update();
-
-		// For system service, we render to buffer instead of swap chain.
-		if (serverConfig->server_config.system_service)
-		{
-			g_cubeRenderer->Render(g_bufferRenderer->GetRenderTargetView());
-		}
-		else
-		{
-			g_cubeRenderer->Render();
-		}
-	});
-
-	ID3D11Texture2D* frameBuffer = nullptr;
-	if (!serverConfig->server_config.system_service)
-	{
-		// Gets the frame buffer from the swap chain.
-		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-			0,
-			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(&frameBuffer));
-	}
-
-	// Initializes the buffer renderer.
-	g_bufferRenderer = new BufferRenderer(
-		serverConfig->server_config.width,
-		serverConfig->server_config.height,
-		g_deviceResources->GetD3DDevice(),
-		frameRenderFunc,
-		frameBuffer);
-
-	// Makes sure to release the frame buffer reference.
-	SAFE_RELEASE(frameBuffer);
-
 	rtc::InitializeSSL();
-
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
 	std::shared_ptr<TurnCredentialProvider> turnProvider;
 	PeerConnectionClient client;
+
+	// Creates and initializes the buffer capturer.
+	// Note: Conductor is responsible for cleaning up bufferCapturer object.
+	std::shared_ptr<DirectXBufferCapturer> bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
+		new DirectXBufferCapturer(g_deviceResources->GetD3DDevice()));
+
+	bufferCapturer->Initialize(serverConfig->server_config.system_service,
+		serverConfig->server_config.width, serverConfig->server_config.height);
+
+	if (nvEncConfig->use_software_encoding)
+	{
+		bufferCapturer->EnableSoftwareEncoder();
+	}
+
+	// Initializes the conductor.
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
+		&client, bufferCapturer.get(), &wnd, webrtcConfig.get()));
+
+	// Gets the frame buffer from the swap chain.
+	ComPtr<ID3D11Texture2D> frameBuffer;
+	if (!serverConfig->server_config.system_service)
+	{
+		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
+			0,
+			__uuidof(ID3D11Texture2D),
+			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+	}
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -154,42 +157,44 @@ bool AppMain(BOOL stopping)
 			strcpy(body, msg.get("body", "").asCString());
 			std::istringstream datastream(body);
 			std::string token;
-
 			if (strcmp(type, "stereo-rendering") == 0)
 			{
 				getline(datastream, token, ',');
 				bool isStereo = stoi(token) == 1;
-				if (isStereo == g_deviceResources->IsStereo())
+				if (isStereo != g_deviceResources->IsStereo())
 				{
-					return;
+					// Resizes the swap chain.
+					frameBuffer.Reset();
+					g_deviceResources->SetStereo(isStereo);
+					if (!serverConfig->server_config.system_service)
+					{
+						HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
+							0,
+							__uuidof(ID3D11Texture2D),
+							reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+						if (FAILED(hr))
+						{
+							return hr;
+						}
+					}
+					else
+					{
+						SIZE size = g_deviceResources->GetOutputSize();
+						bufferCapturer->ResizeRenderTexture(size.cx, size.cy);
+					}
+
+					if (isStereo)
+					{
+						// In stereo rendering mode, we need to position the cube
+						// in front of user.
+						g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
+					}
+					else
+					{
+						g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
+					}
 				}
-
-				// Releases the current frame buffer.
-				g_bufferRenderer->Release();
-
-				// Resizes the swap chain.
-				g_deviceResources->SetStereo(isStereo);
-				
-				// Updates the new frame buffer.
-				if (!serverConfig->server_config.system_service)
-				{
-					ID3D11Texture2D* frameBuffer = nullptr;
-					HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(&frameBuffer));
-
-					g_bufferRenderer->Resize(frameBuffer);
-
-					// Makes sure to release the frame buffer reference.
-					SAFE_RELEASE(frameBuffer);
-				}
-				else
-				{
-					SIZE size = g_deviceResources->GetOutputSize();
-					g_bufferRenderer->Resize(size.cx, size.cy);
-				}
-
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{
@@ -217,10 +222,10 @@ bool AppMain(BOOL stopping)
 				getline(datastream, token, ',');
 				float upZ = stof(token);
 
-				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-				g_cubeRenderer->UpdateView(eye, lookAt, up);
+				g_lookAtVector = { focusX, focusY, focusZ, 0.f };
+				g_upVector = { upX, upY, upZ, 0.f };
+				g_eyeVector = { eyeX, eyeY, eyeZ, 0.f };
+				g_hasNewInputData = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
@@ -246,9 +251,44 @@ bool AppMain(BOOL stopping)
 					}
 				}
 
-				// Updates the cube's matrices.
-				g_cubeRenderer->UpdateView(
-					viewProjectionLeft, viewProjectionRight);
+				g_viewProjectionMatrixLeft = viewProjectionLeft;
+				g_viewProjectionMatrixRight = viewProjectionRight;
+				g_hasNewInputData = true;
+			}
+			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
+			{
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the prediction timestamp.
+				getline(datastream, token, ',');
+				int64_t timestamp = stoll(token);
+				if (timestamp != g_lastTimestamp)
+				{
+					g_lastTimestamp = timestamp;
+					g_viewProjectionMatrixLeft = viewProjectionLeft;
+					g_viewProjectionMatrixRight = viewProjectionRight;
+					g_hasNewInputData = true;
+				}
 			}
 		}
 	});
@@ -350,27 +390,87 @@ bool AppMain(BOOL stopping)
 	}
 
 	// Main loop.
-	MSG msg;
-	BOOL gm;
-	while (!stopping && (gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	while (!stopping)
 	{
-		// For system service, ignore window and swap chain.
-		if (serverConfig->server_config.system_service)
+		MSG msg = { 0 };
+
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
+			if (serverConfig->server_config.system_service ||
+				!wnd.PreTranslateMessage(&msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 		else
 		{
-			if (!wnd.PreTranslateMessage(&msg))
+			if (conductor->is_closing())
 			{
-				::TranslateMessage(&msg);
-				::DispatchMessage(&msg);
+				break;
 			}
 
 			if (conductor->connection_active() || client.is_connected())
 			{
-				g_deviceResources->Present();
+				ULONGLONG tick = GetTickCount64();
+				if (!g_deviceResources->IsStereo())
+				{
+					if (g_hasNewInputData)
+					{
+						g_cubeRenderer->Update(g_eyeVector, g_lookAtVector, g_upVector);
+						g_hasNewInputData = false;
+					}
+					else
+					{
+						g_cubeRenderer->Update();
+					}
+
+					// For system service, we render to buffer instead of swap chain.
+					if (serverConfig->server_config.system_service)
+					{
+						g_cubeRenderer->Render(bufferCapturer->GetRenderTargetView());
+						bufferCapturer->SendFrame();
+					}
+					else
+					{
+						g_cubeRenderer->Render();
+						bufferCapturer->SendFrame(frameBuffer.Get());
+						g_deviceResources->Present();
+					}
+
+					// FPS limiter.
+					const int interval = 1000 / nvEncConfig->capture_fps;
+					ULONGLONG timeElapsed = GetTickCount64() - tick;
+					DWORD sleepAmount = 0;
+					if (timeElapsed < interval)
+					{
+						sleepAmount = interval - timeElapsed;
+					}
+
+					Sleep(sleepAmount);
+				}
+				// In stereo rendering mode, we only update frame whenever
+				// receiving any input data.
+				else if (g_hasNewInputData)
+				{
+					g_cubeRenderer->Update(g_viewProjectionMatrixLeft,
+						g_viewProjectionMatrixRight);
+
+					// For system service, we render to buffer instead of swap chain.
+					if (serverConfig->server_config.system_service)
+					{
+						g_cubeRenderer->Render(bufferCapturer->GetRenderTargetView());
+						bufferCapturer->SendFrame(g_lastTimestamp);
+					}
+					else
+					{
+						g_cubeRenderer->Render();
+						bufferCapturer->SendFrame(frameBuffer.Get(), g_lastTimestamp);
+						//g_deviceResources->Present();
+					}
+
+					g_hasNewInputData = false;
+				}
 			}
 		}
 	}
@@ -378,7 +478,6 @@ bool AppMain(BOOL stopping)
 	rtc::CleanupSSL();
 
 	// Cleanup.
-	delete g_bufferRenderer;
 	delete g_cubeRenderer;
 	delete g_deviceResources;
 

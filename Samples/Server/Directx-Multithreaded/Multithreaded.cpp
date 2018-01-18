@@ -37,6 +37,7 @@
 #include "server_renderer.h"
 #include "webrtc.h"
 #include "config_parser.h"
+#include "directx_buffer_capturer.h"
 #include "service/render_service.h"
 #endif // TEST_RUNNER
 
@@ -388,14 +389,19 @@ SceneParamsStatic           g_StaticParamsShadow[g_iNumShadows];
 SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 
 //--------------------------------------------------------------------------------------
-// Video Helper
+// Video Capturer
 //--------------------------------------------------------------------------------------
 #ifdef TEST_RUNNER
 VideoTestRunner*			g_videoTestRunner = nullptr;
 #else
-BufferRenderer*				g_bufferRenderer = nullptr;
+bool						g_hasNewInputData = false;
+int64_t						g_lastTimestamp = -1;
+DirectX::XMVECTORF32		g_lookAtVector;
+DirectX::XMVECTORF32		g_upVector;
+DirectX::XMVECTORF32		g_eyeVector;
+DirectX::XMFLOAT4X4			g_viewProjectionMatrixLeft;
+DirectX::XMFLOAT4X4			g_viewProjectionMatrixRight;
 #endif // TEST_RUNNER
-
 
 //--------------------------------------------------------------------------------------
 // Forward declarations 
@@ -458,6 +464,7 @@ bool AppMain(BOOL stopping)
 {
 	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 	auto serverConfig = GlobalObject<ServerConfig>::Get();
+	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 	authInfo.authority = webrtcConfig->authentication.authority;
@@ -502,51 +509,55 @@ bool AppMain(BOOL stopping)
 		serverConfig->server_config.height);
 
 	// Resizes swapchain's buffer to match the supported video frame size: 1280x720...
-	DXUTResizeDXGIBuffers(serverConfig->server_config.width, serverConfig->server_config.height, false);
+	DXUTResizeDXGIBuffers(serverConfig->server_config.width,
+		serverConfig->server_config.height, false);
+
+	rtc::InitializeSSL();
+	std::shared_ptr<ServerAuthenticationProvider> authProvider;
+	std::shared_ptr<TurnCredentialProvider> turnProvider;
+	PeerConnectionClient client;
 
 	// Initializes viewport for left and right cameras.
-	g_CameraResources.SetViewport(serverConfig->server_config.width, serverConfig->server_config.height);
+	g_CameraResources.SetViewport(serverConfig->server_config.width,
+		serverConfig->server_config.height);
 
-	// Render loop.
-	std::function<void()> frameRenderFunc = ([&]
-	{
-		DXUTRender3DEnvironment();
-	});
+	// Creates and initializes the buffer capturer.
+	// Note: Conductor is responsible for cleaning up bufferCapturer object.
+	std::shared_ptr<DirectXBufferCapturer> bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
+		new DirectXBufferCapturer(DXUTGetD3D11Device()));
 
-	ID3D11Texture2D* frameBuffer = nullptr;
-	if (!serverConfig->server_config.system_service)
+	bufferCapturer->Initialize(serverConfig->server_config.system_service,
+		serverConfig->server_config.width, serverConfig->server_config.height);
+
+	if (nvEncConfig->use_software_encoding)
 	{
-		// Gets the frame buffer from the swap chain.
-		HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
-			0,
-			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(&frameBuffer));
+		bufferCapturer->EnableSoftwareEncoder();
 	}
-
-	// Initializes the buffer renderer.
-	g_bufferRenderer = new BufferRenderer(
-		serverConfig->server_config.width,
-		serverConfig->server_config.height,
-		DXUTGetD3D11Device(),
-		frameRenderFunc,
-		frameBuffer);
-
-	// Makes sure to release the frame buffer reference.
-	SAFE_RELEASE(frameBuffer);
 
 	// For system service, we render to buffer instead of swap chain.
 	if (serverConfig->server_config.system_service)
 	{
-		DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
+		DXUTSetD3D11RenderTargetView(bufferCapturer->GetRenderTargetView());
 	}
 
-	rtc::InitializeSSL();
-
-	std::shared_ptr<ServerAuthenticationProvider> authProvider;
-	std::shared_ptr<TurnCredentialProvider> turnProvider;
-	PeerConnectionClient client;
+	// Initializes the conductor.
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
+		&client, bufferCapturer.get(), &wnd, webrtcConfig.get()));
+
+	// Gets the frame buffer from the swap chain.
+	ComPtr<ID3D11Texture2D> frameBuffer;
+	if (!serverConfig->server_config.system_service)
+	{
+		HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
+			0,
+			__uuidof(ID3D11Texture2D),
+			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+	}
 
 	// Handles input from client.
 	InputDataHandler inputHandler([&](const std::string& message)
@@ -567,38 +578,38 @@ bool AppMain(BOOL stopping)
 			{
 				getline(datastream, token, ',');
 				bool isStereo = stoi(token) == 1;
-				if (isStereo == g_CameraResources.IsStereo())
+				if (isStereo != g_CameraResources.IsStereo())
 				{
-					return;
-				}
+					// Resizes the swap chain.
+					frameBuffer.Reset();
+					g_CameraResources.SetStereo(isStereo);
+					DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
+					int width = deviceSettings.d3d11.sd.BufferDesc.Width;
+					int height = deviceSettings.d3d11.sd.BufferDesc.Height;
+					int newWidth = isStereo ? width << 1 : width >> 1;
+					DXUTResizeDXGIBuffers(newWidth, height, false);
+					if (!serverConfig->server_config.system_service)
+					{
+						SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+						HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
+							0,
+							__uuidof(ID3D11Texture2D),
+							reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
 
-				g_bufferRenderer->Release();
-				g_CameraResources.SetStereo(isStereo);
-				DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
-				int width = deviceSettings.d3d11.sd.BufferDesc.Width;
-				int height = deviceSettings.d3d11.sd.BufferDesc.Height;
-				int newWidth = isStereo ? width << 1 : width >> 1;
-				DXUTResizeDXGIBuffers(newWidth, height, false);
-				if (!serverConfig->server_config.system_service)
-				{
-					ID3D11Texture2D* frameBuffer = nullptr;
-					SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
+						if (FAILED(hr))
+						{
+							return hr;
+						}
+					}
+					else
+					{
+						bufferCapturer->ResizeRenderTexture(newWidth, height);
+						DXUTSetD3D11RenderTargetView(bufferCapturer->GetRenderTargetView());
+					}
 
-					// Gets the frame buffer from the swap chain.
-					HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(&frameBuffer));
-
-					g_bufferRenderer->Resize(frameBuffer);
-
-					// Makes sure to release the frame buffer reference.
-					SAFE_RELEASE(frameBuffer);
-				}
-				else
-				{
-					g_bufferRenderer->Resize(newWidth, height);
-					DXUTSetD3D11RenderTargetView(g_bufferRenderer->GetRenderTargetView());
+					// Do not present swapchain in stereo mode since 
+					// it affects the frame prediction.
+					DXUTSetNoSwapChainPresent(isStereo);
 				}
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
@@ -627,12 +638,10 @@ bool AppMain(BOOL stopping)
 				getline(datastream, token, ',');
 				float upZ = stof(token);
 
-				const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-				const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-				const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-
-				g_Camera.SetViewParams(eye, lookAt, up);
-				g_Camera.FrameMove(0);
+				g_lookAtVector = { focusX, focusY, focusZ, 0.f };
+				g_upVector = { upX, upY, upZ, 0.f };
+				g_eyeVector = { eyeX, eyeY, eyeZ, 0.f };
+				g_hasNewInputData = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
@@ -658,12 +667,44 @@ bool AppMain(BOOL stopping)
 					}
 				}
 
-				// Updates the camera's matrices.
-				XMFLOAT4X4 id;
-				XMStoreFloat4x4(&id, XMMatrixIdentity());
-				g_CameraResources.SetViewMatrix(id, id);
-				g_CameraResources.SetProjMatrix(viewProjectionLeft, viewProjectionRight);
-				g_Camera.FrameMove(0);
+				g_viewProjectionMatrixLeft = viewProjectionLeft;
+				g_viewProjectionMatrixRight = viewProjectionRight;
+				g_hasNewInputData = true;
+			}
+			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
+			{
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the prediction timestamp.
+				getline(datastream, token, ',');
+				int64_t timestamp = stoll(token);
+				if (timestamp != g_lastTimestamp)
+				{
+					g_lastTimestamp = timestamp;
+					g_viewProjectionMatrixLeft = viewProjectionLeft;
+					g_viewProjectionMatrixRight = viewProjectionRight;
+					g_hasNewInputData = true;
+				}
 			}
 		}
 	});
@@ -758,27 +799,87 @@ bool AppMain(BOOL stopping)
 	}
 
 	// Main loop.
-	MSG msg;
-	BOOL gm;
-	while (!stopping && (gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1)
+	while (!stopping)
 	{
-		// For system service, ignore window and swap chain.
-		if (serverConfig->server_config.system_service)
+		MSG msg = { 0 };
+
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
+			if (serverConfig->server_config.system_service ||
+				!wnd.PreTranslateMessage(&msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
-		else if (!wnd.PreTranslateMessage(&msg))
+		else
 		{
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
+			if (conductor->is_closing())
+			{
+				break;
+			}
+
+			if (conductor->connection_active() || client.is_connected())
+			{
+				ULONGLONG tick = GetTickCount64();
+				if (!g_CameraResources.IsStereo())
+				{
+					if (g_hasNewInputData)
+					{
+						g_Camera.SetViewParams(g_eyeVector, g_lookAtVector, g_upVector);
+						g_Camera.FrameMove(0);
+						g_hasNewInputData = false;
+					}
+
+					DXUTRender3DEnvironment();
+					if (serverConfig->server_config.system_service)
+					{
+						bufferCapturer->SendFrame();
+					}
+					else
+					{
+						bufferCapturer->SendFrame(frameBuffer.Get());
+					}
+
+					// FPS limiter.
+					const int interval = 1000 / nvEncConfig->capture_fps;
+					ULONGLONG timeElapsed = GetTickCount64() - tick;
+					DWORD sleepAmount = 0;
+					if (timeElapsed < interval)
+					{
+						sleepAmount = interval - timeElapsed;
+					}
+
+					Sleep(sleepAmount);
+				}
+				// In stereo rendering mode, we only update frame whenever
+				// receiving any input data.
+				else if (g_hasNewInputData)
+				{
+					XMFLOAT4X4 id;
+					XMStoreFloat4x4(&id, XMMatrixIdentity());
+					g_CameraResources.SetViewMatrix(id, id);
+					g_CameraResources.SetProjMatrix(g_viewProjectionMatrixLeft,
+						g_viewProjectionMatrixRight);
+
+					g_Camera.FrameMove(0);
+					DXUTRender3DEnvironment();
+					if (serverConfig->server_config.system_service)
+					{
+						bufferCapturer->SendFrame(g_lastTimestamp);
+					}
+					else
+					{
+						bufferCapturer->SendFrame(frameBuffer.Get(), g_lastTimestamp);
+					}
+
+					g_hasNewInputData = false;
+				}
+			}
 		}
 	}
 
 	rtc::CleanupSSL();
-
-	// Cleanup.
-	delete g_bufferRenderer;
 
 	return 0;
 }
