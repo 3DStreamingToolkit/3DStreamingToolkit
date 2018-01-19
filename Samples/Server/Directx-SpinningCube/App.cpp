@@ -22,8 +22,6 @@
 #include "multi_peer_conductor.h"
 #endif // TEST_RUNNER
 
-#define FOCUS_POINT		3.f
-
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -36,7 +34,6 @@
 
 #ifndef TEST_RUNNER
 using namespace Microsoft::WRL;
-using namespace Windows::Foundation::Numerics;
 #endif // TEST_RUNNER
 
 using namespace DX;
@@ -51,19 +48,11 @@ void StartRenderService();
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-HWND					g_hWnd = nullptr;
-DeviceResources*		g_deviceResources = nullptr;
-CubeRenderer*			g_cubeRenderer = nullptr;
+HWND				g_hWnd = nullptr;
+DeviceResources*	g_deviceResources = nullptr;
+CubeRenderer*		g_cubeRenderer = nullptr;
 #ifdef TEST_RUNNER
-VideoTestRunner*		g_videoTestRunner = nullptr;
-#else // TEST_RUNNER
-bool					g_hasNewInputData = false;
-int64_t					g_lastTimestamp = -1;
-DirectX::XMVECTORF32	g_lookAtVector;
-DirectX::XMVECTORF32	g_upVector;
-DirectX::XMVECTORF32	g_eyeVector;
-DirectX::XMFLOAT4X4		g_viewProjectionMatrixLeft;
-DirectX::XMFLOAT4X4		g_viewProjectionMatrixRight;
+VideoTestRunner*	g_videoTestRunner = nullptr;
 #endif // TESTRUNNER
 
 #ifndef TEST_RUNNER
@@ -73,7 +62,7 @@ bool AppMain(BOOL stopping)
 	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 	auto serverConfig = GlobalObject<ServerConfig>::Get();
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
-	
+
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
@@ -103,7 +92,7 @@ bool AppMain(BOOL stopping)
 		atomic_bool isClosing = false;
 		virtual void Close() override { isClosing.store(true); }
 	} wndHandler;
-	
+
 	// register the handler
 	wnd.RegisterObserver(&wndHandler);
 
@@ -121,26 +110,6 @@ bool AppMain(BOOL stopping)
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
 	rtc::InitializeSSL();
-	std::shared_ptr<ServerAuthenticationProvider> authProvider;
-	std::shared_ptr<TurnCredentialProvider> turnProvider;
-	PeerConnectionClient client;
-
-	// Creates and initializes the buffer capturer.
-	// Note: Conductor is responsible for cleaning up bufferCapturer object.
-	std::shared_ptr<DirectXBufferCapturer> bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
-		new DirectXBufferCapturer(g_deviceResources->GetD3DDevice()));
-
-	bufferCapturer->Initialize(serverConfig->server_config.system_service,
-		serverConfig->server_config.width, serverConfig->server_config.height);
-
-	if (nvEncConfig->use_software_encoding)
-	{
-		bufferCapturer->EnableSoftwareEncoder();
-	}
-
-	// Initializes the conductor.
-	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, bufferCapturer.get(), &wnd, webrtcConfig.get()));
 
 	// Gets the frame buffer from the swap chain.
 	ComPtr<ID3D11Texture2D> frameBuffer;
@@ -159,8 +128,8 @@ bool AppMain(BOOL stopping)
 
 	cond.ConnectSignallingAsync("renderingserver_test");
 
-	// Handles input from client.
-	InputDataHandler inputHandler([&](const std::string& message)
+	// Main loop.
+	while (!stopping)
 	{
 		// if we're quitting, do so
 		if (wndHandler.isClosing)
@@ -170,37 +139,23 @@ bool AppMain(BOOL stopping)
 
 		MSG msg = { 0 };
 
-		if (msg.isMember("type") && msg.isMember("body"))
+		// For system service, ignore window and swap chain.
+		if (serverConfig->server_config.system_service)
 		{
-			strcpy(type, msg.get("type", "").asCString());
-			strcpy(body, msg.get("body", "").asCString());
-			std::istringstream datastream(body);
-			std::string token;
-			if (strcmp(type, "stereo-rendering") == 0)
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		else
+		{
+			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
 				if (!wnd.PreTranslateMessage(&msg))
 				{
-					ID3D11Texture2D* frameBuffer = nullptr;
-					HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-						0,
-						__uuidof(ID3D11Texture2D),
-						reinterpret_cast<void**>(&frameBuffer));
-
-					g_bufferRenderer->Resize(frameBuffer);
-
-					if (isStereo)
-					{
-						// In stereo rendering mode, we need to position the cube
-						// in front of user.
-						g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
-					}
-					else
-					{
-						g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
-					}
+					TranslateMessage(&msg);
+					DispatchMessage(&msg);
 				}
 			}
-			else if (strcmp(type, "camera-transform-lookat") == 0)
+			else
 			{
 				ULONGLONG tick = GetTickCount64();
 				g_cubeRenderer->Update();
@@ -212,7 +167,7 @@ bool AppMain(BOOL stopping)
 
 					if (peerView->IsValid())
 					{
-						g_cubeRenderer->UpdateView(peerView->eye, peerView->lookAt, peerView->up);
+						g_cubeRenderer->Update(peerView->eye, peerView->lookAt, peerView->up);
 					}
 
 					g_cubeRenderer->Render();
@@ -236,59 +191,6 @@ bool AppMain(BOOL stopping)
 				Sleep(sleepAmount);
 			}
 		}
-	});
-
-	for (auto i = 0; i < 2; ++i)
-	{
-		threads.push_back(new std::thread([&, i]()
-		{
-			rtc::Win32Thread instanceThread;
-			instanceThread.SetName("Instance[" + std::to_string(i) + "]", nullptr);
-
-			rtc::ThreadManager::Instance()->SetCurrentThread(&instanceThread);
-
-			PeerConnectionClient client("[" + std::to_string(i) + "]");
-			rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-				&client, &wnd, webrtcConfig.get(), g_bufferRenderer));
-
-			conductor->SetInputDataHandler(&inputHandler);
-			client.SetHeartbeatMs(webrtcConfig->heartbeat);
-
-			while (!stopThreads)
-			{
-				instanceThread.ProcessMessages(500);
-			}
-
-			/*
-			MSG msg;
-			BOOL gm;
-			while (!stopping && (gm = ::GetMessage(&msg, (HWND)-1, 0, 0)) != 0 && gm != -1)
-			{
-				::TranslateMessage(&msg);
-				::DispatchMessage(&msg);
-			}*/
-			
-			// Main loop.
-			//MSG msg;
-			//BOOL gm;
-			//while (!stopping && (gm = ::GetMessage(&msg, (HWND)-1, 0, 0)) != 0 && gm != -1)
-			//{
-			//	// For system service, ignore window and swap chain.
-			//	if (serverConfig->server_config.system_service)
-			//	{
-			//		::TranslateMessage(&msg);
-			//		::DispatchMessage(&msg);
-			//	}
-			//	else
-			//	{
-			//		if (!wnd.PreTranslateMessage(&msg))
-			//		{
-			//			::TranslateMessage(&msg);
-			//			::DispatchMessage(&msg);
-			//		}
-			//	}
-			//}
-		}));
 	}
 
 	rtc::CleanupSSL();
