@@ -82,6 +82,9 @@ public:
 	void OnDataChannel(
 		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override;
 
+	// Emitted when a message is received
+	signal1<string> SignalMessage;
+
 	//  A data buffer was successfully received.
 	virtual void OnMessage(const DataBuffer& buffer) override;
 

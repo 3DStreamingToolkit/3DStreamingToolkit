@@ -190,7 +190,8 @@ void PeerConductor::OnMessage(const DataBuffer& buffer)
 		}
 	}
 
-	// TODO(bengreenier): we can raise a signal with this data to allow for further parsing (not our responsibility)
+	// emit a signal that we've gotten a message
+	SignalMessage.emit(message);
 }
 
 void PeerConductor::OnStateChange() {}
