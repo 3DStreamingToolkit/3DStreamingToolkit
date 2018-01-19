@@ -32,12 +32,12 @@ PeerConductor::PeerConductor(int id,
 	shared_ptr<WebRTCConfig> webrtcConfig,
 	scoped_refptr<PeerConnectionFactoryInterface> peerFactory,
 	const function<void(const string&)>& sendFunc) :
-	m_id(id),
-	m_name(name),
-	m_webrtcConfig(webrtcConfig),
-	m_peerFactory(peerFactory),
-	m_sendFunc(sendFunc),
-	m_view(new PeerView())
+	id_(id),
+	name_(name),
+	webrtc_config_(webrtcConfig),
+	peer_factory_(peerFactory),
+	send_func_(sendFunc),
+	view_(new PeerView())
 {
 
 }
@@ -46,9 +46,9 @@ PeerConductor::~PeerConductor()
 {
 	LOG(INFO) << "dtor";
 
-	m_peerConnection->Close();
-	m_peerConnection = NULL;
-	m_peerStreams.clear();
+	peer_connection_->Close();
+	peer_connection_ = NULL;
+	peer_streams_.clear();
 }
 
 // m_id, new_state, threadsafe per-instance 
@@ -59,7 +59,7 @@ signal2<int, PeerConnectionInterface::IceConnectionState, sigslot::multi_threade
 // around ownership.
 void PeerConductor::OnSuccess(SessionDescriptionInterface* desc)
 {
-	m_peerConnection->SetLocalDescription(
+	peer_connection_->SetLocalDescription(
 		DummySetSessionDescriptionObserver::Create(), desc);
 
 	string sdp;
@@ -72,7 +72,7 @@ void PeerConductor::OnSuccess(SessionDescriptionInterface* desc)
 
 		string message = writer.write(jmessage);
 
-		m_sendFunc(message);
+		send_func_(message);
 	}
 }
 
@@ -115,7 +115,7 @@ void PeerConductor::OnIceCandidate(const IceCandidateInterface* candidate)
 
 	string message = writer.write(jmessage);
 
-	m_sendFunc(message);
+	send_func_(message);
 }
 
 void PeerConductor::OnAddStream(
@@ -125,7 +125,7 @@ void PeerConductor::OnRemoveStream(
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
 	// see https://stackoverflow.com/questions/347441/erasing-elements-from-a-vector
-	m_peerStreams.erase(std::remove(m_peerStreams.begin(), m_peerStreams.end(), stream), m_peerStreams.end());
+	peer_streams_.erase(std::remove(peer_streams_.begin(), peer_streams_.end(), stream), peer_streams_.end());
 
 	stream->Release();
 }
@@ -184,9 +184,9 @@ void PeerConductor::OnMessage(const DataBuffer& buffer)
 			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
 
 			// update the view
-			m_view->lookAt = lookAt;
-			m_view->up = up;
-			m_view->eye = eye;
+			view_->lookAt = lookAt;
+			view_->up = up;
+			view_->eye = eye;
 		}
 	}
 
@@ -198,7 +198,7 @@ void PeerConductor::OnStateChange() {}
 void PeerConductor::HandlePeerMessage(const string& message)
 {
 	// if we don't know this peer, add it
-	if (m_peerConnection.get() == nullptr)
+	if (peer_connection_.get() == nullptr)
 	{
 		// this is just the init that sets the m_peerConnection value
 		AllocatePeerConnection();
@@ -244,13 +244,13 @@ void PeerConductor::HandlePeerMessage(const string& message)
 		}
 
 		LOG(INFO) << " Received session description :" << message;
-		m_peerConnection->SetRemoteDescription(
+		peer_connection_->SetRemoteDescription(
 			DummySetSessionDescriptionObserver::Create(),
 			session_description);
 
 		if (session_description->type() == webrtc::SessionDescriptionInterface::kOffer)
 		{
-			m_peerConnection->CreateAnswer(this, NULL);
+			peer_connection_->CreateAnswer(this, NULL);
 		}
 
 		return;
@@ -280,7 +280,7 @@ void PeerConductor::HandlePeerMessage(const string& message)
 			return;
 		}
 
-		if (!m_peerConnection->AddIceCandidate(candidate.get()))
+		if (!peer_connection_->AddIceCandidate(candidate.get()))
 		{
 			LOG(WARNING) << "Failed to apply the received candidate";
 			return;
@@ -292,42 +292,42 @@ void PeerConductor::HandlePeerMessage(const string& message)
 
 const int PeerConductor::Id() const
 {
-	return m_id;
+	return id_;
 }
 
 const string& PeerConductor::Name() const
 {
-	return m_name;
+	return name_;
 }
 
 const vector<scoped_refptr<webrtc::MediaStreamInterface>> PeerConductor::Streams() const
 {
-	return m_peerStreams;
+	return peer_streams_;
 }
 
 shared_ptr<PeerView> PeerConductor::View()
 {
-	return m_view;
+	return view_;
 }
 
 void PeerConductor::AllocatePeerConnection()
 {
 	webrtc::PeerConnectionInterface::RTCConfiguration config;
 
-	if (!m_webrtcConfig->ice_configuration.empty())
+	if (!webrtc_config_->ice_configuration.empty())
 	{
-		if (m_webrtcConfig->ice_configuration == "relay")
+		if (webrtc_config_->ice_configuration == "relay")
 		{
 			webrtc::PeerConnectionInterface::IceServer turnServer;
 			turnServer.uri = "";
 			turnServer.username = "";
 			turnServer.password = "";
 
-			if (!m_webrtcConfig->turn_server.uri.empty())
+			if (!webrtc_config_->turn_server.uri.empty())
 			{
-				turnServer.uri = m_webrtcConfig->turn_server.uri;
-				turnServer.username = m_webrtcConfig->turn_server.username;
-				turnServer.password = m_webrtcConfig->turn_server.password;
+				turnServer.uri = webrtc_config_->turn_server.uri;
+				turnServer.username = webrtc_config_->turn_server.username;
+				turnServer.password = webrtc_config_->turn_server.password;
 			}
 
 			turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
@@ -336,13 +336,13 @@ void PeerConductor::AllocatePeerConnection()
 		}
 		else
 		{
-			if (m_webrtcConfig->ice_configuration == "stun")
+			if (webrtc_config_->ice_configuration == "stun")
 			{
 				webrtc::PeerConnectionInterface::IceServer stunServer;
 				stunServer.uri = "";
-				if (!m_webrtcConfig->stun_server.uri.empty())
+				if (!webrtc_config_->stun_server.uri.empty())
 				{
-					stunServer.urls.push_back(m_webrtcConfig->stun_server.uri);
+					stunServer.urls.push_back(webrtc_config_->stun_server.uri);
 					config.servers.push_back(stunServer);
 				}
 			}
@@ -361,20 +361,20 @@ void PeerConductor::AllocatePeerConnection()
 	// TODO(bengreenier): make optional again for loopback
 	constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
 
-	auto peerConnection = m_peerFactory->CreatePeerConnection(config, &constraints, NULL, NULL, this);
+	auto peerConnection = peer_factory_->CreatePeerConnection(config, &constraints, NULL, NULL, this);
 
 	// create a peer connection for this peer
-	m_peerConnection = peerConnection;
+	peer_connection_ = peerConnection;
 
 	scoped_refptr<VideoTrackInterface> video_track(
-		m_peerFactory->CreateVideoTrack(
+		peer_factory_->CreateVideoTrack(
 			kVideoLabel,
-			m_peerFactory->CreateVideoSource(
+			peer_factory_->CreateVideoSource(
 				AllocateVideoCapturer(),
 				NULL)));
 
 	rtc::scoped_refptr<webrtc::MediaStreamInterface> peerStream =
-		m_peerFactory->CreateLocalMediaStream(kStreamLabel);
+		peer_factory_->CreateLocalMediaStream(kStreamLabel);
 
 	peerStream->AddTrack(video_track);
 	if (!peerConnection->AddStream(peerStream))
@@ -383,5 +383,5 @@ void PeerConductor::AllocatePeerConnection()
 	}
 
 	// create a peer stream for this peer
-	m_peerStreams.push_back(peerStream);
+	peer_streams_.push_back(peerStream);
 }
