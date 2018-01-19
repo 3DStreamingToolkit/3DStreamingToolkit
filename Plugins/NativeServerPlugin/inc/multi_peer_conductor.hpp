@@ -7,7 +7,7 @@
 #include <atomic>
 
 #include "peer_connection_client.h"
-#include "peer_conductor.hpp"
+#include "directx_peer_conductor.h"
 
 #include "webrtc/base/sigslot.h"
 
