@@ -64,6 +64,9 @@
     <ClCompile Include="src\directx_peer_conductor.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
+    <ClCompile Include="src\multi_peer_conductor.cpp">
+      <Filter>Source\webrtc</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -100,9 +103,6 @@
     <ClInclude Include="inc\directx_buffer_capturer.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
-    <ClInclude Include="inc\multi_peer_conductor.hpp">
-      <Filter>Source\webrtc</Filter>
-    </ClInclude>
     <ClInclude Include="inc\peer_conductor.h">
       <Filter>Headers\webrtc</Filter>
     </ClInclude>
@@ -111,6 +111,9 @@
     </ClInclude>
     <ClInclude Include="inc\directx_peer_conductor.h">
       <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\multi_peer_conductor.h">
+      <Filter>Headers\webrtc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

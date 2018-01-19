@@ -19,7 +19,7 @@
 #include "config_parser.h"
 #include "directx_buffer_capturer.h"
 #include "service/render_service.h"
-#include "multi_peer_conductor.hpp"
+#include "multi_peer_conductor.h"
 #endif // TEST_RUNNER
 
 #define FOCUS_POINT		3.f
