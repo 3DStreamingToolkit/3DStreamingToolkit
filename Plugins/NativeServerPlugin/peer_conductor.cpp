@@ -101,8 +101,8 @@ void PeerConductor::OnIceCandidate(const IceCandidateInterface* candidate)
 	Json::StyledWriter writer;
 	Json::Value jmessage;
 
-	jmessage[PeerConductor::kCandidateSdpMidName] = candidate->sdp_mid();
-	jmessage[PeerConductor::kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
+	jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
+	jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
 
 	string sdp;
 	if (!candidate->ToString(&sdp))

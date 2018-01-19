@@ -32,9 +32,9 @@ class PeerConductor : public PeerConnectionObserver,
 public:
 	PeerConductor(int id,
 		const string& name,
-		shared_ptr<WebRTCConfig> webrtcConfig,
-		scoped_refptr<PeerConnectionFactoryInterface> peerFactory,
-		const function<void(const string&)>& sendFunc);
+		shared_ptr<WebRTCConfig> webrtc_config,
+		scoped_refptr<PeerConnectionFactoryInterface> peer_factory,
+		const function<void(const string&)>& send_func);
 
 	~PeerConductor();
 
@@ -104,14 +104,14 @@ protected:
 private:
 	void AllocatePeerConnection();
 
-	int m_id;
-	string m_name;
-	shared_ptr<WebRTCConfig> m_webrtcConfig;
-	scoped_refptr<PeerConnectionFactoryInterface> m_peerFactory;
-	function<void(const string&)> m_sendFunc;
-	scoped_refptr<PeerConnectionInterface> m_peerConnection;
-	shared_ptr<PeerView> m_view;
-	vector<scoped_refptr<webrtc::MediaStreamInterface>> m_peerStreams;
+	int id_;
+	string name_;
+	shared_ptr<WebRTCConfig> webrtc_config_;
+	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
+	function<void(const string&)> send_func_;
+	scoped_refptr<PeerConnectionInterface> peer_connection_;
+	shared_ptr<PeerView> view_;
+	vector<scoped_refptr<webrtc::MediaStreamInterface>> peer_streams_;
 
 	// Names used for a IceCandidate JSON object.
 	const char* kCandidateSdpMidName = "sdpMid";
