@@ -140,6 +140,6 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "m58patch_timestamp_headers"
-DecompressZip -filename "m58patch_timestamp_x64"
-DecompressZip -filename "m58patch_timestamp_Win32"
+DecompressZip -filename "m58patch_timestamp_v2_headers"
+DecompressZip -filename "m58patch_timestamp_v2_x64"
+DecompressZip -filename "m58patch_timestamp_v2_Win32"
