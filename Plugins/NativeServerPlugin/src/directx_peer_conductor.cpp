@@ -3,50 +3,39 @@
 
 DirectXPeerConductor::DirectXPeerConductor(int id,
 	const string& name,
-	shared_ptr<WebRTCConfig> webrtcConfig,
-	scoped_refptr<PeerConnectionFactoryInterface> peerFactory,
-	const function<void(const string&)>& sendFunc,
-	ID3D11Device* d3dDevice,
-	bool enableSoftware) : PeerConductor(
+	shared_ptr<WebRTCConfig> webrtc_config,
+	scoped_refptr<PeerConnectionFactoryInterface> peer_factory,
+	const function<void(const string&)>& send_func,
+	ID3D11Device* d3d_device,
+	bool enable_software_encoder) : PeerConductor(
 		id,
 		name,
-		webrtcConfig,
-		peerFactory,
-		sendFunc
+		webrtc_config,
+		peer_factory,
+		send_func
 	),
-	m_d3dDevice(d3dDevice),
-	m_enableSoftware(enableSoftware) {}
+	d3d_device_(d3d_device),
+	enable_software_encoder_(enable_software_encoder) {}
 
 void DirectXPeerConductor::SendFrame(ID3D11Texture2D* frame_buffer)
 {
-	for each (auto spy in m_spies)
+	if (capturer_)
 	{
-		spy->SendFrame(frame_buffer);
+		capturer_->SendFrame(frame_buffer);
 	}
 }
 
 unique_ptr<cricket::VideoCapturer> DirectXPeerConductor::AllocateVideoCapturer()
 {
-	unique_ptr<DirectXBufferCapturer> ownedPtr(new DirectXBufferCapturer(m_d3dDevice));
+	unique_ptr<DirectXBufferCapturer> owned_ptr(new DirectXBufferCapturer(d3d_device_));
 
-	ownedPtr->Initialize();
+	owned_ptr->Initialize();
 
-	if (m_enableSoftware)
+	if (enable_software_encoder_)
 	{
-		ownedPtr->EnableSoftwareEncoder();
+		owned_ptr->EnableSoftwareEncoder();
 	}
 
-	// rely on the deleter signal to let us know when it's gone and we should stop updating it
-	ownedPtr->SignalDestroyed.connect(this, &DirectXPeerConductor::OnAllocatedPtrDeleted);
-
-	// spy on this pointer. this only works because webrtc doesn't std::move it
-	m_spies.push_back(ownedPtr.get());
-
-	return ownedPtr;
-}
-
-void DirectXPeerConductor::OnAllocatedPtrDeleted(BufferCapturer* ptr)
-{
-	// see https://stackoverflow.com/questions/347441/erasing-elements-from-a-vector
-	m_spies.erase(std::remove(m_spies.begin(), m_spies.end(), ptr), m_spies.end());
+	capturer_ = owned_ptr.get();
+	return owned_ptr;
 }

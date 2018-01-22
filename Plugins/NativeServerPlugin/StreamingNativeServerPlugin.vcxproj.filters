@@ -55,9 +55,6 @@
     <ClCompile Include="src\directx_buffer_capturer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
-    <ClCompile Include="peer_conductor.cpp">
-      <Filter>Source\webrtc</Filter>
-    </ClCompile>
     <ClCompile Include="src\peer_view.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
@@ -65,6 +62,9 @@
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
     <ClCompile Include="src\multi_peer_conductor.cpp">
+      <Filter>Source\webrtc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\peer_conductor.cpp">
       <Filter>Source\webrtc</Filter>
     </ClCompile>
   </ItemGroup>

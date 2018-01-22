@@ -182,7 +182,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="peer_conductor.cpp" />
     <ClCompile Include="src\buffer_capturer.cpp" />
     <ClCompile Include="src\conductor.cpp" />
     <ClCompile Include="src\defaults.cpp" />
@@ -190,6 +189,7 @@
     <ClCompile Include="src\directx_peer_conductor.cpp" />
     <ClCompile Include="src\input_data_channel_observer.cpp" />
     <ClCompile Include="src\multi_peer_conductor.cpp" />
+    <ClCompile Include="src\peer_conductor.cpp" />
     <ClCompile Include="src\peer_view.cpp" />
     <ClCompile Include="src\render_service.cpp" />
     <ClCompile Include="src\service_base.cpp" />

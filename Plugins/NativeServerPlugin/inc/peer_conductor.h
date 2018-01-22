@@ -5,9 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "peer_view.h"
 #include "buffer_capturer.h"
-#include "directx_buffer_capturer.h"
+#include "peer_view.h"
 
 // from ConfigParser
 #include "structs.h"
