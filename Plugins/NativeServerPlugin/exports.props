@@ -5,7 +5,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(SolutionDir)\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(SolutionDir)\Libraries\WebRTC\headers;$(SolutionDir)\Libraries\Freeglut\include\GL;$(SolutionDir)\Libraries\glext\include\GL;$(SolutionDir)\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />

@@ -134,7 +134,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>
