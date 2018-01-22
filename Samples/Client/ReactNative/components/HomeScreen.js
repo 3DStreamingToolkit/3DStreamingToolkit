@@ -54,9 +54,10 @@ class HomeScreen extends Component {
       videoURL: null
     };
   }
-  componentWillMount() {
 
+  componentWillMount() {
   }
+
   componentWillUpdate(props, nextState) {
   }
 
@@ -116,6 +117,7 @@ class HomeScreen extends Component {
       </View>
     );
   }
+
   renderPeers() {
     return Object.keys(this.state.otherPeers).map((key, index) => {
       return <Picker.Item key={index} label={this.state.otherPeers[key]} value={key} />
