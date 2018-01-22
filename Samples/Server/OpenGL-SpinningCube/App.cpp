@@ -56,6 +56,7 @@ bool AppMain(BOOL stopping)
 {
 	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 	auto serverConfig = GlobalObject<ServerConfig>::Get();
+	auto nvencodeConfig = GlobalObject<NvEncConfig>::Get();
 
 	ServerAuthenticationProvider::ServerAuthInfo authInfo;
 	authInfo.authority = webrtcConfig->authentication.authority;
@@ -94,6 +95,7 @@ bool AppMain(BOOL stopping)
 
 	// Initializes the cube renderer.
 	g_CubeRenderer = new CubeRenderer(captureFrame, serverConfig->server_config.width, serverConfig->server_config.height);
+	g_CubeRenderer->SetTargetFrameRate(nvencodeConfig->capture_fps);
 	rtc::InitializeSSL();
 
 	std::shared_ptr<ServerAuthenticationProvider> authProvider;
