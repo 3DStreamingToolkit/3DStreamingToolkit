@@ -206,7 +206,6 @@
     <ClInclude Include="Content\CubeRenderer.h" />
     <ClInclude Include="glInfo.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="test_runner.h" />
     <ClInclude Include="webrtc.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

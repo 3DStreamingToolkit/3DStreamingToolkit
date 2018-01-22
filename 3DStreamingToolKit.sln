@@ -1,8 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
-=======
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StreamingNativeServerPlugin", "Plugins\NativeServerPlugin\StreamingNativeServerPlugin.vcxproj", "{6BC9C817-FD14-4540-A9C0-63CF16F770A6}"
 EndProject
@@ -394,7 +393,6 @@ Global
 		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x64.Build.0 = Release|x64
 		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x86.ActiveCfg = Release|Win32
 		{CB5A4970-3B08-4CEB-BD8E-B2919B27BEC2}.Release|x86.Build.0 = Release|Win32
->>>>>>> master
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
