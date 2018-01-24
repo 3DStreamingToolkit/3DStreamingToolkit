@@ -2,7 +2,7 @@
 
 A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. 
 
-![example](./3dstreamclientserver.gif)
+![example](./Docs/Images/3dstreamclientserver.gif)
 
 ## What is this?
 
@@ -15,7 +15,7 @@ The 3DToolkit project's purpose is to provide an approach for developing 3D serv
 3. Low-latency audio and video streams using WebRTC
 4. High-performance video encoding and decoding using NVEncode
 
-![WebRTC applied to 3D Streaming](http://avevawebrtc.azurewebsites.net/images//WebRTCStreaming.png)
+![WebRTC applied to 3D Streaming](./Docs/Images/webrtc3d.jpg)
 <!---  (![high level architecture](./readme_data/hl-arch.png))--->
 
 Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3dtoolkit/wiki/What-is-3DToolkit#webrtc-httpwebrtcorg). 
