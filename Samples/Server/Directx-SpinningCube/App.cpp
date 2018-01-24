@@ -51,11 +51,14 @@ void StartRenderService();
 // Global Variables
 //--------------------------------------------------------------------------------------
 
-// Input data from remote peer
-struct PeerInputData
+// Remote peer data
+struct RemotePeerData
 {
 	// True if this data hasn't been processed
 	bool							isNew;
+
+	// True for stereo output, false otherwise
+	bool							isStereo;
 
 	// The look at vector used in camera transform
 	DirectX::XMVECTORF32			lookAtVector;
@@ -65,6 +68,24 @@ struct PeerInputData
 
 	// The eye vector used in camera transform
 	DirectX::XMVECTORF32			eyeVector;
+
+	// The view-projection matrix for left eye used in camera transform
+	DirectX::XMFLOAT4X4				viewProjectionMatrixLeft;
+
+	// The view-projection matrix for right eye used in camera transform
+	DirectX::XMFLOAT4X4				viewProjectionMatrixRight;
+	
+	// The timestamp used for frame synchronization in stereo mode
+	int64_t							lastTimestamp;
+
+	// The render texture which we use to render
+	ComPtr<ID3D11Texture2D>			renderTexture;
+
+	// The render target view of the render texture
+	ComPtr<ID3D11RenderTargetView>	renderTextureRtv;
+
+	// Used for FPS limiter.
+	ULONGLONG						tick;
 };
 
 HWND								g_hWnd = nullptr;
@@ -73,10 +94,29 @@ CubeRenderer*						g_cubeRenderer = nullptr;
 #ifdef TEST_RUNNER
 VideoTestRunner*					g_videoTestRunner = nullptr;
 #else // TEST_RUNNER
-std::map<int, std::shared_ptr<PeerInputData>> g_inputData;
+std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
 #endif // TESTRUNNER
 
 #ifndef TEST_RUNNER
+
+void InitializeRenderTextures(RemotePeerData* peerData, int width, int height, bool isStereo)
+{
+	int texWidth = isStereo ? width << 1 : width;
+	int texHeight = height;
+	D3D11_TEXTURE2D_DESC texDesc = { 0 };
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.Width = texWidth;
+	texDesc.Height = texHeight;
+	texDesc.MipLevels = 1;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+	// Creates texture and render target view
+	g_deviceResources->GetD3DDevice()->CreateTexture2D(&texDesc, nullptr, &peerData->renderTexture);
+	g_deviceResources->GetD3DDevice()->CreateRenderTargetView(peerData->renderTexture.Get(), nullptr, &peerData->renderTextureRtv);
+}
 
 bool AppMain(BOOL stopping)
 {
@@ -130,22 +170,8 @@ bool AppMain(BOOL stopping)
 	// Initializes the cube renderer.
 	g_cubeRenderer = new CubeRenderer(g_deviceResources);
 
+	// Initializes SSL.
 	rtc::InitializeSSL();
-
-	// Gets the frame buffer from the swap chain.
-	ComPtr<ID3D11Texture2D> frameBuffer;
-	if (!serverConfig->server_config.system_service)
-	{
-		HRESULT hr = g_deviceResources->GetSwapChain()->GetBuffer(
-			0,
-			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
-
-		if (FAILED(hr))
-		{
-			return hr;
-		}
-	}
 
 	// Initializes the conductor.
 	MultiPeerConductor cond(webrtcConfig,
@@ -164,16 +190,16 @@ bool AppMain(BOOL stopping)
 		reader.parse(message, msg, false);
 
 		// Retrieves input data from map, creates if needed.
-		std::shared_ptr<PeerInputData> inputData;
-		auto it = g_inputData.find(peerId);
-		if (it != g_inputData.end())
+		std::shared_ptr<RemotePeerData> peerData;
+		auto it = g_remotePeersData.find(peerId);
+		if (it != g_remotePeersData.end())
 		{
-			inputData = it->second;
+			peerData = it->second;
 		}
 		else
 		{
-			inputData.reset(new PeerInputData());
-			g_inputData[peerId] = inputData;
+			peerData.reset(new RemotePeerData());
+			g_remotePeersData[peerId] = peerData;
 		}
 
 		if (msg.isMember("type") && msg.isMember("body"))
@@ -182,7 +208,29 @@ bool AppMain(BOOL stopping)
 			strcpy(body, msg.get("body", "").asCString());
 			std::istringstream datastream(body);
 			std::string token;
-			if (strcmp(type, "camera-transform-lookat") == 0)
+			if (strcmp(type, "stereo-rendering") == 0)
+			{
+				getline(datastream, token, ',');
+				peerData->isStereo = stoi(token) == 1;
+				InitializeRenderTextures(
+					peerData.get(),
+					serverConfig->server_config.width,
+					serverConfig->server_config.height,
+					peerData->isStereo);
+
+				if (peerData->isStereo)
+				{
+					// In stereo rendering mode, we need to position the cube
+					// in front of user.
+					g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
+				}
+				else
+				{
+					g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
+					peerData->tick = GetTickCount64();
+				}
+			}
+			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{
 				// Eye point.
 				getline(datastream, token, ',');
@@ -208,85 +256,161 @@ bool AppMain(BOOL stopping)
 				getline(datastream, token, ',');
 				float upZ = stof(token);
 
-				inputData->lookAtVector = { focusX, focusY, focusZ, 0.f };
-				inputData->upVector = { upX, upY, upZ, 0.f };
-				inputData->eyeVector = { eyeX, eyeY, eyeZ, 0.f };
-				inputData->isNew = true;
+				peerData->lookAtVector = { focusX, focusY, focusZ, 0.f };
+				peerData->upVector = { upX, upY, upZ, 0.f };
+				peerData->eyeVector = { eyeX, eyeY, eyeZ, 0.f };
+				peerData->isNew = true;
+			}
+			else if (strcmp(type, "camera-transform-stereo") == 0)
+			{
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				peerData->viewProjectionMatrixLeft = viewProjectionLeft;
+				peerData->viewProjectionMatrixRight = viewProjectionRight;
+				peerData->isNew = true;
+			}
+			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
+			{
+				// Parses the left view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view projection matrix.
+				DirectX::XMFLOAT4X4 viewProjectionRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewProjectionRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the prediction timestamp.
+				getline(datastream, token, ',');
+				int64_t timestamp = stoll(token);
+				if (timestamp != peerData->lastTimestamp)
+				{
+					peerData->lastTimestamp = timestamp;
+					peerData->viewProjectionMatrixLeft = viewProjectionLeft;
+					peerData->viewProjectionMatrixRight = viewProjectionRight;
+					peerData->isNew = true;
+				}
 			}
 		}
 	});
 
-	cond.ConnectSignallingAsync("renderingserver_test");
+	// Phong: TODO
+	// if (serverConfig->server_config.system_service)
+	{
+		cond.ConnectSignallingAsync("renderingserver_test");
+	}
+
 	cond.SetDataChannelMessageHandler(dataChannelMessageHandler);
 
 	// Main loop.
 	while (!stopping)
 	{
+		MSG msg = { 0 };
+
 		// if we're quitting, do so
 		if (wndHandler.isClosing)
 		{
 			break;
 		}
 
-		MSG msg = { 0 };
-
-		// For system service, ignore window and swap chain.
-		if (serverConfig->server_config.system_service)
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			if (serverConfig->server_config.system_service ||
+				!wnd.PreTranslateMessage(&msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
 		}
 		else
 		{
-			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			ULONGLONG tick = GetTickCount64();
+			for each (auto pair in cond.Peers())
 			{
-				if (!wnd.PreTranslateMessage(&msg))
+				auto peer = pair.second;
+				auto it = g_remotePeersData.find(peer->Id());
+				if (it != g_remotePeersData.end())
 				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
-			}
-			else
-			{
-				ULONGLONG tick = GetTickCount64();
-				for each (auto pair in cond.Peers())
-				{
-					auto peer = pair.second;
-					auto it = g_inputData.find(peer->Id());
-					if (it != g_inputData.end())
+					RemotePeerData* peerData = it->second.get();
+					if (peerData->renderTexture)
 					{
-						PeerInputData* data = it->second.get();
-						if (data->isNew)
+						if (!peerData->isStereo)
 						{
-							g_cubeRenderer->Update(data->eyeVector, data->lookAtVector, data->upVector);
+							// FPS limiter.
+							const int interval = 1000 / nvEncConfig->capture_fps;
+							ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
+							if (timeElapsed >= interval)
+							{
+								peerData->tick = GetTickCount64() - timeElapsed + interval;
+								if (peerData->isNew)
+								{
+									g_cubeRenderer->Update(
+										peerData->eyeVector,
+										peerData->lookAtVector,
+										peerData->upVector);
+								}
+								else
+								{
+									g_cubeRenderer->Update();
+								}
+
+								g_cubeRenderer->Render(peerData->renderTextureRtv.Get());
+								peer->SendFrame(peerData->renderTexture.Get());
+							}
+						}
+						// In stereo rendering mode, we only update frame whenever
+						// receiving any input data.
+						else if (peerData->isNew)
+						{
+							g_cubeRenderer->Update(
+								peerData->viewProjectionMatrixLeft,
+								peerData->viewProjectionMatrixRight);
+
+							g_cubeRenderer->Render(peerData->renderTextureRtv.Get());
+							peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
+							peerData->isNew = false;
 						}
 					}
-
-					g_cubeRenderer->Update();
-					g_cubeRenderer->Render();
-					peer->SendFrame(frameBuffer.Get());
 				}
-
-				// TODO(bengreenier): this will only show the last viewport via the server window (is that cool)
-				g_deviceResources->Present();
-
-				// FPS limiter.
-				const int interval = 1000 / nvEncConfig->capture_fps;
-				ULONGLONG timeElapsed = GetTickCount64() - tick;
-				DWORD sleepAmount = 0;
-				if (timeElapsed < interval)
-				{
-					sleepAmount = interval - timeElapsed;
-				}
-
-				Sleep(sleepAmount);
 			}
 		}
 	}
 
-	rtc::CleanupSSL();
-
 	// Cleanup.
+	rtc::CleanupSSL();
 	delete g_cubeRenderer;
 	delete g_deviceResources;
 

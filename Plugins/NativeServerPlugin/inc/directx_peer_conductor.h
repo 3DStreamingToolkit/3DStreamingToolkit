@@ -16,7 +16,9 @@ public:
 		ID3D11Device* d3d_device,
 		bool enable_software_encoder = false);
 
-	void SendFrame(ID3D11Texture2D* frame_buffer);
+	void SendFrame(ID3D11Texture2D* frame_buffer, int64_t prediction_time_stamp = -1);
+
+	void SendFrame(ID3D11Texture2D* left_frame_buffer, ID3D11Texture2D* right_frame_buffer, int64_t prediction_time_stamp = -1);
 
 protected:
 	// Provide the same buffer capturer for each single video track

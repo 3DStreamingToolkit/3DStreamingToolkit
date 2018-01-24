@@ -17,19 +17,25 @@ DirectXPeerConductor::DirectXPeerConductor(int id,
 	d3d_device_(d3d_device),
 	enable_software_encoder_(enable_software_encoder) {}
 
-void DirectXPeerConductor::SendFrame(ID3D11Texture2D* frame_buffer)
+void DirectXPeerConductor::SendFrame(ID3D11Texture2D* frame_buffer, int64_t prediction_time_stamp)
 {
 	if (capturer_)
 	{
-		capturer_->SendFrame(frame_buffer);
+		capturer_->SendFrame(frame_buffer, prediction_time_stamp);
+	}
+}
+
+void DirectXPeerConductor::SendFrame(ID3D11Texture2D* left_frame_buffer, ID3D11Texture2D* right_frame_buffer, int64_t prediction_time_stamp)
+{
+	if (capturer_)
+	{
+		capturer_->SendFrame(left_frame_buffer, right_frame_buffer, prediction_time_stamp);
 	}
 }
 
 unique_ptr<cricket::VideoCapturer> DirectXPeerConductor::AllocateVideoCapturer()
 {
 	unique_ptr<DirectXBufferCapturer> owned_ptr(new DirectXBufferCapturer(d3d_device_));
-
-	owned_ptr->Initialize();
 
 	if (enable_software_encoder_)
 	{

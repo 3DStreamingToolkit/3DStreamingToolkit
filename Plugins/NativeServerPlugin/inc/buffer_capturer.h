@@ -72,7 +72,6 @@ namespace StreamingToolkit
 		sigslot::signal1<BufferCapturer*> SignalDestroyed;
 
 	protected:
-		virtual void Initialize(bool headless = false, int width = 0, int height = 0) = 0;
 		virtual void SendFrame(webrtc::VideoFrame video_frame);
 
 		Clock* const clock_;
