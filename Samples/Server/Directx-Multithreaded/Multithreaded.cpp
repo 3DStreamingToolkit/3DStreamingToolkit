@@ -37,8 +37,8 @@
 #include "server_renderer.h"
 #include "webrtc.h"
 #include "config_parser.h"
-#include "directx_buffer_capturer.h"
 #include "service/render_service.h"
+#include "multi_peer_conductor.h"
 #endif // TEST_RUNNER
 
 // Required app libs
@@ -392,15 +392,46 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 // Video Capturer
 //--------------------------------------------------------------------------------------
 #ifdef TEST_RUNNER
-VideoTestRunner*			g_videoTestRunner = nullptr;
+VideoTestRunner*					g_videoTestRunner = nullptr;
 #else
-bool						g_hasNewInputData = false;
-int64_t						g_lastTimestamp = -1;
-DirectX::XMVECTORF32		g_lookAtVector;
-DirectX::XMVECTORF32		g_upVector;
-DirectX::XMVECTORF32		g_eyeVector;
-DirectX::XMFLOAT4X4			g_viewProjectionMatrixLeft;
-DirectX::XMFLOAT4X4			g_viewProjectionMatrixRight;
+// Remote peer data
+struct RemotePeerData
+{
+	// True if this data hasn't been processed
+	bool							isNew;
+
+	// True for stereo output, false otherwise
+	bool							isStereo;
+
+	// The look at vector used in camera transform
+	DirectX::XMVECTORF32			lookAtVector;
+
+	// The up vector used in camera transform
+	DirectX::XMVECTORF32			upVector;
+
+	// The eye vector used in camera transform
+	DirectX::XMVECTORF32			eyeVector;
+
+	// The view-projection matrix for left eye used in camera transform
+	DirectX::XMFLOAT4X4				viewProjectionMatrixLeft;
+
+	// The view-projection matrix for right eye used in camera transform
+	DirectX::XMFLOAT4X4				viewProjectionMatrixRight;
+
+	// The timestamp used for frame synchronization in stereo mode
+	int64_t							lastTimestamp;
+
+	// The render texture which we use to render
+	ComPtr<ID3D11Texture2D>			renderTexture;
+
+	// The render target view of the render texture
+	ComPtr<ID3D11RenderTargetView>	renderTextureRtv;
+
+	// Used for FPS limiter.
+	ULONGLONG						tick;
+};
+
+std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
 #endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
@@ -460,17 +491,30 @@ inline bool IsRenderDeferred()
 
 #ifndef TEST_RUNNER
 
+void InitializeRenderTextures(RemotePeerData* peerData, int width, int height, bool isStereo)
+{
+	int texWidth = isStereo ? width << 1 : width;
+	int texHeight = height;
+	D3D11_TEXTURE2D_DESC texDesc = { 0 };
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	texDesc.Width = texWidth;
+	texDesc.Height = texHeight;
+	texDesc.MipLevels = 1;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+	// Creates texture and render target view
+	DXUTGetD3D11Device()->CreateTexture2D(&texDesc, nullptr, &peerData->renderTexture);
+	DXUTGetD3D11Device()->CreateRenderTargetView(peerData->renderTexture.Get(), nullptr, &peerData->renderTextureRtv);
+}
+
 bool AppMain(BOOL stopping)
 {
 	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
 	auto serverConfig = GlobalObject<ServerConfig>::Get();
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
-
-	ServerAuthenticationProvider::ServerAuthInfo authInfo;
-	authInfo.authority = webrtcConfig->authentication.authority;
-	authInfo.resource = webrtcConfig->authentication.resource;
-	authInfo.clientId = webrtcConfig->authentication.client_id;
-	authInfo.clientSecret = webrtcConfig->authentication.client_secret;
 
 	rtc::EnsureWinsockInit();
 	rtc::Win32Thread w32_thread;
@@ -484,6 +528,26 @@ bool AppMain(BOOL stopping)
 		false,
 		serverConfig->server_config.width,
 		serverConfig->server_config.height);
+
+	// give us a quick and dirty quit handler
+	struct wndHandler : public MainWindowCallback
+	{
+		virtual void StartLogin(const std::string& server, int port) override {};
+
+		virtual void DisconnectFromServer() override {}
+
+		virtual void ConnectToPeer(int peer_id) override {}
+
+		virtual void DisconnectFromCurrentPeer() override {}
+
+		virtual void UIThreadCallback(int msg_id, void* data) override {}
+
+		atomic_bool isClosing = false;
+		virtual void Close() override { isClosing.store(true); }
+	} wndHandler;
+
+	// register the handler
+	wnd.RegisterObserver(&wndHandler);
 
 	if (!serverConfig->server_config.system_service)
 	{
@@ -512,61 +576,41 @@ bool AppMain(BOOL stopping)
 	DXUTResizeDXGIBuffers(serverConfig->server_config.width,
 		serverConfig->server_config.height, false);
 
-	rtc::InitializeSSL();
-	std::shared_ptr<ServerAuthenticationProvider> authProvider;
-	std::shared_ptr<TurnCredentialProvider> turnProvider;
-	PeerConnectionClient client;
-
 	// Initializes viewport for left and right cameras.
 	g_CameraResources.SetViewport(serverConfig->server_config.width,
 		serverConfig->server_config.height);
 
-	// Creates and initializes the buffer capturer.
-	// Note: Conductor is responsible for cleaning up bufferCapturer object.
-	std::shared_ptr<DirectXBufferCapturer> bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
-		new DirectXBufferCapturer(DXUTGetD3D11Device()));
-
-	bufferCapturer->Initialize(serverConfig->server_config.system_service,
-		serverConfig->server_config.width, serverConfig->server_config.height);
-
-	if (nvEncConfig->use_software_encoding)
-	{
-		bufferCapturer->EnableSoftwareEncoder();
-	}
-
-	// For system service, we render to buffer instead of swap chain.
-	if (serverConfig->server_config.system_service)
-	{
-		DXUTSetD3D11RenderTargetView(bufferCapturer->GetRenderTargetView());
-	}
+	// Initializes SSL.
+	rtc::InitializeSSL();
 
 	// Initializes the conductor.
-	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
-		&client, bufferCapturer.get(), &wnd, webrtcConfig.get()));
+	MultiPeerConductor cond(webrtcConfig,
+		DXUTGetD3D11Device(),
+		nvEncConfig->use_software_encoding);
 
-	// Gets the frame buffer from the swap chain.
-	ComPtr<ID3D11Texture2D> frameBuffer;
-	if (!serverConfig->server_config.system_service)
-	{
-		HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
-			0,
-			__uuidof(ID3D11Texture2D),
-			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
-
-		if (FAILED(hr))
-		{
-			return hr;
-		}
-	}
-
-	// Handles input from client.
-	InputDataHandler inputHandler([&](const std::string& message)
+	// Handles data channel messages.
+	std::function<void(int, const string&)> dataChannelMessageHandler([&](
+		int peerId,
+		const std::string& message)
 	{
 		char type[256];
 		char body[1024];
 		Json::Reader reader;
 		Json::Value msg = NULL;
 		reader.parse(message, msg, false);
+
+		// Retrieves remote peer data from map, create new if needed.
+		std::shared_ptr<RemotePeerData> peerData;
+		auto it = g_remotePeersData.find(peerId);
+		if (it != g_remotePeersData.end())
+		{
+			peerData = it->second;
+		}
+		else
+		{
+			peerData.reset(new RemotePeerData());
+			g_remotePeersData[peerId] = peerData;
+		}
 
 		if (msg.isMember("type") && msg.isMember("body"))
 		{
@@ -577,40 +621,15 @@ bool AppMain(BOOL stopping)
 			if (strcmp(type, "stereo-rendering") == 0)
 			{
 				getline(datastream, token, ',');
-				bool isStereo = stoi(token) == 1;
-				if (isStereo != g_CameraResources.IsStereo())
-				{
-					// Resizes the swap chain.
-					frameBuffer.Reset();
-					g_CameraResources.SetStereo(isStereo);
-					DXUTDeviceSettings deviceSettings = DXUTGetDeviceSettings();
-					int width = deviceSettings.d3d11.sd.BufferDesc.Width;
-					int height = deviceSettings.d3d11.sd.BufferDesc.Height;
-					int newWidth = isStereo ? width << 1 : width >> 1;
-					DXUTResizeDXGIBuffers(newWidth, height, false);
-					if (!serverConfig->server_config.system_service)
-					{
-						SetWindowPos(DXUTGetHWNDDeviceWindowed(), 0, 0, 0, newWidth, height, SWP_NOZORDER | SWP_NOMOVE);
-						HRESULT hr = DXUTGetDXGISwapChain()->GetBuffer(
-							0,
-							__uuidof(ID3D11Texture2D),
-							reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+				peerData->isStereo = stoi(token) == 1;
+				InitializeRenderTextures(
+					peerData.get(),
+					serverConfig->server_config.width,
+					serverConfig->server_config.height,
+					peerData->isStereo);
 
-						if (FAILED(hr))
-						{
-							return hr;
-						}
-					}
-					else
-					{
-						bufferCapturer->ResizeRenderTexture(newWidth, height);
-						DXUTSetD3D11RenderTargetView(bufferCapturer->GetRenderTargetView());
-					}
-
-					// Do not present swapchain in stereo mode since 
-					// it affects the frame prediction.
-					DXUTSetNoSwapChainPresent(isStereo);
-				}
+				DXUTSetNoSwapChainPresent(true);
+				peerData->tick = GetTickCount64();
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{
@@ -638,10 +657,10 @@ bool AppMain(BOOL stopping)
 				getline(datastream, token, ',');
 				float upZ = stof(token);
 
-				g_lookAtVector = { focusX, focusY, focusZ, 0.f };
-				g_upVector = { upX, upY, upZ, 0.f };
-				g_eyeVector = { eyeX, eyeY, eyeZ, 0.f };
-				g_hasNewInputData = true;
+				peerData->lookAtVector = { focusX, focusY, focusZ, 0.f };
+				peerData->upVector = { upX, upY, upZ, 0.f };
+				peerData->eyeVector = { eyeX, eyeY, eyeZ, 0.f };
+				peerData->isNew = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
@@ -667,9 +686,9 @@ bool AppMain(BOOL stopping)
 					}
 				}
 
-				g_viewProjectionMatrixLeft = viewProjectionLeft;
-				g_viewProjectionMatrixRight = viewProjectionRight;
-				g_hasNewInputData = true;
+				peerData->viewProjectionMatrixLeft = viewProjectionLeft;
+				peerData->viewProjectionMatrixRight = viewProjectionRight;
+				peerData->isNew = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
 			{
@@ -698,110 +717,35 @@ bool AppMain(BOOL stopping)
 				// Parses the prediction timestamp.
 				getline(datastream, token, ',');
 				int64_t timestamp = stoll(token);
-				if (timestamp != g_lastTimestamp)
+				if (timestamp != peerData->lastTimestamp)
 				{
-					g_lastTimestamp = timestamp;
-					g_viewProjectionMatrixLeft = viewProjectionLeft;
-					g_viewProjectionMatrixRight = viewProjectionRight;
-					g_hasNewInputData = true;
+					peerData->lastTimestamp = timestamp;
+					peerData->viewProjectionMatrixLeft = viewProjectionLeft;
+					peerData->viewProjectionMatrixRight = viewProjectionRight;
+					peerData->isNew = true;
 				}
 			}
 		}
 	});
 
-	conductor->SetInputDataHandler(&inputHandler);
-	client.SetHeartbeatMs(webrtcConfig->heartbeat);
-
-	// configure callbacks (which may or may not be used)
-	AuthenticationProvider::AuthenticationCompleteCallback authComplete([&](const AuthenticationProviderResult& data) {
-		if (data.successFlag)
-		{
-			client.SetAuthorizationHeader("Bearer " + data.accessToken);
-
-			// indicate to the user auth is complete (only if turn isn't in play)
-			if (turnProvider.get() == nullptr)
-			{
-				wnd.SetAuthCode(L"OK");
-			}
-
-			// For system service, automatically connect to the signaling server
-			// after successful authentication.
-			if (serverConfig->server_config.system_service)
-			{
-				conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
-			}
-		}
-	});
-
-	TurnCredentialProvider::CredentialsRetrievedCallback credentialsRetrieved([&](const TurnCredentials& creds)
+	// Phong: TODO
+	// if (serverConfig->server_config.system_service)
 	{
-		if (creds.successFlag)
-		{
-			conductor->SetTurnCredentials(creds.username, creds.password);
-
-			// indicate to the user turn is done
-			wnd.SetAuthCode(L"OK");
-		}
-	});
-
-	// configure auth, if needed
-	if (!authInfo.authority.empty())
-	{
-		authProvider.reset(new ServerAuthenticationProvider(authInfo));
-
-		authProvider->SignalAuthenticationComplete.connect(&authComplete, &AuthenticationProvider::AuthenticationCompleteCallback::Handle);
-	}
-	else if (serverConfig->server_config.system_service)
-	{
-		// For system service, automatically connect to the signaling server.
-		conductor->StartLogin(webrtcConfig->server, webrtcConfig->port);
+		cond.ConnectSignallingAsync("renderingserver_test");
 	}
 
-	// configure turn, if needed
-	if (!webrtcConfig->turn_server.provider.empty())
-	{
-		turnProvider.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider));
-		turnProvider->SignalCredentialsRetrieved.connect(
-			&credentialsRetrieved,
-			&TurnCredentialProvider::CredentialsRetrievedCallback::Handle);
-	}
-
-	// start auth or turn if needed
-	if (turnProvider.get() != nullptr)
-	{
-		if (authProvider.get() != nullptr)
-		{
-			turnProvider->SetAuthenticationProvider(authProvider.get());
-		}
-
-		// under the hood, this will trigger authProvider->Authenticate() if it exists
-		turnProvider->RequestCredentials();
-	}
-	else if (authProvider.get() != nullptr)
-	{
-		authProvider->Authenticate();
-	}
-
-	// let the user know what we're doing
-	if (turnProvider.get() != nullptr || authProvider.get() != nullptr)
-	{
-		if (authProvider.get() != nullptr)
-		{
-			wnd.SetAuthUri(std::wstring(authInfo.authority.begin(), authInfo.authority.end()));
-		}
-
-		wnd.SetAuthCode(L"Loading");
-	}
-	else
-	{
-		wnd.SetAuthCode(L"Not configured");
-		wnd.SetAuthUri(L"Not configured");
-	}
+	cond.SetDataChannelMessageHandler(dataChannelMessageHandler);
 
 	// Main loop.
 	while (!stopping)
 	{
 		MSG msg = { 0 };
+
+		// if we're quitting, do so
+		if (wndHandler.isClosing)
+		{
+			break;
+		}
 
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -814,71 +758,60 @@ bool AppMain(BOOL stopping)
 		}
 		else
 		{
-			if (conductor->is_closing())
+			for each (auto pair in cond.Peers())
 			{
-				break;
-			}
-
-			if (conductor->connection_active() || client.is_connected())
-			{
-				ULONGLONG tick = GetTickCount64();
-				if (!g_CameraResources.IsStereo())
+				auto peer = pair.second;
+				auto it = g_remotePeersData.find(peer->Id());
+				if (it != g_remotePeersData.end())
 				{
-					if (g_hasNewInputData)
+					RemotePeerData* peerData = it->second.get();
+					if (peerData->renderTexture)
 					{
-						g_Camera.SetViewParams(g_eyeVector, g_lookAtVector, g_upVector);
-						g_Camera.FrameMove(0);
-						g_hasNewInputData = false;
-					}
+						DXUTSetD3D11RenderTargetView(peerData->renderTextureRtv.Get());
+						if (!peerData->isStereo)
+						{
+							// FPS limiter.
+							const int interval = 1000 / nvEncConfig->capture_fps;
+							ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
+							if (timeElapsed >= interval)
+							{
+								peerData->tick = GetTickCount64() - timeElapsed + interval;
+								if (peerData->isNew)
+								{
+									g_Camera.SetViewParams(
+										peerData->eyeVector,
+										peerData->lookAtVector,
+										peerData->upVector);
 
-					DXUTRender3DEnvironment();
-					if (serverConfig->server_config.system_service)
-					{
-						bufferCapturer->SendFrame();
-					}
-					else
-					{
-						bufferCapturer->SendFrame(frameBuffer.Get());
-					}
+									g_Camera.FrameMove(0);
+								}
 
-					// FPS limiter.
-					const int interval = 1000 / nvEncConfig->capture_fps;
-					ULONGLONG timeElapsed = GetTickCount64() - tick;
-					DWORD sleepAmount = 0;
-					if (timeElapsed < interval)
-					{
-						sleepAmount = interval - timeElapsed;
-					}
+								DXUTRender3DEnvironment();
+								peer->SendFrame(peerData->renderTexture.Get());
+							}
+						}
+						// In stereo rendering mode, we only update frame whenever
+						// receiving any input data.
+						else if (peerData->isNew)
+						{
+							XMFLOAT4X4 id;
+							XMStoreFloat4x4(&id, XMMatrixIdentity());
+							g_CameraResources.SetViewMatrix(id, id);
+							g_CameraResources.SetProjMatrix(peerData->viewProjectionMatrixLeft,
+								peerData->viewProjectionMatrixRight);
 
-					Sleep(sleepAmount);
-				}
-				// In stereo rendering mode, we only update frame whenever
-				// receiving any input data.
-				else if (g_hasNewInputData)
-				{
-					XMFLOAT4X4 id;
-					XMStoreFloat4x4(&id, XMMatrixIdentity());
-					g_CameraResources.SetViewMatrix(id, id);
-					g_CameraResources.SetProjMatrix(g_viewProjectionMatrixLeft,
-						g_viewProjectionMatrixRight);
-
-					g_Camera.FrameMove(0);
-					DXUTRender3DEnvironment();
-					if (serverConfig->server_config.system_service)
-					{
-						bufferCapturer->SendFrame(g_lastTimestamp);
+							g_Camera.FrameMove(0);
+							DXUTRender3DEnvironment();
+							peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
+							peerData->isNew = false;
+						}
 					}
-					else
-					{
-						bufferCapturer->SendFrame(frameBuffer.Get(), g_lastTimestamp);
-					}
-
-					g_hasNewInputData = false;
 				}
 			}
 		}
 	}
 
+	// Cleanup.
 	rtc::CleanupSSL();
 
 	return 0;

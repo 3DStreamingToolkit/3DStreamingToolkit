@@ -50,7 +50,12 @@ void StartRenderService();
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-
+HWND								g_hWnd = nullptr;
+DeviceResources*					g_deviceResources = nullptr;
+CubeRenderer*						g_cubeRenderer = nullptr;
+#ifdef TEST_RUNNER
+VideoTestRunner*					g_videoTestRunner = nullptr;
+#else // TEST_RUNNER
 // Remote peer data
 struct RemotePeerData
 {
@@ -74,7 +79,7 @@ struct RemotePeerData
 
 	// The view-projection matrix for right eye used in camera transform
 	DirectX::XMFLOAT4X4				viewProjectionMatrixRight;
-	
+
 	// The timestamp used for frame synchronization in stereo mode
 	int64_t							lastTimestamp;
 
@@ -88,12 +93,6 @@ struct RemotePeerData
 	ULONGLONG						tick;
 };
 
-HWND								g_hWnd = nullptr;
-DeviceResources*					g_deviceResources = nullptr;
-CubeRenderer*						g_cubeRenderer = nullptr;
-#ifdef TEST_RUNNER
-VideoTestRunner*					g_videoTestRunner = nullptr;
-#else // TEST_RUNNER
 std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
 #endif // TESTRUNNER
 
@@ -189,7 +188,7 @@ bool AppMain(BOOL stopping)
 		Json::Value msg = NULL;
 		reader.parse(message, msg, false);
 
-		// Retrieves input data from map, creates if needed.
+		// Retrieves remote peer data from map, create new if needed.
 		std::shared_ptr<RemotePeerData> peerData;
 		auto it = g_remotePeersData.find(peerId);
 		if (it != g_remotePeersData.end())
@@ -357,7 +356,6 @@ bool AppMain(BOOL stopping)
 		}
 		else
 		{
-			ULONGLONG tick = GetTickCount64();
 			for each (auto pair in cond.Peers())
 			{
 				auto peer = pair.second;
