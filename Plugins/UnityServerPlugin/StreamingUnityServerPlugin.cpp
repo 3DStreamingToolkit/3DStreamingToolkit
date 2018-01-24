@@ -513,7 +513,6 @@ extern "C" __declspec(dllexport) void InitializeBufferCapturer(void* leftRT, voi
 	s_bufferCapturer = std::shared_ptr<DirectXBufferCapturer>(
 		new DirectXBufferCapturer(s_Device.Get()));
 
-	s_bufferCapturer->Initialize();
 	if (nvEncConfig->use_software_encoding)
 	{
 		s_bufferCapturer->EnableSoftwareEncoder();
