@@ -38,8 +38,7 @@ PeerConductor::PeerConductor(int id,
 	name_(name),
 	webrtc_config_(webrtc_config),
 	peer_factory_(peer_factory),
-	send_func_(send_func),
-	view_(new PeerView())
+	send_func_(send_func)
 {
 }
 
@@ -139,59 +138,7 @@ void PeerConductor::OnDataChannel(
 void PeerConductor::OnMessage(const DataBuffer& buffer)
 {
 	std::string message((const char*)buffer.data.data(), buffer.data.size());
-
-	char type[256];
-	char body[1024];
-	Json::Reader reader;
-	Json::Value msg = NULL;
-	reader.parse(message, msg, false);
-
-	if (msg.isMember("type") && msg.isMember("body"))
-	{
-		strcpy(type, msg.get("type", "").asCString());
-		strcpy(body, msg.get("body", "").asCString());
-		std::istringstream datastream(body);
-		std::string token;
-
-		if (strcmp(type, "camera-transform-lookat") == 0)
-		{
-			// Eye point.
-			getline(datastream, token, ',');
-			float eyeX = stof(token);
-			getline(datastream, token, ',');
-			float eyeY = stof(token);
-			getline(datastream, token, ',');
-			float eyeZ = stof(token);
-
-			// Focus point.
-			getline(datastream, token, ',');
-			float focusX = stof(token);
-			getline(datastream, token, ',');
-			float focusY = stof(token);
-			getline(datastream, token, ',');
-			float focusZ = stof(token);
-
-			// Up vector.
-			getline(datastream, token, ',');
-			float upX = stof(token);
-			getline(datastream, token, ',');
-			float upY = stof(token);
-			getline(datastream, token, ',');
-			float upZ = stof(token);
-
-			const DirectX::XMVECTORF32 lookAt = { focusX, focusY, focusZ, 0.f };
-			const DirectX::XMVECTORF32 up = { upX, upY, upZ, 0.f };
-			const DirectX::XMVECTORF32 eye = { eyeX, eyeY, eyeZ, 0.f };
-
-			// update the view
-			view_->lookAt = lookAt;
-			view_->up = up;
-			view_->eye = eye;
-		}
-	}
-
-	// emit a signal that we've gotten a message
-	SignalMessage.emit(message);
+	SignalDataChannelMessage.emit(Id(), message);
 }
 
 void PeerConductor::OnStateChange() {}
@@ -304,11 +251,6 @@ const string& PeerConductor::Name() const
 const vector<scoped_refptr<webrtc::MediaStreamInterface>> PeerConductor::Streams() const
 {
 	return peer_streams_;
-}
-
-shared_ptr<PeerView> PeerConductor::View()
-{
-	return view_;
 }
 
 void PeerConductor::AllocatePeerConnection()

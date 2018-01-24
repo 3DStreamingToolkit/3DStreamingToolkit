@@ -190,7 +190,6 @@
     <ClCompile Include="src\input_data_channel_observer.cpp" />
     <ClCompile Include="src\multi_peer_conductor.cpp" />
     <ClCompile Include="src\peer_conductor.cpp" />
-    <ClCompile Include="src\peer_view.cpp" />
     <ClCompile Include="src\render_service.cpp" />
     <ClCompile Include="src\service_base.cpp" />
   </ItemGroup>
@@ -203,7 +202,6 @@
     <ClInclude Include="inc\input_data_channel_observer.h" />
     <ClInclude Include="inc\multi_peer_conductor.h" />
     <ClInclude Include="inc\peer_conductor.h" />
-    <ClInclude Include="inc\peer_view.h" />
     <ClInclude Include="inc\plugindefs.h" />
     <ClInclude Include="inc\flagdefs.h" />
     <ClInclude Include="inc\macros.h" />

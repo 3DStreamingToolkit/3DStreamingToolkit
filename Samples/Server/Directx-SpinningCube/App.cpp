@@ -4,9 +4,9 @@
 #include <shellapi.h>
 #include <fstream>
 
-#include "DeviceResources.h"
-#include "CubeRenderer.h"
 #include "macros.h"
+#include "CubeRenderer.h"
+#include "DeviceResources.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
@@ -17,10 +17,11 @@
 #include "server_renderer.h"
 #include "webrtc.h"
 #include "config_parser.h"
-#include "directx_buffer_capturer.h"
 #include "service/render_service.h"
 #include "multi_peer_conductor.h"
 #endif // TEST_RUNNER
+
+#define FOCUS_POINT		3.f
 
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
@@ -34,6 +35,7 @@
 
 #ifndef TEST_RUNNER
 using namespace Microsoft::WRL;
+using namespace Windows::Foundation::Numerics;
 #endif // TEST_RUNNER
 
 using namespace DX;
@@ -48,11 +50,30 @@ void StartRenderService();
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
-HWND				g_hWnd = nullptr;
-DeviceResources*	g_deviceResources = nullptr;
-CubeRenderer*		g_cubeRenderer = nullptr;
+
+// Input data from remote peer
+struct PeerInputData
+{
+	// True if this data hasn't been processed
+	bool							isNew;
+
+	// The look at vector used in camera transform
+	DirectX::XMVECTORF32			lookAtVector;
+
+	// The up vector used in camera transform
+	DirectX::XMVECTORF32			upVector;
+
+	// The eye vector used in camera transform
+	DirectX::XMVECTORF32			eyeVector;
+};
+
+HWND								g_hWnd = nullptr;
+DeviceResources*					g_deviceResources = nullptr;
+CubeRenderer*						g_cubeRenderer = nullptr;
 #ifdef TEST_RUNNER
-VideoTestRunner*	g_videoTestRunner = nullptr;
+VideoTestRunner*					g_videoTestRunner = nullptr;
+#else // TEST_RUNNER
+std::map<int, std::shared_ptr<PeerInputData>> g_inputData;
 #endif // TESTRUNNER
 
 #ifndef TEST_RUNNER
@@ -119,6 +140,11 @@ bool AppMain(BOOL stopping)
 			0,
 			__uuidof(ID3D11Texture2D),
 			reinterpret_cast<void**>(frameBuffer.GetAddressOf()));
+
+		if (FAILED(hr))
+		{
+			return hr;
+		}
 	}
 
 	// Initializes the conductor.
@@ -126,7 +152,72 @@ bool AppMain(BOOL stopping)
 		g_deviceResources->GetD3DDevice(),
 		nvEncConfig->use_software_encoding);
 
+	// Handles data channel messages.
+	std::function<void(int, const string&)> dataChannelMessageHandler([&](
+		int peerId,
+		const std::string& message)
+	{
+		char type[256];
+		char body[1024];
+		Json::Reader reader;
+		Json::Value msg = NULL;
+		reader.parse(message, msg, false);
+
+		// Retrieves input data from map, creates if needed.
+		std::shared_ptr<PeerInputData> inputData;
+		auto it = g_inputData.find(peerId);
+		if (it != g_inputData.end())
+		{
+			inputData = it->second;
+		}
+		else
+		{
+			inputData.reset(new PeerInputData());
+			g_inputData[peerId] = inputData;
+		}
+
+		if (msg.isMember("type") && msg.isMember("body"))
+		{
+			strcpy(type, msg.get("type", "").asCString());
+			strcpy(body, msg.get("body", "").asCString());
+			std::istringstream datastream(body);
+			std::string token;
+			if (strcmp(type, "camera-transform-lookat") == 0)
+			{
+				// Eye point.
+				getline(datastream, token, ',');
+				float eyeX = stof(token);
+				getline(datastream, token, ',');
+				float eyeY = stof(token);
+				getline(datastream, token, ',');
+				float eyeZ = stof(token);
+
+				// Focus point.
+				getline(datastream, token, ',');
+				float focusX = stof(token);
+				getline(datastream, token, ',');
+				float focusY = stof(token);
+				getline(datastream, token, ',');
+				float focusZ = stof(token);
+
+				// Up vector.
+				getline(datastream, token, ',');
+				float upX = stof(token);
+				getline(datastream, token, ',');
+				float upY = stof(token);
+				getline(datastream, token, ',');
+				float upZ = stof(token);
+
+				inputData->lookAtVector = { focusX, focusY, focusZ, 0.f };
+				inputData->upVector = { upX, upY, upZ, 0.f };
+				inputData->eyeVector = { eyeX, eyeY, eyeZ, 0.f };
+				inputData->isNew = true;
+			}
+		}
+	});
+
 	cond.ConnectSignallingAsync("renderingserver_test");
+	cond.SetDataChannelMessageHandler(dataChannelMessageHandler);
 
 	// Main loop.
 	while (!stopping)
@@ -158,21 +249,21 @@ bool AppMain(BOOL stopping)
 			else
 			{
 				ULONGLONG tick = GetTickCount64();
-				g_cubeRenderer->Update();
-
 				for each (auto pair in cond.Peers())
 				{
 					auto peer = pair.second;
-					auto peerView = peer->View();
-
-					if (peerView->IsValid())
+					auto it = g_inputData.find(peer->Id());
+					if (it != g_inputData.end())
 					{
-						g_cubeRenderer->Update(peerView->eye, peerView->lookAt, peerView->up);
+						PeerInputData* data = it->second.get();
+						if (data->isNew)
+						{
+							g_cubeRenderer->Update(data->eyeVector, data->lookAtVector, data->upVector);
+						}
 					}
 
+					g_cubeRenderer->Update();
 					g_cubeRenderer->Render();
-
-					// this works because peer is a DirectXPeerConductor
 					peer->SendFrame(frameBuffer.Get());
 				}
 

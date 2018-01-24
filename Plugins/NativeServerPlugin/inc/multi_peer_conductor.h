@@ -26,15 +26,17 @@ class MultiPeerConductor : public PeerConnectionClientObserver,
 public:
 	MultiPeerConductor(shared_ptr<WebRTCConfig> config,
 		ID3D11Device* d3d_device,
-		bool enable_software = false);
+		bool enable_software_encoder = false);
 
 	~MultiPeerConductor();
 
 	// Connect the signalling implementation to the signalling server
 	void ConnectSignallingAsync(const string& client_name);
 
-	// each peer can emit a signal that will in turn call this method
+	// Each peer can emit a signal that will in turn call this method
 	void OnIceConnectionChange(int peer_id, PeerConnectionInterface::IceConnectionState new_state);
+
+	void SetDataChannelMessageHandler(const function<void(int, const string&)>& data_channel_handler);
 
 	virtual void OnSignedIn() override;
 
@@ -63,14 +65,18 @@ private:
 		string message;
 		MessageEntry(int p, const string& s) : peer(p), message(s) {}
 	};
+
+	// Handles message received via data channel
+	void HandleDataChannelMessage(int peer_id, const string& message);
 	
 	PeerConnectionClient signalling_client_;
 	shared_ptr<WebRTCConfig> webrtc_config_;
 	ID3D11Device* d3d_device_;
-	bool enable_software_;
+	bool enable_software_encoder_;
 	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
 	map<int, scoped_refptr<DirectXPeerConductor>> connected_peers_;
 	queue<MessageEntry> message_queue_;
 	atomic_bool should_process_queue_;
 	unique_ptr<Thread> process_thread_;
+	function<void(int, const string&)> data_channel_handler_;
 };

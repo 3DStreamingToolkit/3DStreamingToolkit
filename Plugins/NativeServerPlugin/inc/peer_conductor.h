@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "buffer_capturer.h"
-#include "peer_view.h"
 
 // from ConfigParser
 #include "structs.h"
@@ -45,7 +44,6 @@ public:
 	// around ownership.
 	virtual void OnSuccess(SessionDescriptionInterface* desc) override;
 
-
 	virtual void OnFailure(const string& error) override;
 
 	// Triggered when the SignalingState changed.
@@ -81,8 +79,8 @@ public:
 	void OnDataChannel(
 		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override;
 
-	// Emitted when a message is received
-	signal1<string> SignalMessage;
+	// Emitted when a message is received via data channel
+	signal2<int, const string&> SignalDataChannelMessage;
 
 	//  A data buffer was successfully received.
 	virtual void OnMessage(const DataBuffer& buffer) override;
@@ -97,8 +95,6 @@ public:
 
 	const vector<scoped_refptr<webrtc::MediaStreamInterface>> Streams() const;
 
-	shared_ptr<PeerView> View();
-
 protected:
 	// Allocates a buffer capturer for a single video track
 	virtual unique_ptr<cricket::VideoCapturer> AllocateVideoCapturer() = 0;
@@ -112,7 +108,6 @@ private:
 	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
 	function<void(const string&)> send_func_;
 	scoped_refptr<PeerConnectionInterface> peer_connection_;
-	shared_ptr<PeerView> view_;
 	vector<scoped_refptr<webrtc::MediaStreamInterface>> peer_streams_;
 
 	// Names used for a IceCandidate JSON object.
