@@ -82,6 +82,9 @@ CMD /C 'git commit -am "nvencodernobuffer patch"'
 CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\cuda.patch")
 CMD /C ("git add --all")
 CMD /C 'git commit -am "cuda patch"'
+CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\nvencodeDXCrashFix")
+CMD /C ("git add --all")
+CMD /C 'git commit -am "nvencodeDXCrashFix patch"'
 Set-Location "third_party"
 CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\third_party.patch")
 CMD /C ("git add nvencode/")
