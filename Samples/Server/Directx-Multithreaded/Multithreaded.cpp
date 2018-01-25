@@ -23,22 +23,20 @@
 #include <shellapi.h>
 #include <fstream>
 
-#include "MultiDeviceContextDXUTMesh.h"
 #include "defs.h"
 #include "CameraResources.h"
+#include "MultiDeviceContextDXUTMesh.h"
 #include "RemotingModelViewerCamera.h"
 
 #ifdef TEST_RUNNER
 #include "test_runner.h"
 #else // TEST_RUNNER
-#include "server_main_window.h"
-#include "server_authentication_provider.h"
-#include "turn_credential_provider.h"
-#include "server_renderer.h"
-#include "webrtc.h"
 #include "config_parser.h"
-#include "service/render_service.h"
 #include "multi_peer_conductor.h"
+#include "server_main_window.h"
+#include "server_renderer.h"
+#include "service/render_service.h"
+#include "webrtc.h"
 #endif // TEST_RUNNER
 
 // Required app libs

@@ -1,6 +1,7 @@
 ﻿using SimpleJSON;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -18,20 +19,12 @@ namespace Microsoft.Toolkit.ThreeD
         /// <summary>
         /// The video frame width.
         /// </summary>
-        public int VideoFrameWidth = 1280;
+        public static int VideoFrameWidth = 1280;
 
         /// <summary>
         /// The video frame height.
         /// </summary>
-        public int VideoFrameHeight = 720;
-
-        /// <summary>
-        /// If this flag is set to true, the target texture of the camera is generated
-        /// automatically using <see cref="InitializeRenderTextures"/>. Otherwise, the
-        /// target texture must be created and assigned manually in Editor using 
-        /// <see cref="RenderTexture"/>
-        /// </summary>
-        public bool GenerateTargetTexture = true;
+        public static int VideoFrameHeight = 720;
 
         /// <summary>
         /// The left eye camera
@@ -50,16 +43,6 @@ namespace Microsoft.Toolkit.ThreeD
         /// </remarks>
         [Tooltip("The right eye camera, only used in a stereo setup")]
         public Camera RightEye;
-
-        /// <summary>
-        /// Indicates the current rendering approach
-        /// </summary>
-        /// <remarks>
-        /// When this is <c>true</c> stereo rendering using <see cref="LeftEye"/> and <see cref="RightEye"/> will be used
-        /// When this is <c>false</c> mono rendering using <see cref="LeftEye"/> will be used
-        /// </remarks>
-        [Tooltip("Flag indicating if we are currently rendering in stereo")]
-        public bool IsStereo = false;
 
         /// <summary>
         /// A mutable peers list that we'll keep updated, and derive connect/disconnect operations from
@@ -82,41 +65,6 @@ namespace Microsoft.Toolkit.ThreeD
         /// Instance that represents the underlying native plugin that powers the webrtc experience
         /// </summary>
         public StreamingUnityServerPlugin Plugin = null;
-
-        /// <summary>
-        /// Render texture for the left camera.
-        /// </summary>
-        private RenderTexture leftRenderTexture;
-
-        /// <summary>
-        /// Render texture for the right camera.
-        /// </summary>
-        private RenderTexture rightRenderTexture;
-
-        /// <summary>
-        /// The location to be placed at as determined by client control
-        /// </summary>
-        private Vector3 location = Vector3.zero;
-
-        /// <summary>
-        /// The location to look at as determined by client control
-        /// </summary>
-        private Vector3 lookAt = Vector3.zero;
-
-        /// <summary>
-        /// The upward vector as determined by client control
-        /// </summary>
-        private Vector3 up = Vector3.zero;
-
-        /// <summary>
-        /// The left stereo eye projection as determined by client control
-        /// </summary>
-        private Matrix4x4 stereoLeftProjectionMatrix = Matrix4x4.identity;
-
-        /// <summary>
-        /// The right stereo eye projection as determined by client control
-        /// </summary>
-        private Matrix4x4 stereoRightProjectionMatrix = Matrix4x4.identity;
 
         /// <summary>
         /// Internal flag used to indicate we are shutting down
@@ -142,19 +90,9 @@ namespace Microsoft.Toolkit.ThreeD
         private bool offerSucceeded = false;
 
         /// <summary>
-        /// Flag indicating if we were stereo on the last <see cref="SetupActiveEyes"/> call
+        /// Stores all remote peers' data.
         /// </summary>
-        private bool? lastSetupVisibleEyes = null;
-
-        /// <summary>
-        /// The last prediction timestamp.
-        /// </summary>
-        private long lastTimestamp = -1;
-
-        /// <summary>
-        /// Flag indicating if the camera needs to be updated.
-        /// </summary>
-        private bool cameraNeedUpdated = false;
+        private Dictionary<int, RemotePeerData> remotePeersData = new Dictionary<int, RemotePeerData>();
 
         /// <summary>
         /// Unity engine object Awake() hook
@@ -166,31 +104,14 @@ namespace Microsoft.Toolkit.ThreeD
             Application.runInBackground = true;
             Application.targetFrameRate = 60;
 
-            // Initializes render textures if needed.
-            if (GenerateTargetTexture)
-            {
-                InitializeRenderTextures();
-            }
+            // Setup default cameras.
+            SetupActiveEyes(false);
 
             // Open the connection.
             Open();
-            
-            // Setup the eyes for the first time.
-            SetupActiveEyes();
 
-            // Validates target texture of camera.
-            if (LeftEye.targetTexture == null || LeftEye.targetTexture.format != RenderTextureFormat.ARGB32 ||
-                RightEye.targetTexture == null || RightEye.targetTexture.format != RenderTextureFormat.ARGB32)
-            {
-                throw new ArgumentException("Invalid target texture of camera.");
-            }
-            else
-            {
-                // Initializes the buffer renderer using render texture.
-                StartCoroutine(Plugin.InitializeBufferCapturer(
-                    LeftEye.targetTexture.GetNativeTexturePtr(),
-                    RightEye.targetTexture.GetNativeTexturePtr()));
-            }
+            // Initializes the buffer renderer using render texture.
+            StartCoroutine(Plugin.NativeInitWebRTC());
         }
 
         /// <summary>
@@ -209,28 +130,39 @@ namespace Microsoft.Toolkit.ThreeD
         {
             if (!isClosing)
             {
-                if (!IsStereo)
+                foreach (var peerData in remotePeersData.Values)
                 {
-                    LeftEye.transform.position = location;
-                    LeftEye.transform.LookAt(lookAt, up);
-                    this.LeftEye.Render();
-                    StartCoroutine(SendFrame(false));
-                }
-                else if (cameraNeedUpdated)
-                {
-                    this.LeftEye.projectionMatrix = stereoLeftProjectionMatrix;
-                    this.RightEye.projectionMatrix = stereoRightProjectionMatrix;
-                    this.LeftEye.Render();
-                    this.RightEye.Render();
-                    StartCoroutine(SendFrame(true));
-                }
-            }
+                    // Makes sure that the mono/stereo mode has been set.
+                    if (peerData.IsStereo.HasValue)
+                    {
+                        // Lazily initializes the render textures.
+                        if (peerData.LeftRenderTexture == null)
+                        {
+                            peerData.InitializeRenderTextures();
+                        }
 
-            // if the eye config changes, reconfigure
-            if (this.lastSetupVisibleEyes.HasValue &&
-                this.lastSetupVisibleEyes.Value != this.IsStereo)
-            {
-                SetupActiveEyes();
+                        SetupActiveEyes(peerData.IsStereo.Value);
+                        if (!peerData.IsStereo.Value)
+                        {
+                            LeftEye.targetTexture = peerData.LeftRenderTexture;
+                            LeftEye.transform.position = peerData.EyeVector;
+                            LeftEye.transform.LookAt(peerData.LookAtVector, peerData.UpVector);
+                            LeftEye.Render();
+                        }
+                        else if (peerData.IsNew)
+                        {
+                            LeftEye.targetTexture = peerData.LeftRenderTexture;
+                            LeftEye.projectionMatrix = peerData.LeftViewProjectionMatrix;
+                            LeftEye.Render();
+
+                            RightEye.targetTexture = peerData.RightRenderTexture;
+                            RightEye.projectionMatrix = peerData.RightViewProjectionMatrix;
+                            RightEye.Render();
+                        }
+                    }
+                }
+
+                StartCoroutine(SendFrame());
             }
 
             // check if we're in the editor, and fail out if we aren't loading the plugin in editor
@@ -246,14 +178,6 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 previousPeer = PeerList.Peers.First(p => p.Id == offerPeer.Value);
                 PeerList.SelectedPeer = previousPeer;
-            }
-
-            // check if we need to connect to a peer, and if so, do it
-            if ((previousPeer == null && PeerList.SelectedPeer != null) ||
-                (previousPeer != null && PeerList.SelectedPeer != null && !previousPeer.Equals(PeerList.SelectedPeer)))
-            {
-                Plugin.ConnectToPeer(PeerList.SelectedPeer.Id);
-                previousPeer = PeerList.SelectedPeer;
             }
         }
 
@@ -282,7 +206,7 @@ namespace Microsoft.Toolkit.ThreeD
 
             // hook it's input event
             // note: if you wish to capture debug data, see the <see cref="StreamingUnityServerDebug"/> behaviour
-            Plugin.InputUpdate += OnInputData;
+            Plugin.DataChannelMessage += OnDataChannelMessage;
 
             Plugin.PeerConnect += (int peerId, string peerName) =>
             {
@@ -344,36 +268,24 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// Initializes render textures.
-        /// </summary>
-        private void InitializeRenderTextures()
-        {
-            // Left.
-            leftRenderTexture = new RenderTexture(
-                VideoFrameWidth, VideoFrameHeight, 24, RenderTextureFormat.ARGB32);
-
-            leftRenderTexture.Create();
-            LeftEye.targetTexture = leftRenderTexture;
-
-            // Right
-            rightRenderTexture = new RenderTexture(
-                VideoFrameWidth, VideoFrameHeight, 24, RenderTextureFormat.ARGB32);
-
-            rightRenderTexture.Create();
-            RightEye.targetTexture = rightRenderTexture;
-        }
-
-        /// <summary>
         /// Handles input data and updates local transformations
         /// </summary>
         /// <param name="data">input data</param>
-        private void OnInputData(string data)
+        private void OnDataChannelMessage(int peerId, string data)
         {
             try
             {
                 JSONNode node = SimpleJSON.JSON.Parse(data);
                 string messageType = node["type"];
                 string camera = "";
+
+                // Retrieves remote peer data from dictionary, creates new if needed.
+                RemotePeerData peerData = default(RemotePeerData);
+                if (!remotePeersData.TryGetValue(peerId, out peerData))
+                {
+                    peerData = new RemotePeerData();
+                    remotePeersData.Add(peerId, peerData);
+                }
 
                 switch (messageType)
                 {
@@ -387,25 +299,7 @@ namespace Microsoft.Toolkit.ThreeD
                             break;
                         }
 
-                        // the visible eyes value needs to be set to Two only when isStereo is true (value of 1)
-                        // and the total eyes known by the scene is two (meaning we have a second camera available)
-                        this.IsStereo = (isStereo == 1 && this.RightEye != null) ? true : false;
-
-                        break;
-
-                    case "keyboard-event":
-                        JSONNode kbBody = node["body"];
-                        int kbMsg = kbBody["msg"];
-                        int kbWParam = kbBody["wParam"];
-
-                        break;
-
-                    case "mouse-event":
-                        JSONNode mouseBody = node["body"];
-                        int mouseMsg = mouseBody["msg"];
-                        int mouseWParam = mouseBody["wParam"];
-                        int mouseLParam = mouseBody["lParam"];
-
+                        peerData.IsStereo = isStereo == 1;
                         break;
 
                     case "camera-transform-lookat":
@@ -418,71 +312,81 @@ namespace Microsoft.Toolkit.ThreeD
                             loc.x = float.Parse(sp[0]);
                             loc.y = float.Parse(sp[1]);
                             loc.z = float.Parse(sp[2]);
-                            location = loc;
+                            peerData.EyeVector = loc;
 
                             Vector3 look = new Vector3();
                             look.x = float.Parse(sp[3]);
                             look.y = float.Parse(sp[4]);
                             look.z = float.Parse(sp[5]);
-                            lookAt = look;
+                            peerData.LookAtVector = look;
 
                             Vector3 u = new Vector3();
                             u.x = float.Parse(sp[6]);
                             u.y = float.Parse(sp[7]);
                             u.z = float.Parse(sp[8]);
-                            up = u;
+                            peerData.UpVector = u;
+
+                            peerData.IsNew = true;
                         }
 
                         break;
 
                     case "camera-transform-stereo":
                         camera = node["body"];
-                        if (!cameraNeedUpdated && camera != null && camera.Length > 0)
+                        if (!peerData.IsNew && camera != null && camera.Length > 0)
                         {
                             string[] coords = camera.Split(',');
                             int index = 0;
+                            Matrix4x4 leftMatrix = Matrix4x4.identity;
+                            Matrix4x4 rightMatrix = Matrix4x4.identity;
                             for (int i = 0; i < 4; i++)
                             {
                                 for (int j = 0; j < 4; j++)
                                 {
                                     // We are receiving 32 values for the left/right matrix.
                                     // The first 16 are for left followed by the right matrix.
-                                    stereoRightProjectionMatrix[i, j] = float.Parse(coords[16 + index]);
-                                    stereoLeftProjectionMatrix[i, j] = float.Parse(coords[index++]);
+                                    rightMatrix[i, j] = float.Parse(coords[16 + index]);
+                                    leftMatrix[i, j] = float.Parse(coords[index++]);
                                 }
                             }
 
-                            cameraNeedUpdated = true;
+                            peerData.LeftViewProjectionMatrix = leftMatrix;
+                            peerData.RightViewProjectionMatrix = rightMatrix;
+                            peerData.IsNew = true;
                         }
                         
                         break;
 
                     case "camera-transform-stereo-prediction":
                         camera = node["body"];
-                        if (!cameraNeedUpdated && camera != null && camera.Length > 0)
+                        if (!peerData.IsNew && camera != null && camera.Length > 0)
                         {
                             string[] coords = camera.Split(',');
 
                             // Parse the prediction timestamp from the message body.
                             long timestamp = long.Parse(coords[32]);
 
-                            if (timestamp != lastTimestamp)
+                            if (timestamp != peerData.LastTimestamp)
                             {
-                                lastTimestamp = timestamp;
+                                peerData.LastTimestamp = timestamp;
 
                                 int index = 0;
+                                Matrix4x4 leftMatrix = Matrix4x4.identity;
+                                Matrix4x4 rightMatrix = Matrix4x4.identity;
                                 for (int i = 0; i < 4; i++)
                                 {
                                     for (int j = 0; j < 4; j++)
                                     {
                                         // We are receiving 32 values for the left/right matrix.
                                         // The first 16 are for left followed by the right matrix.
-                                        stereoRightProjectionMatrix[i, j] = float.Parse(coords[16 + index]);
-                                        stereoLeftProjectionMatrix[i, j] = float.Parse(coords[index++]);
+                                        rightMatrix[i, j] = float.Parse(coords[16 + index]);
+                                        leftMatrix[i, j] = float.Parse(coords[index++]);
                                     }
                                 }
 
-                                cameraNeedUpdated = true;
+                                peerData.LeftViewProjectionMatrix = leftMatrix;
+                                peerData.RightViewProjectionMatrix = rightMatrix;
+                                peerData.IsNew = true;
                             }
                         }
 
@@ -491,7 +395,7 @@ namespace Microsoft.Toolkit.ThreeD
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("InputUpdate threw " + ex.Message + "\r\n" + ex.StackTrace);
+                Debug.LogWarning("DataChannelMessage threw " + ex.Message + "\r\n" + ex.StackTrace);
             }
         }
 
@@ -500,9 +404,9 @@ namespace Microsoft.Toolkit.ThreeD
         /// Cameras are disabled as we we take control of render order ourselves, see
         /// https://docs.unity3d.com/ScriptReference/Camera.Render.html for more info
         /// </summary>
-        private void SetupActiveEyes()
+        private void SetupActiveEyes(bool isStereo)
         {
-            if (this.IsStereo)
+            if (isStereo)
             {
                 this.LeftEye.stereoTargetEye = StereoTargetEyeMask.Left;
                 this.LeftEye.enabled = false;
@@ -515,24 +419,108 @@ namespace Microsoft.Toolkit.ThreeD
                 this.LeftEye.enabled = false;
                 this.RightEye.enabled = false;
             }
-
-            // update our last setup visible eye value
-            this.lastSetupVisibleEyes = this.IsStereo;
-
-            // notify the plugin of the potential stereo change as well
-            if (this.Plugin != null)
-            {
-                this.Plugin.EncodingStereo = this.IsStereo;
-            }
         }
 
         /// <summary>
         /// Sends frame buffer.
         /// </summary>
-        private IEnumerator SendFrame(bool isStereo)
+        private IEnumerator SendFrame()
         {
-            yield return Plugin.SendFrame(isStereo, lastTimestamp);
-            cameraNeedUpdated = false;
+            yield return new WaitForEndOfFrame();
+            foreach (var peer in remotePeersData)
+            {
+                int peerId = peer.Key;
+                RemotePeerData peerData = peer.Value;
+                if (peerData.LeftRenderTexture)
+                {
+                    Plugin.SendFrame(
+                        peerId,
+                        peerData.IsStereo.Value,
+                        peerData.LeftRenderTexture,
+                        peerData.RightRenderTexture,
+                        peerData.LastTimestamp);
+
+                    peerData.IsNew = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Remote peer data.
+        /// </summary>
+        private class RemotePeerData
+        {
+            /// <summary>
+            /// True if this data hasn't been processed.
+            /// </summary>
+            public bool IsNew { get; set; }
+
+            /// <summary>
+            /// True for stereo output, false otherwise.
+            /// </summary>
+            public bool? IsStereo { get; set; }
+
+            /// <summary>
+            /// The look at vector used in camera transform.
+            /// </summary>
+            public Vector3 LookAtVector { get; set; }
+
+            /// <summary>
+            /// The up vector used in camera transform.
+            /// </summary>
+            public Vector3 UpVector { get; set; }
+
+            /// <summary>
+            /// The eye vector used in camera transform.
+            /// </summary>
+            public Vector3 EyeVector { get; set; }
+
+            /// <summary>
+            /// The view-projection matrix for left eye used in camera transform.
+            /// </summary>
+            public Matrix4x4 LeftViewProjectionMatrix { get; set; }
+
+            /// <summary>
+            /// The view-projection matrix for right eye used in camera transform.
+            /// </summary>
+            public Matrix4x4 RightViewProjectionMatrix { get; set; }
+
+            /// <summary>
+            /// The timestamp used for frame synchronization in stereo mode.
+            /// </summary>
+            public long LastTimestamp { get; set; }
+
+            /// <summary>
+            /// The render texture of left eye camera which we use to render.
+            /// </summary>
+            public RenderTexture LeftRenderTexture { get; set; }
+
+            /// <summary>
+            /// The render texture of right eye camera which we use to render.
+            /// </summary>
+            public RenderTexture RightRenderTexture { get; set; }
+
+            /// <summary>
+            /// Initializes render textures.
+            /// </summary>
+            public void InitializeRenderTextures()
+            {
+                // Left eye.
+                LeftRenderTexture = new RenderTexture(
+                    VideoFrameWidth, VideoFrameHeight,
+                    24, RenderTextureFormat.ARGB32);
+
+                LeftRenderTexture.Create();
+
+                if (IsStereo.Value)
+                {
+                    // Right eye.
+                    RightRenderTexture = new RenderTexture(VideoFrameWidth, VideoFrameHeight,
+                        24, RenderTextureFormat.ARGB32);
+
+                    RightRenderTexture.Create();
+                }
+            }
         }
     }
 }
