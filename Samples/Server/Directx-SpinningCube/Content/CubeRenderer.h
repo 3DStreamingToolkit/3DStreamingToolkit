@@ -2,6 +2,11 @@
 
 #include "DeviceResources.h"
 
+// Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
+static const DirectX::XMVECTORF32 kEye = { 0.0f, 0.0f, 1.0f, 0.0f };
+static const DirectX::XMVECTORF32 kLookAt = { 0.0f, 0.0f, 0.0f, 0.0f };
+static const DirectX::XMVECTORF32 kUp = { 0.0f, 1.0f, 0.0f, 0.0f };
+
 namespace StreamingToolkitSample
 {
 	// Constant buffer used to send model matrix to the vertex shader.
@@ -34,20 +39,21 @@ namespace StreamingToolkitSample
 	public:
 												CubeRenderer(DX::DeviceResources* deviceResources);
 
-		void									InitConstantBuffers(bool isStereo);
-		void									Update();
-		void									Update(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
-		void									Update(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
-		void									Render();
-		void									Render(ID3D11RenderTargetView* renderTargetView);
+		void									UpdateView(const DirectX::XMFLOAT4X4& viewProjectionLeft, const DirectX::XMFLOAT4X4& viewProjectionRight);
+		void									UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
+		void									Render(ID3D11RenderTargetView* renderTargetView = nullptr);
 
 		// Property accessors.
 		void									SetPosition(Windows::Foundation::Numerics::float3 pos) { m_position = pos; }
 		Windows::Foundation::Numerics::float3	GetPosition() { return m_position; }
+		DirectX::XMVECTORF32					GetDefaultEyeVector() { return kEye; }
+		DirectX::XMVECTORF32					GetDefaultLookAtVector() { return kLookAt; }
+		DirectX::XMVECTORF32					GetDefaultUpVector() { return kUp; }
 
 	private:
 		void									InitGraphics();
 		void									InitPipeline();
+		void									InternalUpdate();
 
 		// Cached pointer to device resources.
 		DX::DeviceResources*					m_deviceResources;

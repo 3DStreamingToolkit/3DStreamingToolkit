@@ -13,11 +13,6 @@ using namespace StreamingToolkitSample;
 using namespace StreamingToolkit;
 #endif // TEST_RUNNER
 
-// Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
-static const XMVECTORF32 eye = { 0.0f, 0.0f, 1.0f, 0.0f };
-static const XMVECTORF32 at = { 0.0f, 0.0f, 0.0f, 0.0f };
-static const XMVECTORF32 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-
 // Mesh vertices. Each vertex has a position and a color.
 static const VertexPositionColor cubeVertices[] =
 {
@@ -87,17 +82,14 @@ void CubeRenderer::InitGraphics()
 	CD3D11_BUFFER_DESC vertexBufferDesc(sizeof(cubeVertices), D3D11_BIND_VERTEX_BUFFER);
 	D3D11_SUBRESOURCE_DATA vertexBufferData = { cubeVertices , 0, 0 };
 	m_deviceResources->GetD3DDevice()->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_vertexBuffer);
-	m_indexCount = ARRAYSIZE(cubeIndicesLH);
-	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndicesLH), D3D11_BIND_INDEX_BUFFER);
-	D3D11_SUBRESOURCE_DATA indexBufferData =
-	{
-		m_deviceResources->IsStereo() ? cubeIndicesRH : cubeIndicesLH,
-		0,
-		0
-	};
 
+	CD3D11_BUFFER_DESC indexBufferDesc(sizeof(cubeIndicesLH), D3D11_BIND_INDEX_BUFFER);
 	m_deviceResources->GetD3DDevice()->CreateBuffer(
-		&indexBufferDesc, &indexBufferData, &m_indexBuffer);
+		&indexBufferDesc,
+		nullptr,
+		&m_indexBuffer);
+
+	m_indexCount = ARRAYSIZE(cubeIndicesLH);
 }
 
 void CubeRenderer::InitPipeline()
@@ -198,13 +190,11 @@ void CubeRenderer::InitPipeline()
 		&projectionConstantBufferDesc,
 		nullptr,
 		&m_projectionConstantBuffer);
-
-	InitConstantBuffers(m_deviceResources->IsStereo());
 }
 
-void CubeRenderer::InitConstantBuffers(bool isStereo)
+void CubeRenderer::InternalUpdate()
 {
-	if (isStereo)
+	if (m_deviceResources->IsStereo())
 	{
 		// Initializes the view matrix as identity since we'll use the 
 		// projection matrix to store viewProjection transformation.
@@ -215,6 +205,16 @@ void CubeRenderer::InitConstantBuffers(bool isStereo)
 			0,
 			NULL,
 			&m_viewConstantBufferData,
+			0,
+			0,
+			0);
+
+		// Updates the cube vertice indices.
+		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+			m_indexBuffer,
+			0,
+			NULL,
+			cubeIndicesRH,
 			0,
 			0,
 			0);
@@ -259,11 +259,6 @@ void CubeRenderer::InitConstantBuffers(bool isStereo)
 			0,
 			0);
 
-		// Initializes the view matrix.
-		XMStoreFloat4x4(
-			&m_viewConstantBufferData.view,
-			XMMatrixTranspose(XMMatrixLookAtLH(eye, at, up)));
-
 		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
 			m_viewConstantBuffer,
 			0,
@@ -272,20 +267,17 @@ void CubeRenderer::InitConstantBuffers(bool isStereo)
 			0,
 			0,
 			0);
-	}
-}
 
-void CubeRenderer::Update()
-{
-	// Updates the cube vertice indices.
-	m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
-		m_indexBuffer,
-		0,
-		NULL,
-		m_deviceResources->IsStereo() ? cubeIndicesRH : cubeIndicesLH,
-		0,
-		0,
-		0);
+		// Updates the cube vertice indices.
+		m_deviceResources->GetD3DDeviceContext()->UpdateSubresource1(
+			m_indexBuffer,
+			0,
+			NULL,
+			cubeIndicesLH,
+			0,
+			0,
+			0);
+	}
 
 	// Rotates the cube.
 	float radians = XMConvertToRadians(m_degreesPerSecond++);
@@ -309,14 +301,14 @@ void CubeRenderer::Update()
 		m_modelConstantBuffer, 0, NULL, &m_modelConstantBufferData, 0, 0, 0);
 }
 
-void CubeRenderer::Update(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
+void CubeRenderer::UpdateView(const XMFLOAT4X4& viewProjectionLeft, const XMFLOAT4X4& viewProjectionRight)
 {
 	m_projectionConstantBufferData[0].projection = viewProjectionLeft;
 	m_projectionConstantBufferData[1].projection = viewProjectionRight;
-	Update();
+	InternalUpdate();
 }
 
-void CubeRenderer::Update(const XMVECTORF32& eye, const XMVECTORF32& at, const XMVECTORF32& up)
+void CubeRenderer::UpdateView(const XMVECTORF32& eye, const XMVECTORF32& at, const XMVECTORF32& up)
 {
 	// Updates the view matrix.
 	XMStoreFloat4x4(
@@ -332,7 +324,7 @@ void CubeRenderer::Update(const XMVECTORF32& eye, const XMVECTORF32& at, const X
 		0,
 		0);
 
-	Update();
+	InternalUpdate();
 }
 
 void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
@@ -340,8 +332,14 @@ void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
 	// Gets the device context.
 	auto context = m_deviceResources->GetD3DDeviceContext();
 
+	// Gets render target view.
+	if (!renderTargetView)
+	{
+		renderTargetView = m_deviceResources->GetBackBufferRenderTargetView();
+	}
+
 	// Sets the render target.
-	ID3D11RenderTargetView *const targets[1] = { renderTargetView };
+	ID3D11RenderTargetView* const targets[1] = { renderTargetView };
 	context->OMSetRenderTargets(1, targets, nullptr);
 
 	// Clear the back buffer.
@@ -392,9 +390,4 @@ void CubeRenderer::Render(ID3D11RenderTargetView* renderTargetView)
 		context->RSSetViewports(1, viewports);
 		context->DrawIndexed(m_indexCount, 0, 0);
 	}
-}
-
-void CubeRenderer::Render()
-{
-	Render(m_deviceResources->GetBackBufferRenderTargetView());
 }

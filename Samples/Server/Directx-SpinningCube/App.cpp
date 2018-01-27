@@ -19,7 +19,7 @@
 #include "webrtc.h"
 #endif // TEST_RUNNER
 
-#define FOCUS_POINT		3.f
+#define FOCUS_POINT		-2.f
 
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
@@ -215,15 +215,11 @@ bool AppMain(BOOL stopping)
 					serverConfig->server_config.height,
 					peerData->isStereo);
 
-				if (peerData->isStereo)
+				if (!peerData->isStereo)
 				{
-					// In stereo rendering mode, we need to position the cube
-					// in front of user.
-					g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
-				}
-				else
-				{
-					g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
+					peerData->eyeVector = g_cubeRenderer->GetDefaultEyeVector();
+					peerData->lookAtVector = g_cubeRenderer->GetDefaultLookAtVector();
+					peerData->upVector = g_cubeRenderer->GetDefaultUpVector();
 					peerData->tick = GetTickCount64();
 				}
 			}
@@ -261,29 +257,25 @@ bool AppMain(BOOL stopping)
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
 				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
+						peerData->viewProjectionMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
 				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						peerData->viewProjectionMatrixRight.m[i][j] = stof(token);
 					}
 				}
 
-				peerData->viewProjectionMatrixLeft = viewProjectionLeft;
-				peerData->viewProjectionMatrixRight = viewProjectionRight;
 				peerData->isNew = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
@@ -363,6 +355,7 @@ bool AppMain(BOOL stopping)
 					RemotePeerData* peerData = it->second.get();
 					if (peerData->renderTexture)
 					{
+						g_deviceResources->SetStereo(peerData->isStereo);
 						if (!peerData->isStereo)
 						{
 							// FPS limiter.
@@ -371,17 +364,11 @@ bool AppMain(BOOL stopping)
 							if (timeElapsed >= interval)
 							{
 								peerData->tick = GetTickCount64() - timeElapsed + interval;
-								if (peerData->isNew)
-								{
-									g_cubeRenderer->Update(
-										peerData->eyeVector,
-										peerData->lookAtVector,
-										peerData->upVector);
-								}
-								else
-								{
-									g_cubeRenderer->Update();
-								}
+								g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
+								g_cubeRenderer->UpdateView(
+									peerData->eyeVector,
+									peerData->lookAtVector,
+									peerData->upVector);
 
 								g_cubeRenderer->Render(peerData->renderTextureRtv.Get());
 								peer->SendFrame(peerData->renderTexture.Get());
@@ -391,7 +378,8 @@ bool AppMain(BOOL stopping)
 						// receiving any input data.
 						else if (peerData->isNew)
 						{
-							g_cubeRenderer->Update(
+							g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
+							g_cubeRenderer->UpdateView(
 								peerData->viewProjectionMatrixLeft,
 								peerData->viewProjectionMatrixRight);
 
@@ -533,7 +521,11 @@ HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow)
 //--------------------------------------------------------------------------------------
 void Render()
 {
-	g_cubeRenderer->Update();
+	g_cubeRenderer->UpdateView(
+		g_cubeRenderer->GetDefaultEyeVector(),
+		g_cubeRenderer->GetDefaultLookAtVector(),
+		g_cubeRenderer->GetDefaultUpVector());
+
 	g_cubeRenderer->Render();
 	g_deviceResources->Present();
 }

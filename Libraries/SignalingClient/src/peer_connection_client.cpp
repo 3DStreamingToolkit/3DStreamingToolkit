@@ -87,7 +87,6 @@ const Peers& PeerConnectionClient::peers() const
 
 void PeerConnectionClient::RegisterObserver(PeerConnectionClientObserver* callback)
 {
-	;
 	callbacks_.push_back(callback);
 }
 
