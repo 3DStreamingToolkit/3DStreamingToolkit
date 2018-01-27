@@ -118,11 +118,6 @@ bool AppMain(BOOL stopping)
 	bufferCapturer->Initialize(serverConfig->server_config.system_service,
 		serverConfig->server_config.width, serverConfig->server_config.height);
 
-	if (nvEncConfig->use_software_encoding)
-	{
-		bufferCapturer->EnableSoftwareEncoder();
-	}
-
 	// Initializes the conductor.
 	rtc::scoped_refptr<Conductor> conductor(new rtc::RefCountedObject<Conductor>(
 		&client, bufferCapturer.get(), &wnd, webrtcConfig.get()));

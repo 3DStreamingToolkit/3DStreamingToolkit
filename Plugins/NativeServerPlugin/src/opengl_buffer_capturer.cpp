@@ -109,6 +109,8 @@ void OpenGLBufferCapturer::Initialize(bool headless, int width, int height)
 
 void OpenGLBufferCapturer::SendFrame()
 {
+	rtc::CritScope cs(&lock_);
+
 	if (!running_)
 	{
 		return;
@@ -146,22 +148,36 @@ void OpenGLBufferCapturer::SendFrame()
 		glReadPixels(0, 0, buffer_width, buffer_height, PIXEL_FORMAT, GL_UNSIGNED_BYTE, colorBuffer);
 	}
 
+	if (buffer_width > 4096 || buffer_width > 4096)
+	{
+		return;
+	}
+
 	rtc::scoped_refptr<webrtc::I420Buffer> buffer;
 	buffer = webrtc::I420Buffer::Create(buffer_width, buffer_height);
 
-	libyuv::ABGRToI420(
-		(uint8_t*)colorBuffer,
-		buffer_width * 4,
-		buffer.get()->MutableDataY(),
-		buffer.get()->StrideY(),
-		buffer.get()->MutableDataU(),
-		buffer.get()->StrideU(),
-		buffer.get()->MutableDataV(),
-		buffer.get()->StrideV(),
-		buffer_width,
-		buffer_height);
+	if (use_software_encoder_)
+	{
+		libyuv::ABGRToI420(
+			(uint8_t*)colorBuffer,
+			buffer_width * 4,
+			buffer.get()->MutableDataY(),
+			buffer.get()->StrideY(),
+			buffer.get()->MutableDataU(),
+			buffer.get()->StrideU(),
+			buffer.get()->MutableDataV(),
+			buffer.get()->StrideV(),
+			buffer_width,
+			buffer_height);
+	}
 
 	auto frame = webrtc::VideoFrame(buffer, kVideoRotation_0, 0);
+
+	if (!use_software_encoder_)
+	{
+		frame.set_frame_buffer((uint8_t*)colorBuffer);
+	}
+
 	frame.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
 
 	// Sending video frame.

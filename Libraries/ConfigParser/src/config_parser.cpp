@@ -211,10 +211,6 @@ void ConfigParser::ParseNvEncConfig(const std::string& path, StreamingToolkit::N
 	if (fileStream.good())
 	{
 		reader.parse(fileStream, root, true);
-		if (root.isMember("useSoftwareEncoding"))
-		{
-			nvEncConfig->use_software_encoding = root.get("useSoftwareEncoding", NULL).asBool();
-		}
 
 		if (root.isMember("serverFrameCaptureFPS"))
 		{

@@ -1,17 +1,17 @@
 {
-  "useSoftwareEncoding": false,
+  /* Set the desired framerate for the renderer and the encoder. */
   "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
+    /* Setup the average and min bitrate for the encoder.  
+    * WebRTC will modify the bitrate based on bandwidth but will never go below minBitrate.
+    * WARNING: Setting a high minBitrate can cause the stream to freeze. */
     "bitrate": 5500000,
     "minBitrate": 3500000,
-    "fps": 60,
-    "qp": 5,
-    "intraRefreshPeriod": 60,
-    "intraRefreshEnableFlag": true,
-    "intraRefreshDuration": 6,
-    "enableTemporalAQ": false,
-    "invalidateRefFramesEnableFlag": true,
-    "nvEncodeProfile": 2,
-    "nvEncodeProfile_comment": "nvEncodeProfile enums: 1 - NV_ENC_H264_PROFILE_MAIN_GUID; 2 - NV_ENC_PRESET_LOW_LATENCY_HQ_GUID; 3 - NV_ENC_H264_PROFILE_STEREO_GUID; 0 - NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID"
+    /* Setup an encoder that puts an IDR every 60 frames, an I-frame every 15
+    * frames, and the rest P-frames. 
+    * Set intraRefreshEnableFlag to false to disable I-frames. */
+    "idrPeriod": 60,
+    "intraRefreshPeriod": 15,
+    "intraRefreshEnableFlag": true
   }
 }

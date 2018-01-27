@@ -109,7 +109,7 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>nvpipe.lib; ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
@@ -135,6 +135,8 @@
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
       )
       del /f /q xcopy.lock
+
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
     <ProjectReference>
@@ -163,7 +165,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>nvpipe.lib; ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
@@ -180,8 +182,7 @@
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
     <PostBuildEvent>
-      <Command>
-      IF NOT EXIST $(OutDir)xcopy.lock (
+      <Command>IF NOT EXIST $(OutDir)xcopy.lock (
       type nul &gt; $(OutDir)xcopy.lock
         xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
@@ -189,7 +190,8 @@
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
       )
       del /f /q xcopy.lock
-      </Command>
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
+   </Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -217,7 +219,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>nvpipe.lib; %(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -249,7 +251,8 @@
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
       )
       del /f /q xcopy.lock
-      </Command>
+      
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -276,7 +279,7 @@
     <Link>
       <AdditionalOptions>
       </AdditionalOptions>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>nvpipe.lib; %(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -299,13 +302,13 @@
       </Command>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>
-      IF NOT EXIST $(OutDir)xcopy.lock (
+      <Command>IF NOT EXIST $(OutDir)xcopy.lock (
       type nul &gt; $(OutDir)xcopy.lock
         xcopy /y /s /d /r $(ProjectDir)Media $(OutDir)
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
       )
       del /f /q xcopy.lock
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
     <ProjectReference>

@@ -529,11 +529,6 @@ bool AppMain(BOOL stopping)
 	bufferCapturer->Initialize(serverConfig->server_config.system_service,
 		serverConfig->server_config.width, serverConfig->server_config.height);
 
-	if (nvEncConfig->use_software_encoding)
-	{
-		bufferCapturer->EnableSoftwareEncoder();
-	}
-
 	// For system service, we render to buffer instead of swap chain.
 	if (serverConfig->server_config.system_service)
 	{

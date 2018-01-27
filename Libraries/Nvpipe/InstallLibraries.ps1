@@ -16,7 +16,7 @@ function DecompressZip {
     $response = $request.GetResponse()
     $etag = $response.Headers["ETag"] 
     $request.Abort()
-    $localFileName = ($filename + $etag + ".zip")
+    $localFileName = ($filename + ".zip")
     $localFullPath = ($PSScriptRoot + "\" + $localFileName)
     
     Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
@@ -26,32 +26,12 @@ function DecompressZip {
         }
     }
 
-    if((Test-Path ($localFullPath)) -eq $false) {
-
-        Write-Host "Downloading $localFileName from $uri"
-        Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-        Write-Host ("Downloaded " + $filename + " lib archive")
-
-        $extractDir = ""
-
-        if($filename -like "*x64*") {
-            $extractDir = "\x64"
-        } 
-        if($filename -like "*Win32*") {
-            $extractDir = "\Win32"
+    if((Test-Path ($PSScriptRoot + "\Win32")) -eq $false) {
+        Write-Host ("Downloading " + $filename + " lib archive")
+        if((Test-Path ($localFullPath)) -eq $false) {
+               Copy-File -SourcePath $uri -DestinationPath $localFullPath    
+               Write-Host ("Downloaded " + $filename + " lib archive")
         }
-        if($filename -like "*headers*") {
-            $extractDir = "\headers"
-        }
-        if($extractDir -eq "") {
-            return
-        }
-        
-        if((Test-Path ($PSScriptRoot + $extractDir)) -eq $true) {
-            Write-Host "Clearing existing $extractDir" 
-            Remove-Item -Recurse -Force ($PSScriptRoot + $extractDir)
-        }
-
         Write-Host "Extracting..."
         [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot)
         Write-Host "Finished"
@@ -138,6 +118,5 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "m58patch_nvpipe_headers"
-DecompressZip -filename "m58patch_nvpipe_x64"
-DecompressZip -filename "m58patch_nvpipe_Win32"
+DecompressZip -filename "Nvpipe"
+
