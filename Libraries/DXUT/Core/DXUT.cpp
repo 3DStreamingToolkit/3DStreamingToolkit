@@ -1588,6 +1588,14 @@ void WINAPI DXUTSetD3D11RenderTargetView(_In_ ID3D11RenderTargetView* pRenderTar
 	GetDXUTState().SetD3D11RenderTargetView(pRenderTargetView);
 }
 
+//--------------------------------------------------------------------------------------
+// Sets the custom depth stencil view.
+//--------------------------------------------------------------------------------------
+_Use_decl_annotations_
+void WINAPI DXUTSetD3D11DepthStencilView(_In_ ID3D11DepthStencilView* pDepthStencilView)
+{
+	GetDXUTState().SetD3D11DepthStencilView(pDepthStencilView);
+}
 
 //--------------------------------------------------------------------------------------
 // Handles app's message loop and rendering when idle.  If DXUTCreateDevice()

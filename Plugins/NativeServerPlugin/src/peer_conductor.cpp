@@ -143,6 +143,90 @@ void PeerConductor::OnMessage(const DataBuffer& buffer)
 
 void PeerConductor::OnStateChange() {}
 
+void PeerConductor::AllocatePeerConnection(bool create_offer)
+{
+	webrtc::PeerConnectionInterface::RTCConfiguration config;
+
+	if (!webrtc_config_->ice_configuration.empty())
+	{
+		if (webrtc_config_->ice_configuration == "relay")
+		{
+			webrtc::PeerConnectionInterface::IceServer turnServer;
+			turnServer.uri = "";
+			turnServer.username = "";
+			turnServer.password = "";
+
+			if (!webrtc_config_->turn_server.uri.empty())
+			{
+				turnServer.uri = webrtc_config_->turn_server.uri;
+				turnServer.username = webrtc_config_->turn_server.username;
+				turnServer.password = webrtc_config_->turn_server.password;
+			}
+
+			turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+			config.type = webrtc::PeerConnectionInterface::kRelay;
+			config.servers.push_back(turnServer);
+		}
+		else
+		{
+			if (webrtc_config_->ice_configuration == "stun")
+			{
+				webrtc::PeerConnectionInterface::IceServer stunServer;
+				stunServer.uri = "";
+				if (!webrtc_config_->stun_server.uri.empty())
+				{
+					stunServer.urls.push_back(webrtc_config_->stun_server.uri);
+					config.servers.push_back(stunServer);
+				}
+			}
+			else
+			{
+				webrtc::PeerConnectionInterface::IceServer stunServer;
+
+				stunServer.urls.push_back("stun:stun.l.google.com:19302");
+				config.servers.push_back(stunServer);
+			}
+		}
+	}
+
+	webrtc::FakeConstraints constraints;
+
+	// TODO(bengreenier): make optional again for loopback
+	constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
+
+	peer_connection_ = peer_factory_->CreatePeerConnection(config, &constraints, NULL, NULL, this);
+
+	scoped_refptr<VideoTrackInterface> video_track(
+		peer_factory_->CreateVideoTrack(
+			kVideoLabel,
+			peer_factory_->CreateVideoSource(
+				AllocateVideoCapturer(),
+				NULL)));
+
+	rtc::scoped_refptr<webrtc::MediaStreamInterface> peerStream =
+		peer_factory_->CreateLocalMediaStream(kStreamLabel);
+
+	peerStream->AddTrack(video_track);
+	if (!peer_connection_->AddStream(peerStream))
+	{
+		LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
+	}
+
+	// create a peer stream for this peer
+	peer_streams_.push_back(peerStream);
+
+	// create offer if required
+	if (create_offer)
+	{
+		webrtc::DataChannelInit data_channel_config;
+		data_channel_config.ordered = false;
+		data_channel_config.maxRetransmits = 0;
+		auto channel = peer_connection_->CreateDataChannel("inputDataChannel", &data_channel_config);
+		channel->RegisterObserver(this);
+		peer_connection_->CreateOffer(this, NULL);
+	}
+}
+
 void PeerConductor::HandlePeerMessage(const string& message)
 {
 	// if we don't know this peer, add it
@@ -238,6 +322,11 @@ void PeerConductor::HandlePeerMessage(const string& message)
 	}
 }
 
+const bool PeerConductor::IsConnected() const
+{
+	return peer_connection_ != NULL;
+}
+
 const int PeerConductor::Id() const
 {
 	return id_;
@@ -251,80 +340,4 @@ const string& PeerConductor::Name() const
 const vector<scoped_refptr<webrtc::MediaStreamInterface>> PeerConductor::Streams() const
 {
 	return peer_streams_;
-}
-
-void PeerConductor::AllocatePeerConnection()
-{
-	webrtc::PeerConnectionInterface::RTCConfiguration config;
-
-	if (!webrtc_config_->ice_configuration.empty())
-	{
-		if (webrtc_config_->ice_configuration == "relay")
-		{
-			webrtc::PeerConnectionInterface::IceServer turnServer;
-			turnServer.uri = "";
-			turnServer.username = "";
-			turnServer.password = "";
-
-			if (!webrtc_config_->turn_server.uri.empty())
-			{
-				turnServer.uri = webrtc_config_->turn_server.uri;
-				turnServer.username = webrtc_config_->turn_server.username;
-				turnServer.password = webrtc_config_->turn_server.password;
-			}
-
-			turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
-			config.type = webrtc::PeerConnectionInterface::kRelay;
-			config.servers.push_back(turnServer);
-		}
-		else
-		{
-			if (webrtc_config_->ice_configuration == "stun")
-			{
-				webrtc::PeerConnectionInterface::IceServer stunServer;
-				stunServer.uri = "";
-				if (!webrtc_config_->stun_server.uri.empty())
-				{
-					stunServer.urls.push_back(webrtc_config_->stun_server.uri);
-					config.servers.push_back(stunServer);
-				}
-			}
-			else
-			{
-				webrtc::PeerConnectionInterface::IceServer stunServer;
-
-				stunServer.urls.push_back("stun:stun.l.google.com:19302");
-				config.servers.push_back(stunServer);
-			}
-		}
-	}
-
-	webrtc::FakeConstraints constraints;
-
-	// TODO(bengreenier): make optional again for loopback
-	constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp, "true");
-
-	auto peerConnection = peer_factory_->CreatePeerConnection(config, &constraints, NULL, NULL, this);
-
-	// create a peer connection for this peer
-	peer_connection_ = peerConnection;
-
-	scoped_refptr<VideoTrackInterface> video_track(
-		peer_factory_->CreateVideoTrack(
-			kVideoLabel,
-			peer_factory_->CreateVideoSource(
-				AllocateVideoCapturer(),
-				NULL)));
-
-	rtc::scoped_refptr<webrtc::MediaStreamInterface> peerStream =
-		peer_factory_->CreateLocalMediaStream(kStreamLabel);
-
-	peerStream->AddTrack(video_track);
-	if (!peerConnection->AddStream(peerStream))
-	{
-		LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
-	}
-
-	// create a peer stream for this peer
-	peer_streams_.push_back(peerStream);
 }

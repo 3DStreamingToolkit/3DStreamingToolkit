@@ -87,7 +87,11 @@ public:
 
 	virtual void OnStateChange() override;
 
+	void AllocatePeerConnection(bool create_offer = false);
+
 	void HandlePeerMessage(const string& message);
+
+	const bool IsConnected() const;
 
 	const int Id() const;
 
@@ -100,8 +104,6 @@ protected:
 	virtual unique_ptr<cricket::VideoCapturer> AllocateVideoCapturer() = 0;
 
 private:
-	void AllocatePeerConnection();
-
 	int id_;
 	string name_;
 	shared_ptr<WebRTCConfig> webrtc_config_;

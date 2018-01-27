@@ -1,4 +1,6 @@
 #include "pch.h"
+
+#include "defaults.h"
 #include "multi_peer_conductor.h"
 
 MultiPeerConductor::MultiPeerConductor(shared_ptr<WebRTCConfig> config,
@@ -6,7 +8,8 @@ MultiPeerConductor::MultiPeerConductor(shared_ptr<WebRTCConfig> config,
 	bool enable_software_encoder) :
 	webrtc_config_(config),
 	d3d_device_(d3d_device),
-	enable_software_encoder_(enable_software_encoder)
+	enable_software_encoder_(enable_software_encoder),
+	main_window_(nullptr)
 {
 	signalling_client_.RegisterObserver(this);
 	peer_factory_ = webrtc::CreatePeerConnectionFactory();
@@ -19,9 +22,19 @@ MultiPeerConductor::~MultiPeerConductor()
 	process_thread_->Quit();
 }
 
-void MultiPeerConductor::ConnectSignallingAsync(const string& clientName)
+const map<int, scoped_refptr<DirectXPeerConductor>>& MultiPeerConductor::Peers() const
 {
-	signalling_client_.Connect(webrtc_config_->server, webrtc_config_->port, clientName);
+	return connected_peers_;
+}
+
+void MultiPeerConductor::ConnectSignallingAsync(const string& client_name)
+{
+	signalling_client_.Connect(webrtc_config_->server, webrtc_config_->port, client_name);
+}
+
+void MultiPeerConductor::SetMainWindow(MainWindow* main_window)
+{
+	main_window_ = main_window;
 }
 
 void MultiPeerConductor::SetDataChannelMessageHandler(const function<void(int, const string&)>& data_channel_handler)
@@ -49,6 +62,10 @@ void MultiPeerConductor::HandleDataChannelMessage(int peer_id, const string& mes
 void MultiPeerConductor::OnSignedIn()
 {
 	should_process_queue_.store(true);
+	if (main_window_ && main_window_->IsWindow())
+	{
+		main_window_->SwitchToPeerList(signalling_client_.peers());
+	}
 }
 
 void MultiPeerConductor::OnDisconnected()
@@ -67,11 +84,17 @@ void MultiPeerConductor::OnPeerConnected(int id, const string& name)
 			message_queue_.push(MessageEntry(id, message));
 			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
 		},
-		d3d_device_,
+		d3d_device_.Get(),
 		enable_software_encoder_);
 
 	connected_peers_[id]->SignalIceConnectionChange.connect(this, &MultiPeerConductor::OnIceConnectionChange);
 	connected_peers_[id]->SignalDataChannelMessage.connect(this, &MultiPeerConductor::HandleDataChannelMessage);
+
+	// Refresh the list if we're showing it.
+	if (main_window_ && main_window_->IsWindow() && main_window_->current_ui() == MainWindow::LIST_PEERS)
+	{
+		main_window_->SwitchToPeerList(signalling_client_.peers());
+	}
 }
 
 void MultiPeerConductor::OnPeerDisconnected(int peer_id)
@@ -84,9 +107,7 @@ void MultiPeerConductor::OnMessageFromPeer(int peer_id, const string& message)
 	connected_peers_[peer_id]->HandlePeerMessage(message);
 }
 
-void MultiPeerConductor::OnMessageSent(int err)
-{
-}
+void MultiPeerConductor::OnMessageSent(int err) {}
 
 void MultiPeerConductor::OnServerConnectionFailure() {}
 
@@ -119,7 +140,28 @@ void MultiPeerConductor::Run(Thread* thread)
 	}
 }
 
-const map<int, scoped_refptr<DirectXPeerConductor>>& MultiPeerConductor::Peers() const
+void MultiPeerConductor::StartLogin(const std::string& server, int port)
 {
-	return connected_peers_;
+	signalling_client_.Connect(server, port, "renderingserver_" + GetPeerName());
 }
+
+void MultiPeerConductor::DisconnectFromServer() {}
+
+void MultiPeerConductor::ConnectToPeer(int peer_id)
+{
+	auto it = connected_peers_.find(peer_id);
+	if (it != connected_peers_.end())
+	{
+		DirectXPeerConductor* peer = it->second;
+		if (!peer->IsConnected())
+		{
+			peer->AllocatePeerConnection(true);
+		}
+	}
+}
+
+void MultiPeerConductor::DisconnectFromCurrentPeer() {}
+
+void MultiPeerConductor::UIThreadCallback(int msg_id, void* data) {}
+
+void MultiPeerConductor::Close() {}

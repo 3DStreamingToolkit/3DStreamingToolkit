@@ -19,6 +19,7 @@
 #include "webrtc.h"
 #endif // TEST_RUNNER
 
+// Position the cube two meters in front of user for image stabilization.
 #define FOCUS_POINT		-2.f
 
 // Required app libs
@@ -85,7 +86,13 @@ struct RemotePeerData
 	ComPtr<ID3D11Texture2D>			renderTexture;
 
 	// The render target view of the render texture
-	ComPtr<ID3D11RenderTargetView>	renderTextureRtv;
+	ComPtr<ID3D11RenderTargetView>	renderTargetView;
+
+	// The depth stencil texture which we use to render
+	ComPtr<ID3D11Texture2D>			depthStencilTexture;
+
+	// The depth stencil view of the depth stencil texture
+	ComPtr<ID3D11DepthStencilView>	depthStencilView;
 
 	// Used for FPS limiter.
 	ULONGLONG						tick;
@@ -96,10 +103,12 @@ std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
 
 #ifndef TEST_RUNNER
 
-void InitializeRenderTextures(RemotePeerData* peerData, int width, int height, bool isStereo)
+void InitializeRenderTexture(RemotePeerData* peerData, int width, int height, bool isStereo)
 {
 	int texWidth = isStereo ? width << 1 : width;
 	int texHeight = height;
+
+	// Creates the render texture.
 	D3D11_TEXTURE2D_DESC texDesc = { 0 };
 	texDesc.ArraySize = 1;
 	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -109,10 +118,36 @@ void InitializeRenderTextures(RemotePeerData* peerData, int width, int height, b
 	texDesc.SampleDesc.Count = 1;
 	texDesc.Usage = D3D11_USAGE_DEFAULT;
 	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
-
-	// Creates texture and render target view
 	g_deviceResources->GetD3DDevice()->CreateTexture2D(&texDesc, nullptr, &peerData->renderTexture);
-	g_deviceResources->GetD3DDevice()->CreateRenderTargetView(peerData->renderTexture.Get(), nullptr, &peerData->renderTextureRtv);
+
+	// Creates the render target view.
+	g_deviceResources->GetD3DDevice()->CreateRenderTargetView(peerData->renderTexture.Get(), nullptr, &peerData->renderTargetView);
+}
+
+void InitializeDepthStencilTexture(RemotePeerData* peerData, int width, int height, bool isStereo)
+{
+	int texWidth = isStereo ? width << 1 : width;
+	int texHeight = height;
+
+	// Creates the depth stencil texture.
+	D3D11_TEXTURE2D_DESC texDesc = { 0 };
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	texDesc.Width = texWidth;
+	texDesc.Height = texHeight;
+	texDesc.MipLevels = 1;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	g_deviceResources->GetD3DDevice()->CreateTexture2D(&texDesc, nullptr, &peerData->depthStencilTexture);
+
+	// Creates the depth stencil view.
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+	descDSV.Format = texDesc.Format;
+	descDSV.Flags = 0;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0;
+	g_deviceResources->GetD3DDevice()->CreateDepthStencilView(peerData->depthStencilTexture.Get(), &descDSV, &peerData->depthStencilView);
 }
 
 bool AppMain(BOOL stopping)
@@ -134,26 +169,6 @@ bool AppMain(BOOL stopping)
 		serverConfig->server_config.width,
 		serverConfig->server_config.height);
 
-	// give us a quick and dirty quit handler
-	struct wndHandler : public MainWindowCallback
-	{
-		virtual void StartLogin(const std::string& server, int port) override {};
-
-		virtual void DisconnectFromServer() override {}
-
-		virtual void ConnectToPeer(int peer_id) override {}
-
-		virtual void DisconnectFromCurrentPeer() override {}
-
-		virtual void UIThreadCallback(int msg_id, void* data) override {}
-
-		atomic_bool isClosing = false;
-		virtual void Close() override { isClosing.store(true); }
-	} wndHandler;
-
-	// register the handler
-	wnd.RegisterObserver(&wndHandler);
-
 	if (!serverConfig->server_config.system_service && !wnd.Create())
 	{
 		RTC_NOTREACHED();
@@ -174,6 +189,12 @@ bool AppMain(BOOL stopping)
 	MultiPeerConductor cond(webrtcConfig,
 		g_deviceResources->GetD3DDevice(),
 		nvEncConfig->use_software_encoding);
+
+	// Sets main window to update UI.
+	cond.SetMainWindow(&wnd);
+
+	// Registers the handler.
+	wnd.RegisterObserver(&cond);
 
 	// Handles data channel messages.
 	std::function<void(int, const string&)> dataChannelMessageHandler([&](
@@ -209,7 +230,13 @@ bool AppMain(BOOL stopping)
 			{
 				getline(datastream, token, ',');
 				peerData->isStereo = stoi(token) == 1;
-				InitializeRenderTextures(
+				InitializeRenderTexture(
+					peerData.get(),
+					serverConfig->server_config.width,
+					serverConfig->server_config.height,
+					peerData->isStereo);
+
+				InitializeDepthStencilTexture(
 					peerData.get(),
 					serverConfig->server_config.width,
 					serverConfig->server_config.height,
@@ -316,25 +343,13 @@ bool AppMain(BOOL stopping)
 		}
 	});
 
-	// Phong: TODO
-	// if (serverConfig->server_config.system_service)
-	{
-		cond.ConnectSignallingAsync("renderingserver_test");
-	}
-
+	// Sets data channel message handler.
 	cond.SetDataChannelMessageHandler(dataChannelMessageHandler);
 
 	// Main loop.
-	while (!stopping)
+	MSG msg = { 0 };
+	while (!stopping && WM_QUIT != msg.message)
 	{
-		MSG msg = { 0 };
-
-		// if we're quitting, do so
-		if (wndHandler.isClosing)
-		{
-			break;
-		}
-
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (serverConfig->server_config.system_service ||
@@ -370,7 +385,7 @@ bool AppMain(BOOL stopping)
 									peerData->lookAtVector,
 									peerData->upVector);
 
-								g_cubeRenderer->Render(peerData->renderTextureRtv.Get());
+								g_cubeRenderer->Render(peerData->renderTargetView.Get());
 								peer->SendFrame(peerData->renderTexture.Get());
 							}
 						}
@@ -383,7 +398,7 @@ bool AppMain(BOOL stopping)
 								peerData->viewProjectionMatrixLeft,
 								peerData->viewProjectionMatrixRight);
 
-							g_cubeRenderer->Render(peerData->renderTextureRtv.Get());
+							g_cubeRenderer->Render(peerData->renderTargetView.Get());
 							peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
 							peerData->isNew = false;
 						}

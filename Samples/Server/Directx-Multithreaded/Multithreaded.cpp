@@ -56,9 +56,6 @@ using namespace CppFactory;
 using namespace DirectX;
 using namespace StreamingToolkit;
 
-// Extern method from DXUT.cpp
-void DXUTResizeDXGIBuffers(_In_ UINT Width, _In_ UINT Height, _In_ BOOL bFullscreen);
-
 // #defines for compile-time Debugging switches:
 //#define ADJUSTABLE_LIGHT          // The 0th light is adjustable with the mouse (right mouse button down)
 #define RENDER_SCENE_LIGHT_POV      // F4 toggles between the usual camera and the 0th light's point-of-view
@@ -265,17 +262,18 @@ RemotingModelViewerCamera   g_Camera;               // A model viewing camera
 CameraResources				g_CameraResources;      // Camera resources for stereo output
 
 #if defined(TEST_RUNNER)
-static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.f };
-static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 30.0f, 800.0f, -150.0f, 0.0f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, 60.0f, 0.0f, 0.0f };
 #else // TEST_RUNNER
-static const XMVECTORF32    s_vDefaultEye = { 0.0f, -1.0f, 0.0f, 0.f };
-static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, -1.0f, 1.0f, 0.f };
+static const XMVECTORF32    s_vDefaultEye = { 0.0f, -1.0f, 0.0f, 0.0f };
+static const XMVECTORF32    s_vDefaultLookAt = { 0.0f, -1.0f, 1.0f, 0.0f };
 #endif // TEST_RUNNER
+static const XMVECTORF32    s_vDefaultUp = { 0.0f, 1.0f, 0.0f, 0.0f };
 static const XMVECTORF32    s_vDefaultScale = { 0.01f, 0.01f, 0.01f, 1.f };
 static const FLOAT          s_fNearPlane = 2.0f;
 static const FLOAT          s_fFarPlane = 4000.0f;
 static const FLOAT          s_fFOV = XM_PI / 4.0f;
-static const XMVECTORF32    s_vSceneCenter = { 0.0f, 350.0f, 0.0f, 0.f };
+static const XMVECTORF32    s_vSceneCenter = { 0.0f, 350.0f, 0.0f, 0.0f };
 static const FLOAT          s_fSceneRadius = 600.0f;
 static const FLOAT          s_fDefaultCameraRadius = 300.0f;
 static const FLOAT          s_fMinCameraRadius = 150.0f;
@@ -423,7 +421,13 @@ struct RemotePeerData
 	ComPtr<ID3D11Texture2D>			renderTexture;
 
 	// The render target view of the render texture
-	ComPtr<ID3D11RenderTargetView>	renderTextureRtv;
+	ComPtr<ID3D11RenderTargetView>	renderTargetView;
+
+	// The depth stencil texture which we use to render
+	ComPtr<ID3D11Texture2D>			depthStencilTexture;
+
+	// The depth stencil view of the depth stencil texture
+	ComPtr<ID3D11DepthStencilView>	depthStencilView;
 
 	// Used for FPS limiter.
 	ULONGLONG						tick;
@@ -489,10 +493,12 @@ inline bool IsRenderDeferred()
 
 #ifndef TEST_RUNNER
 
-void InitializeRenderTextures(RemotePeerData* peerData, int width, int height, bool isStereo)
+void InitializeRenderTexture(RemotePeerData* peerData, int width, int height, bool isStereo)
 {
 	int texWidth = isStereo ? width << 1 : width;
 	int texHeight = height;
+
+	// Creates the render texture.
 	D3D11_TEXTURE2D_DESC texDesc = { 0 };
 	texDesc.ArraySize = 1;
 	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -502,10 +508,36 @@ void InitializeRenderTextures(RemotePeerData* peerData, int width, int height, b
 	texDesc.SampleDesc.Count = 1;
 	texDesc.Usage = D3D11_USAGE_DEFAULT;
 	texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
-
-	// Creates texture and render target view
 	DXUTGetD3D11Device()->CreateTexture2D(&texDesc, nullptr, &peerData->renderTexture);
-	DXUTGetD3D11Device()->CreateRenderTargetView(peerData->renderTexture.Get(), nullptr, &peerData->renderTextureRtv);
+
+	// Creates the render target view.
+	DXUTGetD3D11Device()->CreateRenderTargetView(peerData->renderTexture.Get(), nullptr, &peerData->renderTargetView);
+}
+
+void InitializeDepthStencilTexture(RemotePeerData* peerData, int width, int height, bool isStereo)
+{
+	int texWidth = isStereo ? width << 1 : width;
+	int texHeight = height;
+
+	// Creates the depth stencil texture.
+	D3D11_TEXTURE2D_DESC texDesc = { 0 };
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	texDesc.Width = texWidth;
+	texDesc.Height = texHeight;
+	texDesc.MipLevels = 1;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DXUTGetD3D11Device()->CreateTexture2D(&texDesc, nullptr, &peerData->depthStencilTexture);
+
+	// Creates the depth stencil view.
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+	descDSV.Format = texDesc.Format;
+	descDSV.Flags = 0;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0;
+	DXUTGetD3D11Device()->CreateDepthStencilView(peerData->depthStencilTexture.Get(), &descDSV, &peerData->depthStencilView);
 }
 
 bool AppMain(BOOL stopping)
@@ -526,26 +558,6 @@ bool AppMain(BOOL stopping)
 		false,
 		serverConfig->server_config.width,
 		serverConfig->server_config.height);
-
-	// give us a quick and dirty quit handler
-	struct wndHandler : public MainWindowCallback
-	{
-		virtual void StartLogin(const std::string& server, int port) override {};
-
-		virtual void DisconnectFromServer() override {}
-
-		virtual void ConnectToPeer(int peer_id) override {}
-
-		virtual void DisconnectFromCurrentPeer() override {}
-
-		virtual void UIThreadCallback(int msg_id, void* data) override {}
-
-		atomic_bool isClosing = false;
-		virtual void Close() override { isClosing.store(true); }
-	} wndHandler;
-
-	// register the handler
-	wnd.RegisterObserver(&wndHandler);
 
 	if (!serverConfig->server_config.system_service)
 	{
@@ -570,10 +582,6 @@ bool AppMain(BOOL stopping)
 		serverConfig->server_config.width,
 		serverConfig->server_config.height);
 
-	// Resizes swapchain's buffer to match the supported video frame size: 1280x720...
-	DXUTResizeDXGIBuffers(serverConfig->server_config.width,
-		serverConfig->server_config.height, false);
-
 	// Initializes viewport for left and right cameras.
 	g_CameraResources.SetViewport(serverConfig->server_config.width,
 		serverConfig->server_config.height);
@@ -585,6 +593,12 @@ bool AppMain(BOOL stopping)
 	MultiPeerConductor cond(webrtcConfig,
 		DXUTGetD3D11Device(),
 		nvEncConfig->use_software_encoding);
+
+	// Sets main window to update UI.
+	cond.SetMainWindow(&wnd);
+
+	// Registers the handler.
+	wnd.RegisterObserver(&cond);
 
 	// Handles data channel messages.
 	std::function<void(int, const string&)> dataChannelMessageHandler([&](
@@ -620,14 +634,26 @@ bool AppMain(BOOL stopping)
 			{
 				getline(datastream, token, ',');
 				peerData->isStereo = stoi(token) == 1;
-				InitializeRenderTextures(
+				InitializeRenderTexture(
+					peerData.get(),
+					serverConfig->server_config.width,
+					serverConfig->server_config.height,
+					peerData->isStereo);
+
+				InitializeDepthStencilTexture(
 					peerData.get(),
 					serverConfig->server_config.width,
 					serverConfig->server_config.height,
 					peerData->isStereo);
 
 				DXUTSetNoSwapChainPresent(true);
-				peerData->tick = GetTickCount64();
+				if (!peerData->isStereo)
+				{
+					peerData->eyeVector = s_vDefaultEye;
+					peerData->lookAtVector = s_vDefaultLookAt;
+					peerData->upVector = s_vDefaultUp;
+					peerData->tick = GetTickCount64();
+				}
 			}
 			else if (strcmp(type, "camera-transform-lookat") == 0)
 			{
@@ -663,29 +689,25 @@ bool AppMain(BOOL stopping)
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
 				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
+						peerData->viewProjectionMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
 				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						peerData->viewProjectionMatrixRight.m[i][j] = stof(token);
 					}
 				}
 
-				peerData->viewProjectionMatrixLeft = viewProjectionLeft;
-				peerData->viewProjectionMatrixRight = viewProjectionRight;
 				peerData->isNew = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
@@ -726,25 +748,13 @@ bool AppMain(BOOL stopping)
 		}
 	});
 
-	// Phong: TODO
-	// if (serverConfig->server_config.system_service)
-	{
-		cond.ConnectSignallingAsync("renderingserver_test");
-	}
-
+	// Sets data channel message handler.
 	cond.SetDataChannelMessageHandler(dataChannelMessageHandler);
 
 	// Main loop.
-	while (!stopping)
+	MSG msg = { 0 };
+	while (!stopping && WM_QUIT != msg.message)
 	{
-		MSG msg = { 0 };
-
-		// if we're quitting, do so
-		if (wndHandler.isClosing)
-		{
-			break;
-		}
-
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
 			if (serverConfig->server_config.system_service ||
@@ -765,7 +775,9 @@ bool AppMain(BOOL stopping)
 					RemotePeerData* peerData = it->second.get();
 					if (peerData->renderTexture)
 					{
-						DXUTSetD3D11RenderTargetView(peerData->renderTextureRtv.Get());
+						g_CameraResources.SetStereo(peerData->isStereo);
+						DXUTSetD3D11RenderTargetView(peerData->renderTargetView.Get());
+						DXUTSetD3D11DepthStencilView(peerData->depthStencilView.Get());
 						if (!peerData->isStereo)
 						{
 							// FPS limiter.
@@ -774,16 +786,12 @@ bool AppMain(BOOL stopping)
 							if (timeElapsed >= interval)
 							{
 								peerData->tick = GetTickCount64() - timeElapsed + interval;
-								if (peerData->isNew)
-								{
-									g_Camera.SetViewParams(
-										peerData->eyeVector,
-										peerData->lookAtVector,
-										peerData->upVector);
+								g_Camera.SetViewParams(
+									peerData->eyeVector,
+									peerData->lookAtVector,
+									peerData->upVector);
 
-									g_Camera.FrameMove(0);
-								}
-
+								g_Camera.FrameMove(0);
 								DXUTRender3DEnvironment();
 								peer->SendFrame(peerData->renderTexture.Get());
 							}
@@ -795,7 +803,8 @@ bool AppMain(BOOL stopping)
 							XMFLOAT4X4 id;
 							XMStoreFloat4x4(&id, XMMatrixIdentity());
 							g_CameraResources.SetViewMatrix(id, id);
-							g_CameraResources.SetProjMatrix(peerData->viewProjectionMatrixLeft,
+							g_CameraResources.SetProjMatrix(
+								peerData->viewProjectionMatrixLeft,
 								peerData->viewProjectionMatrixRight);
 
 							g_Camera.FrameMove(0);
