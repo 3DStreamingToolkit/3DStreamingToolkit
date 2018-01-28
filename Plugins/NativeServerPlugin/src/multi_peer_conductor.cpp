@@ -27,6 +27,11 @@ const map<int, scoped_refptr<DirectXPeerConductor>>& MultiPeerConductor::Peers()
 	return connected_peers_;
 }
 
+PeerConnectionClient& MultiPeerConductor::PeerConnection()
+{
+	return signalling_client_;
+}
+
 void MultiPeerConductor::ConnectSignallingAsync(const string& client_name)
 {
 	signalling_client_.Connect(webrtc_config_->server, webrtc_config_->port, client_name);

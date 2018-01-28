@@ -27,6 +27,21 @@ namespace Microsoft.Toolkit.ThreeD
         public static int VideoFrameHeight = 720;
 
         /// <summary>
+        /// The default eye vector.
+        /// </summary>
+        public static Vector3 DefaultEyeVector = new Vector3(0, 0, -1.0f);
+
+        /// <summary>
+        /// The default look at vector.
+        /// </summary>
+        public static Vector3 DefaultLookAtVector = new Vector3(0, 0, 0);
+
+        /// <summary>
+        /// The default up vector.
+        /// </summary>
+        public static Vector3 DefaultUpVector = new Vector3(0, 1.0f, 0);
+
+        /// <summary>
         /// The left eye camera
         /// </summary>
         /// <remarks>
@@ -95,6 +110,16 @@ namespace Microsoft.Toolkit.ThreeD
         private Dictionary<int, RemotePeerData> remotePeersData = new Dictionary<int, RemotePeerData>();
 
         /// <summary>
+        /// Stores the left eye camera's default position.
+        /// </summary>
+        private Vector3 leftEyeDefaultPosition;
+
+        /// <summary>
+        /// Stores the left eye camera's default rotation.
+        /// </summary>
+        private Vector3 leftEyeDefaultRotation;
+
+        /// <summary>
         /// Unity engine object Awake() hook
         /// </summary>
         private void Awake()
@@ -105,6 +130,8 @@ namespace Microsoft.Toolkit.ThreeD
             Application.targetFrameRate = 60;
 
             // Setup default cameras.
+            leftEyeDefaultPosition = this.LeftEye.transform.position;
+            leftEyeDefaultRotation = this.LeftEye.transform.eulerAngles;
             SetupActiveEyes(false);
 
             // Open the connection.
@@ -142,6 +169,9 @@ namespace Microsoft.Toolkit.ThreeD
                         }
 
                         SetupActiveEyes(peerData.IsStereo.Value);
+                        LeftEye.transform.position = leftEyeDefaultPosition;
+                        LeftEye.transform.eulerAngles = leftEyeDefaultRotation;
+                        LeftEye.ResetProjectionMatrix();
                         if (!peerData.IsStereo.Value)
                         {
                             LeftEye.targetTexture = peerData.LeftRenderTexture;
@@ -178,6 +208,14 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 previousPeer = PeerList.Peers.First(p => p.Id == offerPeer.Value);
                 PeerList.SelectedPeer = previousPeer;
+            }
+
+            // check if we need to connect to a peer, and if so, do it
+            if ((previousPeer == null && PeerList.SelectedPeer != null) ||
+                (previousPeer != null && PeerList.SelectedPeer != null && !previousPeer.Equals(PeerList.SelectedPeer)))
+            {
+                Plugin.ConnectToPeer(PeerList.SelectedPeer.Id);
+                previousPeer = PeerList.SelectedPeer;
             }
         }
 
@@ -300,6 +338,9 @@ namespace Microsoft.Toolkit.ThreeD
                         }
 
                         peerData.IsStereo = isStereo == 1;
+                        peerData.EyeVector = DefaultEyeVector;
+                        peerData.LookAtVector = DefaultLookAtVector;
+                        peerData.UpVector = DefaultUpVector;
                         break;
 
                     case "camera-transform-lookat":

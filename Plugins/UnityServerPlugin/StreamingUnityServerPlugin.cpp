@@ -104,23 +104,6 @@ struct CallbackMap
 	BoolParamFuncType onIceConnectionReceivingChange;
 } s_callbackMap;
 
-// give us a quick and dirty quit handler
-struct WndHandler : public MainWindowCallback
-{
-	virtual void StartLogin(const std::string& server, int port) override {};
-
-	virtual void DisconnectFromServer() override {}
-
-	virtual void ConnectToPeer(int peer_id) override {}
-
-	virtual void DisconnectFromCurrentPeer() override {}
-
-	virtual void UIThreadCallback(int msg_id, void* data) override {}
-
-	atomic_bool isClosing = false;
-	virtual void Close() override { isClosing.store(true); }
-} s_wndHandler;
-
 struct UnityServerPeerObserver : public PeerConnectionClientObserver,
 	public webrtc::PeerConnectionObserver
 {
@@ -285,9 +268,6 @@ void InitWebRTC()
 
 	wnd.Create();
 
-	// Register the handler.
-	wnd.RegisterObserver(&s_wndHandler);
-
 	// Initializes SSL.
 	rtc::InitializeSSL();
 		
@@ -299,6 +279,9 @@ void InitWebRTC()
 		webrtcConfig,
 		s_Device.Get(),
 		nvEncConfig->use_software_encoding));
+
+	// Registers observer to update Unity's window UI.
+	s_cond->PeerConnection().RegisterObserver(&s_clientObserver);
 
 	// Handles data channel messages.
 	std::function<void(int, const string&)> dataChannelMessageHandler([&](
@@ -313,18 +296,14 @@ void InitWebRTC()
 		});
 	});
 
-	// Phong: TODO
-	// if (serverConfig->server_config.system_service)
-	{
-		s_cond->ConnectSignallingAsync("renderingserver_test");
-	}
-
 	s_cond->SetDataChannelMessageHandler(dataChannelMessageHandler);
+
+	s_cond->StartLogin(s_server, s_port);
 
 	// Main loop.
 	MSG msg;
 	BOOL gm;
-	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1 && !s_closing)
+	while ((gm = ::GetMessage(&msg, NULL, 0, 0)) != 0 && gm != -1 && !s_closing && WM_QUIT != msg.message)
 	{
 		if (!wnd.PreTranslateMessage(&msg))
 		{
@@ -333,7 +312,9 @@ void InitWebRTC()
 				::TranslateMessage(&msg);
 				::DispatchMessage(&msg);
 			}
-			catch (const std::exception& e) { // reference to the base of a polymorphic object
+			catch (const std::exception& e) 
+			{
+				// reference to the base of a polymorphic object
 				std::cout << e.what(); // information from length_error printed
 				ULOG(LERROR, e.what());
 			}
@@ -388,9 +369,9 @@ extern "C" __declspec(dllexport) void Close()
 {
 	ULOG(INFO, __FUNCTION__);
 
-	s_wndHandler.DisconnectFromCurrentPeer();
-	s_wndHandler.DisconnectFromServer();
-	s_wndHandler.Close();
+	s_cond->DisconnectFromCurrentPeer();
+	s_cond->DisconnectFromServer();
+	s_cond->Close();
 	rtc::CleanupSSL();
 	s_closing = true;
 }
@@ -405,6 +386,16 @@ extern "C" void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityPluginUnload()
 extern "C" __declspec(dllexport) void NativeInitWebRTC()
 {
 	s_messageThread = new std::thread(InitWebRTC);
+}
+
+extern "C" __declspec(dllexport) void ConnectToPeer(const int peerId)
+{
+	ULOG(INFO, __FUNCTION__);
+
+	// Marshal to main thread.
+	s_rtcMainThread->Invoke<void>(RTC_FROM_HERE, [&] {
+		s_cond->ConnectToPeer(peerId);
+	});
 }
 
 extern "C" __declspec(dllexport) void SendFrame(int peerId, bool isStereo, void* leftRT, void* rightRT, int64_t predictionTimestamp)

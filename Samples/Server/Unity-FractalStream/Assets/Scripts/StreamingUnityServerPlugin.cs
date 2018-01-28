@@ -30,6 +30,13 @@ namespace Microsoft.Toolkit.ThreeD
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
+            public static extern void ConnectToPeer(int peerId);
+#endif
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
 #endif
             public static extern void SendFrame(int peerId, bool isStereo, IntPtr leftRT, IntPtr rightRT, long predictionTimestamp);
 
@@ -209,6 +216,15 @@ namespace Microsoft.Toolkit.ThreeD
         {
             Native.NativeInitWebRTC();
             yield return null;
+        }
+
+        /// <summary>
+        /// Connect to a peer identified by a given id
+        /// </summary>
+        /// <param name="peerId">the peer id</param>
+        public void ConnectToPeer(int peerId)
+        {
+            Native.ConnectToPeer(peerId);
         }
 
         /// <summary>

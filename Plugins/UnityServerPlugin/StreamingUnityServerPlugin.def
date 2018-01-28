@@ -4,5 +4,6 @@ EXPORTS
    UnityPluginLoad
    UnityPluginUnload
    NativeInitWebRTC
+   ConnectToPeer
    SendFrame
    SetCallbackMap

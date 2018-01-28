@@ -63,6 +63,8 @@ public:
 
 	const map<int, scoped_refptr<DirectXPeerConductor>>& Peers() const;
 
+	PeerConnectionClient& PeerConnection();
+
 	//-------------------------------------------------------------------------
 	// MainWindowCallback implementation.
 	//-------------------------------------------------------------------------
