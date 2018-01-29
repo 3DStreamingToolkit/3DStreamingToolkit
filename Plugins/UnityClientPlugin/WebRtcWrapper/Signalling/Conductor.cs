@@ -612,6 +612,8 @@ namespace PeerConnectionClient.Signalling
             _signalingMode = RTCPeerConnectionSignalingMode.Json;
 #endif
             _signaller = new Signaller();
+
+            // if this is crashing with a FileNotFoundException it is because you are likely running in Debug. Please use Release.
             _media = Media.CreateMedia();
 
             Signaller.OnDisconnected += Signaller_OnDisconnected;
