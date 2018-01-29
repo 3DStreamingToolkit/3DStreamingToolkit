@@ -254,6 +254,9 @@ paket-files/
 *.sln.iml
 
 # 3DStreaming 
+Libraries/Freeglut
+Libraries/Glew
+Libraries/glext
 *.h264
 *.log
 *.cso
