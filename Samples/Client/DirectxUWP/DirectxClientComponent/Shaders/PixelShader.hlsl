@@ -9,6 +9,8 @@
 //
 //*********************************************************
 
+//#define UNITY_UV_STARTS_AT_TOP
+
 Texture2D diffuseTexture : register(t0);
 SamplerState linearSampler : register(s0);
 
@@ -20,5 +22,9 @@ struct PixelShaderInput
 
 float4 main(PixelShaderInput input) : SV_Target
 {
+#ifdef UNITY_UV_STARTS_AT_TOP
+	input.textureUV.y = 1 - input.textureUV.y;
+#endif
+
 	return diffuseTexture.Sample(linearSampler, input.textureUV);
 }
