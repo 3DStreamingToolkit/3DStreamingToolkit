@@ -136,7 +136,7 @@
       )
       del /f /q xcopy.lock
 
-xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\cudart32_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
     <ProjectReference>
@@ -190,7 +190,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
       )
       del /f /q xcopy.lock
-xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x64\cudart64_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
    </Command>
     </PostBuildEvent>
     <ProjectReference>
@@ -252,7 +252,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
       )
       del /f /q xcopy.lock
       
-xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"</Command>
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\cudart32_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -308,7 +308,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x86\nvToolsExt32_1.dll" "$(
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
       )
       del /f /q xcopy.lock
-xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\x64\cudart64_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
     <ProjectReference>
