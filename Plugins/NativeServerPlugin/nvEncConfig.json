@@ -2,13 +2,13 @@
   /* Set the desired framerate for the renderer and the encoder. */
   "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
-    /* Setup the average and min bitrate in kbits/second for the encoder.
+    /* Setup the average and min bitrate for the encoder.
     * WebRTC will modify the bitrate based on bandwidth but will never go below minBitrate.
     * Use the Kush gauge for best quality: width * height * framerate * 4 * 0.07 
     * Our mono samples are 1280x720 and stereo 2560x720 
     * WARNING: Setting a high minBitrate can cause latency. */
     "bitrate": 15482880,
-    "minBitrate": 7741440,
+    "minBitrate": 300000,
     /* Setup an encoder that puts an IDR every 60 frames, an I-frame every 30
     * frames, and the rest P-frames. 
     * Set intraRefreshEnableFlag to false to disable I-frames - not recommended */
