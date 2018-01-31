@@ -128,6 +128,9 @@
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\cudart32_91.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\nvToolsExt32_1.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       ENDLOCAL
@@ -165,6 +168,9 @@
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\cudart64_91.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\nvToolsExt64_1.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       ENDLOCAL
@@ -203,7 +209,9 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
-
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\cudart32_91.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\nvToolsExt32_1.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
@@ -234,8 +242,7 @@
       <ModuleDefinitionFile>.\StreamingUnityServerPlugin.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
-      <Command>
-      SETLOCAL
+      <Command>      SETLOCAL
       set TARGET_PLUGIN_PATH=$(ProjectDir)..\..\Samples\Server\Unity-FractalStream\Assets\
 
       echo Target Plugin Path is %TARGET_PLUGIN_PATH%
@@ -243,12 +250,14 @@
       mkdir "%TARGET_PLUGIN_PATH%Plugins"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)"
       mkdir "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
-
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\cudart64_91.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\nvToolsExt64_1.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
+      xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
       xcopy /y $(OutDir)*.dll "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.pdb "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y $(OutDir)*.json "%TARGET_PLUGIN_PATH%Plugins"
       ENDLOCAL
-      </Command>
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
