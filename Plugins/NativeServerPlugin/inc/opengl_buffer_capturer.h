@@ -14,7 +14,7 @@ namespace StreamingToolkit
 	class OpenGLBufferCapturer : public BufferCapturer
 	{
 	public:
-		explicit OpenGLBufferCapturer();
+		OpenGLBufferCapturer(int width, int height);
 
 		virtual ~OpenGLBufferCapturer() {}
 

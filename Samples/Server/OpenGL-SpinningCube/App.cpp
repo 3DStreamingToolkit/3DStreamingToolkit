@@ -83,10 +83,9 @@ bool AppMain(BOOL stopping)
 		return -1;
 	}
 
-	// Creates and initializes the buffer capturer.
+	// Creates the buffer capturer. Initialization is called when the first buffer is sent. This allows the OpenGL context to start first.
 	// Note: Conductor is responsible for cleaning up bufferCapturer object.
-	OpenGLBufferCapturer* bufferCapturer = new OpenGLBufferCapturer();
-	bufferCapturer->Initialize(true, serverConfig->server_config.width, serverConfig->server_config.height);
+	OpenGLBufferCapturer* bufferCapturer = new OpenGLBufferCapturer(serverConfig->server_config.width, serverConfig->server_config.height);
 
 	std::function<void()> captureFrame = ([&]
 	{

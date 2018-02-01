@@ -47,17 +47,18 @@ void *font = GLUT_BITMAP_8_BY_13;
 GLuint pboIds[PBO_COUNT];           // IDs of PBOs
 bool pboSupported;
 bool pboUsed;
+bool isInitialized;
 GLubyte* colorBuffer = 0;
 
-OpenGLBufferCapturer::OpenGLBufferCapturer()
+OpenGLBufferCapturer::OpenGLBufferCapturer(int width, int height)
 {
+	buffer_width = width;
+	buffer_height = height;
+	isInitialized = false;
 }
 
 void OpenGLBufferCapturer::Initialize(bool headless, int width, int height)
 {
-	buffer_width = width;
-	buffer_height = height;
-
 	auto data_size = buffer_width * buffer_height * 4;
 	// allocate buffers to store frames
 	colorBuffer = new GLubyte[data_size];
@@ -105,11 +106,18 @@ void OpenGLBufferCapturer::Initialize(bool headless, int width, int height)
 
 		glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, 0);
 	}
+
+	isInitialized = true;
 }
 
 void OpenGLBufferCapturer::SendFrame()
 {
 	rtc::CritScope cs(&lock_);
+
+	if (!isInitialized)
+	{
+		Initialize();
+	}
 
 	if (!running_)
 	{

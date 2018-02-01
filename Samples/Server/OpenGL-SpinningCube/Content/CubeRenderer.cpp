@@ -17,8 +17,9 @@ std::function<void()> CaptureFrame;
 static double _angle;
 static double _delta_angle = 0;
 int _frameRate = 60;
-float _eyeX = 0, _eyeY = 0, _eyeZ = 5, _lookAtX = 0, _lookAtY = 0, _lookAtZ = 0, _upX = 0, _upY = 1, _upZ = 0;
+float _eyeX = 0, _eyeY = 0, _eyeZ = 10, _lookAtX = 0, _lookAtY = 0, _lookAtZ = 0, _upX = 0, _upY = 1, _upZ = 0;
 int _width, _height;
+int scaleCorrection = 10;
 
 CubeRenderer::CubeRenderer(const std::function<void()>& capture_frame, int width, int height)
 {
@@ -232,14 +233,15 @@ void StreamingToolkitSample::CubeRenderer::ToPerspective()
 
 void CubeRenderer::UpdateView(float eyeX, float eyeY, float eyeZ, float lookX, float lookY, float lookZ, float upX, float upY, float upZ)
 {
-	_eyeX = eyeX;
-	_eyeY = eyeY;
-	_eyeZ = eyeZ;
-	_lookAtX = lookX;
-	_lookAtY = lookY;
-	_lookAtZ = lookZ;
+	// Modify incoming values to match scene scaling. 
+	_eyeX = eyeX * scaleCorrection;
+	_eyeY = eyeY * scaleCorrection;
+	_eyeZ = eyeZ * scaleCorrection;
+	_lookAtX = lookX * scaleCorrection;
+	_lookAtY = lookY * scaleCorrection;
+	_lookAtZ = lookZ * scaleCorrection;
 	_upX = upX;
-	_upY = -upY;
+	_upY = upY;
 	_upZ = upZ;
 }
 
