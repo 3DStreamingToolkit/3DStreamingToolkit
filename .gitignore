@@ -263,5 +263,8 @@ Libraries/glext
 *.zip
 js-3dtoolkit.*
 
+# Test resource files
+*.yuv
+
 # Mac Files
 .DS_Store
