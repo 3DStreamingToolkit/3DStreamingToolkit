@@ -31,6 +31,9 @@ namespace DirectXClientComponent
 		// Gets the reference frame.
 		Windows::Perception::Spatial::SpatialStationaryFrameOfReference^ GetReferenceFrame();
 
+		// Gets the spatial anchor map.
+		Platform::Collections::Map<Platform::String^, Windows::Perception::Spatial::SpatialAnchor^>^ GetSpatialAnchorMap();
+
     private:
         // Asynchronously creates resources for new holographic cameras.
         void OnCameraAdded(
@@ -75,5 +78,8 @@ namespace DirectXClientComponent
         Windows::Foundation::EventRegistrationToken                     m_cameraAddedToken;
         Windows::Foundation::EventRegistrationToken                     m_cameraRemovedToken;
         Windows::Foundation::EventRegistrationToken                     m_locatabilityChangedToken;
+
+		// Sharing.
+		Platform::Collections::Map<Platform::String^, Windows::Perception::Spatial::SpatialAnchor^>^ m_spatialAnchorMap;
     };
 }

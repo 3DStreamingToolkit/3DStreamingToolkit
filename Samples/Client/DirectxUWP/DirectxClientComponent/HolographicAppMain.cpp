@@ -10,8 +10,11 @@ using namespace DirectXClientComponent;
 
 using namespace concurrency;
 using namespace Platform;
+using namespace Platform::Collections;
 using namespace Windows::Foundation;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::Perception;
+using namespace Windows::Globalization;
 using namespace Windows::Graphics::Holographic;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::UI::Input::Spatial;
@@ -20,7 +23,8 @@ using namespace std::placeholders;
 // Loads and initializes application assets when the application is loaded.
 HolographicAppMain::HolographicAppMain(
 	const std::shared_ptr<DX::DeviceResources>& deviceResources) :
-    m_deviceResources(deviceResources)
+    m_deviceResources(deviceResources),
+	m_spatialAnchorMap(ref new Map<String^, SpatialAnchor^>())
 {
 }
 
@@ -84,6 +88,42 @@ void HolographicAppMain::SetHolographicSpace(HolographicSpace^ holographicSpace)
 	//   Anchor positions do not drift, but can be corrected; the anchor will use the
 	//   corrected position starting in the next frame after the correction has
     //   occurred.
+
+	// Try to get the anchor relative to the stationary frame.
+	Calendar^ calendar = ref new Calendar();
+	calendar->SetToNow();
+	PerceptionTimestamp^ perceptionTimestamp = PerceptionTimestampHelper::FromHistoricalTargetTime(
+		calendar->GetDateTime());
+
+	if (perceptionTimestamp != nullptr)
+	{
+		SpatialPointerPose^ spp = SpatialPointerPose::TryGetAtTimestamp(
+			m_referenceFrame->CoordinateSystem, perceptionTimestamp);
+
+		// Gets the anchor which is two meters in front of the user.
+		if (spp != nullptr)
+		{
+			// Get the gaze direction relative to the given coordinate system.
+			const float3 headPosition = spp->Head->Position;
+			const float3 headDirection = spp->Head->ForwardDirection;
+
+			// The anchor position in the StationaryReferenceFrame.
+			static const float distanceFromUser = 2.0f; // meters
+			const float3 gazeAtTwoMeters = headPosition + (distanceFromUser * headDirection);
+
+			// Create the anchor at position.
+			SpatialAnchor^ anchor = SpatialAnchor::TryCreateRelativeTo(
+				m_referenceFrame->CoordinateSystem, gazeAtTwoMeters);
+
+			if (anchor != nullptr)
+			{
+				// Create an identifier for the anchor.
+				String^ id = ref new String(L"HolographicSpatialAnchor") + m_spatialAnchorMap->Size;
+
+				m_spatialAnchorMap->Insert(id->ToString(), anchor);
+			}
+		}
+	}
 }
 
 void HolographicAppMain::SetVideoRender(VideoRenderer* videoRenderer)
@@ -274,6 +314,11 @@ bool HolographicAppMain::Render(
 SpatialStationaryFrameOfReference^ HolographicAppMain::GetReferenceFrame()
 {
 	return m_referenceFrame;
+}
+
+Map<String^, SpatialAnchor^>^ HolographicAppMain::GetSpatialAnchorMap()
+{
+	return m_spatialAnchorMap;
 }
 
 void HolographicAppMain::OnLocatabilityChanged(SpatialLocator^ sender, Object^ args)

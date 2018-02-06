@@ -43,6 +43,8 @@ public:
 
 	void SetDataChannelMessageHandler(const function<void(int, const string&)>& data_channel_handler);
 
+	void SendDataChannelMessage(int peer_id, const string& message);
+
 	virtual void OnSignedIn() override;
 
 	virtual void OnDisconnected() override;

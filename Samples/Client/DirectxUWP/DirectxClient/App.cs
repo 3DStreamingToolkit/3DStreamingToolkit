@@ -98,6 +98,11 @@ namespace StreamingDirectXHololensClient
                 _webRtcControl.IsReadyToDisconnect = true;
             });
 
+            Conductor.Instance.OnPeerDataChannelReceived += (peerId, msg) =>
+            {
+                _appCallbacks.OnPeerDataChannelReceived(peerId, msg);
+            };
+
             _webRtcControl.Initialize();
 
             // Starts the main render loop.

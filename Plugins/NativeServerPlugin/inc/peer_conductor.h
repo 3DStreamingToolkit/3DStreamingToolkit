@@ -91,6 +91,8 @@ public:
 
 	void HandlePeerMessage(const string& message);
 
+	void SendDataChannelMessage(const string& message);
+
 	const bool IsConnected() const;
 
 	const int Id() const;
@@ -111,6 +113,7 @@ private:
 	function<void(const string&)> send_func_;
 	scoped_refptr<PeerConnectionInterface> peer_connection_;
 	vector<scoped_refptr<webrtc::MediaStreamInterface>> peer_streams_;
+	scoped_refptr<webrtc::DataChannelInterface> data_channel_;
 
 	// Names used for a IceCandidate JSON object.
 	const char* kCandidateSdpMidName = "sdpMid";

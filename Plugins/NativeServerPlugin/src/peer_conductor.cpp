@@ -133,6 +133,7 @@ void PeerConductor::OnDataChannel(
 	rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
 {
 	channel->RegisterObserver(this);
+	data_channel_ = channel;
 }
 
 void PeerConductor::OnMessage(const DataBuffer& buffer)
@@ -223,6 +224,7 @@ void PeerConductor::AllocatePeerConnection(bool create_offer)
 		data_channel_config.maxRetransmits = 0;
 		auto channel = peer_connection_->CreateDataChannel("inputDataChannel", &data_channel_config);
 		channel->RegisterObserver(this);
+		data_channel_ = channel;
 		peer_connection_->CreateOffer(this, NULL);
 	}
 }
@@ -319,6 +321,15 @@ void PeerConductor::HandlePeerMessage(const string& message)
 		}
 
 		LOG(INFO) << " Received candidate :" << message;
+	}
+}
+
+void PeerConductor::SendDataChannelMessage(const string& message)
+{
+	if (data_channel_)
+	{
+		DataBuffer buffer(message);
+		data_channel_->Send(buffer);
 	}
 }
 

@@ -47,6 +47,11 @@ void MultiPeerConductor::SetDataChannelMessageHandler(const function<void(int, c
 	data_channel_handler_ = data_channel_handler;
 }
 
+void MultiPeerConductor::SendDataChannelMessage(int peer_id, const string& message)
+{
+	connected_peers_[peer_id]->SendDataChannelMessage(message);
+}
+
 void MultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterface::IceConnectionState new_state)
 {
 	// peer disconnected

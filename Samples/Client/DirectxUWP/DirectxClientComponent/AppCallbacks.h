@@ -38,8 +38,11 @@ namespace DirectXClientComponent
 
 		uint32 OnFpsReportRequested();
 
+		void OnPeerDataChannelReceived(int peerId, String^ msg);
+
 	private:
 		void SendInputData();
+		void SendSpatialAnchorData();
 
 		Microsoft::WRL::Wrappers::CriticalSection				m_lock;
 		std::shared_ptr<DX::DeviceResources>					m_deviceResources;
@@ -56,5 +59,8 @@ namespace DirectXClientComponent
 
 		// The holographic space the app will use for rendering.
 		Windows::Graphics::Holographic::HolographicSpace^		m_holographicSpace;
+
+		// Sharing.
+		std::vector<byte>										m_anchorByteDataOut;
 	};
 }

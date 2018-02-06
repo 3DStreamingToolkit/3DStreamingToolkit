@@ -56,6 +56,9 @@
     <ClInclude Include="..\..\..\..\Plugins\UnityClientPlugin\MediaEngineUWP\Shared\MediaHelpers.h">
       <Filter>MediaEngine</Filter>
     </ClInclude>
+    <ClInclude Include="Common\SpatialAnchorImportExportHelper.h">
+      <Filter>Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Common">

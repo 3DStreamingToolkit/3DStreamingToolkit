@@ -354,9 +354,11 @@ namespace PeerConnectionClient.Signalling
                 new RTCDataChannelInit(){
                     Ordered = true
                 });
+
             _peerSendDataChannel.OnOpen += PeerSendDataChannelOnOpen;
             _peerSendDataChannel.OnClose += PeerSendDataChannelOnClose;
             _peerSendDataChannel.OnError += _peerSendDataChannel_OnError;
+            _peerSendDataChannel.OnMessage += _peerReceiveDataChannel_OnMessage;
             _peerConnection.OnDataChannel += _peerConnection_OnDataChannel;     // DataChannel Setup Completed            
 
             Debug.WriteLine("Conductor: Getting user media.");

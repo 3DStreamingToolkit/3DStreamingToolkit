@@ -4,6 +4,7 @@
 
 #include "AppCallbacks.h"
 #include "DirectXHelper.h"
+#include "SpatialAnchorImportExportHelper.h"
 
 using namespace DirectXClientComponent;
 using namespace DirectX;
@@ -133,6 +134,11 @@ uint32 AppCallbacks::OnFpsReportRequested()
 	return m_player->GetFrameRate();
 }
 
+void AppCallbacks::OnPeerDataChannelReceived(int peerId, String^ msg)
+{
+	// TODO
+}
+
 void AppCallbacks::SendInputData()
 {
 	// Attempts to set server to stereo mode.
@@ -149,6 +155,7 @@ void AppCallbacks::SendInputData()
 			return;
 		}
 
+		SendSpatialAnchorData();
 		m_sentStereoMode = true;
 	}
 
@@ -208,4 +215,23 @@ void AppCallbacks::SendInputData()
 		"}";
 
 	m_sendInputDataHandler(msg);
+}
+
+void AppCallbacks::SendSpatialAnchorData()
+{
+	SpatialAnchorImportExportHelper::ExportAnchorDataAsync(
+		&m_anchorByteDataOut, m_main->GetSpatialAnchorMap())
+		.then([&](bool result)
+		{
+			std::string str(m_anchorByteDataOut.begin(), m_anchorByteDataOut.end());
+			std::wstring wstr(str.begin(), str.end());
+			String^ body = ref new String(wstr.c_str(), wstr.length());
+			String^ message =
+				"{" +
+				"  \"type\":\"spatial-anchor\"," +
+				"  \"body\":\"" + body + "\"" +
+				"}";
+
+			m_sendInputDataHandler(message);
+		});
 }
