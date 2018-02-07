@@ -2,7 +2,7 @@
 
 A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. 
 
-![example](./3dstreamclientserver.gif)
+![example](./Docs/Images/3dstreamclientserver.gif)
 
 ## What is this?
 
@@ -15,7 +15,7 @@ The 3DToolkit project's purpose is to provide an approach for developing 3D serv
 3. Low-latency audio and video streams using WebRTC
 4. High-performance video encoding and decoding using NVEncode
 
-![WebRTC applied to 3D Streaming](http://avevawebrtc.azurewebsites.net/images//WebRTCStreaming.png)
+![WebRTC applied to 3D Streaming](./Docs/Images/webrtc3d.jpg)
 <!---  (![high level architecture](./readme_data/hl-arch.png))--->
 
 Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3dtoolkit/wiki/What-is-3DToolkit#webrtc-httpwebrtcorg). 
@@ -60,15 +60,14 @@ If you're seeing errors, check out the [troubleshooting guide](https://github.co
 
 ## Build output
 
-After you've built the solution, you'll likely want to start one sample server implementation, and one sample client implementation. These are applications that we've build to demonstrate the behaviors the toolkit provides.
+After you've built the solution, you'll likely want to start one sample server implementation, and one sample client implementation. We've provided example client and server applications to demonstrate the behaviors the toolkit provides.
 
 > Note: We advise you to try `Spinning Cube` and `Win32Client` to begin, as these are the simpliest sample implementations.
 
-Here's a table illustrating where each sample implementation will be built to. To run one server and one client, navigate to that location and start the `exe`.
+To run one server and one client, navigate to the location under `Build\<Platform>\<Configuration>\` and start the `exe`.To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x86`.
 
-> Note: the following table describes the location under `Build\<Platform>\<Configuration>\` where a sample can be found. To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x86`.
 
-Once you start both a server and client implementation, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
+Once you start both a server and client implementation, you will need to give it a signaling server. If you need to set one up, please see our [wiki on Signaling Service](https://github.com/CatalystCode/3dtoolkit/wiki/Signaling-Service) for an easy local or cloud-based implementation. After connecting, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
 
 ## Next Steps
 

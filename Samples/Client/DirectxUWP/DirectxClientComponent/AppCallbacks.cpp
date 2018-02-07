@@ -157,7 +157,9 @@ void AppCallbacks::SendInputData()
 	m_holographicFrames.push_back(newFrame);
 
 	// Gets the current camera transformation.
+	XMFLOAT4X4 leftProjectionMatrix;
 	XMFLOAT4X4 leftViewMatrix;
+	XMFLOAT4X4 rightProjectionMatrix;
 	XMFLOAT4X4 rightViewMatrix;
 	SpatialCoordinateSystem^ currentCoordinateSystem = m_main->GetReferenceFrame()->CoordinateSystem;
 	for (auto cameraPose : newFrame->CurrentPrediction->CameraPoses)
@@ -174,30 +176,44 @@ void AppCallbacks::SendInputData()
 				viewTransformContainer->Value;
 
 			XMStoreFloat4x4(
+				&leftProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Left))
+			);
+
+			XMStoreFloat4x4(
 				&leftViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left))
+			);
+
+			XMStoreFloat4x4(
+				&rightProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Right))
 			);
 
 			XMStoreFloat4x4(
 				&rightViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right))
 			);
 		}
 	}
 
 	// Builds the camera transform message to send.
-	String^ leftCameraTransform = "";
-	String^ rightCameraTransform = "";
+	String^ leftProjection = "";
+	String^ leftView = "";
+	String^ rightProjection = "";
+	String^ rightView = "";
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			leftCameraTransform += leftViewMatrix.m[i][j] + ",";
-			rightCameraTransform += rightViewMatrix.m[i][j] + ",";
+			leftProjection += leftProjectionMatrix.m[i][j] + ",";
+			leftView += leftViewMatrix.m[i][j] + ",";
+			rightProjection += rightProjectionMatrix.m[i][j] + ",";
+			rightView += rightViewMatrix.m[i][j] + ",";
 		}
 	}
 
-	String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
+	String^ cameraTransformBody = leftProjection + leftView + rightProjection + rightView;
 
 	// Adds the current prediction timestamp.
 	cameraTransformBody += newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
