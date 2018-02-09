@@ -7,13 +7,13 @@
     * Use the Kush gauge for best quality: width * height * framerate * 4 * 0.07 
     * Our mono samples are 1280x720 and stereo 2560x720 
     * WARNING: Setting a high minBitrate can cause latency. */
-    "bitrate": 15482880,
-    "minBitrate": 300000,
-    /* Setup an encoder that puts an IDR every 60 frames, an I-frame every 30
-    * frames, and the rest P-frames. 
-    * Set intraRefreshEnableFlag to false to disable I-frames - not recommended */
+    "bitrate": 7741440,
+    "minBitrate": 7741440,
+    /* Setup an encoder that puts an IDR every 60 frames and the rest P-frames. 
+    * Set intraRefreshEnableFlag to enable/disable I-frames. 
+    * If flag is true, intraRefreshPeriod puts an I-frame every (n) number of frames. */
     "idrPeriod": 60,
     "intraRefreshPeriod": 30,
-    "intraRefreshEnableFlag": true
+    "intraRefreshEnableFlag": false
   }
 }
