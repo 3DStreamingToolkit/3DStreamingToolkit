@@ -174,7 +174,7 @@ namespace Microsoft.Toolkit.ThreeD
             // Make sure that the render window continues to render when the game window 
             // does not have focus
             Application.runInBackground = true;
-            //Application.targetFrameRate = 60;
+            Application.targetFrameRate = 60;
 
             // Initializes render textures if needed.
             if (GenerateTargetTexture)
