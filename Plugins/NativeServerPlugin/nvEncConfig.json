@@ -8,7 +8,7 @@
     * Our mono samples are 1280x720 and stereo 2560x720 
     * WARNING: Setting a high minBitrate can cause latency. */
     "bitrate": 7741440,
-    "minBitrate": 7741440,
+    "minBitrate": 3870720,
     /* Setup an encoder that puts an IDR every 60 frames and the rest P-frames. 
     * Set intraRefreshEnableFlag to enable/disable I-frames. 
     * If flag is true, intraRefreshPeriod puts an I-frame every (n) number of frames. */
