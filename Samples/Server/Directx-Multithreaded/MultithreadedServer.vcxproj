@@ -98,9 +98,7 @@
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" 
         xcopy /y /d /r  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)"
       )
-      del /f /q xcopy.lock
-xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
-   </Command>
+      del /f /q xcopy.lock</Command>
     </PostBuildEvent>
     <ProjectReference>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
@@ -156,7 +154,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration
         xcopy /y /d /r $(ProjectDir)*.hlsl  $(OutDir)
       )
       del /f /q xcopy.lock
-xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)"
+
       </Command>
     </PostBuildEvent>
     <ProjectReference>

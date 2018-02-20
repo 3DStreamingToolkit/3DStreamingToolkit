@@ -73,7 +73,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\Libraries\Freeglut\lib\x64;$(ProjectDir)..\..\..\Libraries\Glew\lib\Release\x64;$(ProjectDir)..\..\..\Libraries\glext\lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Freeglut\bin\x64\freeglut.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\glext\lib\glext.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\NvEncoder\kernels\ptx\preproc64_cuda.ptx" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Freeglut\bin\x64\freeglut.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\glext\lib\glext.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\NvEncoder\kernels\ptx\preproc64_cuda.ptx" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -99,7 +99,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\Libraries\Freeglut\lib\x64;$(ProjectDir)..\..\..\Libraries\Glew\lib\Release\x64;$(ProjectDir)..\..\..\Libraries\glext\lib</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Freeglut\bin\x64\freeglut.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\NvEncoder\kernels\ptx\preproc64_cuda.ptx" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\glext\lib\glext.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Freeglut\bin\x64\freeglut.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\NvEncoder\kernels\ptx\preproc64_cuda.ptx" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\glext\lib\glext.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -3,7 +3,12 @@
   <PropertyGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
     <LibraryPath>$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(MSBuildThisFileDirectory)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\cudart64_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)" </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
     <ClCompile>
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(SolutionDir)\Libraries\WebRTC\headers;$(SolutionDir)\Libraries\Freeglut\include\GL;$(SolutionDir)\Libraries\glext\include\GL;$(SolutionDir)\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
