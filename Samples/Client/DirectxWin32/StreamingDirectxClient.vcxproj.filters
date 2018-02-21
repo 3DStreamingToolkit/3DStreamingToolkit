@@ -25,9 +25,6 @@
     <ClCompile Include="src\win32_data_channel_handler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="nvpipe_dummy.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />

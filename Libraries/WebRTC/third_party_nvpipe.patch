@@ -1,7 +1,7 @@
-From 46e21b322656565b50e5ed25e5095b437b790963 Mon Sep 17 00:00:00 2001
+From bd306276a35758f6dcef7be12360733b32d30c25 Mon Sep 17 00:00:00 2001
 From: Andrei Ermilov <anderm@microsoft.com>
-Date: Fri, 26 Jan 2018 23:14:35 -0500
-Subject: [PATCH] nvpipe
+Date: Wed, 21 Feb 2018 18:24:46 +0200
+Subject: [PATCH] nvpipe patch
 
 ---
  BUILD.gn                   |    7 +
@@ -9,8 +9,8 @@ Subject: [PATCH] nvpipe
  nvpipe/dynlink_cuda.h      |   21 +
  nvpipe/dynlink_cuda_cuda.h | 1687 ++++++++++++++++++++++
  nvpipe/nvEncodeAPI.h       | 3334 ++++++++++++++++++++++++++++++++++++++++++++
- nvpipe/nvpipe.h            |  187 +++
- 6 files changed, 5898 insertions(+)
+ nvpipe/nvpipe.h            |   90 ++
+ 6 files changed, 5801 insertions(+)
  create mode 100644 nvpipe/dynlink_cuda.cpp
  create mode 100644 nvpipe/dynlink_cuda.h
  create mode 100644 nvpipe/dynlink_cuda_cuda.h
@@ -5762,10 +5762,10 @@ index 00000000000..40e1be95b1a
 +
 diff --git a/nvpipe/nvpipe.h b/nvpipe/nvpipe.h
 new file mode 100644
-index 00000000000..110a1e47b20
+index 00000000000..6305333c58b
 --- /dev/null
 +++ b/nvpipe/nvpipe.h
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,90 @@
 +/* Copyright (c) 2016-2017, NVIDIA CORPORATION. All rights reserved.
 + *
 + * Redistribution and use in source and binary forms, with or without
@@ -5841,118 +5841,21 @@ index 00000000000..110a1e47b20
 +
 +typedef void nvpipe;
 +
-+#ifdef __GNUC__
-+#	define NVPIPE_VISIBLE __attribute__((visibility("default")))
-+#else
-+#	define NVPIPE_VISIBLE __declspec(dllexport)
-+#endif
-+
-+/** @fn create nvpipe instance
-+ *
-+ * return a valid instance on success, NULL otherwise.
-+ * @param[in] backend implementation to use.
-+ * @param[in] bitrate rate to use
-+ * @param[in] frame rate to use
-+ *
-+ * If you're unsure what to use for a bitrate, we suggest the Kush gauge:
-+ *  [image width] x [image height] x [framerate] x [motion rank] x 0.07
-+ *      [motion rank]:  1 being low motion;
-+ *                      2 being medium motion;
-+ *                      4 being high motion;
-+ * See also:
-+ *      http://www.adobe.com/content/dam/Adobe/en/devnet/
-+ */
-+NVPIPE_VISIBLE nvpipe*
-+nvpipe_create_encoder(nvp_codec_t id, uint64_t bitrate, uint64_t frameRate, uint64_t idrPeriod, uint64_t intraRefreshPeriod, bool intraRefreshEnableFlag);
-+
-+/** @fn create nvpipe decoding instance
-+ *
-+ * return a valid instance on success, NULL otherwise.
-+ * @param[in] backend implementation to use.
-+ */
-+NVPIPE_VISIBLE nvpipe*
-+nvpipe_create_decoder(nvp_codec_t id);
-+
-+/** \brief free nvpipe instance
-+ *
-+ * clean up each instance created by 'nvpipe_create_*()'.
-+ */
-+NVPIPE_VISIBLE void
-+nvpipe_destroy(nvpipe* const __restrict codec);
-+
-+/** encode/compress images
-+ *
-+ * User provides pointers for both input and output buffers.  The output buffer
-+ * must be large enough to accommodate the compressed data.  Sizing the output
-+ * buffer may be difficult; the call will return OUTPUT_BUFFER_OVERFLOW to
-+ * indicate that the user must increase the size of the buffer.
-+ * On successful execution, the output buffer size will be modified to indicate
-+ * how many bytes were actually filled.
-+ *
-+ * @param[in] codec library instance to use
-+ * @param[in] ibuf input buffer to compress. host or device pointer.
-+ * @param[in] ibuf_sz number of bytes in the input buffer
-+ * @param[out] obuf (host) buffer to place compressed data into.
-+ * @param[in,out] obuf_sz number of bytes available in 'obuf', output is number
-+ *                        of bytes that were actually filled.
-+ * @param[in] width number of pixels in X of the input buffer
-+ * @param[in] height number of pixels in Y of the input buffer
-+ * @param[in] format the format of ibuf.
-+ *
-+ * @return NVPIPE_SUCCESS on success, nonzero on error.
-+ */
-+NVPIPE_VISIBLE nvp_err_t
-+nvpipe_encode(nvpipe * const __restrict codec,
-+              const void *const __restrict ibuf,
-+              const size_t ibuf_sz,
-+              void *const __restrict obuf,
-+              size_t* const __restrict obuf_sz,
-+              const uint32_t width, const uint32_t height, const uint32_t frameRate,
-+              nvp_fmt_t format);
-+
-+/** Adjust the bitrate used for an encoder.  The setting takes effect for
-+ * subsequent frames.
-+ *
-+ * The bitrate determines the quality of the encoded image.  NvPipe will
-+ * automatically adjust to new image sizes, but it will not update the bitrate
-+ * it utilizes without (this) explicit request.
-+ *
-+ * Note this only makes sense for encoders; decoders accept streams encoded at
-+ * any bitrate. */
-+NVPIPE_VISIBLE
-+nvp_err_t nvpipe_bitrate(nvpipe* const enc, uint64_t bitrate, uint64_t frameRate);
-+
-+/** decode/decompress a frame
-+ *
-+ * @param[in] codec instance variable
-+ * @param[in] ibuf the compressed frame, on the host.
-+ * @param[in] ibuf_sz  the size in bytes of the compressed data
-+ * @param[out] obuf where the output RGB frame will be written.
-+ *             must be at least width*height*components bytes. host or device pointer.
-+ * @param[in] width  width of output image
-+ * @param[in] height height of output image
-+ * @param[in] format the format of obuf. alpha channel is set to 255 for RGBA
-+ *
-+ * @return NVPIPE_SUCCESS on success, nonzero on error.
-+ */
-+NVPIPE_VISIBLE nvp_err_t
-+nvpipe_decode(nvpipe* const __restrict codec,
-+              const void* const __restrict ibuf,
-+              const size_t ibuf_sz,
-+              void* const __restrict obuf,
-+              const uint32_t width, const uint32_t height,
-+              nvp_fmt_t format);
-+
-+/** Retrieve human-readable error message for the given error code.  Note that
-+ * this is a pointer to constant memory that must NOT be freed or manipulated
-+ * by the user. */
-+NVPIPE_VISIBLE const char*
-+nvpipe_strerror(nvp_err_t error_code);
++typedef nvpipe*(__stdcall *nvpipe_create_encoder)(nvp_codec_t id, uint64_t bitrate, uint64_t frameRate, uint64_t idrPeriod, uint64_t intraRefreshPeriod, bool intraRefreshEnableFlag);
++typedef	void(__stdcall *nvpipe_destroy)(nvpipe* const __restrict codec);
++typedef	nvp_err_t(__stdcall *nvpipe_encode)(nvpipe * const __restrict codec,
++	const void *const __restrict ibuf,
++	const size_t ibuf_sz,
++	void *const __restrict obuf,
++	size_t* const __restrict obuf_sz,
++	const uint32_t width, const uint32_t height, const uint32_t frameRate,
++	nvp_fmt_t format);
++typedef	nvp_err_t(__stdcall *nvpipe_bitrate)(nvpipe* const enc, uint64_t bitrate, uint64_t frameRate);
 +
 +#  ifdef __cplusplus
 +}
 +#  endif
 +#endif
 -- 
-2.11.0.windows.3
+2.15.1.windows.2
 
