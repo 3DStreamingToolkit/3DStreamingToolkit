@@ -14,6 +14,13 @@ using namespace Windows::Perception;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::System::Threading;
 
+#ifdef SHOW_DEBUG_INFO
+int64_t g_totalDelayTime = 0;
+int64_t g_currentTimestamp = 0;
+int g_latencyCounter = 0;
+int g_latency = 0;
+#endif // SHOW_DEBUG_INFO
+
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
@@ -96,8 +103,8 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 					m_holographicFrames.begin(),
 					m_holographicFrames.end(),
 					[&](HolographicFrame^ frame)
-					{ 
-						return frame->CurrentPrediction->Timestamp->TargetTime.UniversalTime == 
+					{
+						return frame->CurrentPrediction->Timestamp->TargetTime.UniversalTime ==
 							predictionTimestamp;
 					});
 
@@ -107,7 +114,22 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 						m_videoRenderer->GetVideoFrame(), texture.Get());
 
 					HolographicFrame^ frame = *it;
+
+#ifdef SHOW_DEBUG_INFO
+					if (++g_latencyCounter % 60)
+					{
+						g_totalDelayTime += (g_currentTimestamp - predictionTimestamp) / 10000;
+					}
+					else
+					{
+						g_latency = g_totalDelayTime / 60;
+						g_totalDelayTime = 0;
+					}
+
+					if (m_main->Render(frame, m_player->GetFrameRate(), g_latency))
+#else // SHOW_DEBUG_INFO
 					if (m_main->Render(frame))
+#endif // SHOW_DEBUG_INFO
 					{
 						m_deviceResources->Present(frame);
 					}
@@ -222,6 +244,10 @@ void AppCallbacks::SendInputData()
 		"  \"type\":\"camera-transform-stereo-prediction\"," +
 		"  \"body\":\"" + cameraTransformBody + "\"" +
 		"}";
+
+#ifdef SHOW_DEBUG_INFO
+	g_currentTimestamp = newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
+#endif // SHOW_DEBUG_INFO
 
 	m_sendInputDataHandler(msg);
 }
