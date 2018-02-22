@@ -18,8 +18,7 @@ VideoRenderer::VideoRenderer(
 		m_deviceResources(deviceResources),
 		m_width(width),
 		m_height(height),
-		m_usingVprtShaders(false),
-		m_text(L"")
+		m_usingVprtShaders(false)
 {
 	// Sets a fixed focus point two meters in front of user for image stabilization.
 	m_focusPoint = { 0.f, 0.f, -2.f };

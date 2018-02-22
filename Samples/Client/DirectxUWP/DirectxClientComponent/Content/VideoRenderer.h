@@ -49,7 +49,6 @@ namespace DirectXClientComponent
 
 		// Resources related to text rendering.
 		ComPtr<ID2D1RenderTarget>					m_d2dRenderTarget;
-		std::wstring                                m_text;
 		ComPtr<ID2D1SolidColorBrush>				m_brush;
 		ComPtr<IDWriteTextFormat>					m_textFormat;
 	};
