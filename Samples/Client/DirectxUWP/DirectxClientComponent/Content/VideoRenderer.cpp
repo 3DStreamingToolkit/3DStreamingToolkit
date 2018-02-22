@@ -3,7 +3,7 @@
 #include "DirectXHelper.h"
 
 #ifdef SHOW_DEBUG_INFO
-#define FONT_SIZE		40.f
+#define FONT_SIZE		40.0f
 #define TEXT_INDENT		20
 #endif // SHOW_DEBUG_INFO
 
@@ -21,7 +21,7 @@ VideoRenderer::VideoRenderer(
 		m_usingVprtShaders(false)
 {
 	// Sets a fixed focus point two meters in front of user for image stabilization.
-	m_focusPoint = { 0.f, 0.f, -2.f };
+	m_focusPoint = { 0.0f, 0.0f, -2.0f };
 
 #ifdef SHOW_DEBUG_INFO
 	// Creates text format.
@@ -49,6 +49,23 @@ void VideoRenderer::CreateDeviceDependentResources()
 
 	VertexPositionTexture vertices[] =
 	{
+#ifdef UNITY_UV_STARTS_AT_TOP
+		// Left camera.
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.0f,	0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+
+		// Right camera
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.0f,	0.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) }
+#else // UNITY_UV_STARTS_AT_TOP
 		// Left camera.
 		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
@@ -64,6 +81,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+#endif // UNITY_UV_STARTS_AT_TOP
 	};
 
 	D3D11_BUFFER_DESC bufferDesc = { 0 };
@@ -252,18 +270,19 @@ void VideoRenderer::Render(int fps, int latency)
 {
 #ifdef SHOW_DEBUG_INFO
 	String^ debugInfo = L"FPS: " + fps + L" Latency: " + latency;
+	int halfWidth = m_width >> 1;
 
 	D2D1_RECT_F leftTextRect = 
 	{
 		TEXT_INDENT,
 		0,
-		m_width >> 1,
+		halfWidth,
 		m_height
 	};
 
 	D2D1_RECT_F rightTextRect = 
 	{
-		(m_width >> 1) + TEXT_INDENT,
+		halfWidth + TEXT_INDENT,
 		0,
 		m_width,
 		m_height
@@ -271,12 +290,30 @@ void VideoRenderer::Render(int fps, int latency)
 
 	m_d2dRenderTarget->BeginDraw();
 
+#ifdef UNITY_UV_STARTS_AT_TOP
+	m_d2dRenderTarget->SetTransform(
+		D2D1::Matrix3x2F::Scale(
+			1.0f,
+			-1.0f,
+			D2D1::Point2F(halfWidth, m_height >> 1))
+	);
+#endif // UNITY_UV_STARTS_AT_TOP
+
 	m_d2dRenderTarget->DrawText(
 		debugInfo->Data(),
 		debugInfo->Length(),
 		m_textFormat.Get(),
 		leftTextRect,
 		m_brush.Get());
+
+#ifdef UNITY_UV_STARTS_AT_TOP
+	m_d2dRenderTarget->SetTransform(
+		D2D1::Matrix3x2F::Scale(
+			1.0f,
+			-1.0f,
+			D2D1::Point2F(m_width + halfWidth, m_height >> 1))
+	);
+#endif // UNITY_UV_STARTS_AT_TOP
 
 	m_d2dRenderTarget->DrawText(
 		debugInfo->Data(),

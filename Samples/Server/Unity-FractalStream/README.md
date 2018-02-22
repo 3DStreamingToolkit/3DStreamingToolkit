@@ -22,4 +22,4 @@ appCallbacks.AddCommandLineArg("-force-d3d11-no-singlethreaded");
 
 ## Enable UV flag for DirectX HoloLens client
 
-When using [RenderTexture](https://docs.unity3d.com/ScriptReference/RenderTexture.html), Unity follows OpenGL standard so we need to manually “flip” the screen texture upside down. To do that, enable **UNITY_UV_STARTS_AT_TOP** flag in **PixelShader.hlsl**.
+When using [RenderTexture](https://docs.unity3d.com/ScriptReference/RenderTexture.html), Unity follows OpenGL standard so we need to manually “flip” the screen texture upside down. To do that, enable **UNITY_UV_STARTS_AT_TOP** flag in **VideoRenderer.h**.

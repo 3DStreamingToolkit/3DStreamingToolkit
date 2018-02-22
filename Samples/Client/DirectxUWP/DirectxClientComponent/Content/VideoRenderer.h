@@ -4,6 +4,7 @@
 #include "ShaderStructures.h"
 
 //#define SHOW_DEBUG_INFO
+//#define UNITY_UV_STARTS_AT_TOP
 
 using namespace Microsoft::WRL;
 
