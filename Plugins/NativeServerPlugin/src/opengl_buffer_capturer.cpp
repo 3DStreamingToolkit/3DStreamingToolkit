@@ -156,7 +156,7 @@ void OpenGLBufferCapturer::SendFrame()
 		glReadPixels(0, 0, buffer_width, buffer_height, PIXEL_FORMAT, GL_UNSIGNED_BYTE, colorBuffer);
 	}
 
-	if (buffer_width > 4096 || buffer_width > 4096)
+	if (buffer_width > 4096 || buffer_height > 4096)
 	{
 		return;
 	}

@@ -1,12 +1,11 @@
-From 5d088642a48aba50a0ba69b34f9ce035f2bcebef Mon Sep 17 00:00:00 2001
+From 8490795bfab06b937561b3f6e1cf1d935c1053c1 Mon Sep 17 00:00:00 2001
 From: Andrei Ermilov <anderm@microsoft.com>
-Date: Wed, 21 Feb 2018 17:48:13 +0200
+Date: Fri, 23 Feb 2018 17:48:16 +0200
 Subject: [PATCH] 3DToolkit upgrade patch
 
 ---
  webrtc/api/video/i420_buffer.cc                    |    3 +-
  webrtc/api/video/video_frame.h                     |   22 +
- webrtc/base/BUILD.gn                               |    2 +-
  webrtc/call/call.cc                                |    5 +
  webrtc/common_types.h                              |    1 +
  webrtc/config.cc                                   |   14 +-
@@ -25,23 +24,22 @@ Subject: [PATCH] 3DToolkit upgrade patch
  webrtc/modules/rtp_rtcp/source/rtp_sender.cc       |    1 +
  webrtc/modules/rtp_rtcp/source/rtp_sender_video.cc |    1 +
  webrtc/modules/rtp_rtcp/source/rtp_utility.cc      |    9 +
- webrtc/modules/video_coding/BUILD.gn               |    3 +-
+ webrtc/modules/video_coding/BUILD.gn               |    1 +
  .../video_coding/codecs/h264/h264_decoder_impl.cc  |    2 +
- .../video_coding/codecs/h264/h264_encoder_impl.cc  | 1276 ++++++++++++--------
- .../video_coding/codecs/h264/h264_encoder_impl.h   |  180 +--
+ .../video_coding/codecs/h264/h264_encoder_impl.cc  | 1280 ++++++++++++--------
+ .../video_coding/codecs/h264/h264_encoder_impl.h   |  181 +--
  .../codecs/h264/h264_encoder_impl_unittest.cc      |  402 +++++-
  webrtc/modules/video_coding/codecs/vp8/vp8_impl.cc |    4 +-
  webrtc/modules/video_coding/codecs/vp8/vp8_impl.h  |    1 +
  webrtc/modules/video_coding/frame_object.cc        |    1 +
  webrtc/modules/video_coding/video_sender.cc        |    2 +
- webrtc/video/BUILD.gn                              |    2 +-
  webrtc/video/payload_router.cc                     |    1 +
  webrtc/video/rtp_stream_receiver.cc                |    4 +-
  webrtc/video/video_loopback.cc                     |    5 +-
  webrtc/video/video_send_stream.cc                  |   12 +-
  webrtc/video/vie_encoder.cc                        |    2 +-
  webrtc/video_frame.h                               |    1 +
- 37 files changed, 1352 insertions(+), 711 deletions(-)
+ 35 files changed, 1354 insertions(+), 708 deletions(-)
 
 diff --git a/webrtc/api/video/i420_buffer.cc b/webrtc/api/video/i420_buffer.cc
 index 031b15940..8c89d3662 100644
@@ -118,19 +116,6 @@ index 8840782ca..a42b25d1f 100644
  };
  
  }  // namespace webrtc
-diff --git a/webrtc/base/BUILD.gn b/webrtc/base/BUILD.gn
-index eb9361bc4..89b2d4bf2 100644
---- a/webrtc/base/BUILD.gn
-+++ b/webrtc/base/BUILD.gn
-@@ -647,7 +647,7 @@ rtc_source_set("gtest_prod") {
-   ]
- }
- 
--if (rtc_include_tests) {
-+if (true) {
-   config("rtc_base_tests_utils_exported_config") {
-     defines = [ "GTEST_RELATIVE_PATH" ]
-   }
 diff --git a/webrtc/call/call.cc b/webrtc/call/call.cc
 index e2b1e709a..25999fa82 100644
 --- a/webrtc/call/call.cc
@@ -496,7 +481,7 @@ index def431f17..e8d68bf08 100644
          case kRtpExtensionNumberOfExtensions: {
            RTC_NOTREACHED() << "Invalid extension type: " << type;
 diff --git a/webrtc/modules/video_coding/BUILD.gn b/webrtc/modules/video_coding/BUILD.gn
-index 643260a94..bf42590ac 100644
+index 643260a94..bec17dc51 100644
 --- a/webrtc/modules/video_coding/BUILD.gn
 +++ b/webrtc/modules/video_coding/BUILD.gn
 @@ -176,6 +176,7 @@ rtc_static_library("webrtc_h264") {
@@ -507,15 +492,6 @@ index 643260a94..bf42590ac 100644
        "//third_party/openh264:encoder",
      ]
    }
-@@ -271,7 +272,7 @@ rtc_static_library("webrtc_vp9") {
-   }
- }
- 
--if (rtc_include_tests) {
-+if (true) {
-   rtc_executable("video_quality_measurement") {
-     testonly = true
- 
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc
 index c26b94c04..ca82ed518 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_decoder_impl.cc
@@ -537,10 +513,10 @@ index c26b94c04..ca82ed518 100644
      // interface to pass a VideoFrameBuffer instead of a VideoFrame?
      ret = decoded_image_callback_->Decoded(cropped_frame);
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-index 84bfafb8b..ba503870c 100644
+index 84bfafb8b..a894822ef 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.cc
-@@ -1,503 +1,773 @@
+@@ -1,503 +1,777 @@
 -/*
 - *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
 - *
@@ -1083,7 +1059,6 @@ index 84bfafb8b..ba503870c 100644
 +#include "webrtc/base/bind.h"
 +#include "webrtc/base/asyncinvoker.h"
 +
-+#define BITSTREAM_BUFFER_SIZE	2 * 1024 * 1024
 +using namespace std;
 +
 +#define __cu(a) do { CUresult  ret; if ((ret = (a)) != CUDA_SUCCESS) { fprintf(stderr, "%s has returned CUDA error %d\n", #a, ret); return NV_ENC_ERR_GENERIC;}} while(0)
@@ -1302,7 +1277,7 @@ index 84bfafb8b..ba503870c 100644
 +		m_encodeConfig.width = codec_settings->width;
 +		m_encodeConfig.height = codec_settings->height;
 +
-+		HINSTANCE hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
++		hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
 +		if (hGetProcIDDLL == NULL) {
 +			// Failed to load Nvpipe dll.
 +			LOG(LS_ERROR) << "Failed to load Nvpipe dll";
@@ -1413,6 +1388,11 @@ index 84bfafb8b..ba503870c 100644
 +	if (m_pNvPipeEncoder)
 +	{
 +		destroy_nvpipe_encoder(m_pNvPipeEncoder);
++		m_pNvPipeEncoder = nullptr;
++		FreeLibrary((HMODULE)hGetProcIDDLL);
++
++		delete[] pFrameBuffer;
++		pFrameBuffer = nullptr;
 +	}
 +
 +	encoded_image_._buffer = nullptr;
@@ -1818,10 +1798,10 @@ index 84bfafb8b..ba503870c 100644
 +
 +}  // namespace webrtc
 diff --git a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
-index a455259bf..23515cae4 100644
+index a455259bf..25823b77a 100644
 --- a/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
 +++ b/webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h
-@@ -19,85 +19,119 @@
+@@ -19,85 +19,120 @@
  #include "webrtc/modules/video_coding/codecs/h264/include/h264.h"
  #include "webrtc/modules/video_coding/utility/quality_scaler.h"
  
@@ -1976,6 +1956,7 @@ index a455259bf..23515cae4 100644
 +		EncodeConfig				m_encodeConfig;
 +
 +		// Nv pipe
++		HINSTANCE hGetProcIDDLL;
 +		nvpipe* m_pNvPipeEncoder;
 +		uint8_t* pFrameBuffer;
 +		size_t bufferSize;
@@ -2504,19 +2485,6 @@ index 0b54d13b2..6f958fa81 100644
    // TODO(pbos): Make sure setting send codec is synchronized with video
    // processing so frame size always matches.
    if (!_codecDataBase.MatchesCurrentResolution(videoFrame.width(),
-diff --git a/webrtc/video/BUILD.gn b/webrtc/video/BUILD.gn
-index a5a3b7c2d..f2d27d0c0 100644
---- a/webrtc/video/BUILD.gn
-+++ b/webrtc/video/BUILD.gn
-@@ -77,7 +77,7 @@ rtc_static_library("video") {
-   ]
- }
- 
--if (rtc_include_tests) {
-+if (true) {
-   rtc_source_set("video_quality_test") {
-     testonly = true
-     sources = [
 diff --git a/webrtc/video/payload_router.cc b/webrtc/video/payload_router.cc
 index f2f430904..75e7483b5 100644
 --- a/webrtc/video/payload_router.cc

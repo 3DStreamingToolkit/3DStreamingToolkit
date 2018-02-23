@@ -15,10 +15,14 @@ namespace NativeServersUnitTests
 	public:
 		TEST_METHOD(CanInitializeWithDefaultParameters)
 		{
-			H264EncoderImpl encoder(cricket::VideoCodec("H264"));
+			auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
 			VideoCodec codec_settings;
 			SetDefaultCodecSettings(&codec_settings);
-			Assert::IsTrue(encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
+			Assert::IsTrue(encoder->InitEncode(&codec_settings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
+
+			// Test correct release of encoder
+			Assert::IsTrue(encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
+			delete encoder;
 		}
 
 		TEST_METHOD(HardwareNvencodeEncode) {
@@ -54,8 +58,11 @@ namespace NativeServersUnitTests
 			Assert::IsTrue(encoded_frame._completeFrame);
 			Assert::IsTrue(encoded_frame._length > 0);
 
-			// Test correct release of hardware encoder
+			// Test correct release of encoder
 			Assert::IsTrue(h264TestImpl->encoder_->Release() == WEBRTC_VIDEO_CODEC_OK);
+
+			delete[] rgbBuffer;
+			rgbBuffer = NULL;
 		}
 	};
 }
