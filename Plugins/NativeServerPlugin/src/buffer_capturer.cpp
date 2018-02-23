@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "buffer_capturer.h"
+#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
 
 namespace StreamingToolkit
 {
@@ -10,9 +11,9 @@ namespace StreamingToolkit
 		clock_(webrtc::Clock::GetRealTimeClock()),
 		running_(false),
 		sink_(nullptr),
-		use_software_encoder_(false),
 		sink_wants_observer_(nullptr)
 	{
+		use_software_encoder_ = webrtc::H264EncoderImpl::CheckDeviceNVENCCapability() != NVENCSTATUS::NV_ENC_SUCCESS;
 		set_enable_video_adapter(false);
 		SetCaptureFormat(NULL);
 	}
@@ -69,12 +70,8 @@ namespace StreamingToolkit
 	void BufferCapturer::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) 
 	{
 		rtc::CritScope cs(&lock_);
+		running_ = false;
 		sink_ = nullptr;
-	}
-
-	void BufferCapturer::EnableSoftwareEncoder(bool use_software_encoder)
-	{
-		use_software_encoder_ = use_software_encoder;
 	}
 
 	void BufferCapturer::SendFrame(webrtc::VideoFrame video_frame)

@@ -3,8 +3,6 @@
 #include "directx_buffer_capturer.h"
 #include "plugindefs.h"
 
-#include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
-
 using namespace Microsoft::WRL;
 using namespace StreamingToolkit;
 
@@ -25,10 +23,6 @@ void DirectXBufferCapturer::Initialize(bool headless, int width, int height)
 	multithread->SetMultithreadProtected(true);
 	multithread->Release();
 #endif // MULTITHREAD_PROTECTION
-
-	// Initializes NVIDIA encoder.
-	webrtc::H264EncoderImpl::SetDevice(d3d_device_.Get());
-	webrtc::H264EncoderImpl::SetContext(d3d_context_.Get());
 
 	// Headless mode initialization.
 	headless_ = headless;
@@ -105,10 +99,17 @@ void DirectXBufferCapturer::SendFrame(ID3D11Texture2D* frame_buffer, int64_t pre
 	frame.set_rotation(VideoRotation::kVideoRotation_0);
 	frame.set_prediction_timestamp(prediction_time_stamp);
 
-	// For hardware encoder, setting the video frame texture.
+	// For hardware encoder, setting the video frame buffer.
 	if (!use_software_encoder_)
 	{
-		frame.set_staging_frame_buffer(staging_frame_buffer_.Get());
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		if (SUCCEEDED(d3d_context_.Get()->Map(
+			staging_frame_buffer_.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+		{
+			frame.set_frame_buffer((uint8_t*)mapped.pData);
+
+			d3d_context_->Unmap(staging_frame_buffer_.Get(), 0);
+		}
 	}
 
 	// Sending video frame.
@@ -165,10 +166,17 @@ void DirectXBufferCapturer::SendFrame(ID3D11Texture2D* left_frame_buffer, ID3D11
 	frame.set_rotation(VideoRotation::kVideoRotation_0);
 	frame.set_prediction_timestamp(prediction_time_stamp);
 
-	// For hardware encoder, setting the video frame texture.
+	// For hardware encoder, setting the video frame buffer.
 	if (!use_software_encoder_)
 	{
-		frame.set_staging_frame_buffer(staging_frame_buffer_.Get());
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		if (SUCCEEDED(d3d_context_.Get()->Map(
+			staging_frame_buffer_.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+		{
+			frame.set_frame_buffer((uint8_t*)mapped.pData);
+
+			d3d_context_->Unmap(staging_frame_buffer_.Get(), 0);
+		}
 	}
 
 	// Sending video frame.

@@ -114,9 +114,19 @@ namespace Microsoft.Toolkit.ThreeD
         private Matrix4x4 stereoLeftProjectionMatrix = Matrix4x4.identity;
 
         /// <summary>
+        /// The left stereo eye view as determined by client control
+        /// </summary>
+        private Matrix4x4 stereoLeftViewMatrix = Matrix4x4.identity;
+
+        /// <summary>
         /// The right stereo eye projection as determined by client control
         /// </summary>
         private Matrix4x4 stereoRightProjectionMatrix = Matrix4x4.identity;
+
+        /// <summary>
+        /// The right stereo eye view as determined by client control
+        /// </summary>
+        private Matrix4x4 stereoRightViewMatrix = Matrix4x4.identity;
 
         /// <summary>
         /// Internal flag used to indicate we are shutting down
@@ -174,7 +184,7 @@ namespace Microsoft.Toolkit.ThreeD
 
             // Open the connection.
             Open();
-            
+
             // Setup the eyes for the first time.
             SetupActiveEyes();
 
@@ -218,10 +228,38 @@ namespace Microsoft.Toolkit.ThreeD
                 }
                 else if (cameraNeedUpdated)
                 {
+                    // Updates left and right projection matrices.
                     this.LeftEye.projectionMatrix = stereoLeftProjectionMatrix;
                     this.RightEye.projectionMatrix = stereoRightProjectionMatrix;
+
+                    // Updates camera transform's position and rotation.
+                    // Converts from right-handed to left-handed coordinates.
+                    stereoLeftViewMatrix = Matrix4x4.Inverse(stereoLeftViewMatrix);
+                    stereoRightViewMatrix = Matrix4x4.Inverse(stereoRightViewMatrix);
+
+                    this.LeftEye.transform.position = new Vector3(
+                        stereoLeftViewMatrix.m03,
+                        stereoLeftViewMatrix.m13,
+                        -stereoLeftViewMatrix.m23);
+
+                    this.RightEye.transform.position = new Vector3(
+                        stereoRightViewMatrix.m03,
+                        stereoRightViewMatrix.m13,
+                        -stereoRightViewMatrix.m23);
+
+                    Quaternion leftQ = QuaternionFromMatrix(stereoLeftViewMatrix);
+                    this.LeftEye.transform.rotation = new Quaternion(
+                        -leftQ.x, -leftQ.y, leftQ.z, leftQ.w);
+
+                    Quaternion rightQ = QuaternionFromMatrix(stereoRightViewMatrix);
+                    this.RightEye.transform.rotation = new Quaternion(
+                        -rightQ.x, -rightQ.y, rightQ.z, rightQ.w);
+
+                    // Manually render to textures.
                     this.LeftEye.Render();
                     this.RightEye.Render();
+
+                    // Starts sending frame.
                     StartCoroutine(SendFrame(true));
                 }
             }
@@ -445,16 +483,16 @@ namespace Microsoft.Toolkit.ThreeD
                             {
                                 for (int j = 0; j < 4; j++)
                                 {
-                                    // We are receiving 32 values for the left/right matrix.
-                                    // The first 16 are for left followed by the right matrix.
-                                    stereoRightProjectionMatrix[i, j] = float.Parse(coords[16 + index]);
+                                    stereoRightViewMatrix[i, j] = float.Parse(coords[48 + index]);
+                                    stereoRightProjectionMatrix[i, j] = float.Parse(coords[32 + index]);
+                                    stereoLeftViewMatrix[i, j] = float.Parse(coords[16 + index]);
                                     stereoLeftProjectionMatrix[i, j] = float.Parse(coords[index++]);
                                 }
                             }
 
                             cameraNeedUpdated = true;
                         }
-                        
+
                         break;
 
                     case "camera-transform-stereo-prediction":
@@ -464,7 +502,7 @@ namespace Microsoft.Toolkit.ThreeD
                             string[] coords = camera.Split(',');
 
                             // Parse the prediction timestamp from the message body.
-                            long timestamp = long.Parse(coords[32]);
+                            long timestamp = long.Parse(coords[64]);
 
                             if (timestamp != lastTimestamp)
                             {
@@ -475,9 +513,9 @@ namespace Microsoft.Toolkit.ThreeD
                                 {
                                     for (int j = 0; j < 4; j++)
                                     {
-                                        // We are receiving 32 values for the left/right matrix.
-                                        // The first 16 are for left followed by the right matrix.
-                                        stereoRightProjectionMatrix[i, j] = float.Parse(coords[16 + index]);
+                                        stereoRightViewMatrix[i, j] = float.Parse(coords[48 + index]);
+                                        stereoRightProjectionMatrix[i, j] = float.Parse(coords[32 + index]);
+                                        stereoLeftViewMatrix[i, j] = float.Parse(coords[16 + index]);
                                         stereoLeftProjectionMatrix[i, j] = float.Parse(coords[index++]);
                                     }
                                 }
@@ -533,6 +571,22 @@ namespace Microsoft.Toolkit.ThreeD
         {
             yield return Plugin.SendFrame(isStereo, lastTimestamp);
             cameraNeedUpdated = false;
+        }
+
+        /// <summary>
+        /// From: https://answers.unity.com/questions/11363/converting-matrix4x4-to-quaternion-vector3.html
+        /// </summary>
+        public static Quaternion QuaternionFromMatrix(Matrix4x4 m)
+        {
+            Quaternion q = new Quaternion();
+            q.w = Mathf.Sqrt(Mathf.Max(0, 1 + m[0, 0] + m[1, 1] + m[2, 2])) / 2;
+            q.x = Mathf.Sqrt(Mathf.Max(0, 1 + m[0, 0] - m[1, 1] - m[2, 2])) / 2;
+            q.y = Mathf.Sqrt(Mathf.Max(0, 1 - m[0, 0] + m[1, 1] - m[2, 2])) / 2;
+            q.z = Mathf.Sqrt(Mathf.Max(0, 1 - m[0, 0] - m[1, 1] + m[2, 2])) / 2;
+            q.x *= Mathf.Sign(q.x * (m[2, 1] - m[1, 2]));
+            q.y *= Mathf.Sign(q.y * (m[0, 2] - m[2, 0]));
+            q.z *= Mathf.Sign(q.z * (m[1, 0] - m[0, 1]));
+            return q;
         }
     }
 }

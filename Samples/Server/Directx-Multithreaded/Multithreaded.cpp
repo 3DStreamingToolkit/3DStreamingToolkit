@@ -399,8 +399,10 @@ int64_t						g_lastTimestamp = -1;
 DirectX::XMVECTORF32		g_lookAtVector;
 DirectX::XMVECTORF32		g_upVector;
 DirectX::XMVECTORF32		g_eyeVector;
-DirectX::XMFLOAT4X4			g_viewProjectionMatrixLeft;
-DirectX::XMFLOAT4X4			g_viewProjectionMatrixRight;
+DirectX::XMFLOAT4X4			g_projectionMatrixLeft;
+DirectX::XMFLOAT4X4			g_viewMatrixLeft;
+DirectX::XMFLOAT4X4			g_projectionMatrixRight;
+DirectX::XMFLOAT4X4			g_viewMatrixRight;
 #endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
@@ -529,11 +531,6 @@ bool AppMain(BOOL stopping)
 	bufferCapturer->Initialize(serverConfig->server_config.system_service,
 		serverConfig->server_config.width, serverConfig->server_config.height);
 
-	if (nvEncConfig->use_software_encoding)
-	{
-		bufferCapturer->EnableSoftwareEncoder();
-	}
-
 	// For system service, we render to buffer instead of swap chain.
 	if (serverConfig->server_config.system_service)
 	{
@@ -645,53 +642,99 @@ bool AppMain(BOOL stopping)
 			}
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
-				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				// Parses the left projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
+						projectionMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
+				// Parses the left view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						viewMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
-				g_viewProjectionMatrixLeft = viewProjectionLeft;
-				g_viewProjectionMatrixRight = viewProjectionRight;
+				// Parses the right projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						projectionMatrixRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewMatrixRight.m[i][j] = stof(token);
+					}
+				}
+
+				g_projectionMatrixLeft = projectionMatrixLeft;
+				g_viewMatrixLeft = viewMatrixLeft;
+				g_projectionMatrixRight = projectionMatrixRight;
+				g_viewMatrixRight = viewMatrixRight;
 				g_hasNewInputData = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
 			{
-				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				// Parses the left projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
+						projectionMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
+				// Parses the left view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						viewMatrixLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						projectionMatrixRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewMatrixRight.m[i][j] = stof(token);
 					}
 				}
 
@@ -701,8 +744,10 @@ bool AppMain(BOOL stopping)
 				if (timestamp != g_lastTimestamp)
 				{
 					g_lastTimestamp = timestamp;
-					g_viewProjectionMatrixLeft = viewProjectionLeft;
-					g_viewProjectionMatrixRight = viewProjectionRight;
+					g_projectionMatrixLeft = projectionMatrixLeft;
+					g_viewMatrixLeft = viewMatrixLeft;
+					g_projectionMatrixRight = projectionMatrixRight;
+					g_viewMatrixRight = viewMatrixRight;
 					g_hasNewInputData = true;
 				}
 			}
@@ -857,11 +902,21 @@ bool AppMain(BOOL stopping)
 				else if (g_hasNewInputData)
 				{
 					XMFLOAT4X4 id;
+					DirectX::XMFLOAT4X4 leftProjMatrix;
+					DirectX::XMFLOAT4X4 rightProjMatrix;
+
 					XMStoreFloat4x4(&id, XMMatrixIdentity());
 					g_CameraResources.SetViewMatrix(id, id);
-					g_CameraResources.SetProjMatrix(g_viewProjectionMatrixLeft,
-						g_viewProjectionMatrixRight);
 
+					XMStoreFloat4x4(
+						&leftProjMatrix,
+						XMLoadFloat4x4(&g_projectionMatrixLeft) * XMLoadFloat4x4(&g_viewMatrixLeft));
+
+					XMStoreFloat4x4(
+						&rightProjMatrix,
+						XMLoadFloat4x4(&g_projectionMatrixRight) * XMLoadFloat4x4(&g_viewMatrixRight));
+
+					g_CameraResources.SetProjMatrix(leftProjMatrix, rightProjMatrix);
 					g_Camera.FrameMove(0);
 					DXUTRender3DEnvironment();
 					if (serverConfig->server_config.system_service)

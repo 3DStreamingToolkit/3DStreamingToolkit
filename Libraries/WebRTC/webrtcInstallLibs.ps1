@@ -26,9 +26,8 @@ function DecompressZip {
         }
     }
 
-
-
     if((Test-Path ($localFullPath)) -eq $false) {
+
         Write-Host "Downloading $localFileName from $uri"
         Copy-File -SourcePath $uri -DestinationPath $localFullPath    
         Write-Host ("Downloaded " + $filename + " lib archive")
@@ -139,7 +138,6 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-
-DecompressZip -filename "m58patch_timestamp_headers"
-DecompressZip -filename "m58patch_timestamp_x64"
-DecompressZip -filename "m58patch_timestamp_Win32"
+DecompressZip -filename "m58patch_nvpipe_headers_v2"
+DecompressZip -filename "m58patch_nvpipe_x64_v2"
+DecompressZip -filename "m58patch_nvpipe_Win32_v2"

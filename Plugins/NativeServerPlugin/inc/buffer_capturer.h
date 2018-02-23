@@ -67,7 +67,6 @@ namespace StreamingToolkit
 			const rtc::VideoSinkWants& wants) override;
 
 		void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
-		void EnableSoftwareEncoder(bool use_software_encoder = true);
 
 		sigslot::signal1<BufferCapturer*> SignalDestroyed;
 
