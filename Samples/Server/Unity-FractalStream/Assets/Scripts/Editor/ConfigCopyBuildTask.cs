@@ -17,11 +17,24 @@ namespace Microsoft.Toolkit.ThreeD.Editor
             string pathToBuiltProject)
         {
             string sourcePath = Application.dataPath + "/Plugins/";
+            string dllSourcePath = Application.dataPath + "/Plugins/x64/StreamingServer/";
             string destPath = pathToBuiltProject.Substring(
                 0, pathToBuiltProject.LastIndexOf("/") + 1);
 
             try
             {
+                UnityEditor.FileUtil.CopyFileOrDirectory(
+                    dllSourcePath + "nvpipe.dll",
+                    destPath + "nvpipe.dll");
+
+                UnityEditor.FileUtil.CopyFileOrDirectory(
+                    dllSourcePath + "cudart64_91.dll",
+                    destPath + "cudart64_91.dll");
+
+                UnityEditor.FileUtil.CopyFileOrDirectory(
+                    dllSourcePath + "nvToolsExt64_1.dll",
+                    destPath + "nvToolsExt64_1.dll");
+
                 UnityEditor.FileUtil.CopyFileOrDirectory(
                     sourcePath + "nvEncConfig.json",
                     destPath + "nvEncConfig.json");
