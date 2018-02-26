@@ -14,6 +14,13 @@ using namespace Windows::Perception;
 using namespace Windows::Perception::Spatial;
 using namespace Windows::System::Threading;
 
+#ifdef SHOW_DEBUG_INFO
+int64_t g_totalDelayTime = 0;
+int64_t g_currentTimestamp = 0;
+int g_latencyCounter = 0;
+int g_latency = 0;
+#endif // SHOW_DEBUG_INFO
+
 AppCallbacks::AppCallbacks(SendInputDataHandler^ sendInputDataHandler) :
 	m_videoRenderer(nullptr),
 	m_holographicSpace(nullptr),
@@ -96,8 +103,8 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 					m_holographicFrames.begin(),
 					m_holographicFrames.end(),
 					[&](HolographicFrame^ frame)
-					{ 
-						return frame->CurrentPrediction->Timestamp->TargetTime.UniversalTime == 
+					{
+						return frame->CurrentPrediction->Timestamp->TargetTime.UniversalTime ==
 							predictionTimestamp;
 					});
 
@@ -107,7 +114,22 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 						m_videoRenderer->GetVideoFrame(), texture.Get());
 
 					HolographicFrame^ frame = *it;
+
+#ifdef SHOW_DEBUG_INFO
+					if (++g_latencyCounter % 60)
+					{
+						g_totalDelayTime += (g_currentTimestamp - predictionTimestamp) / 10000;
+					}
+					else
+					{
+						g_latency = g_totalDelayTime / 60;
+						g_totalDelayTime = 0;
+					}
+
+					if (m_main->Render(frame, m_player->GetFrameRate(), g_latency))
+#else // SHOW_DEBUG_INFO
 					if (m_main->Render(frame))
+#endif // SHOW_DEBUG_INFO
 					{
 						m_deviceResources->Present(frame);
 					}
@@ -157,7 +179,9 @@ void AppCallbacks::SendInputData()
 	m_holographicFrames.push_back(newFrame);
 
 	// Gets the current camera transformation.
+	XMFLOAT4X4 leftProjectionMatrix;
 	XMFLOAT4X4 leftViewMatrix;
+	XMFLOAT4X4 rightProjectionMatrix;
 	XMFLOAT4X4 rightViewMatrix;
 	SpatialCoordinateSystem^ currentCoordinateSystem = m_main->GetReferenceFrame()->CoordinateSystem;
 	for (auto cameraPose : newFrame->CurrentPrediction->CameraPoses)
@@ -174,30 +198,44 @@ void AppCallbacks::SendInputData()
 				viewTransformContainer->Value;
 
 			XMStoreFloat4x4(
+				&leftProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Left))
+			);
+
+			XMStoreFloat4x4(
 				&leftViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left) * XMLoadFloat4x4(&cameraProjectionTransform.Left))
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left))
+			);
+
+			XMStoreFloat4x4(
+				&rightProjectionMatrix,
+				XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Right))
 			);
 
 			XMStoreFloat4x4(
 				&rightViewMatrix,
-				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right) * XMLoadFloat4x4(&cameraProjectionTransform.Right))
+				XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right))
 			);
 		}
 	}
 
 	// Builds the camera transform message to send.
-	String^ leftCameraTransform = "";
-	String^ rightCameraTransform = "";
+	String^ leftProjection = "";
+	String^ leftView = "";
+	String^ rightProjection = "";
+	String^ rightView = "";
 	for (int i = 0; i < 4; i++)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			leftCameraTransform += leftViewMatrix.m[i][j] + ",";
-			rightCameraTransform += rightViewMatrix.m[i][j] + ",";
+			leftProjection += leftProjectionMatrix.m[i][j] + ",";
+			leftView += leftViewMatrix.m[i][j] + ",";
+			rightProjection += rightProjectionMatrix.m[i][j] + ",";
+			rightView += rightViewMatrix.m[i][j] + ",";
 		}
 	}
 
-	String^ cameraTransformBody = leftCameraTransform + rightCameraTransform;
+	String^ cameraTransformBody = leftProjection + leftView + rightProjection + rightView;
 
 	// Adds the current prediction timestamp.
 	cameraTransformBody += newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
@@ -206,6 +244,10 @@ void AppCallbacks::SendInputData()
 		"  \"type\":\"camera-transform-stereo-prediction\"," +
 		"  \"body\":\"" + cameraTransformBody + "\"" +
 		"}";
+
+#ifdef SHOW_DEBUG_INFO
+	g_currentTimestamp = newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
+#endif // SHOW_DEBUG_INFO
 
 	m_sendInputDataHandler(msg);
 }

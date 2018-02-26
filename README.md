@@ -2,7 +2,7 @@
 
 A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. 
 
-![example](./3dstreamclientserver.gif)
+![example](./Docs/Images/3dstreamclientserver.gif)
 
 ## What is this?
 
@@ -15,7 +15,7 @@ The 3DToolkit project's purpose is to provide an approach for developing 3D serv
 3. Low-latency audio and video streams using WebRTC
 4. High-performance video encoding and decoding using NVEncode
 
-![WebRTC applied to 3D Streaming](http://avevawebrtc.azurewebsites.net/images//WebRTCStreaming.png)
+![WebRTC applied to 3D Streaming](./Docs/Images/webrtc3d.jpg)
 <!---  (![high level architecture](./readme_data/hl-arch.png))--->
 
 Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3dtoolkit/wiki/What-is-3DToolkit#webrtc-httpwebrtcorg). 
@@ -33,6 +33,7 @@ These steps will ensure your development environment is configured properly, and
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016 (see [which version of Windows you have](https://binged.it/2xgQqRI)) 
 + [Visual Studio 2015 Update 3](https://www.visualstudio.com/en-us/news/releasenotes/vs2015-update3-vs)
 + [Windows 10 SDK - 10.0.14393.795](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
++ [Latest NVIDIA driver](http://www.nvidia.com/Download/index.aspx) (required for NVEncode)
 + [Azure SDK 3.0.1](https://www.microsoft.com/web/handlers/webpi.ashx/getinstaller/VWDOrVs2015AzurePack.appids) for Visual Studio 2015 (Optional, but required to use the Server Azure Deployment projects)
 
 ### Installing dependencies
@@ -42,33 +43,34 @@ These steps will ensure your development environment is configured properly, and
 Run `.\setup.cmd` from the command line. This will install and configure the following:
 
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
-+ [This patch](.\WebRTCLibs\nvencoder.patch), which adds nvencode support to webrtc, and will be applied to the above
-+ 32bit and 64bit Debug and Release libraries for DirectX Toolkit
-+ [WebRTC-UWP](https://github.com/webrtc-uwp/webrtc-uwp-sdk) M54 synced release for UWP-based clients (Hololens)
++ [WebRTC patch](./Libraries/WebRTC/3dtoolkit_upgrades.patch) and [WebRTC third_party patch](./Libraries/WebRTC/third_party_nvpipe.patch), which adds nvencode support, frame prediction, video frame updates and native buffers to webrtc. These will be applied to the above
++ Pre-built [NvPipe library](https://github.com/anderm/NvPipe/tree/low-latency-optimization) used in our WebRTC patch to enable NVIDIA-accelerated zero latency video compression
++ [CUDA Toolkit 9.1](https://developer.nvidia.com/cuda-downloads) pre-built Release libraries used by NvPipe - cudart64_91 and nvToolsExt64_1
++ 32bit and 64bit Debug and Release libraries for DirectX Toolkit 
++ Release libraries for OpenGL - Freeglut, Glew and glext
++ [WebRTC-UWP](https://github.com/anderm/webrtc-uwp-sdk/tree/media-stream-source) M58 synced release for UWP-based clients (Hololens)
 
 Once you see `Libraries retrieved and up to date` you may proceed.
 
 ### The actual build
 
-> Note: To build the unity client library, you must use `Release` and `x86` for the desired configuration.
-
 + Open [the 3dtoolkit solution](./3DStreamingToolKit.sln) in Visual Studio
-+ Build the solution (Build -> Build Solution) in the desired configuration (Build -> Configuration Manager -> Dropdowns at the top)
++ Build the solution (Build -> Build Solution) in the desired configuration (Build -> Configuration Manager -> Dropdowns at the top). We encourage using  `Release` and `x64`.
 + Done!
+> Note: We no longer support x86 server builds that are using nvencode. This is due to 32-bit support gradually being deprecated/removed from CUDA. 
 
 If you're seeing errors, check out the [troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new).
 
 ## Build output
 
-After you've built the solution, you'll likely want to start one sample server implementation, and one sample client implementation. These are applications that we've build to demonstrate the behaviors the toolkit provides.
+After you've built the solution, you'll likely want to start one sample server implementation, and one sample client implementation. We've provided example client and server applications to demonstrate the behaviors the toolkit provides.
 
-> Note: We advise you to try `Spinning Cube` and `Win32Client` to begin, as these are the simpliest sample implementations.
+> Note: We advise you to try `Spinning Cube` and `StreamingDirectxClient` to begin, as these are the simpliest sample implementations.
 
-Here's a table illustrating where each sample implementation will be built to. To run one server and one client, navigate to that location and start the `exe`.
+To run one server and one client, navigate to the location under `Build\<Platform>\<Configuration>\` and start the `exe`.To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x64`.
 
-> Note: the following table describes the location under `Build\<Platform>\<Configuration>\` where a sample can be found. To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x86`.
 
-Once you start both a server and client implementation, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
+Once you start both a server and client implementation, you will need to give it a signaling server. If you need to set one up, please see our [wiki on Signaling Service](https://github.com/CatalystCode/3dtoolkit/wiki/Signaling-Service) for an easy local or cloud-based implementation. After connecting, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
 
 ## Next Steps
 
@@ -84,6 +86,7 @@ These resources will be critical to your success in configuring and scaling appl
 + [Building WebRTC from source](https://github.com/CatalystCode/3dtoolkit/wiki/Building-WebRTC-from-source)
 + [WebRTC Homepage](https://webrtc.org/)
 + [NVEncode Homepage](https://developer.nvidia.com/nvidia-video-codec-sdk)
++ [NvPipe original source](https://github.com/NVIDIA/NvPipe)
 
 ## License
 

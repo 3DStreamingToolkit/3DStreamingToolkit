@@ -13,8 +13,7 @@ public:
 		shared_ptr<WebRTCConfig> webrtc_config,
 		scoped_refptr<PeerConnectionFactoryInterface> peer_factory,
 		const function<void(const string&)>& send_func,
-		ID3D11Device* d3d_device,
-		bool enable_software_encoder = false);
+		ID3D11Device* d3d_device);
 
 	void SendFrame(ID3D11Texture2D* frame_buffer, int64_t prediction_time_stamp = -1);
 
@@ -26,6 +25,5 @@ protected:
 
 private:
 	ID3D11Device* d3d_device_;
-	bool enable_software_encoder_;
 	DirectXBufferCapturer* capturer_;
 };

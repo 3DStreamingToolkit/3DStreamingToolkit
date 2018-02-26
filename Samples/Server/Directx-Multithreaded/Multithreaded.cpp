@@ -390,6 +390,7 @@ SceneParamsStatic           g_StaticParamsMirror[g_iNumMirrors];
 #ifdef TEST_RUNNER
 VideoTestRunner*					g_videoTestRunner = nullptr;
 #else
+
 // Remote peer data
 struct RemotePeerData
 {
@@ -408,11 +409,17 @@ struct RemotePeerData
 	// The eye vector used in camera transform
 	DirectX::XMVECTORF32			eyeVector;
 
-	// The view-projection matrix for left eye used in camera transform
-	DirectX::XMFLOAT4X4				viewProjectionMatrixLeft;
+	// The projection matrix for left eye used in camera transform
+	DirectX::XMFLOAT4X4				projectionMatrixLeft;
 
-	// The view-projection matrix for right eye used in camera transform
-	DirectX::XMFLOAT4X4				viewProjectionMatrixRight;
+	// The view matrix for left eye used in camera transform
+	DirectX::XMFLOAT4X4				viewMatrixLeft;
+
+	// The projection matrix for right eye used in camera transform
+	DirectX::XMFLOAT4X4				projectionMatrixRight;
+
+	// The view matrix for right eye used in camera transform
+	DirectX::XMFLOAT4X4				viewMatrixRight;
 
 	// The timestamp used for frame synchronization in stereo mode
 	int64_t							lastTimestamp;
@@ -434,6 +441,7 @@ struct RemotePeerData
 };
 
 std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
+
 #endif // TEST_RUNNER
 
 //--------------------------------------------------------------------------------------
@@ -590,9 +598,7 @@ bool AppMain(BOOL stopping)
 	rtc::InitializeSSL();
 
 	// Initializes the conductor.
-	MultiPeerConductor cond(webrtcConfig,
-		DXUTGetD3D11Device(),
-		nvEncConfig->use_software_encoding);
+	MultiPeerConductor cond(webrtcConfig, DXUTGetD3D11Device());
 
 	// Sets main window to update UI.
 	cond.SetMainWindow(&wnd);
@@ -688,49 +694,99 @@ bool AppMain(BOOL stopping)
 			}
 			else if (strcmp(type, "camera-transform-stereo") == 0)
 			{
-				// Parses the left view projection matrix.
+				// Parses the left projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						peerData->viewProjectionMatrixLeft.m[i][j] = stof(token);
+						projectionMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view projection matrix.
+				// Parses the left view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						peerData->viewProjectionMatrixRight.m[i][j] = stof(token);
+						viewMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
+				// Parses the right projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						projectionMatrixRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewMatrixRight.m[i][j] = stof(token);
+					}
+				}
+
+				peerData->projectionMatrixLeft = projectionMatrixLeft;
+				peerData->viewMatrixLeft = viewMatrixLeft;
+				peerData->projectionMatrixRight = projectionMatrixRight;
+				peerData->viewMatrixRight = viewMatrixRight;
 				peerData->isNew = true;
 			}
 			else if (strcmp(type, "camera-transform-stereo-prediction") == 0)
 			{
-				// Parses the left view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionLeft;
+				// Parses the left projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionLeft.m[i][j] = stof(token);
+						projectionMatrixLeft.m[i][j] = stof(token);
 					}
 				}
 
-				// Parses the right view projection matrix.
-				DirectX::XMFLOAT4X4 viewProjectionRight;
+				// Parses the left view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixLeft;
 				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < 4; j++)
 					{
 						getline(datastream, token, ',');
-						viewProjectionRight.m[i][j] = stof(token);
+						viewMatrixLeft.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right projection matrix.
+				DirectX::XMFLOAT4X4 projectionMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						projectionMatrixRight.m[i][j] = stof(token);
+					}
+				}
+
+				// Parses the right view matrix.
+				DirectX::XMFLOAT4X4 viewMatrixRight;
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						getline(datastream, token, ',');
+						viewMatrixRight.m[i][j] = stof(token);
 					}
 				}
 
@@ -740,8 +796,10 @@ bool AppMain(BOOL stopping)
 				if (timestamp != peerData->lastTimestamp)
 				{
 					peerData->lastTimestamp = timestamp;
-					peerData->viewProjectionMatrixLeft = viewProjectionLeft;
-					peerData->viewProjectionMatrixRight = viewProjectionRight;
+					peerData->projectionMatrixLeft = projectionMatrixLeft;
+					peerData->viewMatrixLeft = viewMatrixLeft;
+					peerData->projectionMatrixRight = projectionMatrixRight;
+					peerData->viewMatrixRight = viewMatrixRight;
 					peerData->isNew = true;
 				}
 			}
@@ -803,10 +861,18 @@ bool AppMain(BOOL stopping)
 							XMFLOAT4X4 id;
 							XMStoreFloat4x4(&id, XMMatrixIdentity());
 							g_CameraResources.SetViewMatrix(id, id);
-							g_CameraResources.SetProjMatrix(
-								peerData->viewProjectionMatrixLeft,
-								peerData->viewProjectionMatrixRight);
 
+							XMFLOAT4X4 leftProjMatrix;
+							XMStoreFloat4x4(
+								&leftProjMatrix,
+								XMLoadFloat4x4(&peerData->projectionMatrixLeft) * XMLoadFloat4x4(&peerData->viewMatrixLeft));
+
+							XMFLOAT4X4 rightProjMatrix;
+							XMStoreFloat4x4(
+								&rightProjMatrix,
+								XMLoadFloat4x4(&peerData->projectionMatrixRight) * XMLoadFloat4x4(&peerData->viewMatrixRight));
+
+							g_CameraResources.SetProjMatrix(leftProjMatrix, rightProjMatrix);
 							g_Camera.FrameMove(0);
 							DXUTRender3DEnvironment();
 							peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);

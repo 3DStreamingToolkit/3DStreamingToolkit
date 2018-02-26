@@ -94,7 +94,6 @@ private:
 	PeerConnectionClient signalling_client_;
 	shared_ptr<WebRTCConfig> webrtc_config_;
 	ComPtr<ID3D11Device> d3d_device_;
-	bool enable_software_encoder_;
 	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
 	map<int, scoped_refptr<DirectXPeerConductor>> connected_peers_;
 	queue<MessageEntry> message_queue_;

@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.Toolkit.ThreeD;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
-using Microsoft.Toolkit.ThreeD;
 
 #if !UNITY_EDITOR
 using Org.WebRtc;
@@ -36,8 +36,10 @@ public class ControlScript : MonoBehaviour
 	public HolographicStatus HoloStatus;
 
 #if !UNITY_EDITOR
-    private Matrix4x4 leftViewProjection;
-    private Matrix4x4 rightViewProjection;
+    private Matrix4x4 leftProjection;
+    private Matrix4x4 leftView;
+    private Matrix4x4 rightProjection;
+    private Matrix4x4 rightView;
     private string cameraTransformMsg;
     private WebRtcControl _webRtcControl;
     
@@ -49,9 +51,9 @@ public class ControlScript : MonoBehaviour
 #if !UNITY_EDITOR
     private MediaVideoTrack _peerVideoTrack;
 #endif
-	#endregion
+    #endregion
 
-	void Awake()
+    void Awake()
     {
     }
     
@@ -199,22 +201,28 @@ public class ControlScript : MonoBehaviour
     void Update()
     {
 #if !UNITY_EDITOR
-        leftViewProjection = LeftCamera.cullingMatrix;
-        rightViewProjection = RightCamera.cullingMatrix;
+        leftProjection = LeftCamera.projectionMatrix;
+        leftView = LeftCamera.worldToCameraMatrix;
+        rightProjection = RightCamera.projectionMatrix;
+        rightView = RightCamera.worldToCameraMatrix;
 
         // Builds the camera transform message.
-        var leftCameraTransform = "";
-        var rightCameraTransform = "";
+        var leftProjectionCameraTransform = "";
+        var leftViewCameraTransform = "";
+        var rightProjectionCameraTransform = "";
+        var rightViewCameraTransform = "";
         for (int i = 0; i < 4; i++)
         {
             for (int j = 0; j < 4; j++)
             {
-                leftCameraTransform += leftViewProjection[i, j] + ",";
-                rightCameraTransform += rightViewProjection[i, j] + ",";
+                leftProjectionCameraTransform += leftProjection[i, j] + ",";
+                leftViewCameraTransform += leftView[i, j] + ",";
+                rightProjectionCameraTransform += rightProjection[i, j] + ",";
+                rightViewCameraTransform += rightView[i, j] + ",";
             }
         }
 
-        var cameraTransformBody = leftCameraTransform + rightCameraTransform;
+        var cameraTransformBody = leftProjectionCameraTransform + leftViewCameraTransform + rightProjectionCameraTransform + rightViewCameraTransform;
 
         // Adds dummy prediction timestamp.
         cameraTransformBody += timestamp++;

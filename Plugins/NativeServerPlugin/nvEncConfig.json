@@ -1,17 +1,19 @@
 {
-  "useSoftwareEncoding": false,
+  /* Set the desired framerate for the renderer and the encoder. */
   "serverFrameCaptureFPS": 60,
   "NvencodeSettings": {
-    "bitrate": 5500000,
-    "minBitrate": 3500000,
-    "fps": 60,
-    "qp": 5,
-    "intraRefreshPeriod": 60,
-    "intraRefreshEnableFlag": true,
-    "intraRefreshDuration": 6,
-    "enableTemporalAQ": false,
-    "invalidateRefFramesEnableFlag": true,
-    "nvEncodeProfile": 2,
-    "nvEncodeProfile_comment": "nvEncodeProfile enums: 1 - NV_ENC_H264_PROFILE_MAIN_GUID; 2 - NV_ENC_PRESET_LOW_LATENCY_HQ_GUID; 3 - NV_ENC_H264_PROFILE_STEREO_GUID; 0 - NV_ENC_CODEC_PROFILE_AUTOSELECT_GUID"
+    /* Setup the average and min bitrate for the encoder.
+    * WebRTC will modify the bitrate based on bandwidth but will never go below minBitrate.
+    * Use the Kush gauge for best quality: width * height * framerate * 4 * 0.07 
+    * Our mono samples are 1280x720 and stereo 2560x720 
+    * WARNING: Setting a high minBitrate can cause latency. */
+    "bitrate": 7741440,
+    "minBitrate": 3870720,
+    /* Setup an encoder that puts an IDR every 60 frames and the rest P-frames. 
+    * Set intraRefreshEnableFlag to enable/disable I-frames. 
+    * If flag is true, intraRefreshPeriod puts an I-frame every (n) number of frames. */
+    "idrPeriod": 60,
+    "intraRefreshPeriod": 30,
+    "intraRefreshEnableFlag": false
   }
 }

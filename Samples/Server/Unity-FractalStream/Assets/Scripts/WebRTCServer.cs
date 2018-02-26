@@ -168,10 +168,12 @@ namespace Microsoft.Toolkit.ThreeD
                             peerData.InitializeRenderTextures();
                         }
 
+                        // Resets to the default transform.
                         SetupActiveEyes(peerData.IsStereo.Value);
                         LeftEye.transform.position = leftEyeDefaultPosition;
                         LeftEye.transform.eulerAngles = leftEyeDefaultRotation;
                         LeftEye.ResetProjectionMatrix();
+
                         if (!peerData.IsStereo.Value)
                         {
                             LeftEye.targetTexture = peerData.LeftRenderTexture;
@@ -181,13 +183,42 @@ namespace Microsoft.Toolkit.ThreeD
                         }
                         else if (peerData.IsNew)
                         {
+                            // Sets render textures for both eyes.
                             LeftEye.targetTexture = peerData.LeftRenderTexture;
-                            LeftEye.projectionMatrix = peerData.LeftViewProjectionMatrix;
-                            LeftEye.Render();
-
                             RightEye.targetTexture = peerData.RightRenderTexture;
-                            RightEye.projectionMatrix = peerData.RightViewProjectionMatrix;
-                            RightEye.Render();
+
+                            // Updates left and right projection matrices.
+                            LeftEye.projectionMatrix = peerData.stereoLeftProjectionMatrix;
+                            RightEye.projectionMatrix = peerData.stereoRightProjectionMatrix;
+
+                            // Updates camera transform's position and rotation.
+                            // Converts from right-handed to left-handed coordinates.
+                            peerData.stereoLeftViewMatrix = Matrix4x4.Inverse(peerData.stereoLeftViewMatrix);
+                            peerData.stereoRightViewMatrix = Matrix4x4.Inverse(peerData.stereoRightViewMatrix);
+
+                            // Updates transform's position for both eyes.
+                            this.LeftEye.transform.position = new Vector3(
+                                peerData.stereoLeftViewMatrix.m03,
+                                peerData.stereoLeftViewMatrix.m13,
+                                -peerData.stereoLeftViewMatrix.m23);
+
+                            this.RightEye.transform.position = new Vector3(
+                                peerData.stereoRightViewMatrix.m03,
+                                peerData.stereoRightViewMatrix.m13,
+                                -peerData.stereoRightViewMatrix.m23);
+
+                            // Updates transform's rotation for both eyes.
+                            Quaternion leftQ = QuaternionFromMatrix(peerData.stereoLeftViewMatrix);
+                            this.LeftEye.transform.rotation = new Quaternion(
+                                -leftQ.x, -leftQ.y, leftQ.z, leftQ.w);
+
+                            Quaternion rightQ = QuaternionFromMatrix(peerData.stereoRightViewMatrix);
+                            this.RightEye.transform.rotation = new Quaternion(
+                                -rightQ.x, -rightQ.y, rightQ.z, rightQ.w);
+
+                            // Manually render to textures for both eyes.
+                            this.LeftEye.Render();
+                            this.RightEye.Render();
                         }
                     }
                 }
@@ -378,24 +409,28 @@ namespace Microsoft.Toolkit.ThreeD
                         {
                             string[] coords = camera.Split(',');
                             int index = 0;
-                            Matrix4x4 leftMatrix = Matrix4x4.identity;
-                            Matrix4x4 rightMatrix = Matrix4x4.identity;
+                            Matrix4x4 leftProjectionMatrix = Matrix4x4.identity;
+                            Matrix4x4 leftViewMatrix = Matrix4x4.identity;
+                            Matrix4x4 rightProjectionMatrix = Matrix4x4.identity;
+                            Matrix4x4 rightViewMatrix = Matrix4x4.identity;
                             for (int i = 0; i < 4; i++)
                             {
                                 for (int j = 0; j < 4; j++)
                                 {
-                                    // We are receiving 32 values for the left/right matrix.
-                                    // The first 16 are for left followed by the right matrix.
-                                    rightMatrix[i, j] = float.Parse(coords[16 + index]);
-                                    leftMatrix[i, j] = float.Parse(coords[index++]);
+                                    rightViewMatrix[i, j] = float.Parse(coords[48 + index]);
+                                    rightProjectionMatrix[i, j] = float.Parse(coords[32 + index]);
+                                    leftViewMatrix[i, j] = float.Parse(coords[16 + index]);
+                                    leftProjectionMatrix[i, j] = float.Parse(coords[index++]);
                                 }
                             }
 
-                            peerData.LeftViewProjectionMatrix = leftMatrix;
-                            peerData.RightViewProjectionMatrix = rightMatrix;
+                            peerData.stereoLeftProjectionMatrix = leftProjectionMatrix;
+                            peerData.stereoLeftViewMatrix = leftViewMatrix;
+                            peerData.stereoRightProjectionMatrix = rightProjectionMatrix;
+                            peerData.stereoRightViewMatrix = rightViewMatrix;
                             peerData.IsNew = true;
                         }
-                        
+
                         break;
 
                     case "camera-transform-stereo-prediction":
@@ -405,28 +440,32 @@ namespace Microsoft.Toolkit.ThreeD
                             string[] coords = camera.Split(',');
 
                             // Parse the prediction timestamp from the message body.
-                            long timestamp = long.Parse(coords[32]);
+                            long timestamp = long.Parse(coords[64]);
 
                             if (timestamp != peerData.LastTimestamp)
                             {
                                 peerData.LastTimestamp = timestamp;
 
                                 int index = 0;
-                                Matrix4x4 leftMatrix = Matrix4x4.identity;
-                                Matrix4x4 rightMatrix = Matrix4x4.identity;
+                                Matrix4x4 leftProjectionMatrix = Matrix4x4.identity;
+                                Matrix4x4 leftViewMatrix = Matrix4x4.identity;
+                                Matrix4x4 rightProjectionMatrix = Matrix4x4.identity;
+                                Matrix4x4 rightViewMatrix = Matrix4x4.identity;
                                 for (int i = 0; i < 4; i++)
                                 {
                                     for (int j = 0; j < 4; j++)
                                     {
-                                        // We are receiving 32 values for the left/right matrix.
-                                        // The first 16 are for left followed by the right matrix.
-                                        rightMatrix[i, j] = float.Parse(coords[16 + index]);
-                                        leftMatrix[i, j] = float.Parse(coords[index++]);
+                                        rightViewMatrix[i, j] = float.Parse(coords[48 + index]);
+                                        rightProjectionMatrix[i, j] = float.Parse(coords[32 + index]);
+                                        leftViewMatrix[i, j] = float.Parse(coords[16 + index]);
+                                        leftProjectionMatrix[i, j] = float.Parse(coords[index++]);
                                     }
                                 }
 
-                                peerData.LeftViewProjectionMatrix = leftMatrix;
-                                peerData.RightViewProjectionMatrix = rightMatrix;
+                                peerData.stereoLeftProjectionMatrix = leftProjectionMatrix;
+                                peerData.stereoLeftViewMatrix = leftViewMatrix;
+                                peerData.stereoRightProjectionMatrix = rightProjectionMatrix;
+                                peerData.stereoRightViewMatrix = rightViewMatrix;
                                 peerData.IsNew = true;
                             }
                         }
@@ -472,7 +511,7 @@ namespace Microsoft.Toolkit.ThreeD
             {
                 int peerId = peer.Key;
                 RemotePeerData peerData = peer.Value;
-                if (peerData.LeftRenderTexture)
+                if (peerData.LeftRenderTexture && (!peerData.IsStereo.Value || peerData.IsNew))
                 {
                     Plugin.SendFrame(
                         peerId,
@@ -484,6 +523,22 @@ namespace Microsoft.Toolkit.ThreeD
                     peerData.IsNew = false;
                 }
             }
+        }
+
+        /// <summary>
+        /// From: https://answers.unity.com/questions/11363/converting-matrix4x4-to-quaternion-vector3.html
+        /// </summary>
+        public static Quaternion QuaternionFromMatrix(Matrix4x4 m)
+        {
+            Quaternion q = new Quaternion();
+            q.w = Mathf.Sqrt(Mathf.Max(0, 1 + m[0, 0] + m[1, 1] + m[2, 2])) / 2;
+            q.x = Mathf.Sqrt(Mathf.Max(0, 1 + m[0, 0] - m[1, 1] - m[2, 2])) / 2;
+            q.y = Mathf.Sqrt(Mathf.Max(0, 1 - m[0, 0] + m[1, 1] - m[2, 2])) / 2;
+            q.z = Mathf.Sqrt(Mathf.Max(0, 1 - m[0, 0] - m[1, 1] + m[2, 2])) / 2;
+            q.x *= Mathf.Sign(q.x * (m[2, 1] - m[1, 2]));
+            q.y *= Mathf.Sign(q.y * (m[0, 2] - m[2, 0]));
+            q.z *= Mathf.Sign(q.z * (m[1, 0] - m[0, 1]));
+            return q;
         }
 
         /// <summary>
@@ -517,14 +572,24 @@ namespace Microsoft.Toolkit.ThreeD
             public Vector3 EyeVector { get; set; }
 
             /// <summary>
-            /// The view-projection matrix for left eye used in camera transform.
+            /// The left stereo eye projection as determined by client control
             /// </summary>
-            public Matrix4x4 LeftViewProjectionMatrix { get; set; }
+            public Matrix4x4 stereoLeftProjectionMatrix = Matrix4x4.identity;
 
             /// <summary>
-            /// The view-projection matrix for right eye used in camera transform.
+            /// The left stereo eye view as determined by client control
             /// </summary>
-            public Matrix4x4 RightViewProjectionMatrix { get; set; }
+            public Matrix4x4 stereoLeftViewMatrix = Matrix4x4.identity;
+
+            /// <summary>
+            /// The right stereo eye projection as determined by client control
+            /// </summary>
+            public Matrix4x4 stereoRightProjectionMatrix = Matrix4x4.identity;
+
+            /// <summary>
+            /// The right stereo eye view as determined by client control
+            /// </summary>
+            public Matrix4x4 stereoRightViewMatrix = Matrix4x4.identity;
 
             /// <summary>
             /// The timestamp used for frame synchronization in stereo mode.

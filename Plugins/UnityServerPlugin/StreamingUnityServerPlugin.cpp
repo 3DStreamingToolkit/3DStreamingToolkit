@@ -275,10 +275,7 @@ void InitWebRTC()
 	s_port = webrtcConfig->port;
 
 	// Initializes the conductor.
-	s_cond.reset(new MultiPeerConductor(
-		webrtcConfig,
-		s_Device.Get(),
-		nvEncConfig->use_software_encoding));
+	s_cond.reset(new MultiPeerConductor(webrtcConfig, s_Device.Get()));
 
 	// Registers observer to update Unity's window UI.
 	s_cond->PeerConnection().RegisterObserver(&s_clientObserver);

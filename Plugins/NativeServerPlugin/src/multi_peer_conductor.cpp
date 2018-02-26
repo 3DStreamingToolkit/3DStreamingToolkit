@@ -8,7 +8,6 @@ MultiPeerConductor::MultiPeerConductor(shared_ptr<WebRTCConfig> config,
 	bool enable_software_encoder) :
 	webrtc_config_(config),
 	d3d_device_(d3d_device),
-	enable_software_encoder_(enable_software_encoder),
 	main_window_(nullptr)
 {
 	signalling_client_.RegisterObserver(this);
@@ -89,8 +88,7 @@ void MultiPeerConductor::OnPeerConnected(int id, const string& name)
 			message_queue_.push(MessageEntry(id, message));
 			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
 		},
-		d3d_device_.Get(),
-		enable_software_encoder_);
+		d3d_device_.Get());
 
 	connected_peers_[id]->SignalIceConnectionChange.connect(this, &MultiPeerConductor::OnIceConnectionChange);
 	connected_peers_[id]->SignalDataChannelMessage.connect(this, &MultiPeerConductor::HandleDataChannelMessage);

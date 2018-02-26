@@ -1,11 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
-    <LibraryPath>$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(MSBuildThisFileDirectory)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Command>
+        IF NOT EXIST "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" (
+        echo Pre-built libraries are missing, did you run setup.cmd?
+        )
+        
+        xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\cudart64_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)" </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+   <ItemDefinitionGroup Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(SolutionDir)\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(SolutionDir)\Libraries\WebRTC\headers;$(SolutionDir)\Libraries\Freeglut\include\GL;$(SolutionDir)\Libraries\glext\include\GL;$(SolutionDir)\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\..\Libraries\SignalingClient\exports.props" Condition="$(ThreeDToolkit_Ignore_NativeServerPlugin_All)!=true and $(ThreeDToolkit_Ignore_NativeServerPlugin_Deps)!=true" />

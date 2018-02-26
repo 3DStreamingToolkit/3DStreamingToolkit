@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -25,19 +17,6 @@
     <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -56,12 +35,6 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -72,39 +45,12 @@
     <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\StreamingNativeServerPlugin\</OutDir>
     <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\StreamingNativeServerPlugin\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Lib />
-    <Lib />
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -112,7 +58,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -121,29 +67,6 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Lib />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;WIN32;%(PreprocessorDefinitions);</PreprocessorDefinitions>
-      <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <UndefinePreprocessorDefinitions>
-      </UndefinePreprocessorDefinitions>
-    </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib />
@@ -157,7 +80,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -173,10 +96,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pch.h</PrecompiledHeaderFile>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -185,6 +104,7 @@
     <ClCompile Include="src\buffer_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\directx_buffer_capturer.cpp" />
+	<ClCompile Include="src\opengl_buffer_capturer.cpp" />
     <ClCompile Include="src\directx_peer_conductor.cpp" />
     <ClCompile Include="src\multi_peer_conductor.cpp" />
     <ClCompile Include="src\peer_conductor.cpp" />
@@ -195,6 +115,7 @@
     <ClInclude Include="inc\buffer_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\directx_buffer_capturer.h" />
+    <ClInclude Include="inc\opengl_buffer_capturer.h" />	
     <ClInclude Include="inc\directx_peer_conductor.h" />
     <ClInclude Include="inc\multi_peer_conductor.h" />
     <ClInclude Include="inc\peer_conductor.h" />
