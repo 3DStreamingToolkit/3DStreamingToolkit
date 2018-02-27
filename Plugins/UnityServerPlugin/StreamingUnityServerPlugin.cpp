@@ -287,10 +287,10 @@ void InitWebRTC()
 	{
 		ULOG(INFO, message.c_str());
 
-		// Marshal to main thread.
-		s_rtcMainThread->Invoke<void>(RTC_FROM_HERE, [&] {
+		if (s_callbackMap.onDataChannelMessage)
+		{
 			(*s_callbackMap.onDataChannelMessage)(peerId, message.c_str());
-		});
+		}
 	});
 
 	s_cond->SetDataChannelMessageHandler(dataChannelMessageHandler);
