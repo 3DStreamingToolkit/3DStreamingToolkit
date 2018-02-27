@@ -326,11 +326,25 @@ void ClientMainWindow::OnPaint()
 			// Starts rendering.
 			render_target_->BeginDraw();
 
+#ifdef UNITY_UV_STARTS_AT_TOP
+			render_target_->SetTransform(
+				D2D1::Matrix3x2F::Scale(
+					1.0f,
+					-1.0f,
+					D2D1::Point2F((desRect.right - desRect.left) / 2, (desRect.bottom - desRect.top) / 2))
+			);
+#endif // UNITY_UV_STARTS_AT_TOP
+
 			// Renders the video frame.
 			render_target_->DrawBitmap(bitmap, desRect);
 
 			// Draws the fps info.
 			wsprintf(fps_text_, L"FPS: %d", fps);
+
+#ifdef UNITY_UV_STARTS_AT_TOP
+			render_target_->SetTransform(D2D1::Matrix3x2F::Identity());
+#endif // UNITY_UV_STARTS_AT_TOP
+
 			render_target_->DrawText(
 				fps_text_,
 				ARRAYSIZE(fps_text_) - 1,
