@@ -6,7 +6,7 @@
 #include <string>
 #include <atomic>
 
-#include "directx_peer_conductor.h"
+#include "opengl_peer_conductor.h"
 #include "main_window.h"
 #include "peer_connection_client.h"
 
@@ -20,18 +20,15 @@ using namespace rtc;
 using namespace webrtc;
 using namespace sigslot;
 
-class MultiPeerConductor : public PeerConnectionClientObserver,
+class OpenGLMultiPeerConductor : public PeerConnectionClientObserver,
 	public MessageHandler,
 	public Runnable,
 	public MainWindowCallback,
 	public has_slots<>
 {
 public:
-	MultiPeerConductor(shared_ptr<WebRTCConfig> config,
-		ID3D11Device* d3d_device,
-		bool enable_software_encoder = false);
-
-	~MultiPeerConductor();
+	OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> config);
+	~OpenGLMultiPeerConductor();
 
 	// Connect the signalling implementation to the signalling server
 	void ConnectSignallingAsync(const string& client_name);
@@ -61,7 +58,7 @@ public:
 
 	virtual void Run(Thread* thread) override;
 
-	const map<int, scoped_refptr<DirectXPeerConductor>>& Peers() const;
+	const map<int, scoped_refptr<OpenGLPeerConductor>>& Peers() const;
 
 	PeerConnectionClient& PeerConnection();
 
@@ -93,9 +90,8 @@ private:
 	
 	PeerConnectionClient signalling_client_;
 	shared_ptr<WebRTCConfig> webrtc_config_;
-	ComPtr<ID3D11Device> d3d_device_;
 	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
-	map<int, scoped_refptr<DirectXPeerConductor>> connected_peers_;
+	map<int, scoped_refptr<OpenGLPeerConductor>> connected_peers_;
 	queue<MessageEntry> message_queue_;
 	atomic_bool should_process_queue_;
 	unique_ptr<Thread> process_thread_;

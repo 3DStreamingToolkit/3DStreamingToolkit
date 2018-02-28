@@ -24,7 +24,7 @@
 
 #include "config_parser.h"
 #include "flagdefs.h"
-#include "multi_peer_conductor.h"
+#include "directx_multi_peer_conductor.h"
 #include "server_main_window.h"
 
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
@@ -74,7 +74,7 @@ static rtc::Thread*					s_rtcMainThread;
 static std::string					s_server				= "signalingserveruri";
 static uint32_t						s_port					= 3000;
 static bool							s_closing				= false;
-static std::shared_ptr<MultiPeerConductor> s_cond;
+static std::shared_ptr<DirectXMultiPeerConductor> s_cond;
 
 typedef void(__stdcall*NoParamFuncType)();
 typedef void(__stdcall*IntParamFuncType)(const int val);
@@ -275,7 +275,7 @@ void InitWebRTC()
 	s_port = webrtcConfig->port;
 
 	// Initializes the conductor.
-	s_cond.reset(new MultiPeerConductor(webrtcConfig, s_Device.Get()));
+	s_cond.reset(new DirectXMultiPeerConductor(webrtcConfig, s_Device.Get()));
 
 	// Registers observer to update Unity's window UI.
 	s_cond->PeerConnection().RegisterObserver(&s_clientObserver);

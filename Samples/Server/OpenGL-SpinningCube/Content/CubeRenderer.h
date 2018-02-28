@@ -1,29 +1,25 @@
 #pragma once
 
-#include <functional>
-#include <iostream>
-
-#include <freeglut.h>
-#include <glut.h>
-#include "glext.h"
+// Eye is at (0, 0, 1), looking at point (0, 0, 0) with the up-vector along the y-axis.
+static const DirectX::XMVECTORF32 kEye = { 0.0f, 0.0f, 1.0f, 0.0f };
+static const DirectX::XMVECTORF32 kLookAt = { 0.0f, 0.0f, 0.0f, 0.0f };
+static const DirectX::XMVECTORF32 kUp = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 namespace StreamingToolkitSample
 {
 	class CubeRenderer
 	{
 	public:
-												CubeRenderer(const std::function<void()>& capture_frame, int width, int height);
+											CubeRenderer(int width, int height);
 
-		static void								InitGLUT(int argc, char **argv);
-		static void								InitGL();
-		static void								Render(void);
-		static void								FirstRender(void);
-		static void								ToPerspective();
-		void									UpdateView(float eyeX, float eyeY, float eyeZ, float lookX, float lookY, float lookZ, float upX, float upY, float upZ);
-		static void								SetTargetFrameRate(int frameRate);
-		
-	private:
-		static void								InitGraphics();
-		static void								SetCamera();
+		void								Render();
+		void								ToPerspective();
+		void								UpdateView(const DirectX::XMVECTORF32& eye, const DirectX::XMVECTORF32& lookAt, const DirectX::XMVECTORF32& up);
+		void								SetCamera();
+
+		// Property accessors.
+		DirectX::XMVECTORF32				GetDefaultEyeVector() { return kEye; }
+		DirectX::XMVECTORF32				GetDefaultLookAtVector() { return kLookAt; }
+		DirectX::XMVECTORF32				GetDefaultUpVector() { return kUp; }
 	};
 }

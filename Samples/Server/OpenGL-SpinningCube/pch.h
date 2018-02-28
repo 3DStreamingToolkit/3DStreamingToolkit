@@ -11,8 +11,9 @@
 #include <memory.h>
 #include <tchar.h>
 
+// OpenGL Header Files
+#include <glew.h>
+
 // DirectX Header Files
-#include <d3d11_4.h>
-#include <d3dcompiler.h>
 #include <directxmath.h>
 #include <directxcolors.h>

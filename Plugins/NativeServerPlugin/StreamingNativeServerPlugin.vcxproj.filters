@@ -51,14 +51,20 @@
     </ClCompile>
     <ClCompile Include="src\opengl_buffer_capturer.cpp">
       <Filter>Source\StreamingToolkit</Filter>
-    </ClCompile>	
+    </ClCompile>
     <ClCompile Include="src\directx_peer_conductor.cpp">
       <Filter>Source\StreamingToolkit</Filter>
     </ClCompile>
-    <ClCompile Include="src\multi_peer_conductor.cpp">
+    <ClCompile Include="src\peer_conductor.cpp">
       <Filter>Source\webrtc</Filter>
     </ClCompile>
-    <ClCompile Include="src\peer_conductor.cpp">
+    <ClCompile Include="src\opengl_peer_conductor.cpp">
+      <Filter>Source\StreamingToolkit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\directx_multi_peer_conductor.cpp">
+      <Filter>Source\webrtc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\opengl_multi_peer_conductor.cpp">
       <Filter>Source\webrtc</Filter>
     </ClCompile>
   </ItemGroup>
@@ -93,14 +99,20 @@
     </ClInclude>
     <ClInclude Include="inc\opengl_buffer_capturer.h">
       <Filter>Headers\StreamingToolkit</Filter>
-    </ClInclude>	
+    </ClInclude>
     <ClInclude Include="inc\peer_conductor.h">
       <Filter>Headers\webrtc</Filter>
     </ClInclude>
     <ClInclude Include="inc\directx_peer_conductor.h">
       <Filter>Headers\StreamingToolkit</Filter>
     </ClInclude>
-    <ClInclude Include="inc\multi_peer_conductor.h">
+    <ClInclude Include="inc\opengl_peer_conductor.h">
+      <Filter>Headers\StreamingToolkit</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\directx_multi_peer_conductor.h">
+      <Filter>Headers\webrtc</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\opengl_multi_peer_conductor.h">
       <Filter>Headers\webrtc</Filter>
     </ClInclude>
   </ItemGroup>

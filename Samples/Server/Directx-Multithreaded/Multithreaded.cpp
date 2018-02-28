@@ -32,7 +32,7 @@
 #include "test_runner.h"
 #else // TEST_RUNNER
 #include "config_parser.h"
-#include "multi_peer_conductor.h"
+#include "directx_multi_peer_conductor.h"
 #include "server_main_window.h"
 #include "server_renderer.h"
 #include "service/render_service.h"
@@ -598,7 +598,7 @@ bool AppMain(BOOL stopping)
 	rtc::InitializeSSL();
 
 	// Initializes the conductor.
-	MultiPeerConductor cond(webrtcConfig, DXUTGetD3D11Device());
+	DirectXMultiPeerConductor cond(webrtcConfig, DXUTGetD3D11Device());
 
 	// Sets main window to update UI.
 	cond.SetMainWindow(&wnd);
