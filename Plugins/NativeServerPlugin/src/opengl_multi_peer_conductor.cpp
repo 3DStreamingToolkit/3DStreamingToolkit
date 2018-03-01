@@ -76,19 +76,6 @@ void OpenGLMultiPeerConductor::OnDisconnected()
 
 void OpenGLMultiPeerConductor::OnPeerConnected(int id, const string& name)
 {
-	connected_peers_[id] = new RefCountedObject<OpenGLPeerConductor>(id,
-		name,
-		webrtc_config_,
-		peer_factory_,
-		[&, id](const string& message)
-		{
-			message_queue_.push(MessageEntry(id, message));
-			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
-		});
-
-	connected_peers_[id]->SignalIceConnectionChange.connect(this, &OpenGLMultiPeerConductor::OnIceConnectionChange);
-	connected_peers_[id]->SignalDataChannelMessage.connect(this, &OpenGLMultiPeerConductor::HandleDataChannelMessage);
-
 	// Refresh the list if we're showing it.
 	if (main_window_ && main_window_->IsWindow() && main_window_->current_ui() == MainWindow::LIST_PEERS)
 	{
@@ -103,6 +90,23 @@ void OpenGLMultiPeerConductor::OnPeerDisconnected(int peer_id)
 
 void OpenGLMultiPeerConductor::OnMessageFromPeer(int peer_id, const string& message)
 {
+	if (connected_peers_.find(peer_id) == connected_peers_.end())
+	{
+		string peer_name = signalling_client_.peers().at(peer_id);
+		connected_peers_[peer_id] = new RefCountedObject<OpenGLPeerConductor>(peer_id,
+			peer_name,
+			webrtc_config_,
+			peer_factory_,
+			[&, peer_id](const string& message)
+		{
+			message_queue_.push(MessageEntry(peer_id, message));
+			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
+		});
+
+		connected_peers_[peer_id]->SignalIceConnectionChange.connect(this, &OpenGLMultiPeerConductor::OnIceConnectionChange);
+		connected_peers_[peer_id]->SignalDataChannelMessage.connect(this, &OpenGLMultiPeerConductor::HandleDataChannelMessage);
+	}
+
 	connected_peers_[peer_id]->HandlePeerMessage(message);
 }
 
