@@ -42,6 +42,12 @@ namespace Microsoft.Toolkit.ThreeD
         public static Vector3 DefaultUpVector = new Vector3(0, 1.0f, 0);
 
         /// <summary>
+        /// If clients don't send "stereo-rendering" message after this time,
+        /// the video stream will start in non-stereo mode.
+        /// </summary>
+        public static int StereoFlagWaitTime = 3000;
+
+        /// <summary>
         /// The left eye camera
         /// </summary>
         /// <remarks>
@@ -221,6 +227,17 @@ namespace Microsoft.Toolkit.ThreeD
                             this.RightEye.Render();
                         }
                     }
+                    else
+                    {
+                        // Forces non-stereo mode initialization.
+                        if (Environment.TickCount - peerData.startTick > StereoFlagWaitTime)
+                        {
+                            peerData.IsStereo = false;
+                            peerData.EyeVector = DefaultEyeVector;
+                            peerData.LookAtVector = DefaultLookAtVector;
+                            peerData.UpVector = DefaultUpVector;
+                        }
+                    }
                 }
 
                 StartCoroutine(SendFrame());
@@ -353,6 +370,7 @@ namespace Microsoft.Toolkit.ThreeD
                 if (!remotePeersData.TryGetValue(peerId, out peerData))
                 {
                     peerData = new RemotePeerData();
+                    peerData.startTick = Environment.TickCount;
                     remotePeersData.Add(peerId, peerData);
                 }
 
@@ -605,6 +623,11 @@ namespace Microsoft.Toolkit.ThreeD
             /// The render texture of right eye camera which we use to render.
             /// </summary>
             public RenderTexture RightRenderTexture { get; set; }
+
+            /// <summary>
+            /// The starting time.
+            /// </summary>
+            public long startTick { get; set; }
 
             /// <summary>
             /// Initializes render textures.

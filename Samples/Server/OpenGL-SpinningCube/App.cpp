@@ -12,6 +12,10 @@
 #include "service/render_service.h"
 #include "webrtc.h"
 
+// If clients don't send "stereo-rendering" message after this time,
+// the video stream will start in non-stereo mode.
+#define STEREO_FLAG_WAIT_TIME		3000
+
 // Required app libs
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "imm32.lib")
@@ -84,6 +88,9 @@ struct RemotePeerData
 
 	// Used for FPS limiter.
 	ULONGLONG						tick;
+
+	// The starting time.
+	ULONGLONG						startTick;
 };
 
 CubeRenderer*						g_cubeRenderer = nullptr;
@@ -232,32 +239,25 @@ bool AppMain(BOOL stopping)
 		int peerId,
 		const std::string& message)
 	{
+		// Returns if the remote peer data hasn't been initialized.
+		if (g_remotePeersData.find(peerId) == g_remotePeersData.end())
+		{
+			return;
+		}
+
 		char type[256];
 		char body[1024];
 		Json::Reader reader;
 		Json::Value msg = NULL;
 		reader.parse(message, msg, false);
-
-		// Retrieves remote peer data from map, create new if needed.
-		std::shared_ptr<RemotePeerData> peerData;
-		auto it = g_remotePeersData.find(peerId);
-		if (it != g_remotePeersData.end())
-		{
-			peerData = it->second;
-		}
-		else
-		{
-			peerData.reset(new RemotePeerData());
-			g_remotePeersData[peerId] = peerData;
-		}
-
+		std::shared_ptr<RemotePeerData> peerData = g_remotePeersData[peerId];
 		if (msg.isMember("type") && msg.isMember("body"))
 		{
 			strcpy(type, msg.get("type", "").asCString());
 			strcpy(body, msg.get("body", "").asCString());
 			std::istringstream datastream(body);
 			std::string token;
-			if (strcmp(type, "stereo-rendering") == 0)
+			if (strcmp(type, "stereo-rendering") == 0 && !peerData->renderTexture)
 			{
 				getline(datastream, token, ',');
 				peerData->isStereo = stoi(token) == 1;
@@ -330,53 +330,81 @@ bool AppMain(BOOL stopping)
 			for each (auto pair in cond.Peers())
 			{
 				auto peer = pair.second;
+
+				// Retrieves remote peer data from map, create new if needed.
+				std::shared_ptr<RemotePeerData> peerData;
 				auto it = g_remotePeersData.find(peer->Id());
-				if (it != g_remotePeersData.end())
+				if (it == g_remotePeersData.end())
 				{
-					RemotePeerData* peerData = it->second.get();
-					if (peerData->frameBuffer)
+					peerData.reset(new RemotePeerData());
+					peerData->startTick = GetTickCount64();
+					g_remotePeersData[peer->Id()] = peerData;
+				}
+				else
+				{
+					peerData = it->second;
+				}
+
+				if (!peerData->renderTexture)
+				{
+					// Forces non-stereo mode initialization.
+					if (GetTickCount64() - peerData->startTick >= STEREO_FLAG_WAIT_TIME)
 					{
-						if (!peerData->isStereo)
+						InitializeRenderBuffer(
+							peerData.get(),
+							serverConfig->server_config.width,
+							serverConfig->server_config.height,
+							false);
+
+						peerData->isStereo = false;
+						peerData->eyeVector = g_cubeRenderer->GetDefaultEyeVector();
+						peerData->lookAtVector = g_cubeRenderer->GetDefaultLookAtVector();
+						peerData->upVector = g_cubeRenderer->GetDefaultUpVector();
+						peerData->tick = GetTickCount64();
+					}
+				}
+				else
+				{
+					if (!peerData->isStereo)
+					{
+						// FPS limiter.
+						const int interval = 1000 / nvEncConfig->capture_fps;
+						ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
+						if (timeElapsed >= interval)
 						{
-							// FPS limiter.
-							const int interval = 1000 / nvEncConfig->capture_fps;
-							ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
-							if (timeElapsed >= interval)
-							{
-								peerData->tick = GetTickCount64() - timeElapsed + interval;
+							peerData->tick = GetTickCount64() - timeElapsed + interval;
 
-								// Updates camera based on remote peer's input data.
-								g_cubeRenderer->UpdateView(
-									peerData->eyeVector,
-									peerData->lookAtVector,
-									peerData->upVector);
+							// Updates camera based on remote peer's input data.
+							g_cubeRenderer->UpdateView(
+								peerData->eyeVector,
+								peerData->lookAtVector,
+								peerData->upVector);
 
-								// Main render.
-								glClearColor(0.0, 0.0, 0.0, 0.0);
-								glClearDepth(1.0f);
-								glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-								g_cubeRenderer->SetCamera();
-								glPushMatrix();
-								g_cubeRenderer->Render();
-								glPopMatrix();
-								g_cubeRenderer->ToPerspective();
-								glRasterPos2i(0, 0);
+							// Main render.
+							glClearColor(0.0, 0.0, 0.0, 0.0);
+							glClearDepth(1.0f);
+							glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+							g_cubeRenderer->SetCamera();
+							glPushMatrix();
+							g_cubeRenderer->Render();
+							glPopMatrix();
+							g_cubeRenderer->ToPerspective();
+							glRasterPos2i(0, 0);
 
-								// Reads frame buffer.
-								glReadPixels(
-									0,
-									0,
-									peerData->renderTextureWidth,
-									peerData->renderTextureHeight,
-									GL_RGBA, GL_UNSIGNED_BYTE,
-									peerData->colorBuffer.get());
+							// Reads frame buffer.
+							glReadPixels(
+								0,
+								0,
+								peerData->renderTextureWidth,
+								peerData->renderTextureHeight,
+								GL_RGBA, GL_UNSIGNED_BYTE,
+								peerData->colorBuffer.get());
 
-								// Sends frame.
-								peer->SendFrame(
-									peerData->colorBuffer.get(),
-									peerData->renderTextureWidth,
-									peerData->renderTextureHeight);
-							}
+							// Sends frame.
+							peer->SendFrame(
+								peerData->colorBuffer.get(),
+								peerData->renderTextureWidth,
+								peerData->renderTextureHeight);
 						}
 					}
 				}

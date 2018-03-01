@@ -39,6 +39,10 @@
 #include "webrtc.h"
 #endif // TEST_RUNNER
 
+// If clients don't send "stereo-rendering" message after this time,
+// the video stream will start in non-stereo mode.
+#define STEREO_FLAG_WAIT_TIME		3000
+
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -438,6 +442,9 @@ struct RemotePeerData
 
 	// Used for FPS limiter.
 	ULONGLONG						tick;
+
+	// The starting time.
+	ULONGLONG						startTick;
 };
 
 std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
@@ -611,32 +618,25 @@ bool AppMain(BOOL stopping)
 		int peerId,
 		const std::string& message)
 	{
+		// Returns if the remote peer data hasn't been initialized.
+		if (g_remotePeersData.find(peerId) == g_remotePeersData.end())
+		{
+			return;
+		}
+
 		char type[256];
 		char body[1024];
 		Json::Reader reader;
 		Json::Value msg = NULL;
 		reader.parse(message, msg, false);
-
-		// Retrieves remote peer data from map, create new if needed.
-		std::shared_ptr<RemotePeerData> peerData;
-		auto it = g_remotePeersData.find(peerId);
-		if (it != g_remotePeersData.end())
-		{
-			peerData = it->second;
-		}
-		else
-		{
-			peerData.reset(new RemotePeerData());
-			g_remotePeersData[peerId] = peerData;
-		}
-
+		std::shared_ptr<RemotePeerData> peerData = g_remotePeersData[peerId];
 		if (msg.isMember("type") && msg.isMember("body"))
 		{
 			strcpy(type, msg.get("type", "").asCString());
 			strcpy(body, msg.get("body", "").asCString());
 			std::istringstream datastream(body);
 			std::string token;
-			if (strcmp(type, "stereo-rendering") == 0)
+			if (strcmp(type, "stereo-rendering") == 0 && !peerData->renderTexture)
 			{
 				getline(datastream, token, ',');
 				peerData->isStereo = stoi(token) == 1;
@@ -827,57 +827,93 @@ bool AppMain(BOOL stopping)
 			for each (auto pair in cond.Peers())
 			{
 				auto peer = pair.second;
+
+				// Retrieves remote peer data from map, create new if needed.
+				std::shared_ptr<RemotePeerData> peerData;
 				auto it = g_remotePeersData.find(peer->Id());
-				if (it != g_remotePeersData.end())
+				if (it == g_remotePeersData.end())
 				{
-					RemotePeerData* peerData = it->second.get();
-					if (peerData->renderTexture)
+					peerData.reset(new RemotePeerData());
+					peerData->startTick = GetTickCount64();
+					g_remotePeersData[peer->Id()] = peerData;
+				}
+				else
+				{
+					peerData = it->second;
+				}
+
+				if (!peerData->renderTexture)
+				{
+					// Forces non-stereo mode initialization.
+					if (GetTickCount64() - peerData->startTick >= STEREO_FLAG_WAIT_TIME)
 					{
-						g_CameraResources.SetStereo(peerData->isStereo);
-						DXUTSetD3D11RenderTargetView(peerData->renderTargetView.Get());
-						DXUTSetD3D11DepthStencilView(peerData->depthStencilView.Get());
-						if (!peerData->isStereo)
+						InitializeRenderTexture(
+							peerData.get(),
+							serverConfig->server_config.width,
+							serverConfig->server_config.height,
+							false);
+
+						InitializeDepthStencilTexture(
+							peerData.get(),
+							serverConfig->server_config.width,
+							serverConfig->server_config.height,
+							false);
+
+						peerData->isStereo = false;
+						peerData->eyeVector = s_vDefaultEye;
+						peerData->lookAtVector = s_vDefaultLookAt;
+						peerData->upVector = s_vDefaultUp;
+						peerData->tick = GetTickCount64();
+
+						DXUTSetNoSwapChainPresent(true);
+					}
+				}
+				else
+				{
+					g_CameraResources.SetStereo(peerData->isStereo);
+					DXUTSetD3D11RenderTargetView(peerData->renderTargetView.Get());
+					DXUTSetD3D11DepthStencilView(peerData->depthStencilView.Get());
+					if (!peerData->isStereo)
+					{
+						// FPS limiter.
+						const int interval = 1000 / nvEncConfig->capture_fps;
+						ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
+						if (timeElapsed >= interval)
 						{
-							// FPS limiter.
-							const int interval = 1000 / nvEncConfig->capture_fps;
-							ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
-							if (timeElapsed >= interval)
-							{
-								peerData->tick = GetTickCount64() - timeElapsed + interval;
-								g_Camera.SetViewParams(
-									peerData->eyeVector,
-									peerData->lookAtVector,
-									peerData->upVector);
+							peerData->tick = GetTickCount64() - timeElapsed + interval;
+							g_Camera.SetViewParams(
+								peerData->eyeVector,
+								peerData->lookAtVector,
+								peerData->upVector);
 
-								g_Camera.FrameMove(0);
-								DXUTRender3DEnvironment();
-								peer->SendFrame(peerData->renderTexture.Get());
-							}
-						}
-						// In stereo rendering mode, we only update frame whenever
-						// receiving any input data.
-						else if (peerData->isNew)
-						{
-							XMFLOAT4X4 id;
-							XMStoreFloat4x4(&id, XMMatrixIdentity());
-							g_CameraResources.SetViewMatrix(id, id);
-
-							XMFLOAT4X4 leftProjMatrix;
-							XMStoreFloat4x4(
-								&leftProjMatrix,
-								XMLoadFloat4x4(&peerData->projectionMatrixLeft) * XMLoadFloat4x4(&peerData->viewMatrixLeft));
-
-							XMFLOAT4X4 rightProjMatrix;
-							XMStoreFloat4x4(
-								&rightProjMatrix,
-								XMLoadFloat4x4(&peerData->projectionMatrixRight) * XMLoadFloat4x4(&peerData->viewMatrixRight));
-
-							g_CameraResources.SetProjMatrix(leftProjMatrix, rightProjMatrix);
 							g_Camera.FrameMove(0);
 							DXUTRender3DEnvironment();
-							peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
-							peerData->isNew = false;
+							peer->SendFrame(peerData->renderTexture.Get());
 						}
+					}
+					// In stereo rendering mode, we only update frame whenever
+					// receiving any input data.
+					else if (peerData->isNew)
+					{
+						XMFLOAT4X4 id;
+						XMStoreFloat4x4(&id, XMMatrixIdentity());
+						g_CameraResources.SetViewMatrix(id, id);
+
+						XMFLOAT4X4 leftProjMatrix;
+						XMStoreFloat4x4(
+							&leftProjMatrix,
+							XMLoadFloat4x4(&peerData->projectionMatrixLeft) * XMLoadFloat4x4(&peerData->viewMatrixLeft));
+
+						XMFLOAT4X4 rightProjMatrix;
+						XMStoreFloat4x4(
+							&rightProjMatrix,
+							XMLoadFloat4x4(&peerData->projectionMatrixRight) * XMLoadFloat4x4(&peerData->viewMatrixRight));
+
+						g_CameraResources.SetProjMatrix(leftProjMatrix, rightProjMatrix);
+						g_Camera.FrameMove(0);
+						DXUTRender3DEnvironment();
+						peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
+						peerData->isNew = false;
 					}
 				}
 			}

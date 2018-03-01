@@ -20,7 +20,11 @@
 #endif // TEST_RUNNER
 
 // Position the cube two meters in front of user for image stabilization.
-#define FOCUS_POINT		-2.f
+#define FOCUS_POINT					-2.0f
+
+// If clients don't send "stereo-rendering" message after this time,
+// the video stream will start in non-stereo mode.
+#define STEREO_FLAG_WAIT_TIME		3000
 
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
@@ -103,6 +107,9 @@ struct RemotePeerData
 
 	// Used for FPS limiter.
 	ULONGLONG						tick;
+
+	// The starting time.
+	ULONGLONG						startTick;
 };
 
 std::map<int, std::shared_ptr<RemotePeerData>> g_remotePeersData;
@@ -206,32 +213,25 @@ bool AppMain(BOOL stopping)
 		int peerId,
 		const std::string& message)
 	{
+		// Returns if the remote peer data hasn't been initialized.
+		if (g_remotePeersData.find(peerId) == g_remotePeersData.end())
+		{
+			return;
+		}
+
 		char type[256];
 		char body[1024];
 		Json::Reader reader;
 		Json::Value msg = NULL;
 		reader.parse(message, msg, false);
-
-		// Retrieves remote peer data from map, create new if needed.
-		std::shared_ptr<RemotePeerData> peerData;
-		auto it = g_remotePeersData.find(peerId);
-		if (it != g_remotePeersData.end())
-		{
-			peerData = it->second;
-		}
-		else
-		{
-			peerData.reset(new RemotePeerData());
-			g_remotePeersData[peerId] = peerData;
-		}
-
+		std::shared_ptr<RemotePeerData> peerData = g_remotePeersData[peerId];
 		if (msg.isMember("type") && msg.isMember("body"))
 		{
 			strcpy(type, msg.get("type", "").asCString());
 			strcpy(body, msg.get("body", "").asCString());
 			std::istringstream datastream(body);
 			std::string token;
-			if (strcmp(type, "stereo-rendering") == 0)
+			if (strcmp(type, "stereo-rendering") == 0 && !peerData->renderTexture)
 			{
 				getline(datastream, token, ',');
 				peerData->isStereo = stoi(token) == 1;
@@ -421,52 +421,86 @@ bool AppMain(BOOL stopping)
 			for each (auto pair in cond.Peers())
 			{
 				auto peer = pair.second;
+
+				// Retrieves remote peer data from map, create new if needed.
+				std::shared_ptr<RemotePeerData> peerData;
 				auto it = g_remotePeersData.find(peer->Id());
-				if (it != g_remotePeersData.end())
+				if (it == g_remotePeersData.end())
 				{
-					RemotePeerData* peerData = it->second.get();
-					if (peerData->renderTexture)
+					peerData.reset(new RemotePeerData());
+					peerData->startTick = GetTickCount64();
+					g_remotePeersData[peer->Id()] = peerData;
+				}
+				else
+				{
+					peerData = it->second;
+				}
+
+				if (!peerData->renderTexture)
+				{
+					// Forces non-stereo mode initialization.
+					if (GetTickCount64() - peerData->startTick >= STEREO_FLAG_WAIT_TIME)
 					{
-						g_deviceResources->SetStereo(peerData->isStereo);
-						if (!peerData->isStereo)
+						InitializeRenderTexture(
+							peerData.get(),
+							serverConfig->server_config.width,
+							serverConfig->server_config.height,
+							false);
+
+						InitializeDepthStencilTexture(
+							peerData.get(),
+							serverConfig->server_config.width,
+							serverConfig->server_config.height,
+							false);
+
+						peerData->isStereo = false;
+						peerData->eyeVector = g_cubeRenderer->GetDefaultEyeVector();
+						peerData->lookAtVector = g_cubeRenderer->GetDefaultLookAtVector();
+						peerData->upVector = g_cubeRenderer->GetDefaultUpVector();
+						peerData->tick = GetTickCount64();
+					}
+				}
+				else
+				{
+					g_deviceResources->SetStereo(peerData->isStereo);
+					if (!peerData->isStereo)
+					{
+						// FPS limiter.
+						const int interval = 1000 / nvEncConfig->capture_fps;
+						ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
+						if (timeElapsed >= interval)
 						{
-							// FPS limiter.
-							const int interval = 1000 / nvEncConfig->capture_fps;
-							ULONGLONG timeElapsed = GetTickCount64() - peerData->tick;
-							if (timeElapsed >= interval)
-							{
-								peerData->tick = GetTickCount64() - timeElapsed + interval;
-								g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
-								g_cubeRenderer->UpdateView(
-									peerData->eyeVector,
-									peerData->lookAtVector,
-									peerData->upVector);
+							peerData->tick = GetTickCount64() - timeElapsed + interval;
+							g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, 0.f }));
+							g_cubeRenderer->UpdateView(
+								peerData->eyeVector,
+								peerData->lookAtVector,
+								peerData->upVector);
 
-								g_cubeRenderer->Render(peerData->renderTargetView.Get());
-								peer->SendFrame(peerData->renderTexture.Get());
-							}
-						}
-						// In stereo rendering mode, we only update frame whenever
-						// receiving any input data.
-						else if (peerData->isNew)
-						{
-							g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
-
-							DirectX::XMFLOAT4X4 leftMatrix;
-							XMStoreFloat4x4(
-								&leftMatrix,
-								XMLoadFloat4x4(&peerData->projectionMatrixLeft) * XMLoadFloat4x4(&peerData->viewMatrixLeft));
-
-							DirectX::XMFLOAT4X4 rightMatrix;
-							XMStoreFloat4x4(
-								&rightMatrix,
-								XMLoadFloat4x4(&peerData->projectionMatrixRight) * XMLoadFloat4x4(&peerData->viewMatrixRight));
-
-							g_cubeRenderer->UpdateView(leftMatrix, rightMatrix);
 							g_cubeRenderer->Render(peerData->renderTargetView.Get());
-							peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
-							peerData->isNew = false;
+							peer->SendFrame(peerData->renderTexture.Get());
 						}
+					}
+					// In stereo rendering mode, we only update frame whenever
+					// receiving any input data.
+					else if (peerData->isNew)
+					{
+						g_cubeRenderer->SetPosition(float3({ 0.f, 0.f, FOCUS_POINT }));
+
+						DirectX::XMFLOAT4X4 leftMatrix;
+						XMStoreFloat4x4(
+							&leftMatrix,
+							XMLoadFloat4x4(&peerData->projectionMatrixLeft) * XMLoadFloat4x4(&peerData->viewMatrixLeft));
+
+						DirectX::XMFLOAT4X4 rightMatrix;
+						XMStoreFloat4x4(
+							&rightMatrix,
+							XMLoadFloat4x4(&peerData->projectionMatrixRight) * XMLoadFloat4x4(&peerData->viewMatrixRight));
+
+						g_cubeRenderer->UpdateView(leftMatrix, rightMatrix);
+						g_cubeRenderer->Render(peerData->renderTargetView.Get());
+						peer->SendFrame(peerData->renderTexture.Get(), peerData->lastTimestamp);
+						peerData->isNew = false;
 					}
 				}
 			}
