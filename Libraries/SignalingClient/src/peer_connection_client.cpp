@@ -211,6 +211,26 @@ void PeerConnectionClient::DoConnect()
 	}
 }
 
+bool PeerConnectionClient::UpdateCapacity(int newCapacity)
+{
+	if (state_ != CONNECTED)
+	{
+		return false;
+	}
+
+	RTC_DCHECK(is_connected());
+	RTC_DCHECK(control_socket_->GetState() == rtc::Socket::CS_CLOSED);
+
+	onconnect_data_ = PrepareRequest("PUT",
+		"/capacity?peer_id=" + std::to_string(my_id_) + "&value=" + std::to_string(newCapacity),
+		{
+			{ "Host", server_address_.hostname() },
+			{ "Content-Length", std::to_string(0) }
+		});
+
+	return ConnectControlSocket();
+}
+
 bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
 {
 	if (state_ != CONNECTED)
