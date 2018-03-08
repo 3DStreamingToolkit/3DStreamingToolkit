@@ -323,7 +323,19 @@ bool PeerConnectionClient::Shutdown()
 		control_socket_->Close();
 	}
 
+	bool shouldFireSignal = false;
+
+	if (state_ == CONNECTED)
+	{
+		shouldFireSignal = true;
+	}
+
 	state_ = NOT_CONNECTED;
+
+	if (shouldFireSignal)
+	{
+		SignalDisconnected.emit();
+	}
 
 	return true;
 }
@@ -331,6 +343,13 @@ bool PeerConnectionClient::Shutdown()
 
 void PeerConnectionClient::Close()
 {
+	bool shouldFireSignal = false;
+
+	if (state_ == CONNECTED)
+	{
+		shouldFireSignal = true;
+	}
+
 	control_socket_->Close();
 	hanging_get_->Close();
 	onconnect_data_.clear();
@@ -343,6 +362,11 @@ void PeerConnectionClient::Close()
 
 	my_id_ = -1;
 	state_ = NOT_CONNECTED;
+
+	if (shouldFireSignal)
+	{
+		SignalDisconnected.emit();
+	}
 }
 
 bool PeerConnectionClient::ConnectControlSocket()
@@ -560,6 +584,8 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			{
 				heartbeat_get_->Connect(server_address_);
 			}
+
+			SignalConnected.emit();
 		}
 	}
 }

@@ -64,6 +64,12 @@ public:
 
 	~PeerConnectionClient();
 
+	// Indicates the client has connected
+	sigslot::signal0<sigslot::multi_threaded_local> SignalConnected;
+
+	// Indicates the client has disconnected
+	sigslot::signal0<sigslot::multi_threaded_local> SignalDisconnected;
+
 	int id() const;
 
 	bool is_connected() const;
