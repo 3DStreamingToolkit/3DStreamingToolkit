@@ -12,6 +12,11 @@ OpenGLMultiPeerConductor::OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> conf
 	signalling_client_.RegisterObserver(this);
 	signalling_client_.SignalConnected.connect(this, &OpenGLMultiPeerConductor::HandleSignalConnect);
 
+	if (webrtc_config_->heartbeat > 0)
+	{
+		signalling_client_.SetHeartbeatMs(webrtc_config_->heartbeat);
+	}
+
 	peer_factory_ = webrtc::CreatePeerConnectionFactory();
 	process_thread_ = rtc::Thread::Create();
 	process_thread_->Start(this);
