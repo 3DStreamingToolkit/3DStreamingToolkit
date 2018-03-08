@@ -218,6 +218,8 @@ bool PeerConnectionClient::UpdateCapacity(int newCapacity)
 		return false;
 	}
 
+	LOG(LS_INFO) << __FUNCTION__ << "Setting new capacity: " << std::to_string(newCapacity);
+
 	RTC_DCHECK(is_connected());
 	RTC_DCHECK(control_socket_->GetState() == rtc::Socket::CS_CLOSED);
 

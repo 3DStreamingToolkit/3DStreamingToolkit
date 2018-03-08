@@ -27,7 +27,7 @@ class DirectXMultiPeerConductor : public PeerConnectionClientObserver,
 	public has_slots<>
 {
 public:
-	DirectXMultiPeerConductor(shared_ptr<WebRTCConfig> config, ID3D11Device* d3d_device);
+	DirectXMultiPeerConductor(shared_ptr<WebRTCConfig> config, ID3D11Device* d3d_device, int maxPeers = -1);
 	~DirectXMultiPeerConductor();
 
 	// Connect the signalling implementation to the signalling server
@@ -88,6 +88,11 @@ private:
 	// Handles message received via data channel
 	void HandleDataChannelMessage(int peer_id, const string& message);
 	
+	// Handles connection event from the signalling_client_
+	void HandleSignalConnect();
+
+	int max_capacity_;
+	int cur_capacity_;
 	PeerConnectionClient signalling_client_;
 	shared_ptr<WebRTCConfig> webrtc_config_;
 	ComPtr<ID3D11Device> d3d_device_;

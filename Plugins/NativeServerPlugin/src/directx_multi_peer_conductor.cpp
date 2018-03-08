@@ -4,12 +4,17 @@
 #include "directx_multi_peer_conductor.h"
 
 DirectXMultiPeerConductor::DirectXMultiPeerConductor(shared_ptr<WebRTCConfig> config,
-	ID3D11Device* d3d_device) :
+	ID3D11Device* d3d_device,
+	int maxPeers) :
 	webrtc_config_(config),
 	d3d_device_(d3d_device),
-	main_window_(nullptr)
+	main_window_(nullptr),
+	max_capacity_(maxPeers),
+	cur_capacity_(maxPeers)
 {
 	signalling_client_.RegisterObserver(this);
+	signalling_client_.SignalConnected.connect(this, &DirectXMultiPeerConductor::HandleSignalConnect);
+
 	peer_factory_ = webrtc::CreatePeerConnectionFactory();
 	process_thread_ = rtc::Thread::Create();
 	process_thread_->Start(this);
@@ -47,10 +52,25 @@ void DirectXMultiPeerConductor::SetDataChannelMessageHandler(const function<void
 
 void DirectXMultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterface::IceConnectionState new_state)
 {
+	// peer connected
+	if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionConnected)
+	{
+		if (cur_capacity_ > -1)
+		{
+			cur_capacity_ -= cur_capacity_ > 1 ? 1 : 0;
+			signalling_client_.UpdateCapacity(cur_capacity_);
+		}
+	}
 	// peer disconnected
-	if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
+	else if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
 	{
 		connected_peers_.erase(peer_id);
+
+		if (cur_capacity_ > -1)
+		{
+			cur_capacity_ += cur_capacity_ < max_capacity_ ? 1 : 0;
+			signalling_client_.UpdateCapacity(cur_capacity_);
+		}
 	}
 }
 
@@ -59,6 +79,14 @@ void DirectXMultiPeerConductor::HandleDataChannelMessage(int peer_id, const stri
 	if (data_channel_handler_)
 	{
 		data_channel_handler_(peer_id, message);
+	}
+}
+
+void DirectXMultiPeerConductor::HandleSignalConnect()
+{
+	if (max_capacity_ > -1)
+	{
+		signalling_client_.UpdateCapacity(max_capacity_);
 	}
 }
 
