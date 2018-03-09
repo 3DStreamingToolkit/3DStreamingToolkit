@@ -88,9 +88,9 @@ public:
 	/// Once capacity reaches 0, we'll be removed from the signaling server listing of available peers
 	/// see https://github.com/bengreenier/webrtc-signal-http-capacity for more info
 	/// </remarks>
-	/// <param name="newCapacity">the new remaining capacity</param>
+	/// <param name="new_capacity">the new remaining capacity</param>
 	/// <returns>success flag</returns>
-	bool UpdateCapacity(int newCapacity);
+	bool UpdateCapacity(int new_capacity);
 
 	bool SendToPeer(int peer_id, const std::string& message);
 

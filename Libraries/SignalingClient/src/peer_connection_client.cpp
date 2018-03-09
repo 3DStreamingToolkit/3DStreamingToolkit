@@ -215,19 +215,19 @@ void PeerConnectionClient::DoConnect()
 	}
 }
 
-bool PeerConnectionClient::UpdateCapacity(int newCapacity)
+bool PeerConnectionClient::UpdateCapacity(int new_capacity)
 {
 	if (state_ != CONNECTED)
 	{
 		return false;
 	}
 
-	LOG(LS_INFO) << __FUNCTION__ << "Setting new capacity: " << std::to_string(newCapacity);
+	LOG(LS_INFO) << __FUNCTION__ << "Setting new capacity: " << std::to_string(new_capacity);
 
 	RTC_DCHECK(capacity_socket_->GetState() == rtc::Socket::CS_CLOSED);
 
 	capacity_data_ = PrepareRequest("PUT",
-		"/capacity?peer_id=" + std::to_string(my_id_) + "&value=" + std::to_string(newCapacity),
+		"/capacity?peer_id=" + std::to_string(my_id_) + "&value=" + std::to_string(new_capacity),
 		{
 			{ "Host", server_address_.hostname() },
 			{ "Content-Length", std::to_string(0) }
@@ -339,12 +339,7 @@ bool PeerConnectionClient::Shutdown()
 		capacity_socket_->Close();
 	}
 
-	bool shouldFireSignal = false;
-
-	if (state_ == CONNECTED)
-	{
-		shouldFireSignal = true;
-	}
+	bool shouldFireSignal = (state_ == CONNECTED) ? true : false;
 
 	state_ = NOT_CONNECTED;
 
@@ -359,12 +354,7 @@ bool PeerConnectionClient::Shutdown()
 
 void PeerConnectionClient::Close()
 {
-	bool shouldFireSignal = false;
-
-	if (state_ == CONNECTED)
-	{
-		shouldFireSignal = true;
-	}
+	bool shouldFireSignal = (state_ == CONNECTED) ? true : false;
 
 	control_socket_->Close();
 	hanging_get_->Close();

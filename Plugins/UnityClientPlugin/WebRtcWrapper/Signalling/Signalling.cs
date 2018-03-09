@@ -327,13 +327,6 @@ namespace PeerConnectionClient.Signalling
         /// <returns>success flag</returns>
         public async Task<bool> UpdateCapacity(int newCapacity)
         {
-            if (_state != State.CONNECTED)
-            {
-                return false;
-            }
-
-            Debug.Assert(IsConnected());
-
             if (!IsConnected())
             {
                 return false;

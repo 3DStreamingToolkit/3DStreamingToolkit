@@ -5,12 +5,12 @@
 
 DirectXMultiPeerConductor::DirectXMultiPeerConductor(shared_ptr<WebRTCConfig> config,
 	ID3D11Device* d3d_device,
-	int maxPeers) :
+	int max_peers) :
 	webrtc_config_(config),
 	d3d_device_(d3d_device),
 	main_window_(nullptr),
-	max_capacity_(maxPeers),
-	cur_capacity_(maxPeers)
+	max_capacity_(max_peers),
+	cur_capacity_(max_peers)
 {
 	signalling_client_.RegisterObserver(this);
 	signalling_client_.SignalConnected.connect(this, &DirectXMultiPeerConductor::HandleSignalConnect);

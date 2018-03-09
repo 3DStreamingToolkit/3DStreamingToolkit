@@ -3,11 +3,11 @@
 #include "defaults.h"
 #include "opengl_multi_peer_conductor.h"
 
-OpenGLMultiPeerConductor::OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> config, int maxPeers) :
+OpenGLMultiPeerConductor::OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> config, int max_peers) :
 	webrtc_config_(config),
 	main_window_(nullptr),
-	max_capacity_(maxPeers),
-	cur_capacity_(maxPeers)
+	max_capacity_(max_peers),
+	cur_capacity_(max_peers)
 {
 	signalling_client_.RegisterObserver(this);
 	signalling_client_.SignalConnected.connect(this, &OpenGLMultiPeerConductor::HandleSignalConnect);
