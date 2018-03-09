@@ -128,6 +128,8 @@ protected:
 
 	void OnHeartbeatGetConnect(rtc::AsyncSocket* socket);
 
+	void OnCapacityConnect(rtc::AsyncSocket* socket);
+
 	void OnMessageFromPeer(int peer_id, const std::string& message);
 
 	// Quick and dirty support for parsing HTTP header values.
@@ -146,6 +148,8 @@ protected:
 	void OnHangingGetRead(rtc::AsyncSocket* socket);
 
 	void OnHeartbeatGetRead(rtc::AsyncSocket* socket);
+
+	void OnCapacityRead(rtc::AsyncSocket* socket);
 
 	// Parses a single line entry in the form "<name>,<id>,<connected>"
 	bool ParseEntry(const std::string& entry, std::string* name, int* id,
@@ -170,10 +174,12 @@ protected:
 	rtc::AsyncResolver* resolver_;
 	rtc::Thread* signaling_thread_;
 	std::unique_ptr<SslCapableSocket> control_socket_;
+	std::unique_ptr<SslCapableSocket> capacity_socket_;
 	std::unique_ptr<SslCapableSocket> hanging_get_;
 	std::unique_ptr<SslCapableSocket> heartbeat_get_;
 	std::string onconnect_data_;
 	std::string control_data_;
+	std::string capacity_data_;
 	std::string notification_data_;
 	std::string client_name_;
 	std::string authorization_header_;
