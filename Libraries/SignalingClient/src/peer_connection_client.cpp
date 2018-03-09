@@ -339,13 +339,14 @@ bool PeerConnectionClient::Shutdown()
 		capacity_socket_->Close();
 	}
 
-	bool shouldFireSignal = (state_ == CONNECTED) ? true : false;
-
-	state_ = NOT_CONNECTED;
-
-	if (shouldFireSignal)
+	if (state_ == CONNECTED)
 	{
+		state_ = NOT_CONNECTED;
 		SignalDisconnected.emit();
+	}
+	else
+	{
+		state_ = NOT_CONNECTED;
 	}
 
 	return true;
