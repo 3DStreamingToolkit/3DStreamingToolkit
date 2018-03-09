@@ -64,10 +64,13 @@ void PeerConnectionClient::InitSocketSignals()
 	control_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnConnect);
 	hanging_get_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnHangingGetConnect);
 	heartbeat_get_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetConnect);
+	capacity_socket_->SignalConnectEvent.connect(this, &PeerConnectionClient::OnCapacityConnect);
 
 	control_socket_->SignalReadEvent.connect(this, &PeerConnectionClient::OnRead);
 	hanging_get_->SignalReadEvent.connect(this, &PeerConnectionClient::OnHangingGetRead);
 	heartbeat_get_->SignalReadEvent.connect(this, &PeerConnectionClient::OnHeartbeatGetRead);
+	capacity_socket_->SignalReadEvent.connect(this, &PeerConnectionClient::OnCapacityRead);
+
 }
 
 int PeerConnectionClient::id() const
@@ -192,6 +195,7 @@ void PeerConnectionClient::DoConnect()
 	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 	heartbeat_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
+	capacity_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
 
 	InitSocketSignals();
 	std::string clientName = client_name_;
@@ -209,6 +213,33 @@ void PeerConnectionClient::DoConnect()
 	{
 		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [](PeerConnectionClientObserver* o) { o->OnServerConnectionFailure(); });
 	}
+}
+
+bool PeerConnectionClient::UpdateCapacity(int new_capacity)
+{
+	if (state_ != CONNECTED)
+	{
+		return false;
+	}
+
+	LOG(LS_INFO) << __FUNCTION__ << "Setting new capacity: " << std::to_string(new_capacity);
+
+	RTC_DCHECK(capacity_socket_->GetState() == rtc::Socket::CS_CLOSED);
+
+	capacity_data_ = PrepareRequest("PUT",
+		"/capacity?peer_id=" + std::to_string(my_id_) + "&value=" + std::to_string(new_capacity),
+		{
+			{ "Host", server_address_.hostname() },
+			{ "Content-Length", std::to_string(0) }
+		});
+
+	int err = capacity_socket_->Connect(server_address_);
+	if (err == SOCKET_ERROR)
+	{
+		return false;
+	}
+
+	return true;
 }
 
 bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message)
@@ -303,7 +334,20 @@ bool PeerConnectionClient::Shutdown()
 		control_socket_->Close();
 	}
 
-	state_ = NOT_CONNECTED;
+	if (capacity_socket_.get() != nullptr)
+	{
+		capacity_socket_->Close();
+	}
+
+	if (state_ == CONNECTED)
+	{
+		state_ = NOT_CONNECTED;
+		SignalDisconnected.emit();
+	}
+	else
+	{
+		state_ = NOT_CONNECTED;
+	}
 
 	return true;
 }
@@ -311,8 +355,12 @@ bool PeerConnectionClient::Shutdown()
 
 void PeerConnectionClient::Close()
 {
+	bool shouldFireSignal = (state_ == CONNECTED) ? true : false;
+
 	control_socket_->Close();
 	hanging_get_->Close();
+	capacity_socket_->Close();
+	capacity_data_.clear();
 	onconnect_data_.clear();
 	peers_.clear();
 	if (resolver_ != NULL)
@@ -323,6 +371,11 @@ void PeerConnectionClient::Close()
 
 	my_id_ = -1;
 	state_ = NOT_CONNECTED;
+
+	if (shouldFireSignal)
+	{
+		SignalDisconnected.emit();
+	}
 }
 
 bool PeerConnectionClient::ConnectControlSocket()
@@ -352,6 +405,13 @@ void PeerConnectionClient::OnHangingGetConnect(rtc::AsyncSocket* socket)
 
 	int sent = socket->Send(req.c_str(), req.length());
 	RTC_DCHECK(sent == req.length());
+}
+
+void PeerConnectionClient::OnCapacityConnect(rtc::AsyncSocket* socket)
+{
+	int sent = socket->Send(capacity_data_.c_str(), capacity_data_.length());
+	RTC_DCHECK(sent == capacity_data_.length());
+	capacity_data_.clear();
 }
 
 void PeerConnectionClient::OnMessageFromPeer(int peer_id, const std::string& message)
@@ -540,6 +600,8 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			{
 				heartbeat_get_->Connect(server_address_);
 			}
+
+			SignalConnected.emit();
 		}
 	}
 }
@@ -608,6 +670,21 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 	if (hanging_get_->GetState() == rtc::Socket::CS_CLOSED && state_ == CONNECTED)
 	{
 		hanging_get_->Connect(server_address_);
+	}
+}
+
+void PeerConnectionClient::OnCapacityRead(rtc::AsyncSocket* socket)
+{
+	size_t content_length = 0;
+	std::string buffer;
+	if (ReadIntoBuffer(socket, &buffer, &content_length))
+	{
+		int status = GetResponseStatus(buffer);
+
+		if (status != 200)
+		{
+			LOG(INFO) << __FUNCTION__ << "Invalid Status: " << std::to_string(status);
+		}
 	}
 }
 

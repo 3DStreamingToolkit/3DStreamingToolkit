@@ -3,11 +3,20 @@
 #include "defaults.h"
 #include "opengl_multi_peer_conductor.h"
 
-OpenGLMultiPeerConductor::OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> config) :
+OpenGLMultiPeerConductor::OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> config, int max_peers) :
 	webrtc_config_(config),
-	main_window_(nullptr)
+	main_window_(nullptr),
+	max_capacity_(max_peers),
+	cur_capacity_(max_peers)
 {
 	signalling_client_.RegisterObserver(this);
+	signalling_client_.SignalConnected.connect(this, &OpenGLMultiPeerConductor::HandleSignalConnect);
+
+	if (webrtc_config_->heartbeat > 0)
+	{
+		signalling_client_.SetHeartbeatMs(webrtc_config_->heartbeat);
+	}
+
 	peer_factory_ = webrtc::CreatePeerConnectionFactory();
 	process_thread_ = rtc::Thread::Create();
 	process_thread_->Start(this);
@@ -45,10 +54,25 @@ void OpenGLMultiPeerConductor::SetDataChannelMessageHandler(const function<void(
 
 void OpenGLMultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterface::IceConnectionState new_state)
 {
+	// peer connected
+	if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionConnected)
+	{
+		if (cur_capacity_ > -1)
+		{
+			cur_capacity_ -= cur_capacity_ >= 1 ? 1 : 0;
+			signalling_client_.UpdateCapacity(cur_capacity_);
+		}
+	}
 	// peer disconnected
-	if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
+	else if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
 	{
 		connected_peers_.erase(peer_id);
+
+		if (cur_capacity_ > -1)
+		{
+			cur_capacity_ += cur_capacity_ < max_capacity_ ? 1 : 0;
+			signalling_client_.UpdateCapacity(cur_capacity_);
+		}
 	}
 }
 
@@ -57,6 +81,14 @@ void OpenGLMultiPeerConductor::HandleDataChannelMessage(int peer_id, const strin
 	if (data_channel_handler_)
 	{
 		data_channel_handler_(peer_id, message);
+	}
+}
+
+void OpenGLMultiPeerConductor::HandleSignalConnect()
+{
+	if (max_capacity_ > -1)
+	{
+		signalling_client_.UpdateCapacity(max_capacity_);
 	}
 }
 
