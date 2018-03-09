@@ -59,7 +59,7 @@ void OpenGLMultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnection
 	{
 		if (cur_capacity_ > -1)
 		{
-			cur_capacity_ -= cur_capacity_ > 1 ? 1 : 0;
+			cur_capacity_ -= cur_capacity_ >= 1 ? 1 : 0;
 			signalling_client_.UpdateCapacity(cur_capacity_);
 		}
 	}
