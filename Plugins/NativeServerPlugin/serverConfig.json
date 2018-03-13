@@ -2,7 +2,8 @@
   "serverConfig": {
     "width": 1280,
     "height": 720,
-    "systemService": false
+    "systemService": false,
+    "systemCapacity": -1
   },
   "serviceConfig": {
     "name": "3DStreamingRenderingService",
