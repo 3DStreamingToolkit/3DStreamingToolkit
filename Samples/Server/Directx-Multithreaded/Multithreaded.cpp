@@ -567,8 +567,8 @@ bool AppMain(BOOL stopping)
 	ServerMainWindow wnd(
 		fullServerConfig->webrtc_config->server.c_str(),
 		fullServerConfig->webrtc_config->port,
-		FLAG_autoconnect,
-		FLAG_autocall,
+		fullServerConfig->server_config->server_config.auto_connect,
+		fullServerConfig->server_config->server_config.auto_call,
 		false,
 		fullServerConfig->server_config->server_config.width,
 		fullServerConfig->server_config->server_config.height);

@@ -260,8 +260,8 @@ void InitWebRTC()
 	ServerMainWindow wnd(
 		FLAG_server,
 		FLAG_port,
-		FLAG_autoconnect,
-		FLAG_autocall,
+		fullServerConfig->server_config->server_config.auto_connect,
+		fullServerConfig->server_config->server_config.auto_call,
 		true,
 		0,
 		0);

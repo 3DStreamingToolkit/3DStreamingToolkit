@@ -102,6 +102,29 @@ void DirectXMultiPeerConductor::HandleSignalConnect()
 	}
 }
 
+scoped_refptr<DirectXPeerConductor> DirectXMultiPeerConductor::SafeAllocatePeerMapEntry(int peer_id)
+{
+	if (connected_peers_.find(peer_id) == connected_peers_.end())
+	{
+		string peer_name = signalling_client_.peers().at(peer_id);
+		connected_peers_[peer_id] = new RefCountedObject<DirectXPeerConductor>(peer_id,
+			peer_name,
+			config_->webrtc_config,
+			peer_factory_,
+			[&, peer_id](const string& message)
+		{
+			message_queue_.push(MessageEntry(peer_id, message));
+			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
+		},
+			d3d_device_.Get());
+
+		connected_peers_[peer_id]->SignalIceConnectionChange.connect(this, &DirectXMultiPeerConductor::OnIceConnectionChange);
+		connected_peers_[peer_id]->SignalDataChannelMessage.connect(this, &DirectXMultiPeerConductor::HandleDataChannelMessage);
+	}
+
+	return connected_peers_[peer_id];
+}
+
 void DirectXMultiPeerConductor::OnSignedIn()
 {
 	should_process_queue_.store(true);
@@ -132,25 +155,8 @@ void DirectXMultiPeerConductor::OnPeerDisconnected(int peer_id)
 
 void DirectXMultiPeerConductor::OnMessageFromPeer(int peer_id, const string& message)
 {
-	if (connected_peers_.find(peer_id) == connected_peers_.end())
-	{
-		string peer_name = signalling_client_.peers().at(peer_id);
-		connected_peers_[peer_id] = new RefCountedObject<DirectXPeerConductor>(peer_id,
-			peer_name,
-			config_->webrtc_config,
-			peer_factory_,
-			[&, peer_id](const string& message)
-		{
-			message_queue_.push(MessageEntry(peer_id, message));
-			rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 500, this, 0);
-		},
-			d3d_device_.Get());
-
-		connected_peers_[peer_id]->SignalIceConnectionChange.connect(this, &DirectXMultiPeerConductor::OnIceConnectionChange);
-		connected_peers_[peer_id]->SignalDataChannelMessage.connect(this, &DirectXMultiPeerConductor::HandleDataChannelMessage);
-	}
-
-	connected_peers_[peer_id]->HandlePeerMessage(message);
+	auto peer = SafeAllocatePeerMapEntry(peer_id);
+	peer->HandlePeerMessage(message);
 }
 
 void DirectXMultiPeerConductor::OnMessageSent(int err) {}
@@ -195,14 +201,10 @@ void DirectXMultiPeerConductor::DisconnectFromServer() {}
 
 void DirectXMultiPeerConductor::ConnectToPeer(int peer_id)
 {
-	auto it = connected_peers_.find(peer_id);
-	if (it != connected_peers_.end())
+	auto peer = SafeAllocatePeerMapEntry(peer_id);
+	if (!peer->IsConnected())
 	{
-		DirectXPeerConductor* peer = it->second;
-		if (!peer->IsConnected())
-		{
-			peer->AllocatePeerConnection(true);
-		}
+		peer->AllocatePeerConnection(true);
 	}
 }
 

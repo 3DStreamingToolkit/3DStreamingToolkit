@@ -21,6 +21,12 @@ namespace StreamingToolkit
 
 		/* Running the system with max number of peers	*/
 		int				system_capacity;
+
+		/* Automatically calls the first connected peer	*/
+		bool			auto_call;
+
+		/* Automatically onnect to the signaling server	*/
+		bool			auto_connect;
 	} ServerAppConfig;
 
 	/*

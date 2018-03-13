@@ -91,6 +91,9 @@ private:
 	// Handles connection event from the signalling_client_
 	void HandleSignalConnect();
 
+	// Handles creation of a new peer entry in connected_peers_ if needed
+	scoped_refptr<DirectXPeerConductor> SafeAllocatePeerMapEntry(int peer_id);
+
 	int max_capacity_;
 	int cur_capacity_;
 	PeerConnectionClient signalling_client_;
