@@ -193,8 +193,7 @@ void InitializeRenderBuffer(RemotePeerData* peerData, int width, int height, boo
 
 bool AppMain(BOOL stopping)
 {
-	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
-	auto serverConfig = GlobalObject<ServerConfig>::Get();
+	auto fullServerConfig = GlobalObject<FullServerConfig>::Get();
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 
 	rtc::EnsureWinsockInit();
@@ -202,15 +201,15 @@ bool AppMain(BOOL stopping)
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ServerMainWindow wnd(
-		webrtcConfig->server.c_str(),
-		webrtcConfig->port,
+		fullServerConfig->webrtc_config->server.c_str(),
+		fullServerConfig->webrtc_config->port,
 		FLAG_autoconnect,
 		FLAG_autocall,
 		false,
-		serverConfig->server_config.width,
-		serverConfig->server_config.height);
+		fullServerConfig->server_config->server_config.width,
+		fullServerConfig->server_config->server_config.height);
 
-	if (!serverConfig->server_config.system_service && !wnd.Create())
+	if (!fullServerConfig->server_config->server_config.system_service && !wnd.Create())
 	{
 		RTC_NOTREACHED();
 		return -1;
@@ -220,13 +219,14 @@ bool AppMain(BOOL stopping)
 	InitializeOpenGL(wnd.handle());
 
 	// Initializes the cube renderer.
-	g_cubeRenderer = new CubeRenderer(serverConfig->server_config.width, serverConfig->server_config.height);
+	g_cubeRenderer = new CubeRenderer(fullServerConfig->server_config->server_config.width,
+		fullServerConfig->server_config->server_config.height);
 	
 	// Initializes SSL.
 	rtc::InitializeSSL();
 
 	// Initializes the conductor.
-	OpenGLMultiPeerConductor cond(webrtcConfig);
+	OpenGLMultiPeerConductor cond(fullServerConfig);
 
 	// Sets main window to update UI.
 	cond.SetMainWindow(&wnd);
@@ -263,8 +263,8 @@ bool AppMain(BOOL stopping)
 				peerData->isStereo = stoi(token) == 1;
 				InitializeRenderBuffer(
 					peerData.get(),
-					serverConfig->server_config.width,
-					serverConfig->server_config.height,
+					fullServerConfig->server_config->server_config.width,
+					fullServerConfig->server_config->server_config.height,
 					peerData->isStereo);
 
 				if (!peerData->isStereo)
@@ -318,7 +318,7 @@ bool AppMain(BOOL stopping)
 	{
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if (serverConfig->server_config.system_service ||
+			if (fullServerConfig->server_config->server_config.system_service ||
 				!wnd.PreTranslateMessage(&msg))
 			{
 				TranslateMessage(&msg);
@@ -352,8 +352,8 @@ bool AppMain(BOOL stopping)
 					{
 						InitializeRenderBuffer(
 							peerData.get(),
-							serverConfig->server_config.width,
-							serverConfig->server_config.height,
+							fullServerConfig->server_config->server_config.width,
+							fullServerConfig->server_config->server_config.height,
 							false);
 
 						peerData->isStereo = false;

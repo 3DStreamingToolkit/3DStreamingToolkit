@@ -27,7 +27,7 @@ class OpenGLMultiPeerConductor : public PeerConnectionClientObserver,
 	public has_slots<>
 {
 public:
-	OpenGLMultiPeerConductor(shared_ptr<WebRTCConfig> config, int max_peers = -1);
+	OpenGLMultiPeerConductor(shared_ptr<FullServerConfig> config);
 	~OpenGLMultiPeerConductor();
 
 	// Connect the signalling implementation to the signalling server
@@ -94,7 +94,7 @@ private:
 	int max_capacity_;
 	int cur_capacity_;
 	PeerConnectionClient signalling_client_;
-	shared_ptr<WebRTCConfig> webrtc_config_;
+	shared_ptr<FullServerConfig> config_;
 	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
 	map<int, scoped_refptr<OpenGLPeerConductor>> connected_peers_;
 	queue<MessageEntry> message_queue_;

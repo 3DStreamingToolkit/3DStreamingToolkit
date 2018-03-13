@@ -18,6 +18,9 @@ namespace StreamingToolkit
 
 		/* Running the app as a system service			*/
 		bool			system_service;
+
+		/* Running the system with max number of peers	*/
+		int				system_capacity;
 	} ServerAppConfig;
 
 	/*
@@ -38,7 +41,7 @@ namespace StreamingToolkit
 		std::wstring	service_password;
 	} ServiceConfig;
 
-	/* 
+	/*
 	 * Server options configuration wrapper
 	 */
 	typedef struct
@@ -127,6 +130,15 @@ namespace StreamingToolkit
 		/* The authentication info						*/
 		Authentication	authentication;
 	} WebRTCConfig;
+
+	/*
+	 * Full server configuration, including ServerConfig and WebRTCConfig
+	 */
+	typedef struct
+	{
+		std::shared_ptr<ServerConfig> server_config;
+		std::shared_ptr<WebRTCConfig> webrtc_config;
+	} FullServerConfig;
 
 	/*
 	 * Video encoder configuration

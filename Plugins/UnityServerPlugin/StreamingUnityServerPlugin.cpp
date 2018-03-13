@@ -249,7 +249,7 @@ void InitWebRTC()
 	// Setup the config parsers.
 	ConfigParser::ConfigureConfigFactories();
 
-	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
+	auto fullServerConfig = GlobalObject<FullServerConfig>::Get();
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 
 	rtc::EnsureWinsockInit();
@@ -271,11 +271,11 @@ void InitWebRTC()
 	// Initializes SSL.
 	rtc::InitializeSSL();
 		
-	s_server = webrtcConfig->server;
-	s_port = webrtcConfig->port;
+	s_server = fullServerConfig->webrtc_config->server;
+	s_port = fullServerConfig->webrtc_config->port;
 
 	// Initializes the conductor.
-	s_cond.reset(new DirectXMultiPeerConductor(webrtcConfig, s_Device.Get()));
+	s_cond.reset(new DirectXMultiPeerConductor(fullServerConfig, s_Device.Get()));
 
 	// Registers observer to update Unity's window UI.
 	s_cond->PeerConnection().RegisterObserver(&s_clientObserver);

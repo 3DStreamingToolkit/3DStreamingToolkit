@@ -3,21 +3,26 @@
 #include "defaults.h"
 #include "directx_multi_peer_conductor.h"
 
-DirectXMultiPeerConductor::DirectXMultiPeerConductor(shared_ptr<WebRTCConfig> config,
-	ID3D11Device* d3d_device,
-	int max_peers) :
-	webrtc_config_(config),
+DirectXMultiPeerConductor::DirectXMultiPeerConductor(shared_ptr<FullServerConfig> config,
+	ID3D11Device* d3d_device) :
+	config_(config),
 	d3d_device_(d3d_device),
 	main_window_(nullptr),
-	max_capacity_(max_peers),
-	cur_capacity_(max_peers)
+	max_capacity_(-1),
+	cur_capacity_(-1)
 {
 	signalling_client_.RegisterObserver(this);
 	signalling_client_.SignalConnected.connect(this, &DirectXMultiPeerConductor::HandleSignalConnect);
 
-	if (webrtc_config_->heartbeat > 0)
+	if (config_->webrtc_config->heartbeat > 0)
 	{
-		signalling_client_.SetHeartbeatMs(webrtc_config_->heartbeat);
+		signalling_client_.SetHeartbeatMs(config_->webrtc_config->heartbeat);
+	}
+
+	if (config_->server_config->server_config.system_capacity > 0)
+	{
+		max_capacity_ = config_->server_config->server_config.system_capacity;
+		cur_capacity_ = max_capacity_;
 	}
 
 	peer_factory_ = webrtc::CreatePeerConnectionFactory();
@@ -42,7 +47,9 @@ PeerConnectionClient& DirectXMultiPeerConductor::PeerConnection()
 
 void DirectXMultiPeerConductor::ConnectSignallingAsync(const string& client_name)
 {
-	signalling_client_.Connect(webrtc_config_->server, webrtc_config_->port, client_name);
+	signalling_client_.Connect(config_->webrtc_config->server,
+		config_->webrtc_config->port,
+		client_name);
 }
 
 void DirectXMultiPeerConductor::SetMainWindow(MainWindow* main_window)
@@ -130,7 +137,7 @@ void DirectXMultiPeerConductor::OnMessageFromPeer(int peer_id, const string& mes
 		string peer_name = signalling_client_.peers().at(peer_id);
 		connected_peers_[peer_id] = new RefCountedObject<DirectXPeerConductor>(peer_id,
 			peer_name,
-			webrtc_config_,
+			config_->webrtc_config,
 			peer_factory_,
 			[&, peer_id](const string& message)
 		{
