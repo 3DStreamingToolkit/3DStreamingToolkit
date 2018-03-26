@@ -317,6 +317,8 @@ void InitWebRTC()
 			}
 		}
 	}
+
+	wnd.Destroy();
 }
 
 extern "C" void UNITY_INTERFACE_API OnGraphicsDeviceEvent(UnityGfxDeviceEventType eventType)
