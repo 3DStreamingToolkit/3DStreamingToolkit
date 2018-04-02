@@ -888,12 +888,20 @@ void PeerConnectionClient::UpdateConnectionState(int id,
 	webrtc::PeerConnectionInterface::IceConnectionState state)
 {
 	peers_[id] = peers_[id].substr(0, peers_[id].find(" - "));
-	if (state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionConnected)
+	switch (state)
 	{
-		peers_[id] += " - Connected";
-	}
-	else if (state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
-	{
-		peers_[id] += " - Disconnected";
+		case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionConnected:
+		case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted:
+			peers_[id] += " - Connected";
+			break;
+
+		case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected:
+			peers_[id] += " - Disconnected";
+			break;
+
+		case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed:
+		case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionClosed:
+			peers_[id] += " - Error";
+			break;
 	}
 }
