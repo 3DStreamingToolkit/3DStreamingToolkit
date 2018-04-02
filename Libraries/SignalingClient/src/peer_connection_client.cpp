@@ -883,3 +883,17 @@ void PeerConnectionClient::SetHeartbeatMs(const int tickMs)
 {
 	heartbeat_tick_ms_ = tickMs;
 }
+
+void PeerConnectionClient::UpdateConnectionState(int id, 
+	webrtc::PeerConnectionInterface::IceConnectionState state)
+{
+	peers_[id] = peers_[id].substr(0, peers_[id].find(" - "));
+	if (state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionConnected)
+	{
+		peers_[id] += " - Connected";
+	}
+	else if (state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
+	{
+		peers_[id] += " - Disconnected";
+	}
+}

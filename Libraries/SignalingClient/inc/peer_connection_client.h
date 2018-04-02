@@ -17,6 +17,7 @@
 #include <functional>
 #include <vector>
 
+#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/signalthread.h"
@@ -112,6 +113,8 @@ public:
 	int heartbeat_ms() const;
 
 	void SetHeartbeatMs(const int tickMs);
+
+	void UpdateConnectionState(int id, webrtc::PeerConnectionInterface::IceConnectionState state);
 
 protected:
 	void DoConnect();

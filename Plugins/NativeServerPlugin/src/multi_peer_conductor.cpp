@@ -82,6 +82,10 @@ void MultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterf
 			signalling_client_.UpdateCapacity(cur_capacity_);
 		}
 	}
+
+	// Updates peer list UI.
+	signalling_client_.UpdateConnectionState(peer_id, new_state);
+	main_window_->SwitchToPeerList(signalling_client_.peers());
 }
 
 void MultiPeerConductor::HandleDataChannelMessage(int peer_id, const string& message)
