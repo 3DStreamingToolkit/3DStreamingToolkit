@@ -329,7 +329,7 @@ bool AppMain(BOOL stopping)
 		{
 			for each (auto pair in cond.Peers())
 			{
-				auto peer = pair.second;
+				auto peer = (OpenGLPeerConductor*)pair.second.get();
 
 				// Retrieves remote peer data from map, create new if needed.
 				std::shared_ptr<RemotePeerData> peerData;

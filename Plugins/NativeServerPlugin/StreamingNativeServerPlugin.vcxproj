@@ -104,6 +104,7 @@
     <ClCompile Include="src\buffer_capturer.cpp" />
     <ClCompile Include="src\defaults.cpp" />
     <ClCompile Include="src\directx_buffer_capturer.cpp" />
+    <ClCompile Include="src\multi_peer_conductor.cpp" />
     <ClCompile Include="src\opengl_buffer_capturer.cpp" />
     <ClCompile Include="src\directx_peer_conductor.cpp" />
     <ClCompile Include="src\directx_multi_peer_conductor.cpp" />
@@ -117,6 +118,7 @@
     <ClInclude Include="inc\buffer_capturer.h" />
     <ClInclude Include="inc\defaults.h" />
     <ClInclude Include="inc\directx_buffer_capturer.h" />
+    <ClInclude Include="inc\multi_peer_conductor.h" />
     <ClInclude Include="inc\opengl_buffer_capturer.h" />
     <ClInclude Include="inc\directx_peer_conductor.h" />
     <ClInclude Include="inc\directx_multi_peer_conductor.h" />
