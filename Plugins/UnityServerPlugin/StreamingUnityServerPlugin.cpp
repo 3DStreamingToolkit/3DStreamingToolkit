@@ -402,7 +402,7 @@ extern "C" __declspec(dllexport) void SendFrame(int peerId, bool isStereo, void*
 	auto it = s_cond->Peers().find(peerId);
 	if (it != s_cond->Peers().end())
 	{
-		DirectXPeerConductor* peer = it->second.get();
+		DirectXPeerConductor* peer = (DirectXPeerConductor*)it->second.get();
 		if (!isStereo)
 		{
 			peer->SendFrame((ID3D11Texture2D*)leftRT);
