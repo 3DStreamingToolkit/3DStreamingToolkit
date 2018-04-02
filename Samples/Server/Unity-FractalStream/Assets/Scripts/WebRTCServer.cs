@@ -45,7 +45,7 @@ namespace Microsoft.Toolkit.ThreeD
         /// If clients don't send "stereo-rendering" message after this time,
         /// the video stream will start in non-stereo mode.
         /// </summary>
-        public static int StereoFlagWaitTime = 3000;
+        public static int StereoFlagWaitTime = 5000;
 
         /// <summary>
         /// The left eye camera

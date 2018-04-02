@@ -41,7 +41,7 @@
 
 // If clients don't send "stereo-rendering" message after this time,
 // the video stream will start in non-stereo mode.
-#define STEREO_FLAG_WAIT_TIME		3000
+#define STEREO_FLAG_WAIT_TIME		5000
 
 // Required app libs
 #pragma comment(lib, "d3dcompiler.lib")
