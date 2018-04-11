@@ -134,7 +134,7 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 						m_deviceResources->Present(frame);
 					}
 
-					m_holographicFrames.erase(it);
+					m_holographicFrames.erase(m_holographicFrames.begin(), it);
 				}
 			}
 		});

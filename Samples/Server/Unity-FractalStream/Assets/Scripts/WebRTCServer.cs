@@ -1,6 +1,5 @@
 ﻿using SimpleJSON;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -133,7 +132,6 @@ namespace Microsoft.Toolkit.ThreeD
             // Make sure that the render window continues to render when the game window 
             // does not have focus
             Application.runInBackground = true;
-            Application.targetFrameRate = 60;
 
             // Setup default cameras.
             leftEyeDefaultPosition = this.LeftEye.transform.position;
@@ -240,7 +238,7 @@ namespace Microsoft.Toolkit.ThreeD
                     }
                 }
 
-                StartCoroutine(SendFrame());
+                SendFrame();
             }
 
             // check if we're in the editor, and fail out if we aren't loading the plugin in editor
@@ -460,7 +458,7 @@ namespace Microsoft.Toolkit.ThreeD
                             // Parse the prediction timestamp from the message body.
                             long timestamp = long.Parse(coords[64]);
 
-                            if (timestamp != peerData.LastTimestamp)
+                            if (timestamp != 0 && timestamp != peerData.LastTimestamp)
                             {
                                 peerData.LastTimestamp = timestamp;
 
@@ -522,9 +520,8 @@ namespace Microsoft.Toolkit.ThreeD
         /// <summary>
         /// Sends frame buffer.
         /// </summary>
-        private IEnumerator SendFrame()
+        private void SendFrame()
         {
-            yield return new WaitForEndOfFrame();
             foreach (var peer in remotePeersData)
             {
                 int peerId = peer.Key;
