@@ -810,9 +810,7 @@ void MEPlayer::UpdateFrameRate()
 	high_resolution_clock::time_point now = high_resolution_clock::now();
 	duration<double, std::milli> time_span = now - m_lastTimeFPSCalculated;
 	if (time_span.count() > 1000) {
-
-		_RPT1(0, "%d\n", m_frameCounter);
-
+		//_RPT1(0, "%d\n", m_frameCounter);
 		m_renderFps = m_frameCounter;
 		m_frameCounter = 0;
 		m_lastTimeFPSCalculated = now;

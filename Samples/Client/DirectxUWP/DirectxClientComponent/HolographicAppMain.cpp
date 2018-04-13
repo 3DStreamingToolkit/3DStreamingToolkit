@@ -200,11 +200,7 @@ bool HolographicAppMain::Render(
         [this, holographicFrame, fps, latency](
 			std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
-        // Up-to-date frame predictions enhance the effectiveness of 
-		// image stablization and allow more accurate positioning of holograms.
-        //holographicFrame->UpdateCurrentPrediction();
         HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
-
         bool atLeastOneCameraRendered = false;
         for (auto cameraPose : prediction->CameraPoses)
         {
