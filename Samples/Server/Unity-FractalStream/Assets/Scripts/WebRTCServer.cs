@@ -180,6 +180,9 @@ namespace Microsoft.Toolkit.ThreeD
 
                         if (!peerData.IsStereo.Value)
                         {
+                            // Enables fps limiter in non-stereo mode.
+                            Application.targetFrameRate = 60;
+
                             LeftEye.targetTexture = peerData.LeftRenderTexture;
                             LeftEye.transform.position = peerData.EyeVector;
                             LeftEye.transform.LookAt(peerData.LookAtVector, peerData.UpVector);
@@ -385,6 +388,13 @@ namespace Microsoft.Toolkit.ThreeD
                         }
 
                         peerData.IsStereo = isStereo == 1;
+
+                        // Enables fps limiter in non-stereo mode.
+                        if (!peerData.IsStereo.Value)
+                        {
+                            Application.targetFrameRate = 60;
+                        }
+
                         peerData.EyeVector = DefaultEyeVector;
                         peerData.LookAtVector = DefaultLookAtVector;
                         peerData.UpVector = DefaultUpVector;
