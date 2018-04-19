@@ -377,6 +377,27 @@ namespace WebRtcWrapper
             return Conductor.Instance.SendPeerDataChannelMessage(msg);
         }
 
+        /// <summary>
+        /// Updates signaling capacity <see cref="Signaller.UpdateCapacity(int)"/>
+        /// </summary>
+        /// <param name="newCapacity">the new remaining capacity</param>
+        public async void UpdateCapacity(int newCapacity)
+        {
+            if (IsConnectedToPeer)
+            {
+                var result = await Conductor.Instance.Signaller.UpdateCapacity(newCapacity);
+
+                if (result)
+                {
+                    OnStatusMessageUpdate?.Invoke($"Capacity Updated to '{newCapacity}'");
+                }
+                else
+                {
+                    OnStatusMessageUpdate?.Invoke($"Unable to update Capacity to '{newCapacity}'");
+                }
+            }
+        }
+
         public void SendPeerMessageData(string msg)
         {
             Task.Run(async () =>

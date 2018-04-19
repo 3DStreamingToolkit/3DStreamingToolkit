@@ -9,7 +9,6 @@ MainWindow::MainWindow(VideoRendererAllocator videoRendererAllocator) :
 	video_renderer_alloc_(videoRendererAllocator),
 	wnd_(NULL),
 	destroyed_(false),
-	callback_(NULL),
 	nested_msg_(NULL),
 	current_ui_(UI::CONNECT_TO_SERVER)
 {
@@ -22,7 +21,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::RegisterObserver(MainWindowCallback* callback)
 {
-	callback_ = callback;
+	callbacks_.push_back(callback);
 }
 
 bool MainWindow::IsWindow()
@@ -135,9 +134,9 @@ bool MainWindow::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result)
 		retCode = true;
 		break;
 	case WM_CLOSE:
-		if (callback_)
+		if (!callbacks_.empty())
 		{
-			callback_->Close();
+			std::for_each(callbacks_.begin(), callbacks_.end(), [](MainWindowCallback* callback) { callback->Close(); });
 		}
 		break;
 	}

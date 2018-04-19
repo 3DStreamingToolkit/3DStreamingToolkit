@@ -3,9 +3,7 @@ LIBRARY
 EXPORTS
    UnityPluginLoad
    UnityPluginUnload
-   InitializeBufferCapturer
-   SendFrame
-   SetEncodingStereo
-   SetCallbackMap
+   NativeInitWebRTC
    ConnectToPeer
-   DisconnectFromPeer
+   SendFrame
+   SetCallbackMap

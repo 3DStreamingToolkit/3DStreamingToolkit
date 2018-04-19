@@ -20,7 +20,6 @@ namespace StreamingDirectXHololensClient
 
         private AppCallbacks _appCallbacks;
         private WebRtcControl _webRtcControl;
-        private IMediaSource _mediaSource;
 
         public App()
         {

@@ -5,7 +5,6 @@
 //WebRTC conversion from 'uint64_t' to 'uint32_t', possible loss of data
 #pragma warning(disable : 4244)
 
-#include "conductor.h"
 #include "server_main_window.h"
 #include "flagdefs.h"
 #include "peer_connection_client.h"

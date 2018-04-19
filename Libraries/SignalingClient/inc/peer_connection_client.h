@@ -17,6 +17,7 @@
 #include <functional>
 #include <vector>
 
+#include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/base/nethelpers.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/signalthread.h"
@@ -64,6 +65,12 @@ public:
 
 	~PeerConnectionClient();
 
+	// Indicates the client has connected
+	sigslot::signal0<sigslot::multi_threaded_local> SignalConnected;
+
+	// Indicates the client has disconnected
+	sigslot::signal0<sigslot::multi_threaded_local> SignalDisconnected;
+
 	int id() const;
 
 	bool is_connected() const;
@@ -74,6 +81,17 @@ public:
 
 	void Connect(const std::string& server, int port,
 				 const std::string& client_name);
+
+	/// <summary>
+	/// Updates the capacity data on the signaling server
+	/// </summary>
+	/// <remarks>
+	/// Once capacity reaches 0, we'll be removed from the signaling server listing of available peers
+	/// see https://github.com/bengreenier/webrtc-signal-http-capacity for more info
+	/// </remarks>
+	/// <param name="new_capacity">the new remaining capacity</param>
+	/// <returns>success flag</returns>
+	bool UpdateCapacity(int new_capacity);
 
 	bool SendToPeer(int peer_id, const std::string& message);
 
@@ -96,6 +114,8 @@ public:
 
 	void SetHeartbeatMs(const int tickMs);
 
+	void UpdateConnectionState(int id, webrtc::PeerConnectionInterface::IceConnectionState state);
+
 protected:
 	void DoConnect();
 
@@ -110,6 +130,8 @@ protected:
 	void OnHangingGetConnect(rtc::AsyncSocket* socket);
 
 	void OnHeartbeatGetConnect(rtc::AsyncSocket* socket);
+
+	void OnCapacityConnect(rtc::AsyncSocket* socket);
 
 	void OnMessageFromPeer(int peer_id, const std::string& message);
 
@@ -129,6 +151,8 @@ protected:
 	void OnHangingGetRead(rtc::AsyncSocket* socket);
 
 	void OnHeartbeatGetRead(rtc::AsyncSocket* socket);
+
+	void OnCapacityRead(rtc::AsyncSocket* socket);
 
 	// Parses a single line entry in the form "<name>,<id>,<connected>"
 	bool ParseEntry(const std::string& entry, std::string* name, int* id,
@@ -153,10 +177,12 @@ protected:
 	rtc::AsyncResolver* resolver_;
 	rtc::Thread* signaling_thread_;
 	std::unique_ptr<SslCapableSocket> control_socket_;
+	std::unique_ptr<SslCapableSocket> capacity_socket_;
 	std::unique_ptr<SslCapableSocket> hanging_get_;
 	std::unique_ptr<SslCapableSocket> heartbeat_get_;
 	std::string onconnect_data_;
 	std::string control_data_;
+	std::string capacity_data_;
 	std::string notification_data_;
 	std::string client_name_;
 	std::string authorization_header_;
@@ -164,6 +190,18 @@ protected:
 	State state_;
 	int my_id_;
 	int heartbeat_tick_ms_;
+
+	struct ScheduledPeerMessage
+	{
+		int peer;
+		std::string message;
+
+		ScheduledPeerMessage(int peer_id, const std::string& messageData) :
+			peer(peer_id), message(messageData)
+		{}
+	};
+
+	std::queue<ScheduledPeerMessage> scheduled_messages_;
 };
 
 #endif  // WEBRTC_PEER_CONNECTION_CLIENT_H_

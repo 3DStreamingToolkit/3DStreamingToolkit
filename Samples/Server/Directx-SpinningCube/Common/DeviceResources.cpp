@@ -212,30 +212,6 @@ void DeviceResources::Present()
 	m_swapChain->Present(1, 0);
 }
 
-// Resizes the swapchain.
-void DeviceResources::Resize(int width, int height)
-{
-	// Releases the render target view.
-	SAFE_RELEASE(m_d3dRenderTargetView);
-
-	// Resizes the swapchain buffers.
-	if (m_swapChain)
-	{
-		HRESULT hr = m_swapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_UNKNOWN, 0);
-		if (SUCCEEDED(hr))
-		{
-			// Re-creates the render target view.
-			ID3D11Texture2D* frameBuffer = nullptr;
-			hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&frameBuffer));
-			if (SUCCEEDED(hr))
-			{
-				hr = m_d3dDevice->CreateRenderTargetView(frameBuffer, nullptr, &m_d3dRenderTargetView);
-				SAFE_RELEASE(frameBuffer);
-			}
-		}
-	}
-}
-
 // Enables/Disables the stereo output mode.
 void DeviceResources::SetStereo(bool enabled)
 {
@@ -245,6 +221,5 @@ void DeviceResources::SetStereo(bool enabled)
 	}
 
 	m_outputSize.cx = enabled ? m_outputSize.cx << 1 : m_outputSize.cx >> 1;
-	Resize(m_outputSize.cx, m_outputSize.cy);
 	m_isStereo = enabled;
 }

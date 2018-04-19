@@ -11,6 +11,8 @@
 #ifndef WEBRTC_DEFAULT_MAIN_WINDOW_H_
 #define WEBRTC_DEFAULT_MAIN_WINDOW_H_
 
+//#define UNITY_UV_STARTS_AT_TOP
+
 #include <map>
 #include <memory>
 #include <string>
@@ -96,6 +98,11 @@ public:
 			return image_.get();
 		}
 
+		const int fps() const
+		{
+			return fps_;
+		}
+
 	protected:
 		void SetSize(int width, int height);
 
@@ -110,6 +117,9 @@ public:
 		std::unique_ptr<uint8_t[]> image_;
 		CRITICAL_SECTION buffer_lock_;
 		rtc::scoped_refptr<webrtc::VideoTrackInterface> rendered_track_;
+		ULONGLONG time_tick_;
+		int frame_counter_;
+		int fps_;
 	};
 
 	// A little helper class to make sure we always to proper locking and
@@ -167,11 +177,15 @@ private:
 	HWND auth_code_label_;
 	ID2D1Factory* direct2d_factory_;
 	ID2D1HwndRenderTarget* render_target_;
+	IDWriteFactory* dwrite_factory_;
+	IDWriteTextFormat* text_format_;
+	ID2D1SolidColorBrush* brush_;
 	std::string server_;
 	std::string port_;
 	bool auto_connect_;
 	bool auto_call_;
 	bool connect_button_state_;
+	WCHAR fps_text_[64];
 
 	int width_;
 	int height_;

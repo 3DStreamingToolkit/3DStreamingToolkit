@@ -1,12 +1,12 @@
 #pragma once
 
-#include <wrl\client.h>
-#include <wrl\wrappers\corewrappers.h>
 #include <freeglut.h>
 #include <glut.h>
-#include "glext.h"
 
 #include "buffer_capturer.h"
+#include "glext.h"
+#include <wrl\client.h>
+#include <wrl\wrappers\corewrappers.h>
 
 namespace StreamingToolkit
 {
@@ -14,16 +14,9 @@ namespace StreamingToolkit
 	class OpenGLBufferCapturer : public BufferCapturer
 	{
 	public:
-		OpenGLBufferCapturer(int width, int height);
-
+		OpenGLBufferCapturer();
 		virtual ~OpenGLBufferCapturer() {}
 
-		void Initialize(bool headless = false, int width = 0, int height = 0) override;
-
-		void SendFrame();
-
-	private:
-		UINT buffer_width;
-		UINT buffer_height;
+		void SendFrame(GLubyte* color_buffer, int width, int height);
 	};
 }

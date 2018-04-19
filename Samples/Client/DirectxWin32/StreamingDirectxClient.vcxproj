@@ -101,7 +101,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;d2d1.lib;dwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <FxCompile>
@@ -128,7 +128,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ffmpeg.dll.lib;boringssl.dll.lib;DirectXTK.lib;d2d1.lib;dwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <PostBuildEvent>
@@ -155,7 +155,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>DirectXTK.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DirectXTK.lib;d2d1.lib;dwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <Manifest>
@@ -179,7 +179,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
-      <AdditionalDependencies>DirectXTK.lib;d2d1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DirectXTK.lib;d2d1.lib;dwrite.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
     </Link>
     <Manifest>

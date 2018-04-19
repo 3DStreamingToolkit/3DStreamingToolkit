@@ -47,6 +47,5 @@ namespace DX
 		HRESULT										CreateDeviceResources();
 		HRESULT										CreateWindowSizeDependentResources(HWND);
 		void										CleanupResources();
-		void										Resize(int width, int height);
 	};
 }

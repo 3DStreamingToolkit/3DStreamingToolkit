@@ -44,6 +44,15 @@ void ConfigParser::ConfigureConfigFactories(const std::string& baseFilePath)
 		return std::shared_ptr<StreamingToolkit::ServerConfig>(config);
 	});
 
+	CppFactory::Object<StreamingToolkit::FullServerConfig>::RegisterAllocator([=] {
+		auto config = new StreamingToolkit::FullServerConfig();
+
+		config->server_config = CppFactory::Object<StreamingToolkit::ServerConfig>::Get();
+		config->webrtc_config = CppFactory::Object<StreamingToolkit::WebRTCConfig>::Get();
+
+		return std::shared_ptr<StreamingToolkit::FullServerConfig>(config);
+	});
+
 	CppFactory::Object<StreamingToolkit::NvEncConfig>::RegisterAllocator([=] {
 		auto config = new StreamingToolkit::NvEncConfig();
 
@@ -148,6 +157,9 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 
 void ConfigParser::ParseServerConfig(const std::string& path, StreamingToolkit::ServerConfig* serverConfig)
 {
+	// we want the systemCapacity default to be -1, which requires an explicit set operation
+	serverConfig->server_config.system_capacity = -1;
+
 	std::ifstream fileStream(path);
 	Json::Reader reader;
 	Json::Value root = NULL;
@@ -170,6 +182,21 @@ void ConfigParser::ParseServerConfig(const std::string& path, StreamingToolkit::
 			if (serverConfigNode.isMember("systemService"))
 			{
 				serverConfig->server_config.system_service = serverConfigNode.get("systemService", "").asBool();
+			}
+
+			if (serverConfigNode.isMember("systemCapacity"))
+			{
+				serverConfig->server_config.system_capacity = serverConfigNode.get("systemCapacity", "").asInt();
+			}
+
+			if (serverConfigNode.isMember("autoCall"))
+			{
+				serverConfig->server_config.auto_call = serverConfigNode.get("autoCall", "").asBool();
+			}
+
+			if (serverConfigNode.isMember("autoConnect"))
+			{
+				serverConfig->server_config.auto_connect = serverConfigNode.get("autoConnect", "").asBool();
 			}
 		}
 

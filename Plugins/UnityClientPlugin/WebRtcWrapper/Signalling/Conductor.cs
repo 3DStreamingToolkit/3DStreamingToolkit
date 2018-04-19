@@ -121,6 +121,7 @@ namespace PeerConnectionClient.Signalling
         RTCPeerConnection _peerConnection;
         private RTCDataChannel _peerSendDataChannel;
         private RTCDataChannel _peerReceiveDataChannel;
+        private bool _isDataChannelOpen;
 
         readonly Media _media;
 
@@ -446,21 +447,29 @@ namespace PeerConnectionClient.Signalling
 
         public bool SendPeerDataChannelMessage(string msg)
         {
-            _peerSendDataChannel?.Send(new StringDataChannelMessage(msg));
+            if (_isDataChannelOpen)
+            {
+                _peerSendDataChannel.Send(new StringDataChannelMessage(msg));
+                return true;
+            }
 
-            return _peerReceiveDataChannel != null;
+            return false;
         }
 
         private void PeerSendDataChannelOnClose()
         {
             // TODO: PeerSendDataChannelOnClose()            
             Debug.WriteLine("Peer Data Channel OnClose()");
+
+            _isDataChannelOpen = false;
         }
 
         private void PeerSendDataChannelOnOpen()
         {
             // TODO: PeerSendDataChannelOnOpen()
-            Debug.WriteLine("Peer Data Channel Close");
+            Debug.WriteLine("Peer Data Channel OnOpen()");
+
+            _isDataChannelOpen = true;
         }
 
         /// <summary>

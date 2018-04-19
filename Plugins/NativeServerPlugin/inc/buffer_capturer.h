@@ -71,13 +71,12 @@ namespace StreamingToolkit
 		sigslot::signal1<BufferCapturer*> SignalDestroyed;
 
 	protected:
-		virtual void Initialize(bool headless = false, int width = 0, int height = 0) = 0;
 		virtual void SendFrame(webrtc::VideoFrame video_frame);
 
 		Clock* const clock_;
 		bool use_software_encoder_;
 		bool running_;
-		rtc::VideoSinkInterface<VideoFrame>* sink_;
+		std::vector<rtc::VideoSinkInterface<VideoFrame>*> sinks_;
 		SinkWantsObserver* sink_wants_observer_;
 		rtc::CriticalSection lock_;
 	};
