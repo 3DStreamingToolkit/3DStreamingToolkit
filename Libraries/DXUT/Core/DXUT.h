@@ -241,6 +241,9 @@ LRESULT CALLBACK DXUTStaticWndProc(_In_ HWND hWnd, _In_ UINT uMsg, _In_ WPARAM w
 // Set the custom render target view
 void WINAPI DXUTSetD3D11RenderTargetView(_In_ ID3D11RenderTargetView* pRenderTargetView);
 
+// Set the custom depth stencil view
+void WINAPI DXUTSetD3D11DepthStencilView(_In_ ID3D11DepthStencilView* pDepthStencilView);
+
 // Choose either DXUTCreateDevice or DXUTCreateD3DDeviceFromSettings
 
 HRESULT WINAPI DXUTCreateDevice(_In_ D3D_FEATURE_LEVEL reqFL, _In_ bool bWindowed = true, _In_ int nSuggestedWidth = 0, _In_  int nSuggestedHeight = 0);

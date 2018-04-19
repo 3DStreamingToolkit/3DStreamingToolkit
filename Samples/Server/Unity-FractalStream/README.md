@@ -19,3 +19,7 @@ Open **App.xaml.cs/cpp** or **App.cs/cpp** and at the end of constructor add:
 ```
 appCallbacks.AddCommandLineArg("-force-d3d11-no-singlethreaded");
 ```
+
+## UNITY_UV_STARTS_AT_TOP flag
+
+When using [RenderTexture](https://docs.unity3d.com/ScriptReference/RenderTexture.html), Unity follows OpenGL standard so we need to manually “flip” the screen texture upside down by enabling **UNITY_UV_STARTS_AT_TOP** flag. For DirectX UWP client, it's in **Samples\Client\DirectxUWP\DirectxClientComponent\Content\VideoRenderer.h** and for DirectX Win32 client, it's in **Libraries\UserInterface\inc\client_main_window.h**.

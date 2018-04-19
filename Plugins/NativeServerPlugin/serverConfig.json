@@ -2,7 +2,10 @@
   "serverConfig": {
     "width": 1280,
     "height": 720,
-    "systemService": false
+    "systemService": false,
+    "systemCapacity": -1,
+    "autoCall": false,
+    "autoConnect":  false
   },
   "serviceConfig": {
     "name": "3DStreamingRenderingService",

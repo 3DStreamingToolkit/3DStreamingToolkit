@@ -3,6 +3,9 @@
 #include "DeviceResources.h"
 #include "ShaderStructures.h"
 
+//#define SHOW_DEBUG_INFO
+//#define UNITY_UV_STARTS_AT_TOP
+
 using namespace Microsoft::WRL;
 
 namespace DirectXClientComponent
@@ -17,7 +20,7 @@ namespace DirectXClientComponent
 
 		void										CreateDeviceDependentResources();
 		void										ReleaseDeviceDependentResources();
-		void										Render();
+		void										Render(int fps = 0, int latency = 0);
 
 		// Property accessors.
 		ID3D11Texture2D*							GetVideoFrame()			{ return m_videoFrame.Get();	}
@@ -44,5 +47,10 @@ namespace DirectXClientComponent
 		bool                                        m_usingVprtShaders;
 
 		Windows::Foundation::Numerics::float3       m_focusPoint;
+
+		// Resources related to text rendering.
+		ComPtr<ID2D1RenderTarget>					m_d2dRenderTarget;
+		ComPtr<ID2D1SolidColorBrush>				m_brush;
+		ComPtr<IDWriteTextFormat>					m_textFormat;
 	};
 }

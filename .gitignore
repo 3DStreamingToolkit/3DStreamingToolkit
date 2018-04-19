@@ -254,12 +254,18 @@ paket-files/
 *.sln.iml
 
 # 3DStreaming 
+Libraries/Freeglut
+Libraries/Glew
+Libraries/glext
 *.h264
 *.log
 *.cso
 *.zip
 js-3dtoolkit.*
 sdputils.*
+
+# Test resource files
+*.yuv
 
 # Mac Files
 .DS_Store

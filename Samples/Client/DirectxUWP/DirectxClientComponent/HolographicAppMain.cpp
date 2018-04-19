@@ -182,7 +182,9 @@ HolographicFrame^ HolographicAppMain::Update()
 // current application and spatial positioning state. Returns true if the
 // frame was rendered to at least one camera.
 bool HolographicAppMain::Render(
-	Windows::Graphics::Holographic::HolographicFrame^ holographicFrame)
+	Windows::Graphics::Holographic::HolographicFrame^ holographicFrame,
+	int fps,
+	int latency)
 {
     //
     // TODO: Add code for pre-pass rendering here.
@@ -195,13 +197,10 @@ bool HolographicAppMain::Render(
     // Lock the set of holographic camera resources, then draw to each camera
     // in this frame.
     return m_deviceResources->UseHolographicCameraResources<bool>(
-        [this, holographicFrame](std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
+        [this, holographicFrame, fps, latency](
+			std::map<UINT32, std::unique_ptr<DX::CameraResources>>& cameraResourceMap)
     {
-        // Up-to-date frame predictions enhance the effectiveness of 
-		// image stablization and allow more accurate positioning of holograms.
-        //holographicFrame->UpdateCurrentPrediction();
         HolographicFramePrediction^ prediction = holographicFrame->CurrentPrediction;
-
         bool atLeastOneCameraRendered = false;
         for (auto cameraPose : prediction->CameraPoses)
         {
@@ -261,7 +260,7 @@ bool HolographicAppMain::Render(
             if (cameraActive)
             {
                 // Draw the sample hologram.
-				m_videoRenderer->Render();
+				m_videoRenderer->Render(fps, latency);
             }
 
             atLeastOneCameraRendered = true;

@@ -1,0 +1,149 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4027EE56-E65E-4A73-8281-A5A14F45E7E3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>NativeServersUnitTests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\NativeServerTests\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\NativeServerTests\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)Build\$(PlatformShortName)\$(Configuration)\NativeServerTests\</OutDir>
+    <IntDir>$(ProjectDir)Intermediate\$(PlatformShortName)\$(Configuration)\NativeServerTests\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(VCInstallDir)UnitTest\include;$(ProjectDir);..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\WebRTC\headers;..\..\..\Plugins\NativeServerPlugin\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UseFullPaths>true</UseFullPaths>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(ProjectDir)..\..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>nvpipe.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\Resources\paris_qcif.yuv" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>IF NOT EXIST "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" (
+echo Pre-built libraries are missing, did you run setup.cmd?
+)
+
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\cudart64_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)" </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>$(ProjectDir);Common;\inc;Content;$(VCInstallDir)UnitTest\include;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\WebRTC\headers;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UseFullPaths>true</UseFullPaths>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;$(ProjectDir)..\..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(ProjectDir)..\..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>nvpipe.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\Resources\paris_qcif.yuv" "$(OutDir)"</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>IF NOT EXIST "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" (
+echo Pre-built libraries are missing, did you run setup.cmd?
+)
+
+xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.dll" "$(OutDir)" &amp;&amp; xcopy /y /d "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\cudart64_91.dll" "$(OutDir)" &amp;&amp; xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\$(Configuration)\nvpipe.dll" "$(OutDir)" </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="webrtc.h" />
+    <ClInclude Include="webrtcH264.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="frame_utils.cc" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="NativeServersTests.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Libraries\Authentication\Authentication.vcxproj">
+      <Project>{0bf47a53-06e2-4102-b789-c36f46d95dc7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Libraries\ConfigParser\ConfigParser.vcxproj">
+      <Project>{38e8fa5f-07be-4022-ae99-ee8e7b45eb82}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Libraries\SignalingClient\SignalingClient.vcxproj">
+      <Project>{88348d78-a949-4ff8-8a0a-2934744d89d2}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Libraries\UserInterface\UserInterface.vcxproj">
+      <Project>{95eb9544-2e62-4f54-8567-d55cd1dfd8fe}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Plugins\NativeServerPlugin\StreamingNativeServerPlugin.vcxproj">
+      <Project>{6bc9c817-fd14-4540-a9c0-63cf16f770a6}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tests.runsettings" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

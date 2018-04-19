@@ -24,28 +24,7 @@ namespace Microsoft.Toolkit.ThreeD
 #else
             [DllImport(PluginName)]
 #endif
-            public static extern void InitializeBufferCapturer(IntPtr leftRT, IntPtr rightRT);
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-            [DllImport ("__Internal")]
-#else
-            [DllImport(PluginName)]
-#endif
-            public static extern void SendFrame(bool isStereo, long predictionTimestamp);
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-            [DllImport ("__Internal")]
-#else
-            [DllImport(PluginName)]
-            public static extern void Close();
-#endif
-
-#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
-            [DllImport ("__Internal")]
-#else
-            [DllImport(PluginName)]
-            public static extern void SetEncodingStereo(bool encodingStereo);
-#endif
+            public static extern void NativeInitWebRTC();
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
@@ -58,14 +37,21 @@ namespace Microsoft.Toolkit.ThreeD
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
-            public static extern void DisconnectFromPeer();
+#endif
+            public static extern void SendFrame(int peerId, bool isStereo, IntPtr leftRT, IntPtr rightRT, long predictionTimestamp);
+
+#if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
+            [DllImport ("__Internal")]
+#else
+            [DllImport(PluginName)]
+            public static extern void Close();
 #endif
 
 #if (UNITY_IPHONE || UNITY_WEBGL) && !UNITY_EDITOR
             [DllImport ("__Internal")]
 #else
             [DllImport(PluginName)]
-            public static extern void SetCallbackMap(GenericDelegate<string>.Handler onInputUpdate,
+            public static extern void SetCallbackMap(GenericDelegate<int, string>.Handler onDataChannelMessage,
                 GenericDelegate<int, string>.Handler onLog,
                 GenericDelegate<int, string>.Handler onPeerConnect,
                 GenericDelegate<int>.Handler onPeerDisconnect,
@@ -90,7 +76,7 @@ namespace Microsoft.Toolkit.ThreeD
 
         #region Marshalled events
 
-        public event GenericDelegate<string>.Handler InputUpdate;
+        public event GenericDelegate<int, string>.Handler DataChannelMessage;
         public event GenericDelegate<int, string>.Handler Log;
         public event GenericDelegate<int, string>.Handler PeerConnect;
         public event GenericDelegate<int>.Handler PeerDisconnect;
@@ -109,7 +95,7 @@ namespace Microsoft.Toolkit.ThreeD
         public event GenericDelegate<string>.Handler IceCandidate;
         public event GenericDelegate<bool>.Handler IceConnectionReceivingChange;
 
-        private GenericDelegate<string>.Handler pinnedInputUpdate;
+        private GenericDelegate<int, string>.Handler pinnedDataChannelMessage;
         private GenericDelegate<int, string>.Handler pinnedLog;
         private GenericDelegate<int, string>.Handler pinnedPeerConnect;
         private GenericDelegate<int>.Handler pinnedPeerDisconnect;
@@ -128,7 +114,7 @@ namespace Microsoft.Toolkit.ThreeD
         private GenericDelegate<string>.Handler pinnedIceCandidate;
         private GenericDelegate<bool>.Handler pinnedIceConnectionReceivingChange;
 
-        private void OnInputUpdate(string val0) { ErrorOnFailure(() => { if (this.InputUpdate != null) this.InputUpdate(val0); }); }
+        private void OnDataChannelMessage(int val0, string val1) { ErrorOnFailure(() => { if (this.DataChannelMessage != null) this.DataChannelMessage(val0, val1); }); }
         private void OnLog(int val0, string val1) { ErrorOnFailure(() => { if (Log != null) this.Log(val0, val1); }); }
         private void OnPeerConnect(int val0, string val1) { ErrorOnFailure(() => { if (PeerConnect != null) this.PeerConnect(val0, val1); }); }
         private void OnPeerDisconnect(int val0) { ErrorOnFailure(() => { if (this.PeerDisconnect != null) this.PeerDisconnect(val0); }); }
@@ -183,7 +169,7 @@ namespace Microsoft.Toolkit.ThreeD
         public StreamingUnityServerPlugin()
         {
             // create null checking wrappers that we can always call on the native side
-            this.pinnedInputUpdate = new GenericDelegate<string>.Handler(this.OnInputUpdate);
+            this.pinnedDataChannelMessage = new GenericDelegate<int, string>.Handler(this.OnDataChannelMessage);
             this.pinnedLog = new GenericDelegate<int, string>.Handler(this.OnLog);
             this.pinnedPeerConnect = new GenericDelegate<int, string>.Handler(this.OnPeerConnect);
             this.pinnedPeerDisconnect = new GenericDelegate<int>.Handler(this.OnPeerDisconnect);
@@ -203,7 +189,7 @@ namespace Microsoft.Toolkit.ThreeD
             this.pinnedIceConnectionReceivingChange = new GenericDelegate<bool>.Handler(this.OnIceConnectionReceivingChange);
 
             // marshal the callbacks across into native land
-            Native.SetCallbackMap(this.pinnedInputUpdate,
+            Native.SetCallbackMap(this.pinnedDataChannelMessage,
                     this.pinnedLog,
                     this.pinnedPeerConnect,
                     this.pinnedPeerDisconnect,
@@ -224,39 +210,12 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// true for stereo encoding, false otherwise
+        /// Initializes WebRTC.
         /// </summary>
-        private bool encodingStereo = false;
-
-        /// <summary>
-        /// Informs the encoder if we are or are not going to be encoding stereo data
-        /// </summary>
-        public bool EncodingStereo
+        public IEnumerator NativeInitWebRTC()
         {
-            get { return encodingStereo; }
-            set { Native.SetEncodingStereo(value); encodingStereo = value; }
-        }
-
-        /// <summary>
-        /// Initializes the buffer capturer.
-        /// </summary>
-        /// <param name="leftRT">The render texture for left eye.</param>
-        /// <param name="rightRT">The render texture for right eye.</param>
-        public IEnumerator InitializeBufferCapturer(IntPtr leftRT, IntPtr rightRT)
-        {
-            Native.InitializeBufferCapturer(leftRT, rightRT);
+            Native.NativeInitWebRTC();
             yield return null;
-        }
-
-        /// <summary>
-        /// Locks frame buffer and sends it to the encoder.
-        /// </summary>
-        /// <param name="isStereo">True for stereo output.</param>
-        /// <param name="predictionTimestamp">The prediction timestamp.</param>
-        public IEnumerator SendFrame(bool isStereo, long predictionTimestamp)
-        {
-            yield return new WaitForEndOfFrame();
-            Native.SendFrame(isStereo, predictionTimestamp);
         }
 
         /// <summary>
@@ -269,11 +228,33 @@ namespace Microsoft.Toolkit.ThreeD
         }
 
         /// <summary>
-        /// Disconnects from the current peer
+        /// Locks frame buffer and sends it to the encoder.
         /// </summary>
-        public void DisconnectFromPeer()
+        /// <param name="peerId">The peer id.</param>
+        /// <param name="isStereo">True for stereo output.</param>
+        /// <param name="leftRT">The left render texture.</param> 
+        /// <param name="rightRT">The right render texture.</param>
+        /// <param name="predictionTimestamp">The prediction timestamp.</param>
+        public void SendFrame(int peerId, bool isStereo, RenderTexture leftRT, RenderTexture rightRT, long predictionTimestamp)
         {
-            Native.DisconnectFromPeer();
+            if (!isStereo)
+            {
+                Native.SendFrame(
+                    peerId,
+                    isStereo,
+                    leftRT.GetNativeTexturePtr(),
+                    IntPtr.Zero,
+                    predictionTimestamp);
+            }
+            else
+            {
+                Native.SendFrame(
+                    peerId,
+                    isStereo,
+                    leftRT.GetNativeTexturePtr(),
+                    rightRT.GetNativeTexturePtr(),
+                    predictionTimestamp);
+            }
         }
 
         #region IDisposable Support

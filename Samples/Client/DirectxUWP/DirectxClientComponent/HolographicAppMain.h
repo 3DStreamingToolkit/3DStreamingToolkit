@@ -26,7 +26,10 @@ namespace DirectXClientComponent
         Windows::Graphics::Holographic::HolographicFrame^ Update();
 
         // Renders holograms, including world-locked content.
-        bool Render(Windows::Graphics::Holographic::HolographicFrame^ holographicFrame);
+        bool Render(
+			Windows::Graphics::Holographic::HolographicFrame^ holographicFrame,
+			int fps = 0,
+			int latency = 0);
 
 		// Gets the reference frame.
 		Windows::Perception::Spatial::SpatialStationaryFrameOfReference^ GetReferenceFrame();

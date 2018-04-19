@@ -317,6 +317,34 @@ namespace PeerConnectionClient.Signalling
         }
 
         /// <summary>
+        /// Updates the capacity data on the signaling server
+        /// </summary>
+        /// <remarks>
+        /// Once capacity reaches 0, we'll be removed from the signaling server listing of available peers
+        /// see https://github.com/bengreenier/webrtc-signal-http-capacity for more info
+        /// </remarks>
+        /// <param name="newCapacity">the new remaining capacity</param>
+        /// <returns>success flag</returns>
+        public async Task<bool> UpdateCapacity(int newCapacity)
+        {
+            if (!IsConnected())
+            {
+                return false;
+            }
+
+
+            var res = await this._httpClient.PutAsync($"/capacity?peer_id={_myId}&value={newCapacity}", new StringContent(""));
+
+            if (res.StatusCode != HttpStatusCode.OK)
+            {
+                Debug.WriteLine("[Info] Signaling: capacity update failed: {0}", res.StatusCode);
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Sends a message to a peer.
         /// </summary>
         /// <param name="peerId">ID of the peer to send a message to.</param>

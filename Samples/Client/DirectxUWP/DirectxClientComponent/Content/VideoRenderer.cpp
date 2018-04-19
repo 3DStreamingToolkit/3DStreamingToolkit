@@ -2,9 +2,14 @@
 #include "VideoRenderer.h"
 #include "DirectXHelper.h"
 
+#ifdef SHOW_DEBUG_INFO
+#define FONT_SIZE		40.0f
+#define TEXT_INDENT		20
+#endif // SHOW_DEBUG_INFO
+
 using namespace DirectX;
-using namespace Windows::UI::Core;
 using namespace DirectXClientComponent;
+using namespace Platform;
 
 VideoRenderer::VideoRenderer(
 	const std::shared_ptr<DX::DeviceResources>& deviceResources,
@@ -16,7 +21,23 @@ VideoRenderer::VideoRenderer(
 		m_usingVprtShaders(false)
 {
 	// Sets a fixed focus point two meters in front of user for image stabilization.
-	m_focusPoint = { 0.f, 0.f, -2.f };
+	m_focusPoint = { 0.0f, 0.0f, -2.0f };
+
+#ifdef SHOW_DEBUG_INFO
+	// Creates text format.
+	DX::ThrowIfFailed(
+		m_deviceResources->GetDWriteFactory()->CreateTextFormat(
+			L"Segoe UI",
+			nullptr,
+			DWRITE_FONT_WEIGHT_LIGHT,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			FONT_SIZE,
+			L"en-US",
+			&m_textFormat
+		)
+	);
+#endif // SHOW_DEBUG_INFO
 
 	CreateDeviceDependentResources();
 }
@@ -28,6 +49,23 @@ void VideoRenderer::CreateDeviceDependentResources()
 
 	VertexPositionTexture vertices[] =
 	{
+#ifdef UNITY_UV_STARTS_AT_TOP
+		// Left camera.
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.0f,	0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
+		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 0.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f) },
+
+		// Right camera
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.0f,	0.0f, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) },
+		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
+		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
+		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 1.0f, 1.0f) }
+#else // UNITY_UV_STARTS_AT_TOP
 		// Left camera.
 		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(0.5f, 1.0f, 0.0f) },
@@ -43,6 +81,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 		{ XMFLOAT3(width, height, 0.0f), XMFLOAT3(1.0f, 0.0f, 1.0f) },
 		{ XMFLOAT3(width,	0.0f, 0.0f), XMFLOAT3(1.0f, 1.0f, 1.0f) },
 		{ XMFLOAT3(0.0f, height, 0.0f), XMFLOAT3(0.5f, 0.0f, 1.0f) }
+#endif // UNITY_UV_STARTS_AT_TOP
 	};
 
 	D3D11_BUFFER_DESC bufferDesc = { 0 };
@@ -61,7 +100,7 @@ void VideoRenderer::CreateDeviceDependentResources()
 	videoTextureDesc.Height = m_height;
 	videoTextureDesc.MipLevels = 1;
 	videoTextureDesc.SampleDesc.Count = 1;
-	videoTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	videoTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	m_deviceResources->GetD3DDevice()->CreateTexture2D(
 		&videoTextureDesc, nullptr, &m_videoFrame);
 
@@ -190,6 +229,30 @@ void VideoRenderer::CreateDeviceDependentResources()
 			);
 		});
 	}
+
+#ifdef SHOW_DEBUG_INFO
+	// Obtains a DXGI surface.
+	ComPtr<IDXGISurface> dxgiSurface;
+	DX::ThrowIfFailed(m_videoFrame->QueryInterface(dxgiSurface.GetAddressOf()));
+
+	// Creates a D2D render target.
+	D2D1_RENDER_TARGET_PROPERTIES props =
+		D2D1::RenderTargetProperties(
+			D2D1_RENDER_TARGET_TYPE_DEFAULT,
+			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+		);
+
+	DX::ThrowIfFailed(m_deviceResources->GetD2DFactory()->CreateDxgiSurfaceRenderTarget(
+		dxgiSurface.Get(),
+		&props,
+		&m_d2dRenderTarget
+	));
+
+	m_d2dRenderTarget->CreateSolidColorBrush(
+		D2D1::ColorF(D2D1::ColorF::White, 1.0f),
+		&m_brush
+	);
+#endif // SHOW_DEBUG_INFO
 }
 
 void VideoRenderer::ReleaseDeviceDependentResources()
@@ -200,10 +263,68 @@ void VideoRenderer::ReleaseDeviceDependentResources()
 	m_pixelShader.Reset();
 	m_vertexBuffer.Reset();
 	m_geometryShader.Reset();
+	m_brush.Reset();
 }
 
-void VideoRenderer::Render()
+void VideoRenderer::Render(int fps, int latency)
 {
+#ifdef SHOW_DEBUG_INFO
+	String^ debugInfo = L"FPS: " + fps + L" Latency: " + latency;
+	int halfWidth = m_width >> 1;
+
+	D2D1_RECT_F leftTextRect = 
+	{
+		TEXT_INDENT,
+		0,
+		halfWidth,
+		m_height
+	};
+
+	D2D1_RECT_F rightTextRect = 
+	{
+		halfWidth + TEXT_INDENT,
+		0,
+		m_width,
+		m_height
+	};
+
+	m_d2dRenderTarget->BeginDraw();
+
+#ifdef UNITY_UV_STARTS_AT_TOP
+	m_d2dRenderTarget->SetTransform(
+		D2D1::Matrix3x2F::Scale(
+			1.0f,
+			-1.0f,
+			D2D1::Point2F(halfWidth, m_height >> 1))
+	);
+#endif // UNITY_UV_STARTS_AT_TOP
+
+	m_d2dRenderTarget->DrawText(
+		debugInfo->Data(),
+		debugInfo->Length(),
+		m_textFormat.Get(),
+		leftTextRect,
+		m_brush.Get());
+
+#ifdef UNITY_UV_STARTS_AT_TOP
+	m_d2dRenderTarget->SetTransform(
+		D2D1::Matrix3x2F::Scale(
+			1.0f,
+			-1.0f,
+			D2D1::Point2F(m_width + halfWidth, m_height >> 1))
+	);
+#endif // UNITY_UV_STARTS_AT_TOP
+
+	m_d2dRenderTarget->DrawText(
+		debugInfo->Data(),
+		debugInfo->Length(),
+		m_textFormat.Get(),
+		rightTextRect,
+		m_brush.Get());
+
+	m_d2dRenderTarget->EndDraw();
+#endif // SHOW_DEBUG_INFO
+
 	// Gets the device context.
 	ID3D11DeviceContext* context = m_deviceResources->GetD3DDeviceContext();
 
