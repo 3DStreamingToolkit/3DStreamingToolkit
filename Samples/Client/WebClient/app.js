@@ -2,14 +2,25 @@ $(function(){
 
   URL = window.webkitURL || window.URL;
 
-  var pcConfigStatic = {
+  // Using this config if you require a TURN server for VPN/Proxy networks. 
+  // See https://github.com/CatalystCode/3dtoolkit/wiki/TURN-Service  
+  var pcConfigTURNStatic = {
     'iceServers': [{
         'urls': 'turn server goes here',
         'username': 'username goes here',
         'credential': 'password goes here',
         'credentialType': 'password'
+    },
+    {
+      'urls': 'stun:stun.l.google.com:19302'
     }],
     'iceTransportPolicy': 'relay'
+  };
+
+  var pcConfigSTUNStatic = {
+    'iceServers': [{
+      'urls': 'stun:stun.l.google.com:19302'
+    }]
   };
 
   var pcConfigDynamic = {
@@ -61,7 +72,8 @@ $(function(){
   };
   var accessToken;
 
-  var pcConfig = pcConfigStatic;
+  // use pcConfigTURNStatic for VPN/Proxy networks. 
+  var pcConfig = pcConfigSTUNStatic;
 
   RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection;
   RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription || RTCSessionDescription;

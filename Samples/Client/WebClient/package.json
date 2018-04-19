@@ -4,7 +4,7 @@
   "description": "Web client sample for 3D Streaming Toolkit",
   "main": "app.js",
   "dependencies": {
-    "js-3dtoolkit": "^1.0.0",
+    "js-3dtoolkit": "^1.1.0",
     "http-server": "^0.11.1"
   },
   "devDependencies": {},
