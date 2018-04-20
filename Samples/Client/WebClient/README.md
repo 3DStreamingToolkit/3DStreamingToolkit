@@ -2,15 +2,21 @@ The WebClient sample is a vanilla JavaScript sample that supports mono rendering
 
 ## Installing dependencies
 
-The WebClient sample consumes a universal JavaScript plugin that is downloaded that is downloaded using npm. The source code can be found [here](https://github.com/CatalystCode/js-3dtoolkit). Installation is done using the `npm install` command.
+All dependencies are installed using the `npm install` command.
 
 ```bash
 $ npm install
 ```
 
+## 3DToolkit JavaScript Library
+
+The WebClient sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/CatalystCode/js-3dtoolkit). 
+
+This library is responsible for connecting to the signaling server, exposing the data channel, connecting/disconnection to peers and handling the SDP offer between peers. By default, the library will request H264 video encoding when connecting to a peer. This is required for the low latency scenarios enabled by this toolkit.
+
 ## Config file
 
-To connect to a specific signaling, you need to modify the value inside `app.js`:
+To connect to a specific signaling server, you need to modify the value inside `app.js`:
 ```  
  var defaultSignalingServerUrl = 'http://localhost:3001'
 ```
@@ -32,6 +38,14 @@ In case your scenario requires VPN/Proxy networks, you need to specify a turn se
 ```
 
 For more information read the [TURN-Service wiki](https://github.com/CatalystCode/3dtoolkit/wiki/TURN-Service) and [sample implementation configuration files](https://github.com/CatalystCode/3dtoolkit/wiki/JSON-Config-Files).
+
+## Running the client
+
+After all dependencies are installed, simply run the command:
+```bash
+$ http-server
+```
+
 ## How it works
 
 Once the config settings are changed, the client will require a server to connect to. In this toolkit, we have a few [Sample Servers](https://github.com/CatalystCode/3dtoolkit/tree/master/Samples/Server). 

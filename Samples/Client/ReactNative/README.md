@@ -4,14 +4,21 @@ An iOS and Android sample client written in React Native. It supports mono rende
 
 ## Installing dependencies
 
-The React Native sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/CatalystCode/js-3dtoolkit). Installation is done using the `npm install` command.
+All dependencies are installed using the `npm install` command.
 
 ```bash
 $ npm install
 ```
+
+## 3DToolkit JavaScript Library
+
+The React Native sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/CatalystCode/js-3dtoolkit). 
+
+This library is responsible for connecting to the signaling server, exposing the data channel, connecting/disconnection to peers and handling the SDP offer between peers. By default, the library will request H264 video encoding when connecting to a peer. This is required for the low latency scenarios enabled by this toolkit.
+
 ## Config file
 
-To connect to a specific signaling, you need to modify the values inside `config.js`:
+To connect to a specific signaling server, you need to modify the values inside `config.js`:
 ```  
 export default Config = {
    'serverUrl': 'http://localhost:3001',
@@ -23,7 +30,7 @@ export default Config = {
 }
 ```
 
-In case your scenario requires VPN/Proxy networks, you need to uncomment and specify a signaling and turn server inside 'config.js':
+In case your scenario requires VPN/Proxy networks, you need to uncomment and specify a signaling and turn server inside `config.js`:
 ```  
 export default Config = {
     'serverUrl': 'http://localhost:3001',
