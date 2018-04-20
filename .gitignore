@@ -262,6 +262,7 @@ Libraries/glext
 *.cso
 *.zip
 js-3dtoolkit.*
+sdputils.*
 
 # Test resource files
 *.yuv

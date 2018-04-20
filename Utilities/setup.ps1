@@ -3,7 +3,6 @@ $err = $null
 $libCount = 0
 $libTotal = 5
 
-
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\Nvpipe")
 try {
     & .\InstallLibraries.ps1
@@ -13,20 +12,6 @@ try {
 
 if ($err) {
     Write-Host ('Error retrieving Nvpipe libraries: ' + $err.Message) -ForegroundColor Red
-}
-
-$libCount++
-Write-Host 'Finished Library '$libCount'/'$libTotal
-Set-Location -Path ($PSScriptRoot + "\..\Libraries\JavaScript3DToolkit")
-
-try {
-    & .\webrtcInstallLibs.ps1
-} catch {
-    $err = $_.Exception
-}
-
-if ($err) {
-    Write-Host ('Error retrieving React library: ' + $err.Message) -ForegroundColor Red
 }
 
 $libCount++
