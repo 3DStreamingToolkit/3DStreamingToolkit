@@ -402,6 +402,13 @@ bool AppMain(BOOL stopping)
 	// Sets data channel message handler.
 	cond.SetDataChannelMessageHandler(dataChannelMessageHandler);
 
+	// For system service, automatically connect to the signaling server.
+	if (fullServerConfig->server_config->server_config.system_service)
+	{
+		cond.StartLogin(fullServerConfig->webrtc_config->server.c_str(),
+			fullServerConfig->webrtc_config->port);
+	}
+
 	// Main loop.
 	MSG msg = { 0 };
 	while (!stopping && WM_QUIT != msg.message)
