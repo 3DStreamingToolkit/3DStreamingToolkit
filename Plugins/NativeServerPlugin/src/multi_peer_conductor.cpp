@@ -127,8 +127,12 @@ void MultiPeerConductor::OnPeerConnected(int id, const string& name)
 	if (main_window_ && main_window_->IsWindow() && main_window_->current_ui() == MainWindow::LIST_PEERS)
 	{
 		main_window_->SwitchToPeerList(signalling_client_.peers());
-		if (config_->server_config->server_config.auto_call)
+
+		// if autocall is enabled and we either have no capacity limit, or have not reached the limit
+		if (config_->server_config->server_config.auto_call &&
+			(cur_capacity_ == -1 || cur_capacity_ < max_capacity_))
 		{
+			// we connect to the peer automatically
 			ConnectToPeer(id);
 		}
 	}
