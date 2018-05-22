@@ -123,10 +123,14 @@ void MultiPeerConductor::OnDisconnected()
 
 void MultiPeerConductor::OnPeerConnected(int id, const string& name)
 {
-	// Refresh the list if we're showing it.
-	if (main_window_ && main_window_->IsWindow() && main_window_->current_ui() == MainWindow::LIST_PEERS)
+	if (main_window_)
 	{
-		main_window_->SwitchToPeerList(signalling_client_.peers());
+		// Refresh the list if we're showing it.
+		if (main_window_->IsWindow() && main_window_->current_ui() == MainWindow::LIST_PEERS)
+		{
+			main_window_->SwitchToPeerList(signalling_client_.peers());
+		}
+
 		if (config_->server_config->server_config.auto_call)
 		{
 			ConnectToPeer(id);
