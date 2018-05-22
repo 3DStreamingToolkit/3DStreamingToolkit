@@ -57,11 +57,11 @@ namespace ConfigParserTests
 			Assert::AreEqual("test:test:1234", injectedWebRTCInstance->turn_server.uri.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->turn_server.username.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->turn_server.password.c_str());
-			Assert::AreEqual("test", injectedWebRTCInstance->server.c_str());
+			Assert::AreEqual("test", injectedWebRTCInstance->server_uri.c_str());
 			Assert::IsTrue(((uint16_t)5678) == injectedWebRTCInstance->port);
 			Assert::IsTrue(((uint32_t)91011) == injectedWebRTCInstance->heartbeat);
 			Assert::AreEqual("test:test:1234", injectedWebRTCInstance->stun_server.uri.c_str());
-			Assert::AreEqual("test://test", injectedWebRTCInstance->authentication.authority.c_str());
+			Assert::AreEqual("test://test", injectedWebRTCInstance->authentication.authority_uri.c_str());
 			Assert::AreEqual("00000000-0000-0000-0000-000000000000", injectedWebRTCInstance->authentication.client_id.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->authentication.client_secret.c_str());
 			Assert::AreEqual("test://test", injectedWebRTCInstance->authentication.code_uri.c_str());
@@ -73,11 +73,11 @@ namespace ConfigParserTests
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.uri.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.username.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.password.c_str());
-			Assert::AreEqual("", defaultWebRTCInstance->server.c_str());
+			Assert::AreEqual("", defaultWebRTCInstance->server_uri.c_str());
 			Assert::IsTrue(((uint16_t)0) == defaultWebRTCInstance->port);
 			Assert::IsTrue(((uint32_t)0) == defaultWebRTCInstance->heartbeat);
 			Assert::AreEqual("", defaultWebRTCInstance->stun_server.uri.c_str());
-			Assert::AreEqual("", defaultWebRTCInstance->authentication.authority.c_str());
+			Assert::AreEqual("", defaultWebRTCInstance->authentication.authority_uri.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->authentication.client_id.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->authentication.client_secret.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->authentication.code_uri.c_str());

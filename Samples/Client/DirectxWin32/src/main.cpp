@@ -53,7 +53,7 @@ int WINAPI wWinMain(
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ClientMainWindow wnd(
-		webrtcConfig->server.c_str(),
+		webrtcConfig->server_uri.c_str(),
 		webrtcConfig->port,
 		FLAG_autoconnect,
 		FLAG_autocall,
@@ -86,10 +86,10 @@ int WINAPI wWinMain(
 	std::unique_ptr<TurnCredentialProvider> turn;
 
 	if (oauth.get() != nullptr &&
-		webrtcConfig->turn_server.provider != FLAG_turnUri &&
-		!webrtcConfig->turn_server.provider.empty())
+		webrtcConfig->turn_server.provider_uri != FLAG_turnUri &&
+		!webrtcConfig->turn_server.provider_uri.empty())
 	{
-		turn.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider));
+		turn.reset(new TurnCredentialProvider(webrtcConfig->turn_server.provider_uri));
 	}
 
 	PeerConnectionClient client;

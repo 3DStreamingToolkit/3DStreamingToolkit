@@ -271,7 +271,7 @@ void InitWebRTC()
 	// Initializes SSL.
 	rtc::InitializeSSL();
 		
-	s_server = fullServerConfig->webrtc_config->server;
+	s_server = fullServerConfig->webrtc_config->server_uri;
 	s_port = fullServerConfig->webrtc_config->port;
 
 	// Initializes the conductor.

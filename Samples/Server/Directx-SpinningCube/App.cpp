@@ -174,7 +174,7 @@ bool AppMain(BOOL stopping)
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ServerMainWindow wnd(
-		fullServerConfig->webrtc_config->server.c_str(),
+		fullServerConfig->webrtc_config->server_uri.c_str(),
 		fullServerConfig->webrtc_config->port,
 		fullServerConfig->server_config->server_config.auto_connect,
 		fullServerConfig->server_config->server_config.auto_call,
@@ -405,7 +405,7 @@ bool AppMain(BOOL stopping)
 	// For system service, automatically connect to the signaling server.
 	if (fullServerConfig->server_config->server_config.system_service)
 	{
-		cond.StartLogin(fullServerConfig->webrtc_config->server.c_str(),
+		cond.StartLogin(fullServerConfig->webrtc_config->server_uri.c_str(),
 			fullServerConfig->webrtc_config->port);
 	}
 
