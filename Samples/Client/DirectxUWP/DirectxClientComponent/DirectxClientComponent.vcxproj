@@ -112,7 +112,7 @@
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+      <Command>xcopy /y /s /d "$(OutDir)*.cso" "$(ProjectDir)..\DirectxClient"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,7 +133,7 @@
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+      <Command>xcopy /y /s /d "$(OutDir)*.cso" "$(ProjectDir)..\DirectxClient"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -154,7 +154,7 @@
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+      <Command>xcopy /y /s /d "$(OutDir)*.cso" "$(ProjectDir)..\DirectxClient"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -175,7 +175,7 @@
       <AdditionalDependencies>WindowsApp.lib;libyuv_win10_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /s /d $(OutDir)*.cso $(ProjectDir)..\DirectxClient</Command>
+      <Command>xcopy /y /s /d "$(OutDir)*.cso" "$(ProjectDir)..\DirectxClient"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

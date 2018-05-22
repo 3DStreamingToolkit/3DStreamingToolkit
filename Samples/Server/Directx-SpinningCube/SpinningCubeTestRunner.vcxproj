@@ -95,7 +95,7 @@
       </AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y $(OutDir)*.cso $(ProjectDir)</Command>
+      <Command>xcopy /y "$(OutDir)*.cso" "$(ProjectDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
