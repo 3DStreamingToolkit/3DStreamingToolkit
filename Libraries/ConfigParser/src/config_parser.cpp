@@ -79,7 +79,7 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 				webrtcConfig->turn_server.uri = turnServerNode.get("uri", NULL).asString();
 			}
 
-			if (turnServerNode.isMember("providerUri"))
+			if (turnServerNode.isMember("providerUri") || turnServerNode.isMember("provider"))
 			{
 				webrtcConfig->turn_server.provider_uri = turnServerNode.get("providerUri", NULL).asString();
 			}
@@ -104,7 +104,7 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 			}
 		}
 
-		if (root.isMember("serverUri"))
+		if (root.isMember("serverUri")||root.isMember("server"))
 		{
 			webrtcConfig->server_uri = root.get("serverUri", NULL).asString();
 		}
@@ -122,7 +122,7 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 		if (root.isMember("authentication"))
 		{
 			auto authenticationNode = root.get("authentication", NULL);
-			if (authenticationNode.isMember("authorityUri"))
+			if (authenticationNode.isMember("authorityUri") || authenticationNode.isMember("authority"))
 			{
 				webrtcConfig->authentication.authority_uri = authenticationNode.get("authorityUri", NULL).asString();
 			}
