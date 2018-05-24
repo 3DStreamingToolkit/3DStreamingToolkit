@@ -23,7 +23,7 @@ namespace StreamingToolkit
 		/// <summary>
 		/// Represents the relative path at which we expect webrtcConfig to exist
 		/// </summary>
-		static const char* kWebrtcConfigPath;
+		///static const char* kWebrtcConfigPath;
 
 		/// <summary>
 		/// Represents the relative path at which we expect serverConfig to exist
@@ -64,7 +64,8 @@ namespace StreamingToolkit
 		/// instances of these types.
 		/// </remarks>
 		/// <param name="baseFilePath">a base path to look for configuration files in</param>
-		static void ConfigureConfigFactories(const std::string& baseFilePath);
+		/// <param name="webrtcConfigName"> the name of the webrtc Config file, defaults to "webrtcConfig.json"</param>
+		static void ConfigureConfigFactories(const std::string& baseFilePath, const std::string& webrtcConfigName= "webrtcConfig.json");
 
 		/// <summary>
 		/// Get the absolute path for a relative file

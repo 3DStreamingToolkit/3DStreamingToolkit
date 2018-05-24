@@ -9,7 +9,7 @@
 
 using namespace StreamingToolkit;
 
-const char* ConfigParser::kWebrtcConfigPath = "webrtcConfig.json";
+///const char* ConfigParser::kWebrtcConfigPath = "webrtcConfig.json";
 const char* ConfigParser::kServerConfigPath = "serverConfig.json";
 const char* ConfigParser::kNvEncConfigPath = "nvEncConfig.json";
 
@@ -26,12 +26,12 @@ void ConfigParser::ConfigureConfigFactories()
 	ConfigureConfigFactories(GetAbsolutePath(""));
 }
 
-void ConfigParser::ConfigureConfigFactories(const std::string& baseFilePath)
+void ConfigParser::ConfigureConfigFactories(const std::string& baseFilePath, const std::string& webrtcConfigName)
 {
 	CppFactory::Object<StreamingToolkit::WebRTCConfig>::RegisterAllocator([=] {
 		auto config = new StreamingToolkit::WebRTCConfig();
 
-		ConfigParser::ParseWebRTCConfig(baseFilePath + std::string(ConfigParser::kWebrtcConfigPath), config);
+		ConfigParser::ParseWebRTCConfig(baseFilePath + webrtcConfigName, config);
 
 		return std::shared_ptr<StreamingToolkit::WebRTCConfig>(config);
 	});
@@ -79,15 +79,17 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 				webrtcConfig->turn_server.uri = turnServerNode.get("uri", NULL).asString();
 			}
 
+			if (turnServerNode.isMember("provider"))
+			{
+				webrtcConfig->turn_server.provider_uri = turnServerNode.get("provider", NULL).asString();
+			}
+
+
 			if (turnServerNode.isMember("providerUri"))
 			{
 				webrtcConfig->turn_server.provider_uri = turnServerNode.get("providerUri", NULL).asString();
 			}
 
-			if (turnServerNode.isMember("provider"))
-			{
-				webrtcConfig->turn_server.provider_uri = turnServerNode.get("provider", NULL).asString();
-			}
 
 
 			if (turnServerNode.isMember("username"))
@@ -110,18 +112,18 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 			}
 		}
 
-		if (root.isMember("serverUri"))
-		{
-			webrtcConfig->server_uri = root.get("serverUri", NULL).asString();
-		}
-
-
 		if (root.isMember("server"))
 		{
 			webrtcConfig->server_uri = root.get("server", NULL).asString();
 		}
 
 
+		if (root.isMember("serverUri"))
+		{
+			webrtcConfig->server_uri = root.get("serverUri", NULL).asString();
+		}
+
+		
 		if (root.isMember("port"))
 		{
 			webrtcConfig->port = root.get("port", NULL).asInt();
@@ -135,16 +137,15 @@ void ConfigParser::ParseWebRTCConfig(const std::string& path, StreamingToolkit::
 		if (root.isMember("authentication"))
 		{
 			auto authenticationNode = root.get("authentication", NULL);
-			if (authenticationNode.isMember("authorityUri"))
-			{
-				webrtcConfig->authentication.authority_uri = authenticationNode.get("authorityUri", NULL).asString();
-			}
-
 			if (authenticationNode.isMember("authority"))
 			{
 				webrtcConfig->authentication.authority_uri = authenticationNode.get("authority", NULL).asString();
 			}
 
+			if (authenticationNode.isMember("authorityUri"))
+			{
+				webrtcConfig->authentication.authority_uri = authenticationNode.get("authorityUri", NULL).asString();
+			}
 
 			if (authenticationNode.isMember("resource"))
 			{

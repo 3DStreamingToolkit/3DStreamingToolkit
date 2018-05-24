@@ -6,6 +6,8 @@
 #include <Windows.h>
 
 #include "config_parser.h"
+#include<iostream>
+
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace CppFactory;
@@ -41,6 +43,7 @@ namespace ConfigParserTests
 			TCHAR currentDirectory[MAX_PATH];
 			GetModuleFileName(GetModuleHandle("ConfigParser.Tests.dll"), currentDirectory, MAX_PATH);
 			auto wrappedCurrentDirectory = std::string(currentDirectory);
+			auto configPath = wrappedCurrentDirectory.substr(0, wrappedCurrentDirectory.length() - 22) + "webrtcConfig.json";
 
 			// should configure the allocators for the default zones
 			// note: we use our current directory (carefully removing our dll name from it) as the baseFilePath
@@ -68,7 +71,7 @@ namespace ConfigParserTests
 			Assert::AreEqual("test://test", injectedWebRTCInstance->authentication.poll_uri.c_str());
 			Assert::AreEqual("00000000-0000-0000-0000-000000000000", injectedWebRTCInstance->authentication.resource.c_str());
 
-			// should be default initialized
+			//// should be default initialized
 			Assert::AreEqual("", defaultWebRTCInstance->ice_configuration.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.uri.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.username.c_str());
@@ -107,6 +110,27 @@ namespace ConfigParserTests
 			Assert::AreEqual(L"", defaultServerInstance->service_config.name.c_str());
 			Assert::AreEqual(L"", defaultServerInstance->service_config.service_account.c_str());
 			Assert::AreEqual(L"", defaultServerInstance->service_config.service_password.c_str());
+
+		}
+
+		TEST_METHOD(Config_URI_Priority_Success)
+		{
+			// get our directory path
+			TCHAR currentDirectory[MAX_PATH];
+			GetModuleFileName(GetModuleHandle("ConfigParser.Tests.dll"), currentDirectory, MAX_PATH);
+			auto wrappedCurrentDirectory = std::string(currentDirectory);
+
+			// should configure the allocators for the default zones
+			// note: we use our current directory (carefully removing our dll name from it) as the baseFilePath
+			ConfigParser::ConfigureConfigFactories(wrappedCurrentDirectory.substr(0, wrappedCurrentDirectory.length() - 22), "updatedWebrtcConfig.json");
+
+			// should get an instance from the default zone
+			auto injectedWebRTCInstance = Object<WebRTCConfig>::Get();
+
+			// ensure that the Uri postfixes have priority
+			// No need to check that old behavior functions, as this is covered by previous test cases
+			Assert::AreEqual("testUri", injectedWebRTCInstance->server_uri.c_str());
+			Assert::AreEqual("testUri://testUri", injectedWebRTCInstance->authentication.authority_uri.c_str());
 
 		}
 	};
