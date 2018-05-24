@@ -6,8 +6,6 @@
 #include <Windows.h>
 
 #include "config_parser.h"
-#include<iostream>
-
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace CppFactory;
@@ -43,7 +41,6 @@ namespace ConfigParserTests
 			TCHAR currentDirectory[MAX_PATH];
 			GetModuleFileName(GetModuleHandle("ConfigParser.Tests.dll"), currentDirectory, MAX_PATH);
 			auto wrappedCurrentDirectory = std::string(currentDirectory);
-			auto configPath = wrappedCurrentDirectory.substr(0, wrappedCurrentDirectory.length() - 22) + "webrtcConfig.json";
 
 			// should configure the allocators for the default zones
 			// note: we use our current directory (carefully removing our dll name from it) as the baseFilePath
@@ -60,11 +57,11 @@ namespace ConfigParserTests
 			Assert::AreEqual("test:test:1234", injectedWebRTCInstance->turn_server.uri.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->turn_server.username.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->turn_server.password.c_str());
-			Assert::AreEqual("test", injectedWebRTCInstance->server_uri.c_str());
+			Assert::AreEqual("testUri", injectedWebRTCInstance->server_uri.c_str());
 			Assert::IsTrue(((uint16_t)5678) == injectedWebRTCInstance->port);
 			Assert::IsTrue(((uint32_t)91011) == injectedWebRTCInstance->heartbeat);
 			Assert::AreEqual("test:test:1234", injectedWebRTCInstance->stun_server.uri.c_str());
-			Assert::AreEqual("test://test", injectedWebRTCInstance->authentication.authority_uri.c_str());
+			Assert::AreEqual("testUri://testUri", injectedWebRTCInstance->authentication.authority_uri.c_str());
 			Assert::AreEqual("00000000-0000-0000-0000-000000000000", injectedWebRTCInstance->authentication.client_id.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->authentication.client_secret.c_str());
 			Assert::AreEqual("test://test", injectedWebRTCInstance->authentication.code_uri.c_str());
@@ -122,15 +119,23 @@ namespace ConfigParserTests
 
 			// should configure the allocators for the default zones
 			// note: we use our current directory (carefully removing our dll name from it) as the baseFilePath
-			ConfigParser::ConfigureConfigFactories(wrappedCurrentDirectory.substr(0, wrappedCurrentDirectory.length() - 22), "updatedWebrtcConfig.json");
+			ConfigParser::ConfigureConfigFactories(wrappedCurrentDirectory.substr(0, wrappedCurrentDirectory.length() - 22), "dualWebrtcConfig.json");
 
 			// should get an instance from the default zone
-			auto injectedWebRTCInstance = Object<WebRTCConfig>::Get();
+			auto dualWebRTCInstance = Object<WebRTCConfig>::Get();
 
 			// ensure that the Uri postfixes have priority
 			// No need to check that old behavior functions, as this is covered by previous test cases
-			Assert::AreEqual("testUri", injectedWebRTCInstance->server_uri.c_str());
-			Assert::AreEqual("testUri://testUri", injectedWebRTCInstance->authentication.authority_uri.c_str());
+			Assert::AreEqual("testUri", dualWebRTCInstance->server_uri.c_str());
+			Assert::AreEqual("testUri://testUri", dualWebRTCInstance->authentication.authority_uri.c_str());
+
+			ConfigParser::ConfigureConfigFactories(wrappedCurrentDirectory.substr(0, wrappedCurrentDirectory.length() - 22), "oldWebrtcConfig.json");
+
+			auto oldWebRTCInstance = Object<WebRTCConfig>::Get();
+
+			//ensure backwards compatibility for non-URI postfixes
+			Assert::AreEqual("test", oldWebRTCInstance->server_uri.c_str());
+			Assert::AreEqual("test://test", oldWebRTCInstance->authentication.authority_uri.c_str());
 
 		}
 	};

@@ -8,11 +8,11 @@
   "stunServer": {
     "uri": "test:test:1234"
   },
-    "serverUri":  "testUri",
+    "server": "test",
     "port": 5678,
     "heartbeat": 91011,
     "authentication": {
-        "authorityUri": "testUri://testUri",
+        "authority": "test://test",
         "clientId": "00000000-0000-0000-0000-000000000000",
         "clientSecret": "test",
         "codeUri": "test://test",

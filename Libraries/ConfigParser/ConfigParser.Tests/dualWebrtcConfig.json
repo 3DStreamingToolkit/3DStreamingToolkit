@@ -8,7 +8,7 @@
   "stunServer": {
     "uri": "test:test:1234"
   },
-    "server": "test",
+    "server":  "test",
     "serverUri":  "testUri",
     "port": 5678,
     "heartbeat": 91011,
