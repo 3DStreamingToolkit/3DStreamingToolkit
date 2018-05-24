@@ -45,7 +45,7 @@ PeerConnectionClient& MultiPeerConductor::PeerConnection()
 
 void MultiPeerConductor::ConnectSignallingAsync(const string& client_name)
 {
-	signalling_client_.Connect(config_->webrtc_config->server,
+	signalling_client_.Connect(config_->webrtc_config->server_uri,
 		config_->webrtc_config->port,
 		client_name);
 }

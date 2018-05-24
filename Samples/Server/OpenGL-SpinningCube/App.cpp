@@ -201,7 +201,7 @@ bool AppMain(BOOL stopping)
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ServerMainWindow wnd(
-		fullServerConfig->webrtc_config->server.c_str(),
+		fullServerConfig->webrtc_config->server_uri.c_str(),
 		fullServerConfig->webrtc_config->port,
 		fullServerConfig->server_config->server_config.auto_connect,
 		fullServerConfig->server_config->server_config.auto_call,

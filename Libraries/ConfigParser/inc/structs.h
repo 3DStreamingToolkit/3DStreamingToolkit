@@ -68,7 +68,7 @@ namespace StreamingToolkit
 		std::string		uri;
 
 		/* The turn credential uri						*/
-		std::string		provider;
+		std::string		provider_uri;
 
 		/* The username used for authentication			*/
 		std::string		username;
@@ -92,7 +92,7 @@ namespace StreamingToolkit
 	typedef struct
 	{
 		/* The uri used for token retrieval				*/
-		std::string		authority;
+		std::string		authority_uri;
 
 		/*  OAuth 2.0 client credentials				*/
 		std::string		resource;
@@ -125,7 +125,7 @@ namespace StreamingToolkit
 		StunServer		stun_server;
 
 		/* The signaling server uri						*/
-		std::string		server;
+		std::string		server_uri;
 
 		/* The signaling server port					*/
 		uint16_t		port;
