@@ -101,3 +101,7 @@ MIT
 > ### Streaming and Cloud Gaming Restrictions
 
 > You may not directly or indirectly distribute Your Project Content by means of streaming or broadcasting where Your Project Content is primarily executed on a server and transmitted as a video stream or via low level graphics render commands over the open Internet to end user devices without a separate license from Unity. This restriction does not prevent end users from remotely accessing Your Project Content from an end user device that is running on another end user device.
+
+## Running Server on Azure
+To run the **MultithreadServer** on Azure N-Serier (specifically NV-Series), after starting the machine, you should run the following script:
+[./Scripts/AzureNVSeriesPrerequisites.ps1](./Scripts/AzureNVSeriesPrerequisites.ps1)
