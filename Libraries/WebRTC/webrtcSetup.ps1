@@ -68,7 +68,7 @@ if((Test-Path ("src")) -eq $false) {
     CMD /C "git branch -D patch_branch"
 }
 CMD /C "git clean -f"
-CMD /C "git checkout -b patch_branch refs/remotes/branch-heads/58"
+CMD /C "git checkout -b patch_branch refs/remotes/branch-heads/62"
 CMD /C "gclient sync --jobs 16"
 CMD /C ("git apply --ignore-whitespace " + $PSScriptRoot + "\3dtoolkit_upgrades.patch")
 CMD /C ("git add --all")
@@ -80,10 +80,10 @@ CMD /C ("git add BUILD.gn")
 CMD /C 'git commit -am "nvpipe patch"'
 Set-Location "..\"
 
-CMD /C 'gn gen out/Win32/Release  --ide=vs --args="target_cpu=\"x86\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
-CMD /C 'gn gen out/Win32/Debug    --ide=vs --args="target_cpu=\"x86\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
-CMD /C 'gn gen out/x64/Release    --ide=vs --args="target_cpu=\"x64\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
-CMD /C 'gn gen out/x64/Debug      --ide=vs --args="target_cpu=\"x64\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
+CMD /C 'gn gen out/Win32/Release  --ide=vs2017 --args="target_cpu=\"x86\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
+CMD /C 'gn gen out/Win32/Debug    --ide=vs2017 --args="target_cpu=\"x86\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
+CMD /C 'gn gen out/x64/Release    --ide=vs2017 --args="target_cpu=\"x64\" is_debug=false rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true is_official_build=true"'
+CMD /C 'gn gen out/x64/Debug      --ide=vs2017 --args="target_cpu=\"x64\" is_debug=true  rtc_use_h264=true ffmpeg_branding=\"Chrome\" use_openh264=true rtc_include_tests=false libyuv_include_tests=false build_libsrtp_tests=false rtc_initialize_ffmpeg=true"'
 CMD /C 'ninja -C out/Win32/Debug'
 CMD /C 'ninja -C out/x64/Debug'
 CMD /C 'ninja -C out/Win32/Release'
