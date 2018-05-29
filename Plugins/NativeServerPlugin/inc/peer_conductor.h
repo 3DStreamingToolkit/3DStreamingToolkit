@@ -10,8 +10,8 @@
 // from ConfigParser
 #include "structs.h"
 
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/json.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/json.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "webrtc/api/test/fakeconstraints.h"

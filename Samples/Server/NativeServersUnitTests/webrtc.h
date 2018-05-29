@@ -6,13 +6,14 @@
 #pragma warning(disable : 4244)
 
 #include "flagdefs.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/win32socketinit.h"
-#include "webrtc/base/win32socketserver.h"
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/rtc_base/checks.h"
+//#include "webrtc/rtc_base/ssladapter.h"
+//#include "webrtc/rtc_base/win32socketinit.h"
+//#include "webrtc/rtc_base/win32socketserver.h"
 
 #ifdef _DEBUG
-#pragma comment(lib, "ffmpeg.dll.lib")
+// #pragma comment(lib, "ffmpeg.dll.lib")
 #endif
 
 #pragma comment(lib, "d3d11.lib")

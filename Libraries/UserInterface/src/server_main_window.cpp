@@ -5,9 +5,9 @@
 
 #include "libyuv/convert_argb.h"
 #include "webrtc/api/video/i420_buffer.h"
-#include "webrtc/base/arraysize.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/arraysize.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
 using rtc::sprintfn;
 
@@ -635,9 +635,9 @@ void ServerMainWindow::ServerVideoRenderer::OnFrame(const webrtc::VideoFrame& vi
 	SetSize(buffer->width(), buffer->height());
 
 	RTC_DCHECK(image_.get() != NULL);
-	libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
-		buffer->DataU(), buffer->StrideU(),
-		buffer->DataV(), buffer->StrideV(),
+	libyuv::I420ToARGB(buffer->GetI420()->DataY(), buffer->GetI420()->StrideY(),
+		buffer->GetI420()->DataU(), buffer->GetI420()->StrideU(),
+		buffer->GetI420()->DataV(), buffer->GetI420()->StrideV(),
 		image_.get(),
 		bmi_.bmiHeader.biWidth *
 		bmi_.bmiHeader.biBitCount / 8,

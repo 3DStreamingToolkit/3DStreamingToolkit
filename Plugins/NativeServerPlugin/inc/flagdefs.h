@@ -11,7 +11,7 @@
 #ifndef WEBRTC_FLAGDEFS_H_
 #define WEBRTC_FLAGDEFS_H_
 
-#include "webrtc/base/flags.h"
+#include "webrtc/rtc_base/flags.h"
 
 extern const uint16_t kDefaultServerPort;  // From defaults.[h|cc]
 extern const int kDefaultHeartbeat;  // From defaults.[h|cc]

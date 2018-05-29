@@ -7,7 +7,7 @@
 #include "main_window.h"
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/win32.h"
+#include "webrtc/rtc_base/win32.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
 

@@ -1,6 +1,6 @@
 #pragma once
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/nethelpers.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/nethelpers.h"
 #include "third_party/jsoncpp/source/include/json/json.h"
 
 #include "authentication_provider.h"

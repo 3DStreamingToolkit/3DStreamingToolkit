@@ -37,9 +37,9 @@ namespace NativeServersUnitTests
 			uint8_t* rgbBuffer = new uint8_t[bufferSize];
 
 			// Convert input frame to RGB
-			libyuv::I420ToARGB(buffer->DataY(), buffer->StrideY(),
-				buffer->DataU(), buffer->StrideU(),
-				buffer->DataV(), buffer->StrideV(),
+			libyuv::I420ToARGB(buffer->GetI420()->DataY(), buffer->GetI420()->StrideY(),
+				buffer->GetI420()->DataU(), buffer->GetI420()->StrideU(),
+				buffer->GetI420()->DataV(), buffer->GetI420()->StrideV(),
 				rgbBuffer,
 				RowBytes,
 				buffer->width(), buffer->height());

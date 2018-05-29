@@ -18,10 +18,10 @@
 #include <vector>
 
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/nethelpers.h"
-#include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/signalthread.h"
-#include "webrtc/base/sigslot.h"
+#include "webrtc/rtc_base/nethelpers.h"
+#include "webrtc/rtc_base/physicalsocketserver.h"
+#include "webrtc/rtc_base/signalthread.h"
+#include "webrtc/rtc_base/sigslot.h"
 
 #include "ssl_capable_socket.h"
 
