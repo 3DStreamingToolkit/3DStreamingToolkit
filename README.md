@@ -4,6 +4,12 @@ A toolkit for creating powerful cloud-based 3D experiences that stream to tradit
 
 ![example](./Docs/Images/3dstreamclientserver.gif)
 
+## Quick Links
+
+- [Getting Started](#getting-started)
+- [License](#license)
+- [Code of Conduct](#code-of-conduct)
+
 ## What is this?
 
 **Problem:** The world is becoming increasingly mobile, but the demand for high-fidelity 3D content is only growing. We needed a scalable approach to make this sort of content available on low-powered, low-bandwidth devices.
@@ -20,13 +26,15 @@ The 3DToolkit project's purpose is to provide an approach for developing 3D serv
 
 Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3dtoolkit/wiki/What-is-3DToolkit#webrtc-httpwebrtcorg). 
 
-## How to build
+## Getting Started
+
+### How to build
 
 > If you don't wish to build the toolkit yourself, you can download our latest build [here](https://github.com/CatalystCode/3dtoolkit/releases/latest).
 
 These steps will ensure your development environment is configured properly, and then they'll walk you through the process of building our code.
 
-### Prerequisites 
+#### Prerequisites 
 
 > Note: If you are using Visual Studio 2017, ensure you have installed the Visual Studio 2015 Update 3 as well, and please **_do not_** update our projects when prompted to do so.
 
@@ -36,7 +44,7 @@ These steps will ensure your development environment is configured properly, and
 + [Latest NVIDIA driver](http://www.nvidia.com/Download/index.aspx) (required for NVEncode)
 + [Azure SDK 3.0.1](https://www.microsoft.com/web/handlers/webpi.ashx/getinstaller/VWDOrVs2015AzurePack.appids) for Visual Studio 2015 (Optional, but required to use the Server Azure Deployment projects)
 
-### Installing dependencies
+#### Installing dependencies
 
 > Note: Before running our `setup.cmd` script, please ensure powershell is set to [enable unrestricted script execution](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1&viewFallbackFrom=powershell-Microsoft.PowerShell.Core).
 
@@ -52,7 +60,7 @@ Run `.\setup.cmd` from the command line. This will install and configure the fol
 
 Once you see `Libraries retrieved and up to date` you may proceed.
 
-### The actual build
+#### The actual build
 
 + Open [the 3dtoolkit solution](./3DStreamingToolKit.sln) in Visual Studio
 + Build the solution (Build -> Build Solution) in the desired configuration (Build -> Configuration Manager -> Dropdowns at the top). We encourage using  `Release` and `x64`.
@@ -61,7 +69,7 @@ Once you see `Libraries retrieved and up to date` you may proceed.
 
 If you're seeing errors, check out the [troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new).
 
-## Build output
+### Build output
 
 After you've built the solution, you'll likely want to start one sample server implementation, and one sample client implementation. We've provided example client and server applications to demonstrate the behaviors the toolkit provides.
 
@@ -69,10 +77,9 @@ After you've built the solution, you'll likely want to start one sample server i
 
 To run one server and one client, navigate to the location under `Build\<Platform>\<Configuration>\` and start the `exe`.To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x64`.
 
-
 Once you start both a server and client implementation, you will need to give it a signaling server. If you need to set one up, please see our [wiki on Signaling Service](https://github.com/CatalystCode/3dtoolkit/wiki/Signaling-Service) for an easy local or cloud-based implementation. After connecting, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3dtoolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3dtoolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3dtoolkit/wiki/Feature-matrices).
 
-## Next Steps
+### Next Steps
 
 These resources will be critical to your success in configuring and scaling applications.
 
@@ -80,7 +87,7 @@ These resources will be critical to your success in configuring and scaling appl
 + [Configuring and deploying services](https://github.com/CatalystCode/3dtoolkit/wiki#services-setup)
 + [Configuring authentication](https://github.com/CatalystCode/3dtoolkit/wiki/Configuring-authentication)
 
-## Learn More
+### Learn More
 
 + [General Wiki](https://github.com/CatalystCode/3dtoolkit/wiki)
 + [Building WebRTC from source](https://github.com/CatalystCode/3dtoolkit/wiki/Building-WebRTC-from-source)
@@ -101,3 +108,7 @@ MIT
 > ### Streaming and Cloud Gaming Restrictions
 
 > You may not directly or indirectly distribute Your Project Content by means of streaming or broadcasting where Your Project Content is primarily executed on a server and transmitted as a video stream or via low level graphics render commands over the open Internet to end user devices without a separate license from Unity. This restriction does not prevent end users from remotely accessing Your Project Content from an end user device that is running on another end user device.
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
