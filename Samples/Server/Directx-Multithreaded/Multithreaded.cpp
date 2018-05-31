@@ -7,7 +7,26 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //--------------------------------------------------------------------------------------
 
+//WebRTC unreferenced formal parameters in headers
+#pragma warning(disable : 4100)
+//WebRTC conversion from 'uint64_t' to 'uint32_t', possible loss of data
+#pragma warning(disable : 4244)
+
+// Require to include specific functions in WinSock2
+#define INCL_EXTRA_HTON_FUNCTIONS
+
+#ifdef TEST_RUNNER
+#include "test_runner.h"
+#else // TEST_RUNNER
+#include "config_parser.h"
+#include "directx_multi_peer_conductor.h"
+#include "server_main_window.h"
+#include "server_renderer.h"
+#include "service/render_service.h"
+#endif // TEST_RUNNER
+
 #include "resource.h"
+#include "webrtc.h"
 #include "DXUT.h"
 #include "DXUTcamera.h"
 #include "DXUTgui.h"
@@ -27,17 +46,6 @@
 #include "CameraResources.h"
 #include "MultiDeviceContextDXUTMesh.h"
 #include "RemotingModelViewerCamera.h"
-
-#ifdef TEST_RUNNER
-#include "test_runner.h"
-#else // TEST_RUNNER
-#include "config_parser.h"
-#include "directx_multi_peer_conductor.h"
-#include "server_main_window.h"
-#include "server_renderer.h"
-#include "service/render_service.h"
-#include "webrtc.h"
-#endif // TEST_RUNNER
 
 // If clients don't send "stereo-rendering" message after this time,
 // the video stream will start in non-stereo mode.
@@ -561,7 +569,8 @@ bool AppMain(BOOL stopping)
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 
 	rtc::EnsureWinsockInit();
-	rtc::Win32Thread w32_thread;
+	rtc::Win32SocketServer w32_ss;
+	rtc::Win32Thread w32_thread(&w32_ss);
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 
 	ServerMainWindow wnd(
