@@ -25,7 +25,7 @@ If you encounter any bugs, please file an issue [here](https://github.com/Cataly
 
 To suggest a new feature or changes that could be made, file an issue the same way you would for a bug, but remove the provided template and replace it with information about your suggestion.
 
-## Submitting Pull Requests
+## Pull Requests
 
 If you are thinking about making a large change to this library, **break up the change into small, logical, testable chunks, and organize your pull requests accordingly**.
 
