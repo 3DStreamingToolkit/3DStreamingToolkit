@@ -15,18 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="ConfigParserTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ConfigParserTests.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)gtest_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -37,5 +34,7 @@
     <None Include="serverConfig.json">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="$(MSBuildThisFileDirectory)packages.config" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
