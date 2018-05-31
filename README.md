@@ -7,6 +7,7 @@ A toolkit for creating powerful cloud-based 3D experiences that stream to tradit
 ## Quick Links
 
 - [Getting Started](#getting-started)
+- [Contributing](#contributing)
 - [License](#license)
 - [Code of Conduct](#code-of-conduct)
 
@@ -94,6 +95,10 @@ These resources will be critical to your success in configuring and scaling appl
 + [WebRTC Homepage](https://webrtc.org/)
 + [NVEncode Homepage](https://developer.nvidia.com/nvidia-video-codec-sdk)
 + [NvPipe original source](https://github.com/NVIDIA/NvPipe)
+
+## Contributing
+
+Read our [contributing guide](./CONTRIBUTING.md) to learn about our development process, how to propose bug fixes and improvements, and how to build and test your changes.
 
 ## License
 
