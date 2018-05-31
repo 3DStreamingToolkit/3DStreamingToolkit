@@ -5,6 +5,7 @@ Thanks for taking the time to read the contribution guidelines. We look forward 
 ## Quick Links
 
 - [Code of Conduct](#code-of-conduct)
+- [Help Wanted](#help-wanted)
 - [Filing Issues](#filing-issues)
 - [Pull Requests](#pull-requests)
     - [General Guidelines](#general-guidelines)
@@ -16,6 +17,10 @@ Thanks for taking the time to read the contribution guidelines. We look forward 
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Help Wanted
+
+We have a [list of issues](https://github.com/CatalystCode/3dtoolkit/labels/help%20wanted) that are ripe for community contributions. This is a great place to get started.
 
 ## Filing Issues
 

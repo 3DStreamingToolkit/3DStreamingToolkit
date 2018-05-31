@@ -9,6 +9,7 @@ A toolkit for creating powerful cloud-based 3D experiences that stream to tradit
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
 - [License](#license)
+- [Code of Conduct](#code-of-conduct)
 
 ## What is this?
 
@@ -97,17 +98,7 @@ These resources will be critical to your success in configuring and scaling appl
 
 ## Contributing
 
-### Code of Conduct
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-### Contributing Guide
-
 Read our [contributing guide](./CONTRIBUTING.md) to learn about our development process, how to propose bug fixes and improvements, and how to build and test your changes.
-
-### Help Wanted
-
-We have a [list of issues](https://github.com/CatalystCode/3dtoolkit/labels/help%20wanted) that are ripe for community contributions. This is a great place to get started.
 
 ## License
 
@@ -122,3 +113,7 @@ MIT
 > ### Streaming and Cloud Gaming Restrictions
 
 > You may not directly or indirectly distribute Your Project Content by means of streaming or broadcasting where Your Project Content is primarily executed on a server and transmitted as a video stream or via low level graphics render commands over the open Internet to end user devices without a separate license from Unity. This restriction does not prevent end users from remotely accessing Your Project Content from an end user device that is running on another end user device.
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
