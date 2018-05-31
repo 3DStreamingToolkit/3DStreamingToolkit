@@ -1,7 +1,9 @@
 #pragma once
+#define WEBRTC_EXTERNAL_JSON
+
 #include "webrtc/rtc_base/sigslot.h"
 #include "webrtc/rtc_base/nethelpers.h"
-#include "third_party/jsoncpp/source/include/json/json.h"
+#include "webrtc/rtc_base/json.h"
 
 #include "authentication_provider.h"
 #include "ssl_capable_socket.h"

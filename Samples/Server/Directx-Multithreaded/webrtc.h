@@ -1,7 +1,6 @@
 #pragma once
 
 #include "flagdefs.h"
-#include "peer_connection_client.h"
 #include "webrtc/rtc_base/win32socketinit.h"
 #include "webrtc/rtc_base/win32socketserver.h"
 

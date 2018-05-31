@@ -58,7 +58,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\..\Libraries\UnityPluginAPI\inc;$(ProjectDir)..\NativeServerPlugin\inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\Libraries\UnityPluginAPI\inc;$(ProjectDir)..\NativeServerPlugin\inc;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\lib;$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\</AdditionalLibraryDirectories>
@@ -78,7 +78,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>nvpipe.lib; ffmpeg.dll.lib;boringssl.dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>nvpipe.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4217,4049</AdditionalOptions>
       <ModuleDefinitionFile>.\StreamingUnityServerPlugin.def</ModuleDefinitionFile>
     </Link>
@@ -99,8 +99,6 @@
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\$(Configuration)\nvpipe.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\nvToolsExt64_1.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       xcopy /y /d  "$(ProjectDir)..\..\Libraries\Nvpipe\$(PlatformShortName)\cudart64_91.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
-      xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\boringssl.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer" 
-      xcopy /y /d  "$(ProjectDir)..\..\Libraries\WebRTC\$(Platform)\$(Configuration)\dll\ffmpeg.dll" "%TARGET_PLUGIN_PATH%Plugins\$(PlatformShortName)\StreamingServer"
       ENDLOCAL
       </Command>
     </PostBuildEvent>

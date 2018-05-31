@@ -58,7 +58,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_DEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers\;$(ProjectDir)..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;$(ProjectDir)..\..\Libraries\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
@@ -80,7 +80,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_WINDOWS;_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;TOOLKIT3DLIBRARY_EXPORTS;_USRDLL;NDEBUG;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>inc;$(ProjectDir)..\..\Libraries\glext\include\GL;$(ProjectDir)..\..\Libraries\WebRTC\headers\;$(ProjectDir)..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;$(ProjectDir)..\..\Libraries\Freeglut\include\GL;$(ProjectDir)..\..\Libraries\Glew\include\GL;$(ProjectDir)..\..\Libraries\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
