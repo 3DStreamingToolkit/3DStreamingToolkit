@@ -1,8 +1,7 @@
 ## Checklist
 ***This checklist is used to make sure that common guidelines for a pull request are followed.***
 
-<!-- Include once the CONTRIBUTING.md is in place. -->
-<!-- - [ ] **I have read the [contribution guidelines](./CONTRIBUTING.md).** -->
+- [ ] **I have read the [contribution guidelines](../CONTRIBUTING.md).**
 - [ ] Title of the pull request is clear and informative.
 - [ ] If applicable, the code is properly documented.
 - [ ] The code builds without any errors.
