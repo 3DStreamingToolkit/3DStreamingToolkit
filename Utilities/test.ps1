@@ -1,0 +1,2 @@
+# run all *.Test.exe binaries, passing gtest_output flags to redirect output to xml
+Get-ChildItem -Path "$PSScriptRoot\.." -Filter *.Tests.exe -Recurse | %{ Start-Process $_.FullName -Wait -NoNewWindow -WorkingDirectory $_.DirectoryName -ArgumentList "--gtest_output=xml:$($_.FullName)-Test.xml" }
