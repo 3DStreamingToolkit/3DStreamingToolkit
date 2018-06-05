@@ -249,8 +249,7 @@ public class ControlScript : MonoBehaviour
                 var source = Media.CreateMedia().CreateMediaStreamSource(
                     _peerVideoTrack,
                     "media",
-                    TextureWidth,
-                    TextureHeight);
+                    "h264");
 
                 Plugin.LoadMediaStreamSource((MediaStreamSource)source);
                 Plugin.Play();

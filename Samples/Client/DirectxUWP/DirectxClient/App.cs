@@ -15,6 +15,7 @@ namespace StreamingDirectXHololensClient
     class App : IFrameworkView, IFrameworkViewSource
     {
         private const string DEFAULT_MEDIA_SOURCE_ID = "media";
+        private const string DEFAULT_MEDIA_SOURCE_TYPE = "h264";
         private const int VIDEO_FRAME_WIDTH = 1280 * 2;
         private const int VIDEO_FRAME_HEIGHT = 720;
 
@@ -66,32 +67,29 @@ namespace StreamingDirectXHololensClient
                 var peerVideoTrack = evt.Stream.GetVideoTracks().FirstOrDefault();
                 if (peerVideoTrack != null)
                 {
-                    MediaSourceReadyDelegate mediaSourceReadyDelegate = (mediaSource) =>
+                    PredictionTimestampDelegate predictionTimestampDelegate = (id, timestamp) =>
                     {
-                        _appCallbacks.SetMediaStreamSource(
-                            (MediaStreamSource)mediaSource,
-                            VIDEO_FRAME_WIDTH,
-                            VIDEO_FRAME_HEIGHT);
+                        _appCallbacks.OnPredictionTimestamp(id, timestamp);
                     };
 
-                    SampleTimestampDelegate sampleTimestampDelegate = (id, timestamp) =>
+                    FpsReportDelegate fpsReportDelegate = () =>
                     {
-                        _appCallbacks.OnSampleTimestamp(id, timestamp);
+                        return _appCallbacks.FpsReport();
                     };
 
-                    FpsReportRequestedDelegate fpsReportRequestedDelegate = () =>
-                    {
-                        return _appCallbacks.OnFpsReportRequested();
-                    };
-
-                    Media.CreateMedia().CreateMediaStreamSource(
+                    var mediaSource = Media.CreateMedia().CreateMediaStreamSource(
                         peerVideoTrack,
+                        DEFAULT_MEDIA_SOURCE_TYPE,
                         DEFAULT_MEDIA_SOURCE_ID,
                         VIDEO_FRAME_WIDTH,
                         VIDEO_FRAME_HEIGHT,
-                        mediaSourceReadyDelegate,
-                        sampleTimestampDelegate,
-                        fpsReportRequestedDelegate);
+                        predictionTimestampDelegate,
+                        fpsReportDelegate);
+
+                    _appCallbacks.SetMediaStreamSource(
+                        (MediaStreamSource)mediaSource,
+                        VIDEO_FRAME_WIDTH,
+                        VIDEO_FRAME_HEIGHT);
                 }
 
                 _webRtcControl.IsReadyToDisconnect = true;
