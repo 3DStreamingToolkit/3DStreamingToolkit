@@ -14,6 +14,7 @@ namespace StreamingDirectXHololensClient
 {
     class App : IFrameworkView, IFrameworkViewSource
     {
+        private const string WEBRTC_CONFIG_FILE = "ms-appx:///webrtcConfig.json";
         private const string DEFAULT_MEDIA_SOURCE_ID = "media";
         private const string DEFAULT_MEDIA_SOURCE_TYPE = "h264";
         private const int VIDEO_FRAME_WIDTH = 1280 * 2;
@@ -56,7 +57,7 @@ namespace StreamingDirectXHololensClient
         public void Run()
         {
             // Initializes webrtc.
-            _webRtcControl = new WebRtcControl("ms-appx:///webrtcConfig.json");
+            _webRtcControl = new WebRtcControl(WEBRTC_CONFIG_FILE);
             _webRtcControl.OnInitialized += (() =>
             {
                 _webRtcControl.ConnectToServer();
