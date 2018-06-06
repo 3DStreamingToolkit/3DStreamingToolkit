@@ -41,7 +41,7 @@ namespace NativeServersUnitTests
 			// Initialize COM. ------------------------------------------
 
 			hres = CoInitializeEx(0, COINIT_MULTITHREADED);
-			
+
 
 			// Step 2: --------------------------------------------------
 			// Set general COM security levels --------------------------
@@ -68,7 +68,7 @@ namespace NativeServersUnitTests
 				0,
 				CLSCTX_INPROC_SERVER,
 				IID_IWbemLocator, (LPVOID *)&pLoc);
-			
+
 			Assert::IsFalse(FAILED(hres));
 
 			// Step 4: -----------------------------------------------------
@@ -107,7 +107,7 @@ namespace NativeServersUnitTests
 			);
 
 			Assert::IsFalse(FAILED(hres));
-			
+
 			// Step 6: --------------------------------------------------
 			// Use the IWbemServices pointer to make requests of WMI ----
 
@@ -119,7 +119,7 @@ namespace NativeServersUnitTests
 				WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
 				NULL,
 				&pEnumerator);
-			
+
 			Assert::IsFalse(FAILED(hres));
 
 			// Step 7: -------------------------------------------------
@@ -127,7 +127,7 @@ namespace NativeServersUnitTests
 
 			IWbemClassObject *pclsObj = NULL;
 			ULONG uReturn = 0;
-			
+
 			VARIANT driverNumber; //Store the driver version installed
 			bool NvidiaPresent = false; //Flag for Nvidia card being present
 
@@ -144,21 +144,22 @@ namespace NativeServersUnitTests
 				VARIANT vtProp;
 				//Finds the manufacturer of the card
 				hr = pclsObj->Get(L"AdapterCompatibility", 0, &vtProp, 0, 0);
-				
+
 				//Find the nvidia card
-				if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) {
+				if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) 
+				{
 					//Set the Nvidia card flag to true
 					NvidiaPresent = true;
 
 					hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
 					wchar_t *currentDriver = driverNumber.bstrVal;
 					size_t len = wcslen(currentDriver);
-					
-					//Major version number of the card is found at the -7th index
-					std::wstring majorVersion(currentDriver, len - 6, 1);
-					
-					//All drivers from 3.0 onwards support nvencode
-					Assert::IsTrue(std::stoi(majorVersion) > 2);
+					Assert::IsTrue(_wtoi(currentDriver[len - 6]) > 2);
+					////Major version number of the card is found at the -7th index
+					//std::wstring majorVersion(currentDriver, len - 6, 1);
+
+					////All drivers from 3.0 onwards support nvencode
+					//Assert::IsTrue(std::stoi(majorVersion) > 2);
 				}
 
 				VariantClear(&vtProp);
@@ -166,10 +167,9 @@ namespace NativeServersUnitTests
 			}
 			//Make sure that we entered the loop
 			Assert::IsTrue(NvidiaPresent);
-			
+
 			//Clean Up
 			VariantClear(&driverNumber);
-
 		}
 
 		TEST_METHOD(HardwareNvencodeEncode) {
