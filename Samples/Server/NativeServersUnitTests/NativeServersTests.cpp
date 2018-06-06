@@ -127,6 +127,7 @@ namespace NativeServersUnitTests
 
 			IWbemClassObject *pclsObj = NULL;
 			ULONG uReturn = 0;
+
 			VARIANT driverNumber; //Store the driver version installed
 			bool NvidiaPresent = false; //Flag for Nvidia card being present
 
