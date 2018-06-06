@@ -147,18 +147,19 @@ namespace NativeServersUnitTests
 				hr = pclsObj->Get(L"AdapterCompatibility", 0, &vtProp, 0, 0);
 				
 				//Find the nvidia card
-				if (!wcscmp(vtProp.bstrVal, L"Nvidia.")) {
+				if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) {
 					//Set the Nvidia card flag to true
 					NvidiaPresent = true;
 					//Test to see if the NVIDIA Card is currently active
 					hr = pclsObj->Get(L"CurrentHorizontalResolution", 0, &active, 0, 0);
-					Assert::AreNotEqual(wcscmp(active.bstrVal, L"."),0);
+					Assert::AreNotEqual(active.intVal,0);
 
 					hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
 					wchar_t *currentDriver = driverNumber.bstrVal;
 					size_t len = wcslen(currentDriver);
+					
 					//Major version number of the card is found at the -7th index
-					std::wstring majorVersion(len - 7, len-6);
+					std::wstring majorVersion(currentDriver, len - 6, 1);
 					
 					//All drivers from 3.0 onwards support nvencode
 					Assert::IsTrue(std::stoi(majorVersion) > 2);
