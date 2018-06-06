@@ -3,7 +3,7 @@
 #include <fstream>
 
 #define WIN32_LEAN_AND_MEAN // exclude rarely used windows content
-// #define WEBRTC_EXTERNAL_JSON
+
 #include <windows.h>
 
 #include "webrtc/rtc_base/json.h"

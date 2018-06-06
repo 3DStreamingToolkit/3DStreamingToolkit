@@ -160,11 +160,6 @@ Socket::ConnState SslCapableSocket::GetState() const
 	return ssl_adapter_.get() == nullptr ? socket_->GetState() : ssl_adapter_->GetState();
 }
 
-//int SslCapableSocket::EstimateMTU(uint16_t* mtu)
-//{
-//	return ssl_adapter_.get() == nullptr ? socket_->EstimateMTU(mtu) : ssl_adapter_->EstimateMTU(mtu);
-//}
-
 int SslCapableSocket::GetOption(AsyncSocket::Option opt, int* value)
 {
 	return ssl_adapter_.get() == nullptr ? socket_->GetOption(opt, value) : ssl_adapter_->GetOption(opt, value);
