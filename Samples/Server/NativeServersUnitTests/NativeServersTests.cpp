@@ -4,6 +4,14 @@
 #include "webrtcH264.h"
 #include "third_party\libyuv\include\libyuv.h"
 #include "CppUnitTest.h"
+#include <comdef.h>
+#include <comutil.h>
+#include <Wbemidl.h>
+#include <Windows.h>
+#include <wchar.h>
+
+# pragma comment(lib, "wbemuuid.lib")
+
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace webrtc;
@@ -23,6 +31,149 @@ namespace NativeServersUnitTests
 			// Test correct release of encoder
 			Assert::IsTrue(encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
 			delete encoder;
+		}
+
+		TEST_METHOD(HasCompatibleGPUAndDriver)
+		{
+			HRESULT hres;
+
+			// Step 1: --------------------------------------------------
+			// Initialize COM. ------------------------------------------
+
+			hres = CoInitializeEx(0, COINIT_MULTITHREADED);
+			
+
+			// Step 2: --------------------------------------------------
+			// Set general COM security levels --------------------------
+
+			hres = CoInitializeSecurity(
+				NULL,
+				-1,                          // COM authentication
+				NULL,                        // Authentication services
+				NULL,                        // Reserved
+				RPC_C_AUTHN_LEVEL_DEFAULT,   // Default authentication 
+				RPC_C_IMP_LEVEL_IMPERSONATE, // Default Impersonation  
+				NULL,                        // Authentication info
+				EOAC_NONE,                   // Additional capabilities 
+				NULL                         // Reserved
+			);
+
+			// Step 3: ---------------------------------------------------
+			// Obtain the initial locator to WMI -------------------------
+
+			IWbemLocator *pLoc = NULL;
+
+			hres = CoCreateInstance(
+				CLSID_WbemLocator,
+				0,
+				CLSCTX_INPROC_SERVER,
+				IID_IWbemLocator, (LPVOID *)&pLoc);
+			
+			Assert::IsFalse(FAILED(hres));
+
+			// Step 4: -----------------------------------------------------
+			// Connect to WMI through the IWbemLocator::ConnectServer method
+
+			IWbemServices *pSvc = NULL;
+
+			// Connect to the root\cimv2 namespace with
+			// the current user and obtain pointer pSvc
+			// to make IWbemServices calls.
+			hres = pLoc->ConnectServer(
+				_bstr_t(L"ROOT\\CIMV2"), // Object path of WMI namespace
+				NULL,                    // User name. NULL = current user
+				NULL,                    // User password. NULL = current
+				0,                       // Locale. NULL indicates current
+				NULL,                    // Security flags.
+				0,                       // Authority (for example, Kerberos)
+				0,                       // Context object 
+				&pSvc                    // pointer to IWbemServices proxy
+			);
+
+			Assert::IsFalse(FAILED(hres));
+
+			// Step 5: --------------------------------------------------
+			// Set security levels on the proxy -------------------------
+
+			hres = CoSetProxyBlanket(
+				pSvc,                        // Indicates the proxy to set
+				RPC_C_AUTHN_WINNT,           // RPC_C_AUTHN_xxx
+				RPC_C_AUTHZ_NONE,            // RPC_C_AUTHZ_xxx
+				NULL,                        // Server principal name 
+				RPC_C_AUTHN_LEVEL_CALL,      // RPC_C_AUTHN_LEVEL_xxx 
+				RPC_C_IMP_LEVEL_IMPERSONATE, // RPC_C_IMP_LEVEL_xxx
+				NULL,                        // client identity
+				EOAC_NONE                    // proxy capabilities 
+			);
+
+			Assert::IsFalse(FAILED(hres));
+			
+			// Step 6: --------------------------------------------------
+			// Use the IWbemServices pointer to make requests of WMI ----
+
+			// For example, get the name of the operating system
+			IEnumWbemClassObject* pEnumerator = NULL;
+			hres = pSvc->ExecQuery(
+				bstr_t("WQL"),
+				bstr_t("SELECT * FROM Win32_VideoController"),
+				WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+				NULL,
+				&pEnumerator);
+			
+			Assert::IsFalse(FAILED(hres));
+
+			// Step 7: -------------------------------------------------
+			// Get the data from the query in step 6 -------------------
+
+			IWbemClassObject *pclsObj = NULL;
+			ULONG uReturn = 0;
+			
+			VARIANT active; //Bool for whether or not the card is active
+			VARIANT driverNumber; //Store the driver version installed
+			bool NvidiaPresent = false; //Flag for Nvidia card being present
+
+			while (pEnumerator)
+			{
+				HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
+					&pclsObj, &uReturn);
+
+				if (0 == uReturn)
+				{
+					break;
+				}
+
+				VARIANT vtProp;
+				//Finds the manufacturer of the card
+				hr = pclsObj->Get(L"AdapterCompatibility", 0, &vtProp, 0, 0);
+				
+				//Find the nvidia card
+				if (!wcscmp(vtProp.bstrVal, L"Nvidia.")) {
+					//Set the Nvidia card flag to true
+					NvidiaPresent = true;
+					//Test to see if the NVIDIA Card is currently active
+					hr = pclsObj->Get(L"CurrentHorizontalResolution", 0, &active, 0, 0);
+					Assert::AreNotEqual(wcscmp(active.bstrVal, L"."),0);
+
+					hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
+					wchar_t *currentDriver = driverNumber.bstrVal;
+					size_t len = wcslen(currentDriver);
+					//Major version number of the card is found at the -7th index
+					std::wstring majorVersion(len - 7, len-6);
+					
+					//All drivers from 3.0 onwards support nvencode
+					Assert::IsTrue(std::stoi(majorVersion) > 2);
+				}
+
+				VariantClear(&vtProp);
+				pclsObj->Release();
+			}
+			//Make sure that we entered the loop
+			Assert::IsTrue(NvidiaPresent);
+			
+			//Clean Up
+			VariantClear(&active);
+			VariantClear(&driverNumber);
+
 		}
 
 		TEST_METHOD(HardwareNvencodeEncode) {
