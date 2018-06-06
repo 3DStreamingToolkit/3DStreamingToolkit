@@ -219,7 +219,10 @@ namespace PeerConnectionClient.Signalling
               (int)VideoCaptureProfile.Width, (int)VideoCaptureProfile.Height, (int)VideoCaptureProfile.FrameRate);
 #else
             Org.WebRtc.WebRTC.SetPreferredVideoCaptureFormat(
-                          (int)VideoCaptureProfile.Width, (int)VideoCaptureProfile.Height, (int)VideoCaptureProfile.FrameRate);
+                          (int)VideoCaptureProfile.Width,
+                          (int)VideoCaptureProfile.Height,
+                          (int)VideoCaptureProfile.FrameRate,
+                          false);
 #endif
             }
         }

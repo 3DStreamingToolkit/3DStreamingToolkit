@@ -34,9 +34,9 @@ namespace DirectXClientComponent
 
 		void SetMediaStreamSource(IMediaStreamSource^ mediaSourceHandle, int width, int height);
 
-		void OnSampleTimestamp(int id, int64_t timestamp);
+		void OnPredictionTimestamp(int id, int64_t timestamp);
 
-		uint32 OnFpsReportRequested();
+		uint32 FpsReport();
 
 	private:
 		void SendInputData();

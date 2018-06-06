@@ -3,10 +3,10 @@
 #include <vector>
 #include <string>
 
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/physicalsocketserver.h"
-#include "third_party/jsoncpp/source/include/json/json.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/physicalsocketserver.h"
+#include "webrtc/rtc_base/json.h"
 
 #include "authentication_provider.h"
 #include "ssl_capable_socket.h"

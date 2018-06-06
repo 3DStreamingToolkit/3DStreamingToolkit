@@ -138,6 +138,6 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "m58patch_nvpipe_headers_v2"
-DecompressZip -filename "m58patch_nvpipe_x64_v2"
-DecompressZip -filename "m58patch_nvpipe_Win32_v2"
+DecompressZip -filename "m62patch_nvpipe_headers"
+DecompressZip -filename "m62patch_nvpipe_x64"
+DecompressZip -filename "m62patch_nvpipe_Win32"

@@ -3,7 +3,7 @@
 #include <chrono>
 
 #ifdef WIN32
-#include "webrtc/base/win32socketserver.h"
+#include "webrtc/rtc_base/win32socketserver.h"
 #endif
 
 namespace
@@ -158,11 +158,6 @@ void SslCapableSocket::SetError(int error)
 Socket::ConnState SslCapableSocket::GetState() const
 {
 	return ssl_adapter_.get() == nullptr ? socket_->GetState() : ssl_adapter_->GetState();
-}
-
-int SslCapableSocket::EstimateMTU(uint16_t* mtu)
-{
-	return ssl_adapter_.get() == nullptr ? socket_->EstimateMTU(mtu) : ssl_adapter_->EstimateMTU(mtu);
 }
 
 int SslCapableSocket::GetOption(AsyncSocket::Option opt, int* value)

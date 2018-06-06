@@ -18,9 +18,9 @@
 
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/api/video/video_frame.h"
-#include "webrtc/base/asyncinvoker.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/timeutils.h"
+#include "webrtc/rtc_base/asyncinvoker.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/timeutils.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
 #include "webrtc/system_wrappers/include/clock.h"

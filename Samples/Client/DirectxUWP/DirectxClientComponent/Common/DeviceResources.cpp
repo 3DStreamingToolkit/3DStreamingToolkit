@@ -108,6 +108,12 @@ void DX::DeviceResources::CreateDeviceResources()
 			&m_d2dContext
 		)
 	);
+
+	// Enables multithread protection.
+	ID3D11Multithread* multithread;
+	m_d3dDevice->QueryInterface(IID_PPV_ARGS(&multithread));
+	multithread->SetMultithreadProtected(true);
+	multithread->Release();
 }
 
 void DX::DeviceResources::SetHolographicSpace(HolographicSpace^ holographicSpace)

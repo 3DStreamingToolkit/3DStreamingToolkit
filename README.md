@@ -37,13 +37,12 @@ These steps will ensure your development environment is configured properly, and
 
 #### Prerequisites 
 
-> Note: If you are using Visual Studio 2017, ensure you have installed the Visual Studio 2015 Update 3 as well, and please **_do not_** update our projects when prompted to do so.
-
 + Windows 10 Anniversary Update / Windows Server 2012 R2 / Windows Server 2016 (see [which version of Windows you have](https://binged.it/2xgQqRI)) 
-+ [Visual Studio 2015 Update 3](https://www.visualstudio.com/en-us/news/releasenotes/vs2015-update3-vs)
++ [Visual Studio 2017](https://docs.microsoft.com/en-us/visualstudio/releasenotes/vs2017-relnotes)
 + [Windows 10 SDK - 10.0.14393.795](https://developer.microsoft.com/en-us/windows/downloads/sdk-archive)
 + [Latest NVIDIA driver](http://www.nvidia.com/Download/index.aspx) (required for NVEncode)
-+ [Azure SDK 3.0.1](https://www.microsoft.com/web/handlers/webpi.ashx/getinstaller/VWDOrVs2015AzurePack.appids) for Visual Studio 2015 (Optional, but required to use the Server Azure Deployment projects)
++ [CUDA Toolkit 9.1](https://developer.nvidia.com/cuda-downloads) (required for NVEncode)
++ [Unity 2017.4.4f1 LTS release](https://unity3d.com/unity/qa/lts-releases) (Optional, but required for Unity server and client samples) 
 
 #### Installing dependencies
 
@@ -51,13 +50,13 @@ These steps will ensure your development environment is configured properly, and
 
 Run `.\setup.cmd` from the command line. This will install and configure the following:
 
-+ 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m58 release](https://chromium.googlesource.com/chromium/src/+/2b7c19d3)
++ 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m62 release](https://chromium.googlesource.com/chromium/src/+/0971c880c3f82e5fdbc6d65d1fc4d8ae9aa47ddc)
 + [WebRTC patch](./Libraries/WebRTC/3dtoolkit_upgrades.patch) and [WebRTC third_party patch](./Libraries/WebRTC/third_party_nvpipe.patch), which adds nvencode support, frame prediction, video frame updates and native buffers to webrtc. These will be applied to the above
 + Pre-built [NvPipe library](https://github.com/anderm/NvPipe/tree/low-latency-optimization) used in our WebRTC patch to enable NVIDIA-accelerated zero latency video compression
 + [CUDA Toolkit 9.1](https://developer.nvidia.com/cuda-downloads) pre-built Release libraries used by NvPipe - cudart64_91 and nvToolsExt64_1
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit 
 + Release libraries for OpenGL - Freeglut, Glew and glext
-+ [WebRTC-UWP](https://github.com/anderm/webrtc-uwp-sdk/tree/media-stream-source) M58 synced release for UWP-based clients (Hololens)
++ [WebRTC-UWP](https://github.com/anderm/ortclib-sdk/tree/3dtoolkit-M62-release) M62 synced release for UWP-based clients (HoloLens)
 
 Once you see `Libraries retrieved and up to date` you may proceed.
 

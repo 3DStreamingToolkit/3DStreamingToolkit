@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="92b50c8f-6214-4c8a-b6f3-fec9f749a49a" Publisher="CN=An Hoang" Version="1.0.0.0" />
+  <Identity Name="92b50c8f-6214-4c8a-b6f3-fec9f749a49a" Publisher="CN=Microsoft_3DToolkit" Version="1.0.0.0" />
   <mp:PhoneIdentity PhoneProductId="92b50c8f-6214-4c8a-b6f3-fec9f749a49a" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>StreamingDirectxHololensClient</DisplayName>
-    <PublisherDisplayName>An Hoang</PublisherDisplayName>
+    <PublisherDisplayName>Microsoft_3DToolkit</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>

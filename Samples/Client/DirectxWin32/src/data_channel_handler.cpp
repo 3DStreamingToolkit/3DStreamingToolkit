@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "data_channel_handler.h"
-#include "webrtc/base/json.h"
+#include "webrtc/rtc_base/json.h"
 
 // Data channel message types.
 const char kStereoRenderingType[]				= "stereo-rendering";

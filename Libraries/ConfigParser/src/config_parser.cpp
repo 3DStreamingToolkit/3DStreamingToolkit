@@ -3,9 +3,10 @@
 #include <fstream>
 
 #define WIN32_LEAN_AND_MEAN // exclude rarely used windows content
+
 #include <windows.h>
 
-#include <third_party/jsoncpp/source/include/json/json.h>
+#include "webrtc/rtc_base/json.h"
 
 using namespace StreamingToolkit;
 

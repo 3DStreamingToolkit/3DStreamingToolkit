@@ -1,15 +1,15 @@
-From bd306276a35758f6dcef7be12360733b32d30c25 Mon Sep 17 00:00:00 2001
+From 93e3fed1cf92e746191f9ca25d2d1af211ab64d8 Mon Sep 17 00:00:00 2001
 From: Andrei Ermilov <anderm@microsoft.com>
-Date: Wed, 21 Feb 2018 18:24:46 +0200
-Subject: [PATCH] nvpipe patch
+Date: Thu, 24 May 2018 14:28:31 -0400
+Subject: [PATCH] third party patch
 
 ---
  BUILD.gn                   |    7 +
- nvpipe/dynlink_cuda.cpp    |  662 +++++++++
+ nvpipe/dynlink_cuda.cpp    |  662 +++++++
  nvpipe/dynlink_cuda.h      |   21 +
- nvpipe/dynlink_cuda_cuda.h | 1687 ++++++++++++++++++++++
- nvpipe/nvEncodeAPI.h       | 3334 ++++++++++++++++++++++++++++++++++++++++++++
- nvpipe/nvpipe.h            |   90 ++
+ nvpipe/dynlink_cuda_cuda.h | 1687 ++++++++++++++++++
+ nvpipe/nvEncodeAPI.h       | 3334 ++++++++++++++++++++++++++++++++++++
+ nvpipe/nvpipe.h            |   90 +
  6 files changed, 5801 insertions(+)
  create mode 100644 nvpipe/dynlink_cuda.cpp
  create mode 100644 nvpipe/dynlink_cuda.h
@@ -18,11 +18,11 @@ Subject: [PATCH] nvpipe patch
  create mode 100644 nvpipe/nvpipe.h
 
 diff --git a/BUILD.gn b/BUILD.gn
-index f973f84fb70..8d43a47da60 100644
+index 1fa7ac45b2a..8ed4e2eadc1 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -43,3 +43,10 @@ group("jpeg") {
-     ]
+@@ -57,3 +57,10 @@ group("jpeg_includes") {
+     public_configs = [ "//third_party/libjpeg:libjpeg_config" ]
    }
  }
 +
@@ -5762,7 +5762,7 @@ index 00000000000..40e1be95b1a
 +
 diff --git a/nvpipe/nvpipe.h b/nvpipe/nvpipe.h
 new file mode 100644
-index 00000000000..6305333c58b
+index 00000000000..15f4cc9ce77
 --- /dev/null
 +++ b/nvpipe/nvpipe.h
 @@ -0,0 +1,90 @@
@@ -5857,5 +5857,5 @@ index 00000000000..6305333c58b
 +#  endif
 +#endif
 -- 
-2.15.1.windows.2
+2.17.0.windows.1
 
