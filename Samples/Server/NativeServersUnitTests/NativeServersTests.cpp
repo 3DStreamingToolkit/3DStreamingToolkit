@@ -154,17 +154,18 @@ namespace NativeServersUnitTests
 					hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
 					wchar_t *currentDriver = driverNumber.bstrVal;
 					size_t len = wcslen(currentDriver);
-					Assert::IsTrue(_wtoi(currentDriver[len - 6]) > 2);
-					////Major version number of the card is found at the -7th index
-					//std::wstring majorVersion(currentDriver, len - 6, 1);
 
-					////All drivers from 3.0 onwards support nvencode
-					//Assert::IsTrue(std::stoi(majorVersion) > 2);
+					//Major version number of the card is found at the -7th index
+					std::wstring majorVersion(currentDriver, len - 6, 1);
+
+					//All drivers from 3.0 onwards support nvencode
+					Assert::IsTrue(std::stoi(majorVersion) > 2);
 				}
 
 				VariantClear(&vtProp);
 				pclsObj->Release();
 			}
+			
 			//Make sure that we entered the loop
 			Assert::IsTrue(NvidiaPresent);
 
