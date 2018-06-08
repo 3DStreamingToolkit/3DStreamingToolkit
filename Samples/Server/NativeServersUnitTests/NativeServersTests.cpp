@@ -1,38 +1,48 @@
-#include "stdafx.h"
+#include "pch.h"
 
-#include "webrtc.h"
-#include "webrtcH264.h"
-#include "third_party\libyuv\include\libyuv.h"
-#include "CppUnitTest.h"
 #include <comdef.h>
 #include <comutil.h>
 #include <Wbemidl.h>
-#include <Windows.h>
 #include <wchar.h>
-#include "third_party\nvpipe\nvpipe.h"
 
-# pragma comment(lib, "wbemuuid.lib")
+#include "CppUnitTest.h"
+#include "DeviceResources.h"
+#include "directx_buffer_capturer.h"
+#include "opengl_buffer_capturer.h"
+#include "server_main_window.h"
+#include "third_party\libyuv\include\libyuv.h"
+#include "third_party\nvpipe\nvpipe.h"
+#include "webrtc.h"
+#include "webrtcH264.h"
+
+#pragma comment(lib, "wbemuuid.lib")
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+using namespace Microsoft::WRL;
+using namespace DX;
+using namespace StreamingToolkit;
 using namespace webrtc;
 
 namespace NativeServersUnitTests
 {		
-	TEST_CLASS(UnitTest1)
+	TEST_CLASS(EncoderTests)
 	{
 	public:
+		// Tests out initializing the H264 encoder.
 		TEST_METHOD(CanInitializeWithDefaultParameters)
 		{
 			auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
-			VideoCodec codec_settings;
-			SetDefaultCodecSettings(&codec_settings);
-			Assert::IsTrue(encoder->InitEncode(&codec_settings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
+			VideoCodec codecSettings;
+			SetDefaultCodecSettings(&codecSettings);
+			Assert::IsTrue(encoder->InitEncode(
+				&codecSettings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
 
 			// Test correct release of encoder
 			Assert::IsTrue(encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
 			delete encoder;
 		}
 
+		// Tests out retrieving the compatible NVIDIA driver version.
 		BEGIN_TEST_METHOD_ATTRIBUTE(HasCompatibleGPUAndDriver)
 		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
 		END_TEST_METHOD_ATTRIBUTE()
@@ -44,7 +54,6 @@ namespace NativeServersUnitTests
 			// Initialize COM. ------------------------------------------
 
 			hres = CoInitializeEx(0, COINIT_MULTITHREADED);
-
 
 			// Step 2: --------------------------------------------------
 			// Set general COM security levels --------------------------
@@ -131,8 +140,8 @@ namespace NativeServersUnitTests
 			IWbemClassObject *pclsObj = NULL;
 			ULONG uReturn = 0;
 
-			VARIANT driverNumber; //Store the driver version installed
-			bool NvidiaPresent = false; //Flag for Nvidia card being present
+			VARIANT driverNumber; // Store the driver version installed
+			bool NvidiaPresent = false; // Flag for Nvidia card being present
 
 			while (pEnumerator)
 			{
@@ -145,23 +154,24 @@ namespace NativeServersUnitTests
 				}
 
 				VARIANT vtProp;
-				//Finds the manufacturer of the card
+
+				// Finds the manufacturer of the card
 				hr = pclsObj->Get(L"AdapterCompatibility", 0, &vtProp, 0, 0);
 
-				//Find the nvidia card
+				// Find the nvidia card
 				if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) 
 				{
-					//Set the Nvidia card flag to true
+					// Set the Nvidia card flag to true
 					NvidiaPresent = true;
 
 					hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
 					wchar_t *currentDriver = driverNumber.bstrVal;
 					size_t len = wcslen(currentDriver);
 
-					//Major version number of the card is found at the -7th index
+					// Major version number of the card is found at the -7th index
 					std::wstring majorVersion(currentDriver, len - 6, 1);
 
-					//All drivers from 3.0 onwards support nvencode
+					// All drivers from 3.0 onwards support nvencode
 					Assert::IsTrue(std::stoi(majorVersion) > 2);
 				}
 
@@ -169,18 +179,20 @@ namespace NativeServersUnitTests
 				pclsObj->Release();
 			}
 			
-			//Make sure that we entered the loop
+			// Make sure that we entered the loop
 			Assert::IsTrue(NvidiaPresent);
 
-			//Clean Up
+			// Clean Up
 			VariantClear(&driverNumber);
 		}
 
+		// Tests out hardware encoder initialization.
 		BEGIN_TEST_METHOD_ATTRIBUTE(HardwareEncodingIsEnabled)
 		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
 		END_TEST_METHOD_ATTRIBUTE()
-		TEST_METHOD(HardwareEncodingIsEnabled) {
-			//Using default settings from webrtc documentation
+		TEST_METHOD(HardwareEncodingIsEnabled) 
+		{
+			// Using default settings from webrtc documentation
 			const nvpipe_codec codec = NVPIPE_H264_NV;
 			const uint32_t width = 1280;
 			const uint32_t height = 720;
@@ -194,24 +206,25 @@ namespace NativeServersUnitTests
 			auto encode_nvpipe = (nvpipe_encode)GetProcAddress(hGetProcIDDLL, "nvpipe_encode");
 			auto reconfigure_nvpipe = (nvpipe_bitrate)GetProcAddress(hGetProcIDDLL, "nvpipe_bitrate");
 
-			//Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
+			// Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
 			Assert::IsTrue(create_nvpipe_encoder);
 			Assert::IsTrue(destroy_nvpipe_encoder);
 			Assert::IsTrue(encode_nvpipe);
 			Assert::IsTrue(reconfigure_nvpipe);
 
-			//Check to ensure that the encoder can be created correctly
+			// Check to ensure that the encoder can be created correctly
 			auto encoder = create_nvpipe_encoder(codec, bitrate, 90, NVENC_INFINITE_GOPLENGTH, 1, false);
 			Assert::IsTrue(encoder);
 
-			//Ensure that the encoder can be destroyed correctly
+			// Ensure that the encoder can be destroyed correctly
 			destroy_nvpipe_encoder(encoder);
 
 			FreeLibrary((HMODULE)hGetProcIDDLL);
 		}
 
-		TEST_METHOD(CanEncodeCorrectly) {
-
+		// Tests out encoding a video frame using hardware encoder.
+		TEST_METHOD(CanEncodeCorrectly) 
+		{
 			auto h264TestImpl = new H264TestImpl();
 			h264TestImpl->SetEncoderHWEnabled(true);
 			rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
@@ -234,20 +247,30 @@ namespace NativeServersUnitTests
 
 			// Encode frame
 			Assert::IsTrue(h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr) == WEBRTC_VIDEO_CODEC_OK);
-			EncodedImage encoded_frame;
+			EncodedImage encodedFrame;
 
 			// Extract encoded_frame from the encoder
-			Assert::IsTrue(h264TestImpl->WaitForEncodedFrame(&encoded_frame));
+			Assert::IsTrue(h264TestImpl->WaitForEncodedFrame(&encodedFrame));
 
 			// Check if we have a complete frame with lengh > 0
-			Assert::IsTrue(encoded_frame._completeFrame);
-			Assert::IsTrue(encoded_frame._length > 0);
+			Assert::IsTrue(encodedFrame._completeFrame);
+			Assert::IsTrue(encodedFrame._length > 0);
 
 			// Test correct release of encoder
 			Assert::IsTrue(h264TestImpl->encoder_->Release() == WEBRTC_VIDEO_CODEC_OK);
 
 			delete[] rgbBuffer;
 			rgbBuffer = NULL;
+		}
+	};
+
+	TEST_CLASS(BufferCapturerTests)
+	{
+	public:
+		TEST_METHOD(CanInitializeWithDefaultParameters)
+		{
+			auto bufferCapturer = new BufferCapturer();
+			Assert::IsNotNull(bufferCapturer);
 		}
 	};
 }
