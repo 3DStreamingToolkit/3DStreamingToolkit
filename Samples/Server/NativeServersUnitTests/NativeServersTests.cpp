@@ -224,12 +224,30 @@ namespace NativeServersUnitTests
 			const uint64_t bitrate = width * height * 30 * 4 * 0.07;
 			void* output = malloc(numBytes);
 
-			nvpipe* encoder = nvpipe_create_encoder(NVPIPE_H264_NV);
-//			Assert::IsTrue(encoder);
+//			nvpipe* encoder = nvpipe_create_encoder(NVPIPE_H264_NV);
+////			Assert::IsTrue(encoder);
+//
+//			auto result = nvpipe_encode(encoder);//, rgb, width*height * 4, output, numBytes, width, height, 90, NVPIPE_RGBA);
+//			Assert::IsTrue(result);
 
-			auto result = nvpipe_encode(encoder);//, rgb, width*height * 4, output, numBytes, width, height, 90, NVPIPE_RGBA);
-			Assert::IsTrue(result);
+			auto hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
 
+			auto create_nvpipe_encoder = (nvpipe_create_encoder)GetProcAddress(hGetProcIDDLL, "nvpipe_create_encoder");
+			auto destroy_nvpipe_encoder = (nvpipe_destroy)GetProcAddress(hGetProcIDDLL, "nvpipe_destroy");
+			auto encode_nvpipe = (nvpipe_encode)GetProcAddress(hGetProcIDDLL, "nvpipe_encode");
+			auto reconfigure_nvpipe = (nvpipe_bitrate)GetProcAddress(hGetProcIDDLL, "nvpipe_bitrate");
+			
+			Assert::IsTrue(create_nvpipe_encoder);
+			Assert::IsTrue(destroy_nvpipe_encoder);
+			Assert::IsTrue(encode_nvpipe);
+			Assert::IsTrue(reconfigure_nvpipe);
+			
+			auto pipe = create_nvpipe_encoder(codec, bitrate, 90, NVENC_INFINITE_GOPLENGTH, 1, false);
+
+			Assert::IsTrue(pipe);
+
+
+			
 		}
 	};
 }
