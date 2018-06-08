@@ -9,6 +9,8 @@
 #include <Wbemidl.h>
 #include <Windows.h>
 #include <wchar.h>
+#include "third_party\nvpipe\nvpipe.h"
+
 
 # pragma comment(lib, "wbemuuid.lib")
 
@@ -173,7 +175,7 @@ namespace NativeServersUnitTests
 			VariantClear(&driverNumber);
 		}
 
-		TEST_METHOD(HardwareNvencodeEncode) {
+		TEST_METHOD(CanDoWebRTCEncoding) {
 
 			auto h264TestImpl = new H264TestImpl();
 			h264TestImpl->SetEncoderHWEnabled(true);
@@ -211,6 +213,23 @@ namespace NativeServersUnitTests
 
 			delete[] rgbBuffer;
 			rgbBuffer = NULL;
+		}
+
+		TEST_METHOD(HardwareEncodingIsEnabled) {
+			const nvpipe_codec codec = NVPIPE_H264_NV;
+			const uint32_t width = 1920;
+			const uint32_t height = 1080;
+			size_t numBytes = width * height * 4;
+			uint8_t* rgb = new uint8_t[numBytes];
+			const uint64_t bitrate = width * height * 30 * 4 * 0.07;
+			void* output = malloc(numBytes);
+
+			nvpipe* encoder = nvpipe_create_encoder(NVPIPE_H264_NV);
+//			Assert::IsTrue(encoder);
+
+			auto result = nvpipe_encode(encoder);//, rgb, width*height * 4, output, numBytes, width, height, 90, NVPIPE_RGBA);
+			Assert::IsTrue(result);
+
 		}
 	};
 }
