@@ -9,9 +9,9 @@
 #include <Wbemidl.h>
 #include <Windows.h>
 #include <wchar.h>
+#include "third_party\nvpipe\nvpipe.h"
 
 # pragma comment(lib, "wbemuuid.lib")
-
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 using namespace webrtc;
@@ -33,6 +33,9 @@ namespace NativeServersUnitTests
 			delete encoder;
 		}
 
+		BEGIN_TEST_METHOD_ATTRIBUTE(HasCompatibleGPUAndDriver)
+		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
+		END_TEST_METHOD_ATTRIBUTE()
 		TEST_METHOD(HasCompatibleGPUAndDriver)
 		{
 			HRESULT hres;
@@ -173,7 +176,41 @@ namespace NativeServersUnitTests
 			VariantClear(&driverNumber);
 		}
 
-		TEST_METHOD(HardwareNvencodeEncode) {
+		BEGIN_TEST_METHOD_ATTRIBUTE(HardwareEncodingIsEnabled)
+		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
+		END_TEST_METHOD_ATTRIBUTE()
+		TEST_METHOD(HardwareEncodingIsEnabled) {
+			//Using default settings from webrtc documentation
+			const nvpipe_codec codec = NVPIPE_H264_NV;
+			const uint32_t width = 1280;
+			const uint32_t height = 720;
+			const uint64_t bitrate = width * height * 30 * 4 * 0.07;
+
+			//Using autos from here on for simplicity
+			auto hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
+
+			auto create_nvpipe_encoder = (nvpipe_create_encoder)GetProcAddress(hGetProcIDDLL, "nvpipe_create_encoder");
+			auto destroy_nvpipe_encoder = (nvpipe_destroy)GetProcAddress(hGetProcIDDLL, "nvpipe_destroy");
+			auto encode_nvpipe = (nvpipe_encode)GetProcAddress(hGetProcIDDLL, "nvpipe_encode");
+			auto reconfigure_nvpipe = (nvpipe_bitrate)GetProcAddress(hGetProcIDDLL, "nvpipe_bitrate");
+
+			//Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
+			Assert::IsTrue(create_nvpipe_encoder);
+			Assert::IsTrue(destroy_nvpipe_encoder);
+			Assert::IsTrue(encode_nvpipe);
+			Assert::IsTrue(reconfigure_nvpipe);
+
+			//Check to ensure that the encoder can be created correctly
+			auto encoder = create_nvpipe_encoder(codec, bitrate, 90, NVENC_INFINITE_GOPLENGTH, 1, false);
+			Assert::IsTrue(encoder);
+
+			//Ensure that the encoder can be destroyed correctly
+			destroy_nvpipe_encoder(encoder);
+
+			FreeLibrary((HMODULE)hGetProcIDDLL);
+		}
+
+		TEST_METHOD(CanEncodeCorrectly) {
 
 			auto h264TestImpl = new H264TestImpl();
 			h264TestImpl->SetEncoderHWEnabled(true);
