@@ -33,6 +33,9 @@ namespace NativeServersUnitTests
 			delete encoder;
 		}
 
+		BEGIN_TEST_METHOD_ATTRIBUTE(HasCompatibleGPUAndDriver)
+		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
+		END_TEST_METHOD_ATTRIBUTE()
 		TEST_METHOD(HasCompatibleGPUAndDriver)
 		{
 			HRESULT hres;
@@ -173,6 +176,9 @@ namespace NativeServersUnitTests
 			VariantClear(&driverNumber);
 		}
 
+		BEGIN_TEST_METHOD_ATTRIBUTE(HardwareEncodingIsEnabled)
+		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
+		END_TEST_METHOD_ATTRIBUTE()
 		TEST_METHOD(HardwareEncodingIsEnabled) {
 			//Using default settings from webrtc documentation
 			const nvpipe_codec codec = NVPIPE_H264_NV;
