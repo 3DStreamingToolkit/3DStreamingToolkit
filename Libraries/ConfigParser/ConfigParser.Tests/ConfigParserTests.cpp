@@ -107,7 +107,6 @@ namespace ConfigParserTests
 			Assert::AreEqual(L"", defaultServerInstance->service_config.name.c_str());
 			Assert::AreEqual(L"", defaultServerInstance->service_config.service_account.c_str());
 			Assert::AreEqual(L"", defaultServerInstance->service_config.service_password.c_str());
-
 		}
 
 		TEST_METHOD(Config_URI_Priority_Success)
@@ -136,7 +135,6 @@ namespace ConfigParserTests
 			//ensure backwards compatibility for non-URI postfixes
 			Assert::AreEqual("test", oldWebRTCInstance->server_uri.c_str());
 			Assert::AreEqual("test://test", oldWebRTCInstance->authentication.authority_uri.c_str());
-
 		}
 	};
 }

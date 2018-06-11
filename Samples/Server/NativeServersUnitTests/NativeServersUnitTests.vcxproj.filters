@@ -30,6 +30,9 @@
     <ClCompile Include="frame_utils.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="tests.runsettings" />
