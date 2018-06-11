@@ -3,7 +3,6 @@
 #include <comdef.h>
 #include <comutil.h>
 #include <Wbemidl.h>
-#include <winsock2.h>
 #include <Windows.h>
 #include <wchar.h>
 
