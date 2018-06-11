@@ -34,7 +34,6 @@
     <None Include="serverConfig.json">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="$(MSBuildThisFileDirectory)packages.config" />
     <None Include="packages.config" />
   </ItemGroup>
 </Project>
