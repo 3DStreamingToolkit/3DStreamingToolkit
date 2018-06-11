@@ -51,12 +51,11 @@ These steps will ensure your development environment is configured properly, and
 Run `.\setup.cmd` from the command line. This will install and configure the following:
 
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m62 release](https://chromium.googlesource.com/chromium/src/+/0971c880c3f82e5fdbc6d65d1fc4d8ae9aa47ddc)
-+ [WebRTC patch](./Libraries/WebRTC/3dtoolkit_upgrades.patch) and [WebRTC third_party patch](./Libraries/WebRTC/third_party_nvpipe.patch), which adds nvencode support, frame prediction, video frame updates and native buffers to webrtc. These will be applied to the above
-+ Pre-built [NvPipe library](https://github.com/anderm/NvPipe/tree/low-latency-optimization) used in our WebRTC patch to enable NVIDIA-accelerated zero latency video compression
++ [M62 WebRTC native and UWP extensions](https://github.com/anderm/ortclib-sdk/tree/3dtoolkit-M62-release), which add nvencode support, frame prediction (for HoloLens), video frame updates and native buffers to webrtc. These will be applied to the above
++ Pre-built [NvPipe library](https://github.com/anderm/NvPipe/tree/low-latency-optimization) used in our WebRTC extension to enable NVIDIA-accelerated zero latency video compression
 + [CUDA Toolkit 9.1](https://developer.nvidia.com/cuda-downloads) pre-built Release libraries used by NvPipe - cudart64_91 and nvToolsExt64_1
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit 
 + Release libraries for OpenGL - Freeglut, Glew and glext
-+ [WebRTC-UWP](https://github.com/anderm/ortclib-sdk/tree/3dtoolkit-M62-release) M62 synced release for UWP-based clients (HoloLens)
 
 Once you see `Libraries retrieved and up to date` you may proceed.
 
