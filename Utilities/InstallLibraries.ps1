@@ -1,42 +1,4 @@
 Import-Module BitsTransfer
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-function Get-ScriptDirectory
-{
-  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-  Split-Path $Invocation.MyCommand.Path
-}
-
-function DecompressZip {
-    param( [string] $filename, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
-    
-    $uri = ($blobUri + $filename + ".zip")
-    $request = [System.Net.HttpWebRequest]::Create($uri)
-    $request.Timeout = 10000
-    $response = $request.GetResponse()
-    $etag = $response.Headers["ETag"] 
-    $request.Abort()
-    $localFileName = ($filename + ".zip")
-    $localFullPath = ($PSScriptRoot + "\..\Libraries\" + $localFileName)
-    
-    Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-                Write-Host "Removing outdated lib"
-                Remove-Item * -Include $_.Name
-        }
-    }
-
-    if((Test-Path ($PSScriptRoot + "\..\Libraries\Freeglut")) -eq $false) {
-        Write-Host ("Downloading " + $filename + " lib archive")
-        if((Test-Path ($localFullPath)) -eq $false) {
-               Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-               Write-Host ("Downloaded " + $filename + " lib archive")
-        }
-        Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, ($PSScriptRoot + "\..\Libraries\"))
-        Write-Host "Finished"
-    }
-}
 
 function
 Copy-File
@@ -118,5 +80,18 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "libOpenGL"
+function Get-ETag {
+    param(
+        [string]
+        $Uri
+    )
 
+    # Make HEAD request to get ETag header for blob
+    $request = [System.Net.HttpWebRequest]::Create($uri)
+    $request.Method = "HEAD"
+    $request.Timeout = 10000
+    $response = $request.GetResponse()
+    $etag = $response.Headers["ETag"] 
+    $request.Abort()
+    return $etag
+}
