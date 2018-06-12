@@ -5,25 +5,39 @@ function DecompressZip {
     
     $uri = ($blobUri + $filename + ".zip")
     $etag = Get-ETag -Uri $uri
-    $localFileName = ($filename + $etag + ".zip")
-    $localFullPath = ($PSScriptRoot + "\..\Libraries\" + $localFileName)
-    
-    Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-                Write-Host "Removing outdated lib"
-                Remove-Item * -Include $_.Name
-        }
-    }
+    $libraryPath = $PSScriptRoot + "\..\Libraries\"
+    $localFullPath = ($libraryPath + $filename + ".zip")
 
-    if((Test-Path ($PSScriptRoot + "\..\Libraries\Freeglut")) -eq $false) {
-        Write-Host ("Downloading " + $filename + " lib archive")
-        if((Test-Path ($localFullPath)) -eq $false) {
-               Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-               Write-Host ("Downloaded " + $filename + " lib archive")
+    # Compare ETag against the currently installed version
+    $versionMatch = Compare-Version -Path $localFullPath -Version $etag
+    if (!$versionMatch) {
+
+        # Download the library
+        Write-Host "Downloading $filename from $uri"
+        Copy-File -SourcePath $uri -DestinationPath $localFullPath
+        Write-Host ("Downloaded " + $filename + " lib archive")
+
+        # Clear the files from the previous library version
+        $freeglutPath = $libraryPath + "Freeglut"
+        $glewPath = $libraryPath + "Glew"
+        $glextPath = $libraryPath + "glext"
+        @( $freeglutPath, $glewPath, $glextPath ) | ForEach-Object {
+            if((Test-Path ($_)) -eq $true) {
+                Write-Host "Clearing existing $_" 
+                Remove-Item -Recurse -Force ($_)
+            }
         }
+
+        # Extract the latest library
         Write-Host "Extracting..."
         Expand-Archive -Path $localFullPath -DestinationPath ($PSScriptRoot + "\..\Libraries\")
         Write-Host "Finished"
+
+        # Clean up .zip file
+        Remove-Item $localFullPath
+
+        # Write the current version using the ETag
+        Write-Version -Path $localFullPath -Version $etag
     }
 }
 

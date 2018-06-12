@@ -3,48 +3,54 @@
 function DecompressZip {
     param( [string] $filename, [string] $path, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
 
+    # Get ETag header for current blob
     $uri = ($blobUri + $filename + ".zip")
     $etag = Get-ETag -Uri $uri
-    $localFileName = ($filename + $etag + ".zip")
-    $localFullPath = ($PSScriptRoot +  $path + $localFileName)
-    $libRemoved = $false
+    $localFullPath = ($PSScriptRoot + $path + $filename + ".zip")
     
-    if($filename -like "*libyuv*") {
-        $extractDir = "\libs"
-    } 
+    # Compare ETag against the currently installed version
+    $versionMatch = Compare-Version -Path $localFullPath -Version $etag
+    if (!$versionMatch) {
 
-    if($filename -like "*Org.*") {
-        $extractDir = "\x86"
-    } 
+        $extractDir = ""
 
-    if((Test-Path ($PSScriptRoot +  $path)) -eq $false) {
-        New-Item -Path ($PSScriptRoot +  $path) -ItemType Directory -Force 
-    }
-
-    Get-ChildItem -File -Path ($PSScriptRoot + $path) -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-                Write-Host "Removing outdated lib"
-                Remove-Item * -Include $_.Name
-                $libRemoved = $true
+        if($filename -like "*libyuv*") {
+            $extractDir = "libs"
+        } 
+        if($filename -like "*Org.*") {
+            $extractDir = "x86"
+        } 
+        if($extractDir -eq "") {
+            return
         }
-    }
-        
-    if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true -and $libRemoved -eq $false) {
-        return
-    }
 
-    if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true) {
-        Write-Host "Clearing existing $path" 
-        Remove-Item -Recurse -Force ($PSScriptRoot + $path + $extractDir)   
-    }
-    
-    Write-Host "Downloading $localFileName from $uri"
-    Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-    Write-Host ("Downloaded " + $filename + " lib archive")
+        # Download the library
+        Write-Host "Downloading $filename from $uri"
+        Copy-File -SourcePath $uri -DestinationPath $localFullPath
+        Write-Host ("Downloaded " + $filename + " lib archive")
 
-    Write-Host "Extracting..."
-    Expand-Archive -Path $localFullPath -DestinationPath ($PSScriptRoot + $path)
-    Write-Host "Finished"
+        # Create the lib sub-directory if it does not already exist
+        if((Test-Path ($PSScriptRoot +  $path)) -eq $false) {
+            New-Item -Path ($PSScriptRoot +  $path) -ItemType Directory -Force 
+        }
+
+        # Clear the files from the previous library version
+        if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true) {
+            Write-Host "Clearing existing $path" 
+            Remove-Item -Recurse -Force ($PSScriptRoot + $path + $extractDir)   
+        }
+
+        # Extract the latest library
+        Write-Host "Extracting..."
+        Expand-Archive -Path $localFullPath -DestinationPath ($PSScriptRoot + $path)
+        Write-Host "Finished"
+
+        # Clean up .zip file
+        Remove-Item $localFullPath
+
+        # Write the current version using the ETag
+        Write-Version -Path $localFullPath -Version $etag
+    }
 }
 
 DecompressZip -filename "Org.WebRtc_m62_timestamp_v1" -path "\Org.WebRTC\"

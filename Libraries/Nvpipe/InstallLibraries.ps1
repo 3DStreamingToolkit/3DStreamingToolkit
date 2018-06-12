@@ -6,38 +6,37 @@ function DecompressZip {
     # Get ETag header for current blob
     $uri = ($blobUri + $filename + ".zip")
     $etag = Get-ETag -Uri $uri
-    $localFileName = ($filename + $etag + ".zip")
-    $localFullPath = ($PSScriptRoot + "\" + $localFileName)
+    $localFullPath = ($PSScriptRoot + "\" + $filename + ".zip")
     
-    # Check if the library with the current ETag already exists
-    Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-                Write-Host "Removing outdated lib"
-                Remove-Item * -Include $_.Name
-        }
-    }
-
-    # If the library with the current ETag does not exist 
-    if ((Test-Path ($localFullPath)) -eq $false) {
-
-        # Download the library
-        Write-Host "Downloading $filename from $uri"
-        Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-        Write-Host ("Downloaded " + $filename + " lib archive")
+    # Compare ETag against the currently installed version
+    $versionMatch = Compare-Version -Path $localFullPath -Version $etag
+    if (!$versionMatch) {
 
         # Clear the files from the previous library version
         Write-Host "Clearing the existing $filename library"
         Get-ChildItem -Path $PSScriptRoot | ForEach-Object {
             $scriptName = [System.IO.Path]::GetFileName($PSCommandPath)
-            if ($_.Name -ne $localFileName -and $_.Name -ne $scriptName) {
+            # Do not remove the install script
+            if ($_.Name -ne $scriptName) {
                 Remove-Item -Recurse -Force ($PSScriptRoot + "\" + $_.Name)
             }
         }
+
+        # Download the library
+        Write-Host "Downloading $filename from $uri"
+        Copy-File -SourcePath $uri -DestinationPath $localFullPath
+        Write-Host ("Downloaded " + $filename + " lib archive")
 
         # Extract the latest library
         Write-Host "Extracting..."
         Expand-Archive -Path $localFullPath -DestinationPath $PSScriptRoot
         Write-Host "Finished"
+
+        # Clean up .zip file
+        Remove-Item $localFullPath
+
+        # Write the current version using the ETag
+        Write-Version -Path $localFullPath -Version $etag
     }
 }
 

@@ -6,24 +6,11 @@ function DecompressZip {
     # Get ETag header for current blob
     $uri = ($blobUri + $filename + ".zip")
     $etag = Get-ETag -Uri $uri
-    $localFileName = ($filename + $etag + ".zip")
-    $localFullPath = ($PSScriptRoot + "\" + $localFileName)
+    $localFullPath = ($PSScriptRoot + "\" + $filename + ".zip")
     
-    # Clear previous versions of the library
-    Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-            Write-Host "Removing outdated lib"
-            Remove-Item * -Include $_.Name
-        }
-    }
-
-    # If the library with the current ETag does not exist 
-    if ((Test-Path ($localFullPath)) -eq $false) {
-
-        # Download the library
-        Write-Host "Downloading $localFileName from $uri"
-        Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-        Write-Host ("Downloaded " + $filename + " lib archive")
+    # Compare ETag against the currently installed version
+    $versionMatch = Compare-Version -Path $localFullPath -Version $etag
+    if (!$versionMatch) {
 
         $extractDir = ""
 
@@ -39,7 +26,12 @@ function DecompressZip {
         if($extractDir -eq "") {
             return
         }
-        
+
+        # Download the library
+        Write-Host "Downloading $filename from $uri"
+        Copy-File -SourcePath $uri -DestinationPath $localFullPath
+        Write-Host ("Downloaded " + $filename + " lib archive")
+
         # Clear the files from the previous library version
         if((Test-Path ($PSScriptRoot + $extractDir)) -eq $true) {
             Write-Host "Clearing existing $extractDir" 
@@ -50,6 +42,12 @@ function DecompressZip {
         Write-Host "Extracting..."
         Expand-Archive -Path $localFullPath -DestinationPath $PSScriptRoot
         Write-Host "Finished"
+
+        # Clean up .zip file
+        Remove-Item $localFullPath
+
+        # Write the current version using the ETag
+        Write-Version -Path $localFullPath -Version $etag
     }
 }
 

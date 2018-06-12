@@ -95,3 +95,32 @@ function Get-ETag {
     $request.Abort()
     return $etag
 }
+
+function Compare-Version {
+    param(
+        [string]
+        $Version,
+
+        [string]
+        $Path
+    )
+
+    $versionPath = $Path + ".version"
+    if ((Test-Path ($versionPath)) -eq $false) {
+        return $false
+    } 
+    
+    return [System.IO.File]::ReadAllText($versionPath) -eq $ETag
+}
+
+function Write-Version {
+    param(
+        [string]
+        $Path,
+
+        [string]
+        $Version
+    )
+
+    [System.IO.File]::WriteAllText($Path + ".version", $ETag)
+}
