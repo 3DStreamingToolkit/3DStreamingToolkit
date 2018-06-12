@@ -576,7 +576,7 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			LOG(LS_ERROR) << "Received error from server: " << std::to_string(status);
 
 			// TODO(bengreenier): special case for azure 500 issue
-			// see https://github.com/CatalystCode/3dtoolkit/issues/45
+			// see https://github.com/CatalystCode/3DStreamingToolkit/issues/45
 			if (status == 500)
 			{
 				control_socket_->Close();
@@ -651,7 +651,7 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 			LOG(LS_ERROR) << "Received error from server: " << std::to_string(status);
 
 			// TODO(bengreenier): special case for azure 500 issue
-			// see https://github.com/CatalystCode/3dtoolkit/issues/45
+			// see https://github.com/CatalystCode/3DStreamingToolkit/issues/45
 			if (status == 500)
 			{
 				hanging_get_->Close();
