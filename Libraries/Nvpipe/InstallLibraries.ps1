@@ -1,5 +1,4 @@
 Import-Module BitsTransfer
-Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Get-ScriptDirectory
 {
@@ -33,7 +32,7 @@ function DecompressZip {
                Write-Host ("Downloaded " + $filename + " lib archive")
         }
         Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot)
+        Expand-Archive -Path $localFullPath -DestinationPath $PSScriptRoot -Force
         Write-Host "Finished"
     }
 }
