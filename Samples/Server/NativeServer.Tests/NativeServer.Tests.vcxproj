@@ -58,13 +58,14 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);Common;\inc;Content;$(VCInstallDir)UnitTest\include;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\WebRTC\headers;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WEBRTC_USE_OPENH264;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);Common;\inc;Content;$(VCInstallDir)UnitTest\include;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\Directx-SpinningCube\Content;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;..\Directx-SpinningCube\Common;..\..\..\Libraries\WebRTC\headers;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WEBRTC_USE_OPENH264;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;_WIN32_WINNT=0x0600;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -113,6 +114,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="pch.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="webrtc.h" />
     <ClInclude Include="webrtcH264.h" />

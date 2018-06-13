@@ -20,21 +20,22 @@
     <ClInclude Include="webrtc.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="pch.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NativeServersTests.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="pch.cpp" />
-    <ClCompile Include="frame_utils.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)gtest_main.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="frame_utils.cc">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
