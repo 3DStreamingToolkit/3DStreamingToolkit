@@ -144,13 +144,13 @@ void AppCallbacks::SetMediaStreamSource(Windows::Media::Core::IMediaStreamSource
 	}
 }
 
-void AppCallbacks::OnSampleTimestamp(int id, int64_t timestamp)
+void AppCallbacks::OnPredictionTimestamp(int id, int64_t timestamp)
 {
 	auto lock = m_lock.Lock();
 	m_framePredictionTimestamp[id] = timestamp;
 }
 
-uint32 AppCallbacks::OnFpsReportRequested()
+uint32 AppCallbacks::FpsReport()
 {
 	return m_player->GetFrameRate();
 }

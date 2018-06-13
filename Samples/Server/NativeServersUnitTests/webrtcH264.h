@@ -11,9 +11,9 @@
 */
 
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/event.h"
-#include "webrtc/base/thread_annotations.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/event.h"
+#include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/test/frame_utils.h"
 #include "webrtc/test/testsupport/fileutils.h"
@@ -55,7 +55,7 @@ namespace webrtc {
 
 		void SetEncoderHWEnabled(bool value)
 		{
-			defaultCodec.SetParam(cricket::kH264UseHWNvencode, value);
+			// defaultCodec.SetParam(cricket::kH264UseHWNvencode, value);
 			SetUp();
 		}
 

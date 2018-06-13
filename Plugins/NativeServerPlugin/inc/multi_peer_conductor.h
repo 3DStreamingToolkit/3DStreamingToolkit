@@ -11,7 +11,7 @@
 #include "main_window.h"
 #include "peer_connection_client.h"
 
-#include "webrtc/base/sigslot.h"
+#include "webrtc/rtc_base/sigslot.h"
 
 using namespace Microsoft::WRL;
 using namespace StreamingToolkit;

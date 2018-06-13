@@ -245,12 +245,16 @@ public class ControlScript : MonoBehaviour
 
             if (_webRtcControl.SendPeerDataChannelMessage(msg))
             {
-                // Start the stream when the server is in stero mode to avoid corrupt frames at startup.
+                // Start the stream when the server is in stereo mode to
+                // avoid corrupt frames at startup.
                 var source = Media.CreateMedia().CreateMediaStreamSource(
                     _peerVideoTrack,
+                    "h264",
                     "media",
                     TextureWidth,
-                    TextureHeight);
+                    TextureHeight,
+                    (_, __) => { },
+                    () => { return FrameRate; });
 
                 Plugin.LoadMediaStreamSource((MediaStreamSource)source);
                 Plugin.Play();

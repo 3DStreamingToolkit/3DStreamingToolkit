@@ -5,7 +5,7 @@
 #include "win32_data_channel_handler.h"
 #include "minwindef.h"
 
-#include "webrtc/base/json.h"
+#include "webrtc/rtc_base/json.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;

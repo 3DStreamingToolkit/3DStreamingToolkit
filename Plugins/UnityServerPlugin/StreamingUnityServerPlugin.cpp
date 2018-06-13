@@ -28,11 +28,11 @@
 #include "server_main_window.h"
 
 #include "webrtc/modules/video_coding/codecs/h264/h264_encoder_impl.h"
-#include "webrtc/base/checks.h"
-#include "webrtc/base/ssladapter.h"
-#include "webrtc/base/win32socketinit.h"
-#include "webrtc/base/win32socketserver.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/win32socketinit.h"
+#include "webrtc/rtc_base/win32socketserver.h"
+#include "webrtc/rtc_base/logging.h"
 
 #pragma warning( disable : 4100 )
 #pragma comment(lib, "ws2_32.lib") 
@@ -253,7 +253,8 @@ void InitWebRTC()
 	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
 
 	rtc::EnsureWinsockInit();
-	rtc::Win32Thread w32_thread;
+	rtc::Win32SocketServer w32_ss;
+	rtc::Win32Thread w32_thread(&w32_ss);
 	rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
 	s_rtcMainThread = &w32_thread;
 

@@ -862,7 +862,8 @@ namespace WebRtcWrapper
                         if (_selfVideoTrack != null)
                         {                            
                             OnStatusMessageUpdate?.Invoke("Enabling video loopback");
-                            var source = Media.CreateMedia().CreateMediaSource(_selfVideoTrack, "SELF");
+                            var source = Media.CreateMedia().CreateMediaSource(
+                                _selfVideoTrack, "SELF", "media");
                             RunOnUiThread(() =>
                             {
                                 // TODO: Setup Local Video Display

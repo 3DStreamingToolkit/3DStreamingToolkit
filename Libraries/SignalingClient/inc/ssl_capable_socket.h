@@ -1,9 +1,8 @@
 #ifndef WEBRTC_SSL_CAPABLE_SOCKET_H_
 #define WEBRTC_SSL_CAPABLE_SOCKET_H_
 
-#include "webrtc/base/socket.h"
-#include "webrtc/base/asyncsocket.h"
-#include "webrtc/base/openssladapter.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/sslidentity.h"
 
 using namespace rtc;
 
