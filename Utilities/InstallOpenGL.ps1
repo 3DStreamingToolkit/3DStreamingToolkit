@@ -33,7 +33,7 @@ function DecompressZip {
         # Extract the latest library
         Write-Host "Extracting..."
         # ExtractToDirectory is at least 3x faster than Expand-Archive
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot)
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $libraryPath)
         Write-Host "Finished"
 
         # Clean up .zip file
