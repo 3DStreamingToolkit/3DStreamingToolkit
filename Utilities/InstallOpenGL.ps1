@@ -1,3 +1,5 @@
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 . .\InstallLibraries.ps1
 
 function DecompressZip {
@@ -30,7 +32,8 @@ function DecompressZip {
 
         # Extract the latest library
         Write-Host "Extracting..."
-        Expand-Archive -Path $localFullPath -DestinationPath ($PSScriptRoot + "\..\Libraries\")
+        # ExtractToDirectory is at least 3x faster than Expand-Archive
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot)
         Write-Host "Finished"
 
         # Clean up .zip file
