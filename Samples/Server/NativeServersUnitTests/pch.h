@@ -17,3 +17,5 @@
 #include <directxmath.h>
 #include <directxcolors.h>
 #include <WindowsNumerics.h>
+
+#define TEST

@@ -60,7 +60,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(ProjectDir);$(VCInstallDir)UnitTest\include;\inc;..\Directx-SpinningCube\Common;..\Directx-SpinningCube\Content;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\UserInterface\inc;..\..\..\Libraries\WebRTC\headers;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;TEST_BUFFER_CAPTURER;_DEBUG;_WINDOWS;WEBRTC_WIN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -89,7 +89,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(VCInstallDir)UnitTest\include;\inc;..\Directx-SpinningCube\Common;..\Directx-SpinningCube\Content;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\UserInterface\inc;..\..\..\Libraries\WebRTC\headers;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;TEST_BUFFER_CAPTURER;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>

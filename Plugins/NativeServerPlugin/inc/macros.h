@@ -10,10 +10,15 @@
 		p = nullptr;					\
 	}
 
-#define FORWARD_DECLARATION(input_namespace, input_class)	\
-namespace input_namespace									\
-{															\
-	class input_class; 										\
+#ifndef TEST
+#define TEST_FORWARD_DECLARATION(input_namespace, input_class)
+#define TEST_FRIEND_CLASS(test_namespace, test_class)
+#else
+#define TEST_FORWARD_DECLARATION(input_namespace, input_class)	\
+namespace input_namespace										\
+{																\
+	class input_class; 											\
 }
 
-#define FRIEND_CLASS(test_namespace, test_class) friend class test_namespace##::##test_class
+#define TEST_FRIEND_CLASS(test_namespace, test_class) friend class test_namespace##::##test_class
+#endif
