@@ -1,38 +1,48 @@
-#include "stdafx.h"
+#include "pch.h"
 
-#include "webrtc.h"
-#include "webrtcH264.h"
-#include "third_party\libyuv\include\libyuv.h"
-#include "CppUnitTest.h"
 #include <comdef.h>
 #include <comutil.h>
 #include <Wbemidl.h>
-#include <Windows.h>
 #include <wchar.h>
-#include "third_party\nvpipe\nvpipe.h"
 
-# pragma comment(lib, "wbemuuid.lib")
+#include "CppUnitTest.h"
+#include "DeviceResources.h"
+#include "directx_buffer_capturer.h"
+#include "opengl_buffer_capturer.h"
+#include "server_main_window.h"
+#include "third_party\libyuv\include\libyuv.h"
+#include "third_party\nvpipe\nvpipe.h"
+#include "webrtc.h"
+#include "webrtcH264.h"
+
+#pragma comment(lib, "wbemuuid.lib")
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
+using namespace Microsoft::WRL;
+using namespace DX;
+using namespace StreamingToolkit;
 using namespace webrtc;
 
 namespace NativeServersUnitTests
 {		
-	TEST_CLASS(UnitTest1)
+	TEST_CLASS(EncoderTests)
 	{
 	public:
+		// Tests out initializing the H264 encoder.
 		TEST_METHOD(CanInitializeWithDefaultParameters)
 		{
 			auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
-			VideoCodec codec_settings;
-			SetDefaultCodecSettings(&codec_settings);
-			Assert::IsTrue(encoder->InitEncode(&codec_settings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
+			VideoCodec codecSettings;
+			SetDefaultCodecSettings(&codecSettings);
+			Assert::IsTrue(encoder->InitEncode(
+				&codecSettings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
 
 			// Test correct release of encoder
 			Assert::IsTrue(encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
 			delete encoder;
 		}
 
+		// Tests out retrieving the compatible NVIDIA driver version.
 		BEGIN_TEST_METHOD_ATTRIBUTE(HasCompatibleGPUAndDriver)
 		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
 		END_TEST_METHOD_ATTRIBUTE()
@@ -44,7 +54,6 @@ namespace NativeServersUnitTests
 			// Initialize COM. ------------------------------------------
 
 			hres = CoInitializeEx(0, COINIT_MULTITHREADED);
-
 
 			// Step 2: --------------------------------------------------
 			// Set general COM security levels --------------------------
@@ -131,8 +140,8 @@ namespace NativeServersUnitTests
 			IWbemClassObject *pclsObj = NULL;
 			ULONG uReturn = 0;
 
-			VARIANT driverNumber; //Store the driver version installed
-			bool NvidiaPresent = false; //Flag for Nvidia card being present
+			VARIANT driverNumber; // Store the driver version installed
+			bool NvidiaPresent = false; // Flag for Nvidia card being present
 
 			while (pEnumerator)
 			{
@@ -145,23 +154,24 @@ namespace NativeServersUnitTests
 				}
 
 				VARIANT vtProp;
-				//Finds the manufacturer of the card
+
+				// Finds the manufacturer of the card
 				hr = pclsObj->Get(L"AdapterCompatibility", 0, &vtProp, 0, 0);
 
-				//Find the nvidia card
+				// Find the nvidia card
 				if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) 
 				{
-					//Set the Nvidia card flag to true
+					// Set the Nvidia card flag to true
 					NvidiaPresent = true;
 
 					hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
 					wchar_t *currentDriver = driverNumber.bstrVal;
 					size_t len = wcslen(currentDriver);
 
-					//Major version number of the card is found at the -7th index
+					// Major version number of the card is found at the -7th index
 					std::wstring majorVersion(currentDriver, len - 6, 1);
 
-					//All drivers from 3.0 onwards support nvencode
+					// All drivers from 3.0 onwards support nvencode
 					Assert::IsTrue(std::stoi(majorVersion) > 2);
 				}
 
@@ -169,18 +179,20 @@ namespace NativeServersUnitTests
 				pclsObj->Release();
 			}
 			
-			//Make sure that we entered the loop
+			// Make sure that we entered the loop
 			Assert::IsTrue(NvidiaPresent);
 
-			//Clean Up
+			// Clean Up
 			VariantClear(&driverNumber);
 		}
 
+		// Tests out hardware encoder initialization.
 		BEGIN_TEST_METHOD_ATTRIBUTE(HardwareEncodingIsEnabled)
 		TEST_METHOD_ATTRIBUTE(L"Priority", "2")
 		END_TEST_METHOD_ATTRIBUTE()
-		TEST_METHOD(HardwareEncodingIsEnabled) {
-			//Using default settings from webrtc documentation
+		TEST_METHOD(HardwareEncodingIsEnabled) 
+		{
+			// Using default settings from webrtc documentation
 			const nvpipe_codec codec = NVPIPE_H264_NV;
 			const uint32_t width = 1280;
 			const uint32_t height = 720;
@@ -194,24 +206,25 @@ namespace NativeServersUnitTests
 			auto encode_nvpipe = (nvpipe_encode)GetProcAddress(hGetProcIDDLL, "nvpipe_encode");
 			auto reconfigure_nvpipe = (nvpipe_bitrate)GetProcAddress(hGetProcIDDLL, "nvpipe_bitrate");
 
-			//Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
+			// Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
 			Assert::IsTrue(create_nvpipe_encoder);
 			Assert::IsTrue(destroy_nvpipe_encoder);
 			Assert::IsTrue(encode_nvpipe);
 			Assert::IsTrue(reconfigure_nvpipe);
 
-			//Check to ensure that the encoder can be created correctly
+			// Check to ensure that the encoder can be created correctly
 			auto encoder = create_nvpipe_encoder(codec, bitrate, 90, NVENC_INFINITE_GOPLENGTH, 1, false);
 			Assert::IsTrue(encoder);
 
-			//Ensure that the encoder can be destroyed correctly
+			// Ensure that the encoder can be destroyed correctly
 			destroy_nvpipe_encoder(encoder);
 
 			FreeLibrary((HMODULE)hGetProcIDDLL);
 		}
 
-		TEST_METHOD(CanEncodeCorrectly) {
-
+		// Tests out encoding a video frame using hardware encoder.
+		TEST_METHOD(CanEncodeCorrectly) 
+		{
 			auto h264TestImpl = new H264TestImpl();
 			h264TestImpl->SetEncoderHWEnabled(true);
 			rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
@@ -234,20 +247,199 @@ namespace NativeServersUnitTests
 
 			// Encode frame
 			Assert::IsTrue(h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr) == WEBRTC_VIDEO_CODEC_OK);
-			EncodedImage encoded_frame;
+			EncodedImage encodedFrame;
 
 			// Extract encoded_frame from the encoder
-			Assert::IsTrue(h264TestImpl->WaitForEncodedFrame(&encoded_frame));
+			Assert::IsTrue(h264TestImpl->WaitForEncodedFrame(&encodedFrame));
 
 			// Check if we have a complete frame with lengh > 0
-			Assert::IsTrue(encoded_frame._completeFrame);
-			Assert::IsTrue(encoded_frame._length > 0);
+			Assert::IsTrue(encodedFrame._completeFrame);
+			Assert::IsTrue(encodedFrame._length > 0);
 
 			// Test correct release of encoder
 			Assert::IsTrue(h264TestImpl->encoder_->Release() == WEBRTC_VIDEO_CODEC_OK);
 
 			delete[] rgbBuffer;
 			rgbBuffer = NULL;
+		}
+	};
+
+	TEST_CLASS(BufferCapturerTests)
+	{
+	public:
+		// Tests out initializing base BufferCapturer object.
+		TEST_METHOD(InitializeBufferCapturer)
+		{
+			std::shared_ptr<BufferCapturer> capturer(new BufferCapturer());
+			Assert::IsNotNull(capturer.get());
+			Assert::IsFalse(capturer->IsRunning());
+		}
+
+		// Tests out initializing DirectX device resources.
+		TEST_METHOD(InitializeDirectXDeviceResources)
+		{
+			std::shared_ptr<DeviceResources> deviceResources(new DeviceResources());
+			Assert::IsNotNull(deviceResources->GetD3DDevice());
+			Assert::IsNotNull(deviceResources->GetD3DDeviceContext());
+			Assert::IsNull(deviceResources->GetSwapChain());
+			Assert::IsNull(deviceResources->GetBackBufferRenderTargetView());
+		}
+
+		// Tests out initializing DirectXBufferCapturer object.
+		TEST_METHOD(InitializeDirectXBufferCapturer)
+		{
+			std::shared_ptr<DeviceResources> deviceResources(new DeviceResources());
+			Assert::IsNotNull(deviceResources->GetD3DDevice());
+
+			std::shared_ptr<DirectXBufferCapturer> capturer(new DirectXBufferCapturer(deviceResources->GetD3DDevice()));
+			Assert::IsNotNull(capturer.get());
+		}
+
+		// Tests out initializing OpenGLBufferCapturer object.
+		TEST_METHOD(InitializeOpenGLBufferCapturer)
+		{
+			std::shared_ptr<OpenGLBufferCapturer> capturer(new OpenGLBufferCapturer());
+			Assert::IsNotNull(capturer.get());
+		}
+
+		// Tests out capturing video frame using DirectXBufferCapturer.
+		TEST_METHOD(CaptureFrameUsingDirectXBufferCapturer)
+		{
+			// Init DirectX device resources.
+			std::shared_ptr<DeviceResources> deviceResources(new DeviceResources());
+
+			//
+			// Prepares texture data.
+			//
+
+			// Init texture desc.
+			D3D11_TEXTURE2D_DESC texDesc = { 0 };
+			texDesc.ArraySize = 1;
+			texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			texDesc.Width = 1280;
+			texDesc.Height = 720;
+			texDesc.MipLevels = 1;
+			texDesc.SampleDesc.Count = 1;
+			texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			texDesc.Usage = D3D11_USAGE_STAGING;
+
+			// Init texture.
+			ComPtr<ID3D11Texture2D> texture = { 0 };
+			deviceResources->GetD3DDevice()->CreateTexture2D(&texDesc, nullptr, &texture);
+
+			// Fill texture with white color.
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			if (SUCCEEDED(deviceResources->GetD3DDeviceContext()->Map(
+				texture.Get(), 0, D3D11_MAP_WRITE, 0, &mapped)))
+			{
+				memset(mapped.pData, 0xFF, texDesc.Width * texDesc.Height * 4);
+				deviceResources->GetD3DDeviceContext()->Unmap(texture.Get(), 0);
+			}
+
+			// Init capturer.
+			std::shared_ptr<DirectXBufferCapturer> capturer(
+				new DirectXBufferCapturer(deviceResources->GetD3DDevice()));
+
+			// Forces switching to running state to test sending frame.
+			capturer->running_ = true;
+			capturer->SendFrame(texture.Get());
+
+			// Verifies staging buffer.
+			Assert::IsNotNull(capturer->staging_frame_buffer_.Get());
+			Assert::IsTrue(capturer->staging_frame_buffer_desc_.Width == 1280);
+			Assert::IsTrue(capturer->staging_frame_buffer_desc_.Height == 720);
+			if (SUCCEEDED(deviceResources->GetD3DDeviceContext()->Map(
+				capturer->staging_frame_buffer_.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+			{
+				Assert::IsTrue(*(uint8_t*)mapped.pData == 0xFF);
+				deviceResources->GetD3DDeviceContext()->Unmap(
+					capturer->staging_frame_buffer_.Get(), 0);
+			}
+		}
+
+		// Tests out capturing video frame using DirectXBufferCapturer (stereo mode).
+		TEST_METHOD(CaptureFrameStereoUsingDirectXBufferCapturer)
+		{
+			// Init DirectX device resources.
+			std::shared_ptr<DeviceResources> deviceResources(new DeviceResources());
+
+			//
+			// Prepares texture data for left eye.
+			//
+
+			// Init left eye texture desc.
+			D3D11_TEXTURE2D_DESC leftTexDesc = { 0 };
+			leftTexDesc.ArraySize = 1;
+			leftTexDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			leftTexDesc.Width = 1280;
+			leftTexDesc.Height = 720;
+			leftTexDesc.MipLevels = 1;
+			leftTexDesc.SampleDesc.Count = 1;
+			leftTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			leftTexDesc.Usage = D3D11_USAGE_STAGING;
+
+			// Init left eye texture.
+			ComPtr<ID3D11Texture2D> leftTexture = { 0 };
+			deviceResources->GetD3DDevice()->CreateTexture2D(
+				&leftTexDesc, nullptr, &leftTexture);
+
+			// Fill left eye texture with white color.
+			D3D11_MAPPED_SUBRESOURCE mapped;
+			if (SUCCEEDED(deviceResources->GetD3DDeviceContext()->Map(
+				leftTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mapped)))
+			{
+				memset(mapped.pData, 0xFF, leftTexDesc.Width * leftTexDesc.Height * 4);
+				deviceResources->GetD3DDeviceContext()->Unmap(leftTexture.Get(), 0);
+			}
+
+			//
+			// Prepares texture data for right eye.
+			//
+
+			// Init right eye texture desc.
+			D3D11_TEXTURE2D_DESC rightTexDesc = { 0 };
+			rightTexDesc.ArraySize = 1;
+			rightTexDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+			rightTexDesc.Width = 1280;
+			rightTexDesc.Height = 720;
+			rightTexDesc.MipLevels = 1;
+			rightTexDesc.SampleDesc.Count = 1;
+			rightTexDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			rightTexDesc.Usage = D3D11_USAGE_STAGING;
+
+			// Init right eye texture.
+			ComPtr<ID3D11Texture2D> rightTexture = { 0 };
+			deviceResources->GetD3DDevice()->CreateTexture2D(
+				&rightTexDesc, nullptr, &rightTexture);
+
+			// Fill right eye texture with 0xEEEEEE color.
+			if (SUCCEEDED(deviceResources->GetD3DDeviceContext()->Map(
+				rightTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mapped)))
+			{
+				memset(mapped.pData, 0xEE, rightTexDesc.Width * rightTexDesc.Height * 4);
+				deviceResources->GetD3DDeviceContext()->Unmap(rightTexture.Get(), 0);
+			}
+
+			// Init capturer.
+			std::shared_ptr<DirectXBufferCapturer> capturer(
+				new DirectXBufferCapturer(deviceResources->GetD3DDevice()));
+
+			// Forces switching to running state to test sending frame.
+			capturer->running_ = true;
+			capturer->SendFrame(leftTexture.Get(), rightTexture.Get());
+
+			// Verifies staging buffer.
+			Assert::IsNotNull(capturer->staging_frame_buffer_.Get());
+			Assert::IsTrue(capturer->staging_frame_buffer_desc_.Width == 1280 * 2);
+			Assert::IsTrue(capturer->staging_frame_buffer_desc_.Height == 720);
+			if (SUCCEEDED(deviceResources->GetD3DDeviceContext()->Map(
+				capturer->staging_frame_buffer_.Get(), 0, D3D11_MAP_READ, 0, &mapped)))
+			{
+				Assert::IsTrue(*(uint8_t*)mapped.pData == 0xFF);
+				Assert::IsTrue(*((uint8_t*)mapped.pData + 1280 * 4) == 0xEE);
+				deviceResources->GetD3DDeviceContext()->Unmap(
+					capturer->staging_frame_buffer_.Get(), 0);
+			}
 		}
 	};
 }

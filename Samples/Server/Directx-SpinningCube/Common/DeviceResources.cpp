@@ -7,7 +7,12 @@ using namespace DX;
 // Constructor for DeviceResources.
 DeviceResources::DeviceResources(int width, int height) :
 	m_outputSize({ width, height }),
-	m_isStereo(false)
+	m_isStereo(false),
+	m_d3dDevice(nullptr),
+	m_d3dContext(nullptr),
+	m_d3dRenderTargetView(nullptr),
+	m_swapChain(nullptr),
+	m_screenViewport(nullptr)
 {
 	CreateDeviceResources();
 }
@@ -20,7 +25,11 @@ DeviceResources::~DeviceResources()
 
 void DeviceResources::CleanupResources()
 {
-	delete []m_screenViewport;
+	if (m_screenViewport)
+	{
+		delete []m_screenViewport;
+	}
+
 	SAFE_RELEASE(m_d3dContext);
 	SAFE_RELEASE(m_d3dRenderTargetView);
 	SAFE_RELEASE(m_swapChain);
