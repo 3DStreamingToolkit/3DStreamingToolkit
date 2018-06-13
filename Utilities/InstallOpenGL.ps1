@@ -1,38 +1,39 @@
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-. ../../Utilities/InstallLibraries.ps1
+. .\InstallLibraries.ps1
 
 function DecompressZip {
     param( [string] $filename, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
     
-    # Get ETag header for current blob
     $uri = ($blobUri + $filename + ".zip")
     $etag = Get-ETag -Uri $uri
-    $localFullPath = ($PSScriptRoot + "\" + $filename + ".zip")
-    
+    $libraryPath = $PSScriptRoot + "\..\Libraries\"
+    $localFullPath = ($libraryPath + $filename + ".zip")
+
     # Compare ETag against the currently installed version
     $versionMatch = Compare-Version -Path $localFullPath -Version $etag
     if (!$versionMatch) {
-
-        # Clear the files from the previous library version
-        Write-Host "Clearing the existing $filename library"
-        Get-ChildItem -Path $PSScriptRoot | ForEach-Object {
-            $scriptName = [System.IO.Path]::GetFileName($PSCommandPath)
-            # Do not remove the install script
-            if ($_.Name -ne $scriptName) {
-                Remove-Item -Recurse -Force ($PSScriptRoot + "\" + $_.Name)
-            }
-        }
 
         # Download the library
         Write-Host "Downloading $filename from $uri"
         Copy-File -SourcePath $uri -DestinationPath $localFullPath
         Write-Host ("Downloaded " + $filename + " lib archive")
 
+        # Clear the files from the previous library version
+        $freeglutPath = $libraryPath + "Freeglut"
+        $glewPath = $libraryPath + "Glew"
+        $glextPath = $libraryPath + "glext"
+        @( $freeglutPath, $glewPath, $glextPath ) | ForEach-Object {
+            if((Test-Path ($_)) -eq $true) {
+                Write-Host "Clearing existing $_" 
+                Remove-Item -Recurse -Force ($_)
+            }
+        }
+
         # Extract the latest library
         Write-Host "Extracting..."
         # ExtractToDirectory is at least 3x faster than Expand-Archive
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot)
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $libraryPath)
         Write-Host "Finished"
 
         # Clean up .zip file
@@ -43,5 +44,4 @@ function DecompressZip {
     }
 }
 
-DecompressZip -filename "Nvpipe"
-
+DecompressZip -filename "libOpenGL"

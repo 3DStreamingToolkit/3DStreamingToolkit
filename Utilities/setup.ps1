@@ -1,7 +1,15 @@
-Push-Location -Path .
+Push-Location -Path $PSScriptRoot
+
+. .\InstallLibraries.ps1
+
 $err = $null
 $libCount = 0
 $libTotal = 5
+
+if (!(HasAzCopy)) 
+{
+    Write-Warning 'AzCopy not installed, downloads may take a long time'
+}
 
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\Nvpipe")
 try {
@@ -62,7 +70,7 @@ Write-Host 'Finished Library '$libCount'/'$libTotal
 Set-Location -Path ($PSScriptRoot)
 
 try {
-    & .\InstallLibraries.ps1
+    & .\InstallOpenGL.ps1
 } catch {
     $err = $_.Exception
 }
@@ -70,6 +78,9 @@ try {
 if ($err) {
     Write-Host ('Error retrieving OpenGL libraries for OpenGL sample server: ' + $err.Message) -ForegroundColor Red
 }
+
+$libCount++
+Write-Host 'Finished Library '$libCount'/'$libTotal
 
 if ($err -eq $null) {
     Write-Host 'Libraries retrieved and up to date' -ForegroundColor Green

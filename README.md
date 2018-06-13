@@ -46,7 +46,7 @@ These steps will ensure your development environment is configured properly, and
 
 #### Installing dependencies
 
-> Note: Before running our `setup.cmd` script, please ensure powershell is set to [enable unrestricted script execution](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1&viewFallbackFrom=powershell-Microsoft.PowerShell.Core).
+> Note: Before running our `setup.cmd` script, please ensure powershell is set to [enable unrestricted script execution](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1&viewFallbackFrom=powershell-Microsoft.PowerShell.Core). The `setup.cmd` script will use `AzCopy` if installed, which will speed up the dependency downloads. Download the latest stable `AzCopy` from http://aka.ms/downloadazcopy.
 
 Run `.\setup.cmd` from the command line. This will install and configure the following:
 

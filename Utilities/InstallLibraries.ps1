@@ -1,42 +1,4 @@
 Import-Module BitsTransfer
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-
-function Get-ScriptDirectory
-{
-  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-  Split-Path $Invocation.MyCommand.Path
-}
-
-function DecompressZip {
-    param( [string] $filename, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
-    
-    $uri = ($blobUri + $filename + ".zip")
-    $request = [System.Net.HttpWebRequest]::Create($uri)
-    $request.Timeout = 10000
-    $response = $request.GetResponse()
-    $etag = $response.Headers["ETag"] 
-    $request.Abort()
-    $localFileName = ($filename + ".zip")
-    $localFullPath = ($PSScriptRoot + "\..\Libraries\" + $localFileName)
-    
-    Get-ChildItem -File -Path $PSScriptRoot -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-                Write-Host "Removing outdated lib"
-                Remove-Item * -Include $_.Name
-        }
-    }
-
-    if((Test-Path ($PSScriptRoot + "\..\Libraries\Freeglut")) -eq $false) {
-        Write-Host ("Downloading " + $filename + " lib archive")
-        if((Test-Path ($localFullPath)) -eq $false) {
-               Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-               Write-Host ("Downloaded " + $filename + " lib archive")
-        }
-        Write-Host "Extracting..."
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, ($PSScriptRoot + "\..\Libraries\"))
-        Write-Host "Finished"
-    }
-}
 
 function
 Copy-File
@@ -61,7 +23,11 @@ Copy-File
     }
     elseif (($SourcePath -as [System.URI]).AbsoluteURI -ne $null)
     {
-        if (Test-Nano)
+        if (HasAzCopy -and (IsAzureBlob -Uri $SourcePath)) 
+        {
+            AzCopy -Source $SourcePath -Dest $DestinationPath
+        }
+        elseif (Test-Nano)
         {
             $handler = New-Object System.Net.Http.HttpClientHandler
             $client = New-Object System.Net.Http.HttpClient($handler)
@@ -118,5 +84,75 @@ Test-Nano()
             ($EditionId -eq "ServerTuva"))
 }
 
-DecompressZip -filename "libOpenGL"
+function Get-ETag {
+    param(
+        [string]
+        $Uri
+    )
 
+    # Make HEAD request to get ETag header for blob
+    $request = [System.Net.HttpWebRequest]::Create($uri)
+    $request.Method = "HEAD"
+    $request.Timeout = 10000
+    $response = $request.GetResponse()
+    $etag = $response.Headers["ETag"] 
+    $request.Abort()
+    return $etag
+}
+
+function Compare-Version {
+    param(
+        [string]
+        $Version,
+
+        [string]
+        $Path
+    )
+
+    $versionPath = $Path + ".version"
+    if ((Test-Path ($versionPath)) -eq $false) {
+        return $false
+    } 
+    
+    return [System.IO.File]::ReadAllText($versionPath) -eq $ETag
+}
+
+function Write-Version {
+    param(
+        [string]
+        $Path,
+
+        [string]
+        $Version
+    )
+
+    [System.IO.File]::WriteAllText($Path + ".version", $ETag)
+}
+
+function HasAzCopy {
+    $args = [string[]]@(${Env:ProgramFiles(x86)}, "Microsoft SDKs", "Azure", "AzCopy", "AzCopy.exe")
+    return Test-Path ([System.IO.Path]::Combine($args))
+}
+
+function AzCopy {
+    param(
+        [string]
+        $Source,
+
+        [string]
+        $Dest
+    )
+
+    $azCopy = [System.IO.Path]::Combine(${Env:ProgramFiles(x86)}, "Microsoft SDKs", "Azure", "AzCopy", "AzCopy.exe")
+    $args = @("/Source:$Source", "/Dest:$Dest", "/Y")
+    & $azCopy $args
+}
+
+function IsAzureBlob {
+    param(
+        [string]
+        $Uri
+    )
+
+    return $Uri -match "blob\.core\.windows\.net"
+}
