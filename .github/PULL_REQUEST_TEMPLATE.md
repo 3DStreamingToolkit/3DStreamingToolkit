@@ -11,4 +11,4 @@
 ***Please add an informative description that covers the changes made by the pull request.***
 
 ## Related Issues and PRs
-***Please provide a reference to an [existing issue](https://github.com/CatalystCode/3dtoolkit/issues) and any related pull requests.***
+***Please provide a reference to an [existing issue](https://github.com/CatalystCode/3DStreamingToolkit/issues) and any related pull requests.***
