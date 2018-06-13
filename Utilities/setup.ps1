@@ -1,7 +1,15 @@
-Push-Location -Path .
+Push-Location -Path $PSScriptRoot
+
+. .\InstallLibraries.ps1
+
 $err = $null
 $libCount = 0
 $libTotal = 5
+
+if (!(HasAzCopy)) 
+{
+    Write-Warning 'AzCopy not installed, downloads may take a long time'
+}
 
 Set-Location -Path ($PSScriptRoot + "\..\Libraries\Nvpipe")
 try {

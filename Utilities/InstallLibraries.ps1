@@ -23,7 +23,11 @@ Copy-File
     }
     elseif (($SourcePath -as [System.URI]).AbsoluteURI -ne $null)
     {
-        if (Test-Nano)
+        if (HasAzCopy -and (IsAzureBlob -Uri $SourcePath)) 
+        {
+            AzCopy -Source $SourcePath -Dest $DestinationPath
+        }
+        elseif (Test-Nano)
         {
             $handler = New-Object System.Net.Http.HttpClientHandler
             $client = New-Object System.Net.Http.HttpClient($handler)
@@ -123,4 +127,32 @@ function Write-Version {
     )
 
     [System.IO.File]::WriteAllText($Path + ".version", $ETag)
+}
+
+function HasAzCopy {
+    $args = [string[]]@(${Env:ProgramFiles(x86)}, "Microsoft SDKs", "Azure", "AzCopy", "AzCopy.exe")
+    return Test-Path ([System.IO.Path]::Combine($args))
+}
+
+function AzCopy {
+    param(
+        [string]
+        $Source,
+
+        [string]
+        $Dest
+    )
+
+    $azCopy = [System.IO.Path]::Combine(${Env:ProgramFiles(x86)}, "Microsoft SDKs", "Azure", "AzCopy", "AzCopy.exe")
+    $args = @("/Source:$Source", "/Dest:$Dest", "/Y")
+    & $azCopy $args
+}
+
+function IsAzureBlob {
+    param(
+        [string]
+        $Uri
+    )
+
+    return $Uri -match "blob\.core\.windows\.net"
 }
