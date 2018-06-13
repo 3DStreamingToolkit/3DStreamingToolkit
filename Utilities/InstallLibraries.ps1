@@ -130,6 +130,11 @@ function Write-Version {
 }
 
 function HasAzCopy {
+    # Do not use AzCopy on VSTS build agent
+    if ($env:AGENT_NAME -ne $null) {
+        return $false
+    }
+    
     $args = [string[]]@(${Env:ProgramFiles(x86)}, "Microsoft SDKs", "Azure", "AzCopy", "AzCopy.exe")
     return Test-Path ([System.IO.Path]::Combine($args))
 }
