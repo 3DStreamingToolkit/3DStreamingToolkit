@@ -18,4 +18,4 @@
 #include <directxcolors.h>
 #include <WindowsNumerics.h>
 
-//#define TEST
+#define ENABLE_TEST
