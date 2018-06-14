@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configures as a BaseProject
+  Configures gtest deps
+-->
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)BaseProject.props" />
+  <PropertyGroup>
+    <!-- map vcpkgtriplet because we'll need to use static variants which aren't officially supported yet in vcpkg.targets -->
+    <ManualLinkRoot Condition="'$(VcpkgTriplet)' == 'x86-windows'">$(VcpkgRoot)..\x86-windows-static\</ManualLinkRoot>
+    <ManualLinkRoot Condition="'$(VcpkgTriplet)' == 'x64-windows'">$(VcpkgRoot)..\x64-windows-static\</ManualLinkRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- all our gtest projects require gtest installed -->
+    <VcpkgPackage Include="gtest:$(VcpkgTriplet)-static" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(ManualLinkRoot)include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(ManualLinkRoot)include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies Condition="'$(Configuration)' == 'Debug'">$(ManualLinkRoot)debug\lib\manual-link\gtestd.lib;$(ManualLinkRoot)debug\lib\manual-link\gmockd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="'$(Configuration)' == 'Release'">$(ManualLinkRoot)lib\manual-link\gtest.lib;$(ManualLinkRoot)lib\manual-link\gmock.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)gtest_main.cpp" />
+  </ItemGroup>
+</Project>

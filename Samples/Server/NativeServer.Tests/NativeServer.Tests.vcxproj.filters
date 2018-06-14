@@ -33,8 +33,11 @@
     <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)gtest_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tests.runsettings" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

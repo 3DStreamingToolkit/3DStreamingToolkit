@@ -36,6 +36,7 @@ bld/
 # NUNIT
 *.VisualState.xml
 TestResult.xml
+*-Test.xml
 
 # Build Results of an ATL Project
 [Dd]ebugPS/

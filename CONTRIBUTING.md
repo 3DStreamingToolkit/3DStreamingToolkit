@@ -53,8 +53,28 @@ The following guidelines must be followed in **EVERY** pull request that is open
 
 In addition to adding test coverage for the included changes, please ensure the following:
 
-- Run the unit tests in the Visual Studio 2015 Test Explorer
+- Run the unit tests in the Visual Studio 2017 Test Explorer (see [below](#running-tests))
 - Run a sample client and server locally
+
+#### Running Tests
+
+> We use [googltest](https://github.com/google/googletest) as a testing framework.
+
+To run the tests in Visual Studio Test Explorer please follow these steps:
+
+- Ensure you have installed the [Google Test Adapter](https://github.com/csoltenborn/GoogleTestAdapter) from [here](https://marketplace.visualstudio.com/items?itemName=ChristianSoltenborn.GoogleTestAdapter)
+- Build the solution (Build -> Build Solution)
+- Open the Visual Studio Test Explorer (Test -> Windows -> Test Explorer)
+- Press "Run All" or select the tests you wish to run and press "Run"
+
+To run the tests in the commandline:
+
+Simply run `test` or `.\test.cmd` from the project directory:
+
+```
+C:\git\3dtoolkit>test
+<test output>
+```
 
 ### Coding Style
 

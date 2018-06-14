@@ -17,7 +17,9 @@
 #include "macros.h"
 #include "buffer_capturer.h"
 
-TEST_FORWARD_DECLARATION(NativeServersUnitTests, BufferCapturerTests)
+// For unit tests.
+FOWARD_DECLARE(BufferCapturerTests, CaptureFrameUsingDirectXBufferCapturer);
+FOWARD_DECLARE(BufferCapturerTests, CaptureFrameStereoUsingDirectXBufferCapturer);
 
 namespace StreamingToolkit
 {
@@ -43,6 +45,8 @@ namespace StreamingToolkit
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> staging_frame_buffer_;
 		D3D11_TEXTURE2D_DESC staging_frame_buffer_desc_;
 
-		TEST_FRIEND_CLASS(NativeServersUnitTests, BufferCapturerTests);
+		// For unit tests.
+		FRIEND_TEST(BufferCapturerTests, CaptureFrameUsingDirectXBufferCapturer);
+		FRIEND_TEST(BufferCapturerTests, CaptureFrameStereoUsingDirectXBufferCapturer);
 	};
 }
