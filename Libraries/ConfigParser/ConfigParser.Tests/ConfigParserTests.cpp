@@ -58,8 +58,8 @@ namespace ConfigParserTests
 			Assert::AreEqual("test", injectedWebRTCInstance->turn_server.username.c_str());
 			Assert::AreEqual("test", injectedWebRTCInstance->turn_server.password.c_str());
 			Assert::AreEqual("testUri", injectedWebRTCInstance->server_uri.c_str());
-			Assert::IsTrue(((uint16_t)5678) == injectedWebRTCInstance->port);
-			Assert::IsTrue(((uint32_t)91011) == injectedWebRTCInstance->heartbeat);
+			Assert::AreEqual(((uint16_t)5678), injectedWebRTCInstance->port);
+			Assert::AreEqual(((uint32_t)91011), injectedWebRTCInstance->heartbeat);
 			Assert::AreEqual("test:test:1234", injectedWebRTCInstance->stun_server.uri.c_str());
 			Assert::AreEqual("testUri://testUri", injectedWebRTCInstance->authentication.authority_uri.c_str());
 			Assert::AreEqual("00000000-0000-0000-0000-000000000000", injectedWebRTCInstance->authentication.client_id.c_str());
@@ -74,8 +74,8 @@ namespace ConfigParserTests
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.username.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->turn_server.password.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->server_uri.c_str());
-			Assert::IsTrue(((uint16_t)0) == defaultWebRTCInstance->port);
-			Assert::IsTrue(((uint32_t)0) == defaultWebRTCInstance->heartbeat);
+			Assert::AreEqual(((uint16_t)0), defaultWebRTCInstance->port);
+			Assert::AreEqual(((uint32_t)0), defaultWebRTCInstance->heartbeat);
 			Assert::AreEqual("", defaultWebRTCInstance->stun_server.uri.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->authentication.authority_uri.c_str());
 			Assert::AreEqual("", defaultWebRTCInstance->authentication.client_id.c_str());
@@ -91,18 +91,18 @@ namespace ConfigParserTests
 			auto defaultServerInstance = Object<ServerConfig>::Get<1>();
 
 			// should be parsed from disk (see serverConfig.json in the test directory)
-			Assert::IsTrue(((uint32_t)1234) == injectedServerInstance->server_config.height);
+			Assert::AreEqual(((uint32_t)1234), injectedServerInstance->server_config.height);
 			Assert::AreEqual(true, injectedServerInstance->server_config.system_service);
-			Assert::IsTrue(((uint32_t)5678) == injectedServerInstance->server_config.width);
+			Assert::AreEqual(((uint32_t)5678), injectedServerInstance->server_config.width);
 			Assert::AreEqual(L"test", injectedServerInstance->service_config.display_name.c_str());
 			Assert::AreEqual(L"test", injectedServerInstance->service_config.name.c_str());
 			Assert::AreEqual(L"test\\test", injectedServerInstance->service_config.service_account.c_str());
 			Assert::AreEqual(L"test", injectedServerInstance->service_config.service_password.c_str());
 
 			// should be default initialized
-			Assert::IsTrue(((uint32_t)0) == defaultServerInstance->server_config.height);
+			Assert::AreEqual(((uint32_t)0), defaultServerInstance->server_config.height);
 			Assert::AreEqual(false, defaultServerInstance->server_config.system_service);
-			Assert::IsTrue(((uint32_t)0) == defaultServerInstance->server_config.width);
+			Assert::AreEqual(((uint32_t)0), defaultServerInstance->server_config.width);
 			Assert::AreEqual(L"", defaultServerInstance->service_config.display_name.c_str());
 			Assert::AreEqual(L"", defaultServerInstance->service_config.name.c_str());
 			Assert::AreEqual(L"", defaultServerInstance->service_config.service_account.c_str());

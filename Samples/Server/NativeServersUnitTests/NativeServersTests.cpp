@@ -26,10 +26,10 @@ namespace NativeServersUnitTests
 			auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
 			VideoCodec codec_settings;
 			SetDefaultCodecSettings(&codec_settings);
-			Assert::IsTrue(encoder->InitEncode(&codec_settings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
+			Assert::AreEqual(WEBRTC_VIDEO_CODEC_OK, encoder->InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
 
 			// Test correct release of encoder
-			Assert::IsTrue(encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
+			Assert::AreEqual(WEBRTC_VIDEO_CODEC_OK, encoder->Release());
 			delete encoder;
 		}
 
@@ -233,7 +233,7 @@ namespace NativeServersUnitTests
 			h264TestImpl->input_frame_.get()->set_frame_buffer(rgbBuffer);
 
 			// Encode frame
-			Assert::IsTrue(h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr) == WEBRTC_VIDEO_CODEC_OK);
+			Assert::AreEqual(WEBRTC_VIDEO_CODEC_OK, h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr));
 			EncodedImage encoded_frame;
 
 			// Extract encoded_frame from the encoder
@@ -244,7 +244,7 @@ namespace NativeServersUnitTests
 			Assert::IsTrue(encoded_frame._length > 0);
 
 			// Test correct release of encoder
-			Assert::IsTrue(h264TestImpl->encoder_->Release() == WEBRTC_VIDEO_CODEC_OK);
+			Assert::AreEqual(WEBRTC_VIDEO_CODEC_OK, h264TestImpl->encoder_->Release());
 
 			delete[] rgbBuffer;
 			rgbBuffer = NULL;
