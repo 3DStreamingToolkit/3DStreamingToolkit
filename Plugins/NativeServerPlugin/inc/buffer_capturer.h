@@ -66,8 +66,6 @@ namespace StreamingToolkit
 		void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
 			const rtc::VideoSinkWants& wants) override;
 
-		void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
-
 		sigslot::signal1<BufferCapturer*> SignalDestroyed;
 
 	protected:
@@ -76,7 +74,7 @@ namespace StreamingToolkit
 		Clock* const clock_;
 		bool use_software_encoder_;
 		bool running_;
-		std::vector<rtc::VideoSinkInterface<VideoFrame>*> sinks_;
+		rtc::VideoSinkInterface<VideoFrame>* sink_;
 		SinkWantsObserver* sink_wants_observer_;
 		rtc::CriticalSection lock_;
 	};

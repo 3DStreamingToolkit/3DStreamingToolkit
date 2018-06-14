@@ -1,6 +1,6 @@
 #include <string>
 #include <gtest\gtest.h>
-#include <Windows.h>
+#include <windows.h>
 
 #include "config_parser.h"
 
@@ -99,7 +99,6 @@ TEST(ConfigParserTests, Config_Global_Allocation_Success)
 	ASSERT_STREQ(L"", defaultServerInstance->service_config.name.c_str());
 	ASSERT_STREQ(L"", defaultServerInstance->service_config.service_account.c_str());
 	ASSERT_STREQ(L"", defaultServerInstance->service_config.service_password.c_str());
-
 }
 
 TEST(ConfigParserTests, Config_URI_Priority_Success)

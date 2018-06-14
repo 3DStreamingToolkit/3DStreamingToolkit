@@ -1,34 +1,48 @@
-#include <gtest\gtest.h>
+#include "pch.h"
 
 #include <comdef.h>
 #include <comutil.h>
+#include <gtest\gtest.h>
 #include <Wbemidl.h>
-#include <Windows.h>
 #include <wchar.h>
 
+#include "CppUnitTest.h"
+#include "DeviceResources.h"
+#include "directx_buffer_capturer.h"
+#include "opengl_buffer_capturer.h"
+#include "server_main_window.h"
+#include "third_party\libyuv\include\libyuv.h"
+#include "third_party\nvpipe\nvpipe.h"
 #include "webrtc.h"
 #include "webrtcH264.h"
-#include "third_party\libyuv\include\libyuv.h"
 
 #pragma comment(lib, "wbemuuid.lib")
 
+using namespace Microsoft::WRL;
+using namespace DX;
+using namespace StreamingToolkit;
 using namespace webrtc;
 
-TEST(NativeServerTests, CanInitializeWithDefaultParameters)
+// Tests out initializing the H264 encoder.
+TEST(EncoderTests, CanInitializeWithDefaultParameters)
 {
 	auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
-	VideoCodec codec_settings;
-	SetDefaultCodecSettings(&codec_settings);
-	ASSERT_TRUE(encoder->InitEncode(&codec_settings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
+	VideoCodec codecSettings;
+	SetDefaultCodecSettings(&codecSettings);
+	ASSERT_TRUE(encoder->InitEncode(
+		&codecSettings, kNumCores, kMaxPayloadSize) == WEBRTC_VIDEO_CODEC_OK);
 
 	// Test correct release of encoder
 	ASSERT_TRUE(encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
 	delete encoder;
 }
 
+// --------------------------------------------------------------
 // see https://github.com/google/googletest/blob/master/googletest/docs/AdvancedGuide.md#temporarily-enabling-disabled-tests
 // for how to run this test (disabled by default, as this fails without nvidia gpu support)
-TEST(NativeServerTests, DISABLED_HasCompatibleGPUAndDriver)
+// --------------------------------------------------------------
+// Tests out retrieving the compatible NVIDIA driver version.
+TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 {
 	HRESULT hres;
 
@@ -168,9 +182,12 @@ TEST(NativeServerTests, DISABLED_HasCompatibleGPUAndDriver)
 	VariantClear(&driverNumber);
 }
 
+// --------------------------------------------------------------
 // see https://github.com/google/googletest/blob/master/googletest/docs/AdvancedGuide.md#temporarily-enabling-disabled-tests
 // for how to run this test (disabled by default, as this fails without nvidia gpu support)
-TEST(NativeServerTests, DISABLED_HardwareEncodingIsEnabled)
+// --------------------------------------------------------------
+// Tests out hardware encoder initialization.
+TEST(EncoderTests, DISABLED_HardwareEncodingIsEnabled)
 {
 	//Using default settings from webrtc documentation
 	const nvpipe_codec codec = NVPIPE_H264_NV;
@@ -202,7 +219,8 @@ TEST(NativeServerTests, DISABLED_HardwareEncodingIsEnabled)
 	FreeLibrary((HMODULE)hGetProcIDDLL);
 }
 
-TEST(NativeServerTests, CanEncodeCorrectly)
+// Tests out encoding a video frame using hardware encoder.
+TEST(EncoderTests, CanEncodeCorrectly)
 {
 	auto h264TestImpl = new H264TestImpl();
 	h264TestImpl->SetEncoderHWEnabled(true);
@@ -226,14 +244,14 @@ TEST(NativeServerTests, CanEncodeCorrectly)
 
 	// Encode frame
 	ASSERT_TRUE(h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr) == WEBRTC_VIDEO_CODEC_OK);
-	EncodedImage encoded_frame;
+	EncodedImage encodedFrame;
 
 	// Extract encoded_frame from the encoder
-	ASSERT_TRUE(h264TestImpl->WaitForEncodedFrame(&encoded_frame));
+	ASSERT_TRUE(h264TestImpl->WaitForEncodedFrame(&encodedFrame));
 
 	// Check if we have a complete frame with lengh > 0
-	ASSERT_TRUE(encoded_frame._completeFrame);
-	ASSERT_TRUE(encoded_frame._length > 0);
+	ASSERT_TRUE(encodedFrame._completeFrame);
+	ASSERT_TRUE(encodedFrame._length > 0);
 
 	// Test correct release of encoder
 	ASSERT_TRUE(h264TestImpl->encoder_->Release() == WEBRTC_VIDEO_CODEC_OK);
