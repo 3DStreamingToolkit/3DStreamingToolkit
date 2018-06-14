@@ -34,7 +34,7 @@ if($vmSize.Contains("NV") -eq $true)
 
 # Expect that the contents of the zip will have an x86 and x64 folder at root, with exes contained within
 $RelativePathToServerExe = "\x64"
-$DestinationFolder = "C:\3Dtoolkit"
+$DestinationFolder = "C:\3DStreamingToolkit"
 $BinariesFolder = $DestinationFolder + "\binaries\SpinningCubeServer"
 $BinariesZipPath = "https://3dtoolkitstorage.blob.core.windows.net/releases/"
 $BinariesZip = "3DStreamingToolkit-20170717.17-SpinningCubeServer-Release.zip"
