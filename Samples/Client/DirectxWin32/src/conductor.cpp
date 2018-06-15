@@ -76,7 +76,7 @@ Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_window, WebR
 	main_window->RegisterObserver(this);
 }
 
-Conductor::~Conductor() 
+Conductor::~Conductor()
 {
 	RTC_DCHECK(peer_connection_.get() == NULL);
 }
@@ -294,6 +294,12 @@ void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 	SendMessage(writer.write(jmessage));
 }
 
+void Conductor::OnIceConnectionChange(
+	webrtc::PeerConnectionInterface::IceConnectionState new_state)
+{
+	ice_state_ = new_state;
+}
+
 //
 // PeerConnectionClientObserver implementation.
 //
@@ -301,7 +307,10 @@ void Conductor::OnIceCandidate(const webrtc::IceCandidateInterface* candidate)
 void Conductor::OnSignedIn()
 {
 	LOG(INFO) << __FUNCTION__;
-	main_window_->SwitchToPeerList(client_->peers());
+	if (main_window_->IsWindow())
+	{
+		main_window_->SwitchToPeerList(client_->peers());
+	}
 }
 
 void Conductor::OnDisconnected()
@@ -477,7 +486,10 @@ void Conductor::OnHeartbeat(int heartbeat_status)
 
 void Conductor::OnServerConnectionFailure()
 {
-    main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
+	if (main_window_->IsWindow())
+	{
+		main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
+	}
 }
 
 //-------------------------------------------------------------------------

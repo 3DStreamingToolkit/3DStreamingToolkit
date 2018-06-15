@@ -79,7 +79,6 @@ ClientMainWindow::ClientMainWindow(
 	int port,
 	bool auto_connect,
 	bool auto_call,
-	bool has_no_UI,
 	int width,
 	int height) : 
 		MainWindow([&](HWND a, int b, int c, webrtc::VideoTrackInterface* d) { return AllocateVideoRenderer(a, b, c, d); }),

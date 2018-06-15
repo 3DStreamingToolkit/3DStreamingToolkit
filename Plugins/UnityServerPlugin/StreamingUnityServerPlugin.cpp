@@ -268,9 +268,9 @@ void InitWebRTC()
 		FLAG_port,
 		fullServerConfig->server_config->server_config.auto_connect,
 		fullServerConfig->server_config->server_config.auto_call,
-		true,
 		0,
-		0);
+		0,
+		true);
 
 	wnd.Create();
 

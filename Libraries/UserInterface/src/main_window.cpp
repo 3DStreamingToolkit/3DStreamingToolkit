@@ -12,6 +12,7 @@ MainWindow::MainWindow(VideoRendererAllocator videoRendererAllocator) :
 	nested_msg_(NULL),
 	current_ui_(UI::CONNECT_TO_SERVER)
 {
+	ui_thread_id_ = ::GetCurrentThreadId();
 }
 
 MainWindow::~MainWindow()

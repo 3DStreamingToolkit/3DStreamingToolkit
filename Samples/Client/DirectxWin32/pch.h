@@ -19,15 +19,5 @@
 #include <d3d11_1.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
-#include <d2d1.h>
-#include <d2d1helper.h>
-#include <dwrite.h>
-#include <wincodec.h>
 
-// DirectXTK
-#include <GamePad.h>
-#include <Keyboard.h>
-#include <Mouse.h>
-#include <SimpleMath.h>
-
-#include "defs.h"
+#include "macros.h"

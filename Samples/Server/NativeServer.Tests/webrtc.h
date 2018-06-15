@@ -5,12 +5,14 @@
 //WebRTC conversion from 'uint64_t' to 'uint32_t', possible loss of data
 #pragma warning(disable : 4244)
 
+#include "conductor.h"
 #include "flagdefs.h"
+#include "peer_connection_client.h"
 #include "webrtc/api/video/i420_buffer.h"
 #include "webrtc/rtc_base/checks.h"
-//#include "webrtc/rtc_base/ssladapter.h"
-//#include "webrtc/rtc_base/win32socketinit.h"
-//#include "webrtc/rtc_base/win32socketserver.h"
+#include "webrtc/rtc_base/ssladapter.h"
+#include "webrtc/rtc_base/win32socketinit.h"
+#include "webrtc/rtc_base/win32socketserver.h"
 
 #ifdef _DEBUG
 // #pragma comment(lib, "ffmpeg.dll.lib")

@@ -1,6 +1,16 @@
 #pragma once
 
+// DirectXTK
+#include <GamePad.h>
+#include <Keyboard.h>
+#include <Mouse.h>
+#include <SimpleMath.h>
+
 using namespace DirectX::SimpleMath;
+
+// For unit tests.
+FOWARD_DECLARE(EndToEndTests, SingleClientToServer);
+FOWARD_DECLARE(EndToEndTests, DISABLED_SingleClientToServer);
 
 class DataChannelCallback
 {
@@ -30,4 +40,8 @@ protected:
 
 private:
 	DataChannelCallback* data_channel_callback_;
+
+	// For unit tests.
+	FRIEND_TEST(EndToEndTests, SingleClientToServer);
+	FRIEND_TEST(EndToEndTests, DISABLED_SingleClientToServer);
 };

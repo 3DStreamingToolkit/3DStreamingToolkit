@@ -24,6 +24,10 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 
+ // For unit tests.
+FOWARD_DECLARE(EndToEndTests, SingleClientToServer);
+FOWARD_DECLARE(EndToEndTests, DISABLED_SingleClientToServer);
+
 namespace webrtc
 {
 	class VideoCaptureModule;
@@ -59,6 +63,10 @@ public:
 
 	void SetTurnCredentials(const std::string& username, const std::string& password);
 
+	void StartLogin(const std::string& server, int port) override;
+
+	void ConnectToPeer(int peer_id) override;
+
 	virtual void Close();
 
 protected:
@@ -92,10 +100,10 @@ protected:
 	void OnDataChannel(
 		rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override;
 
-	void OnRenegotiationNeeded() override {}
+	void OnRenegotiationNeeded() override {};
 
 	void OnIceConnectionChange(
-		webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
+		webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
 
 	void OnIceGatheringChange(
 		webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
@@ -128,11 +136,7 @@ protected:
 	// MainWndCallback implementation.
 	//-------------------------------------------------------------------------
 
-	void StartLogin(const std::string& server, int port) override;
-
 	void DisconnectFromServer() override;
-
-	void ConnectToPeer(int peer_id) override;
 
 	void DisconnectFromCurrentPeer() override;
 
@@ -167,6 +171,12 @@ protected:
 	std::string server_;
 	std::string turn_username_;
 	std::string turn_password_;
+
+	webrtc::PeerConnectionInterface::IceConnectionState ice_state_;
+
+	// For unit tests.
+	FRIEND_TEST(EndToEndTests, SingleClientToServer);
+	FRIEND_TEST(EndToEndTests, DISABLED_SingleClientToServer);
 };
 
 #endif // WEBRTC_CONDUCTOR_H_

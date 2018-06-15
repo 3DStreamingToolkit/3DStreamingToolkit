@@ -34,9 +34,6 @@
     <ClInclude Include="inc\defaults.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="inc\defs.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
     <ClInclude Include="inc\flagdefs.h">
       <Filter>Headers</Filter>
     </ClInclude>

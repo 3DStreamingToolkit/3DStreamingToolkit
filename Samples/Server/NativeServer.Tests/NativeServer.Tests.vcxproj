@@ -61,8 +61,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(VCInstallDir)UnitTest\include;\inc;..\Directx-SpinningCube\Common;..\Directx-SpinningCube\Content;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\UserInterface\inc;..\..\..\Libraries\WebRTC\headers;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;NOMINMAX;WEBRTC_USE_H264;WEBRTC_INITIALIZE_FFMPEG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(VCInstallDir)UnitTest\include;\inc;..\Directx-SpinningCube\Common;..\Directx-SpinningCube\Content;..\..\Client\DirectxWin32\inc;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\DirectXTK\inc;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\UserInterface\inc;..\..\..\Libraries\WebRTC\headers;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;WEBRTC_WIN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -91,7 +91,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(VCInstallDir)UnitTest\include;\inc;..\Directx-SpinningCube\Common;..\Directx-SpinningCube\Content;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\UserInterface\inc;..\..\..\Libraries\WebRTC\headers;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(VCInstallDir)UnitTest\include;\inc;..\Directx-SpinningCube\Common;..\Directx-SpinningCube\Content;..\..\Client\DirectxWin32\inc;..\..\..\Plugins\NativeServerPlugin\inc;..\..\..\Libraries\ConfigParser\inc;..\..\..\Libraries\DirectXTK\inc;..\..\..\Libraries\DXUT\Core;..\..\..\Libraries\DXUT\Optional;..\..\..\Libraries\DXUT\Remoting;..\..\..\Libraries\UserInterface\inc;..\..\..\Libraries\WebRTC\headers;..\..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include\;..\..\..\Libraries\Freeglut\include\GL;..\..\..\Libraries\glext\include\GL;..\..\..\Libraries\Glew\include\GL;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;NOMINMAX;WEBRTC_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <UseFullPaths>true</UseFullPaths>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -123,6 +123,9 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
     <ClInclude Include="webrtcH264.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Client\DirectxWin32\src\conductor.cpp" />
+    <ClCompile Include="..\..\Client\DirectxWin32\src\data_channel_handler.cpp" />
+    <ClCompile Include="..\..\Client\DirectxWin32\src\win32_data_channel_handler.cpp" />
     <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp" />
     <ClCompile Include="frame_generator.cc" />
     <ClCompile Include="frame_utils.cpp" />
@@ -153,6 +156,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\..\Plugins\NativeServerPlugin\exports.props" />
   <ImportGroup Label="ExtensionTargets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
