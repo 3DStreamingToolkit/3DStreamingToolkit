@@ -26,8 +26,18 @@ Copy-File
         if (HasAzCopy -and (IsAzureBlob -Uri $SourcePath)) 
         {
             AzCopy -Source $SourcePath -Dest $DestinationPath
+            if ((Test-Path ($DestinationPath) -PathType Leaf)) 
+            {
+                return
+            }
+            else
+            {
+                Remove-Item -Recurse -Force $DestinationPath
+                Write-Warning "AzCopy operation failed, please ensure you have AzCopy 7.1.0 or later installed."
+            }
         }
-        elseif (Test-Nano)
+        
+        if (Test-Nano)
         {
             $handler = New-Object System.Net.Http.HttpClientHandler
             $client = New-Object System.Net.Http.HttpClient($handler)
@@ -130,11 +140,6 @@ function Write-Version {
 }
 
 function HasAzCopy {
-    # Do not use AzCopy on VSTS build agent
-    if ($env:AGENT_NAME -ne $null) {
-        return $false
-    }
-    
     $args = [string[]]@(${Env:ProgramFiles(x86)}, "Microsoft SDKs", "Azure", "AzCopy", "AzCopy.exe")
     return Test-Path ([System.IO.Path]::Combine($args))
 }

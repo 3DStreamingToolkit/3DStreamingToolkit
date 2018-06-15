@@ -20,11 +20,8 @@ function DecompressZip {
             $extractDir = "libs"
         } 
         if($filename -like "*Org.*") {
-            $extractDir = "x86"
+            $extractDir = "x*"
         } 
-        if($extractDir -eq "") {
-            return
-        }
 
         # Remove library archive if it already exists
         if ((Test-Path ($localFullPath))) {
