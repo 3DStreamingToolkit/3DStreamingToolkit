@@ -29,6 +29,11 @@ function DecompressZip {
             return
         }
 
+        # Remove library archive if it already exists
+        if ((Test-Path ($localFullPath))) {
+            Remove-Item -Recurse -Force $localFullPath
+        }
+
         # Download the library
         Write-Host "Downloading $filename from $uri"
         Copy-File -SourcePath $uri -DestinationPath $localFullPath
