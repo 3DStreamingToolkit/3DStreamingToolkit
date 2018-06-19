@@ -1,6 +1,6 @@
 ## Report
 
-- [ ] I have searched [existing issues](https://github.com/CatalystCode/3dtoolkit/issues) and this is not a duplicate.
+- [ ] I have searched [existing issues](https://github.com/CatalystCode/3DStreamingToolkit/issues) and this is not a duplicate.
 
 ## Environment
 
