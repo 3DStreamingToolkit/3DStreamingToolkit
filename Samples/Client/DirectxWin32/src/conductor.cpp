@@ -470,6 +470,11 @@ void Conductor::OnMessageSent(int err)
 	main_window_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, NULL);
 }
 
+void Conductor::OnHeartbeat(int heartbeat_status)
+{
+	// TODO(bengreenier): if we want to surface this so it can be observed, we could do so
+}
+
 void Conductor::OnServerConnectionFailure()
 {
     main_window_->MessageBox("Error", ("Failed to connect to " + server_).c_str(), true);
