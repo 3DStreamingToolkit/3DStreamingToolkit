@@ -8,7 +8,7 @@
 /// Modern c++ object factory implementation in <200 lines
 /// </summary>
 /// <remarks>
-/// Version 0.2.0 - from https://github.com/bengreenier/CppFactory/releases/tag/v0.2.0
+/// Version 0.3.0 from https://github.com/bengreenier/CppFactory/releases/tag/v0.3.0
 /// </remarks>
 namespace CppFactory
 {
@@ -110,7 +110,7 @@ namespace CppFactory
 		{
 			m_allocFunc.clear();
 		}
-		
+
 		/// <summary>
 		/// Unregisters all allocators for a particular zone for type <c>TObject</c>
 		/// </summary>
@@ -169,4 +169,25 @@ namespace CppFactory
 
 	template <class TObject>
 	typename Object<TObject>::AllocFuncMapType Object<TObject>::m_allocFunc = Object<TObject>::AllocFuncMapType();
+
+
+	/// <summary>
+	/// Represents a traditional factory capable of creating allocating objects
+	/// </summary>
+	/// <param name="TObject">The type of object</param>
+	/// <param name="Args">The ctor argument types for the object constructor</param>
+	template <class TObject, class ...Args>
+	class Factory
+	{
+	public:
+		virtual ~Factory() {}
+
+		/// <summary>
+		/// Allocates an instance of type <see cref="TObject"/>
+		/// </summary>
+		virtual std::unique_ptr<TObject> Allocate(Args... args)
+		{
+			return std::make_unique<TObject>(args...);
+		}
+	};
 }
