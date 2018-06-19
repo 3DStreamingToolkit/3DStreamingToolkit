@@ -82,6 +82,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeServer.Tests", "Sampl
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SignalingClient.Tests", "Libraries\SignalingClient\SignalingClient.Tests\SignalingClient.Tests.vcxproj", "{8B390224-34AB-491A-A0A7-997731B03DB9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B7A1B58F-D3E4-4080-B752-4C03B313B571} = {B7A1B58F-D3E4-4080-B752-4C03B313B571}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gtest.vcpkg", "Libraries\gtest.vcpkg\gtest.vcpkg.vcxproj", "{B7A1B58F-D3E4-4080-B752-4C03B313B571}"
 EndProject
