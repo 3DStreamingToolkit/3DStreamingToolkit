@@ -194,6 +194,95 @@ public:
 };
 
 /// <summary>
+/// Validate that peer_connection_client can correctly create sockets
+/// </summary>
+TEST(SignalingClientTests, AllocateInvoked)
+{
+	shared_ptr<MockSslCapableSocketFactory> factory = make_shared<MockSslCapableSocketFactory>();
+	NoFailureObserver obs;
+
+	// expect 4 socket allocations that do a normal allocation under the hood
+	EXPECT_CALL(*factory, Allocate(_, _, _))
+		.Times(Exactly(4))
+		.WillRepeatedly(Invoke([](const int& a, const bool& b, weak_ptr<Thread> c) { return make_unique<SslCapableSocket>(a, b, c); }));
+
+	// scope for loop guard
+	{
+		// tie client lifetime to loop guard
+		shared_ptr<PeerConnectionClient> client;
+		RtcEventLoop loop([&]()
+		{
+			// alloc client, bind observer
+			client = make_shared<PeerConnectionClient>(factory);
+			client->RegisterObserver(&obs);
+
+			// attempt valid connect
+			client->Connect("localhost", 1, "test");
+		});
+
+		// block test thread waiting for observer
+		// expect the observer to be truthy, indicating there are no ServerConnectionFailures
+		EXPECT_TRUE(obs.Wait());
+
+		// rely on RAII to kill the loop
+	}
+}
+
+/// <summary>
+/// Validate that SslCapableSocket is a light shim on top of AsyncSocket and passes calls through
+/// </summary>
+TEST(SignalingClient, SslCapableSocketPassthrough)
+{
+	auto mockSocket = std::make_unique<MockAsyncSocket>();
+	auto mockThread = std::make_shared<rtc::Thread>();
+
+	// expect that each method will be called once
+	EXPECT_CALL(*mockSocket, GetLocalAddress()).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, GetRemoteAddress()).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Bind(_)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Connect(_)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Send(_, _)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, SendTo(_, _, _)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Recv(_, _, _)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, RecvFrom(_, _, _, _)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Listen(_)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Accept(_)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, Close()).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, GetError()).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, SetError(_)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, GetState()).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, GetOption(_, _)).Times(Exactly(1));
+	EXPECT_CALL(*mockSocket, SetOption(_, _)).Times(Exactly(1));
+
+	// note: this was nontrivial to me, but move does NOT break gmock assertions
+	SslCapableSocket socket(std::move(mockSocket), false, std::weak_ptr<rtc::Thread>(mockThread));
+
+	// call all socket methods to ensure passthrough is working
+	socket.GetLocalAddress();
+	socket.GetRemoteAddress();
+
+	rtc::SocketAddress addr;
+	socket.Bind(addr);
+	socket.Connect(addr);
+	socket.SendTo(nullptr, (size_t)0, addr);
+
+	socket.Send(nullptr, (size_t)0);
+	socket.Recv(nullptr, (size_t)0, nullptr);
+	socket.RecvFrom(nullptr, (size_t)0, nullptr, nullptr);
+	socket.Listen(0);
+	socket.Accept(nullptr);
+	socket.Close();
+	socket.GetError();
+	socket.SetError(0);
+	socket.GetState();
+
+	// opt is an enum
+	auto opt = (rtc::Socket::Option)0;
+	socket.GetOption(opt, nullptr);
+	socket.SetOption(opt, 0);
+}
+
+/// <summary>
 /// Validate that peer_connection_client can correctly send heartbeats
 /// </summary>
 TEST(SignalingClientTests, HeartbeatConnect)
@@ -309,40 +398,8 @@ TEST(SignalingClientTests, SignalConnect)
 }
 
 /// <summary>
-/// Validate that peer_connection_client can correctly create sockets
+/// Validate that turn_credential_provider can provide credentials
 /// </summary>
-TEST(SignalingClientTests, AllocateInvoked)
-{
-	shared_ptr<MockSslCapableSocketFactory> factory = make_shared<MockSslCapableSocketFactory>();
-	NoFailureObserver obs;
-
-	// expect 4 socket allocations that do a normal allocation under the hood
-	EXPECT_CALL(*factory, Allocate(_, _, _))
-		.Times(Exactly(4))
-		.WillRepeatedly(Invoke([](const int& a, const bool& b, weak_ptr<Thread> c) { return make_unique<SslCapableSocket>(a, b, c); }));
-
-	// scope for loop guard
-	{
-		// tie client lifetime to loop guard
-		shared_ptr<PeerConnectionClient> client;
-		RtcEventLoop loop([&]()
-		{
-			// alloc client, bind observer
-			client = make_shared<PeerConnectionClient>(factory);
-			client->RegisterObserver(&obs);
-
-			// attempt valid connect
-			client->Connect("localhost", 1, "test");
-		});
-
-		// block test thread waiting for observer
-		// expect the observer to be truthy, indicating there are no ServerConnectionFailures
-		EXPECT_TRUE(obs.Wait());
-
-		// rely on RAII to kill the loop
-	}
-}
-
 TEST(SignalingClient, TurnCredentialProviderSuccess)
 {
 	shared_ptr<MockSslCapableSocketFactory> factory = make_shared<MockSslCapableSocketFactory>();
@@ -421,58 +478,4 @@ TEST(SignalingClient, TurnCredentialProviderSuccess)
 
 		// rely on RAII to kill the loop
 	}
-}
-
-/// <summary>
-/// Validate that SslCapableSocket is a light shim on top of AsyncSocket and passes calls through
-/// </summary>
-TEST(SignalingClient, SslCapableSocketPassthrough)
-{
-	auto mockSocket = std::make_unique<MockAsyncSocket>();
-	auto mockThread = std::make_shared<rtc::Thread>();
-	
-	// expect that each method will be called once
-	EXPECT_CALL(*mockSocket, GetLocalAddress()).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, GetRemoteAddress()).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Bind(_)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Connect(_)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Send(_, _)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, SendTo(_, _, _)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Recv(_, _, _)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, RecvFrom(_, _, _, _)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Listen(_)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Accept(_)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, Close()).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, GetError()).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, SetError(_)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, GetState()).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, GetOption(_, _)).Times(Exactly(1));
-	EXPECT_CALL(*mockSocket, SetOption(_, _)).Times(Exactly(1));
-
-	// note: this was nontrivial to me, but move does NOT break gmock assertions
-	SslCapableSocket socket(std::move(mockSocket), false, std::weak_ptr<rtc::Thread>(mockThread));
-	
-	// call all socket methods to ensure passthrough is working
-	socket.GetLocalAddress();
-	socket.GetRemoteAddress();
-
-	rtc::SocketAddress addr;
-	socket.Bind(addr);
-	socket.Connect(addr);
-	socket.SendTo(nullptr, (size_t)0, addr);
-
-	socket.Send(nullptr, (size_t)0);
-	socket.Recv(nullptr, (size_t)0, nullptr);
-	socket.RecvFrom(nullptr, (size_t)0, nullptr, nullptr);
-	socket.Listen(0);
-	socket.Accept(nullptr);
-	socket.Close();
-	socket.GetError();
-	socket.SetError(0);
-	socket.GetState();
-
-	// opt is an enum
-	auto opt = (rtc::Socket::Option)0;
-	socket.GetOption(opt, nullptr);
-	socket.SetOption(opt, 0);
 }
