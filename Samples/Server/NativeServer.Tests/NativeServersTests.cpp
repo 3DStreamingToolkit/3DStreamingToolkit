@@ -28,6 +28,7 @@ using namespace webrtc;
 // --------------------------------------------------------------
 
 // Tests out initializing the H264 encoder.
+//This test may fail incorrectly with an incompatible nvidia GPU
 TEST(EncoderTests, CanInitializeWithDefaultParameters)
 {
 	auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
@@ -184,6 +185,13 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 
 	//Clean Up
 	VariantClear(&driverNumber);
+
+	//Using autos from here on for simplicity
+	//Test to see if nvpipe library loads correctly 
+	auto hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
+
+	auto create_nvpipe_encoder = (nvpipe_create_encoder)GetProcAddress(hGetProcIDDLL, "nvpipe_create_encoder");
+	ASSERT_TRUE(create_nvpipe_encoder);
 }
 
 // --------------------------------------------------------------
@@ -224,6 +232,7 @@ TEST(EncoderTests, DISABLED_HardwareEncodingIsEnabled)
 }
 
 // Tests out encoding a video frame using hardware encoder.
+//This test may fail incorrectly with an incompatible nvidia GPU
 TEST(EncoderTests, CanEncodeCorrectly)
 {
 	auto h264TestImpl = new H264TestImpl();
