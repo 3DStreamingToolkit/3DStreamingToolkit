@@ -10,6 +10,9 @@
 #include "DeviceResources.h"
 #include "directx_buffer_capturer.h"
 #include "opengl_buffer_capturer.h"
+#include "webrtc\modules\rtp_rtcp\source\rtp_format_h264.h"
+#include "webrtc\modules\rtp_rtcp\source\rtp_packet_to_send.h"
+#include "webrtc\modules\rtp_rtcp\include\rtp_header_extension_map.h"
 #include "server_main_window.h"
 #include "third_party\libyuv\include\libyuv.h"
 #include "third_party\nvpipe\nvpipe.h"
@@ -444,10 +447,6 @@ TEST(BufferCapturerTests, CaptureFrameStereoUsingDirectXBufferCapturer)
 }
 
 // --------------------------------------------------------------
-// RTP Package tests
-// --------------------------------------------------------------
-
-// --------------------------------------------------------------
 // Decoder tests
 // --------------------------------------------------------------
 TEST(DecoderTests, CanDecodeCorrectly) {
@@ -476,6 +475,9 @@ TEST(DecoderTests, CanDecodeCorrectly) {
 	h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr);
 	EncodedImage encodedFrame;
 
+	//Set frame prediction timestamp to 1 (arbitrary value)
+	encodedFrame.prediction_timestamp_ = 1;
+
 	// Extract encoded_frame from the encoder
 	h264TestImpl->WaitForEncodedFrame(&encodedFrame);
 
@@ -495,15 +497,24 @@ TEST(DecoderTests, CanDecodeCorrectly) {
 			break;
 		}
 	}
-
 	ASSERT_TRUE(DecodedCorrectly);
 
-	//Ensure the decoded frame is not empty
-	std::unique_ptr<VideoFrame> decoded_frame;
-	rtc::Optional<uint8_t> decoded_qp;
+	std::unique_ptr<VideoFrame> decodedFrame;
+	rtc::Optional<uint8_t> decodedQP;
 	
-	ASSERT_TRUE(h264TestImpl->WaitForDecodedFrame(&decoded_frame, &decoded_qp));
-	ASSERT_TRUE(decoded_frame != NULL);
+	//Extract decoded frame from the h264 decoder
+	ASSERT_TRUE(h264TestImpl->WaitForDecodedFrame(&decodedFrame, &decodedQP));
+
+	//Ensure the decoded frame is not empty
+	ASSERT_TRUE(decodedFrame != NULL);
+
+	//Make sure frame prediction timestamp is still valid
+	ASSERT_TRUE(decodedFrame->prediction_timestamp() == encodedFrame.prediction_timestamp_);
+
+	//Make sure that the frame has the same dimensions
+	//Not always true, but true for the default tests
+	ASSERT_TRUE(decodedFrame->height() == buffer->height());
+	ASSERT_TRUE(decodedFrame->width() == buffer->width());
 
 	// Test correct release of decoder
 	h264TestImpl->encoder_->Release();
