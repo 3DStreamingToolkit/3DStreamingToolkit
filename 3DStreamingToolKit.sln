@@ -76,9 +76,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NativeServer.Tests", "Samples\Server\NativeServer.Tests\NativeServer.Tests.vcxproj", "{4027EE56-E65E-4A73-8281-A5A14F45E7E3}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SignalingClient.Tests", "Libraries\SignalingClient\SignalingClient.Tests\SignalingClient.Tests.vcxproj", "{8B390224-34AB-491A-A0A7-997731B03DB9}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B7A1B58F-D3E4-4080-B752-4C03B313B571} = {B7A1B58F-D3E4-4080-B752-4C03B313B571}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
