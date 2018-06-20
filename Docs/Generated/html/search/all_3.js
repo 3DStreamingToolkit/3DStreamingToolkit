@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['backwardrefidx',['BackwardRefIdx',['../struct___c_u_v_i_d_v_c1_p_i_c_p_a_r_a_m_s.html#a5ab05eca0b6a54c3ee814087661f1056',1,'_CUVIDVC1PICPARAMS']]],
+  ['bdirectmode',['bdirectMode',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#ac6d6fc3a94c133d515452de6a4f24ec0',1,'_NV_ENC_CONFIG_H264']]],
+  ['bit_5fdepth_5fchroma_5fminus8',['bit_depth_chroma_minus8',['../struct_c_u_v_i_d_e_o_f_o_r_m_a_t.html#a42ee0e7fe8490cd19e5fce30f026a7ca',1,'CUVIDEOFORMAT']]],
+  ['bit_5fdepth_5fluma_5fminus8',['bit_depth_luma_minus8',['../struct_c_u_v_i_d_e_o_f_o_r_m_a_t.html#a922a0f10c7db6d5e71ccde9deb2474f3',1,'CUVIDEOFORMAT']]],
+  ['bitrate',['bitrate',['../struct_c_u_v_i_d_e_o_f_o_r_m_a_t.html#a5b04eafe930ff7b5b162d328718de6f3',1,'CUVIDEOFORMAT::bitrate()'],['../struct_c_u_a_u_d_i_o_f_o_r_m_a_t.html#a66adf47543115386e8a43fc6e85fab52',1,'CUAUDIOFORMAT::bitrate()']]],
+  ['bitstreambuffer',['bitstreamBuffer',['../struct___n_v___e_n_c___c_r_e_a_t_e___b_i_t_s_t_r_e_a_m___b_u_f_f_e_r.html#aac8d3e81e872e6f4243d952f3aa2939e',1,'_NV_ENC_CREATE_BITSTREAM_BUFFER']]],
+  ['bitstreambufferptr',['bitstreamBufferPtr',['../struct___n_v___e_n_c___c_r_e_a_t_e___b_i_t_s_t_r_e_a_m___b_u_f_f_e_r.html#a402db9af6723f426231a307cea7e57a3',1,'_NV_ENC_CREATE_BITSTREAM_BUFFER::bitstreamBufferPtr()'],['../struct___n_v___e_n_c___l_o_c_k___b_i_t_s_t_r_e_a_m.html#a18acdf66e523dd6efe929ae641e5dd93',1,'_NV_ENC_LOCK_BITSTREAM::bitstreamBufferPtr()']]],
+  ['bitstreamrestrictionflag',['bitstreamRestrictionFlag',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264___v_u_i___p_a_r_a_m_e_t_e_r_s.html#a567dc59ef32513191f604f261ec3ee85',1,'_NV_ENC_CONFIG_H264_VUI_PARAMETERS']]],
+  ['bitstreamsize',['bitStreamSize',['../struct___n_v___e_n_c___s_t_a_t.html#a7ec5b71fc22a69c66d8a522163d468b2',1,'_NV_ENC_STAT']]],
+  ['bitstreamsizeinbytes',['bitstreamSizeInBytes',['../struct___n_v___e_n_c___l_o_c_k___b_i_t_s_t_r_e_a_m.html#a502fc647aa9aa684f018f045f4fe7f40',1,'_NV_ENC_LOCK_BITSTREAM']]],
+  ['booleanvalue',['booleanValue',['../namespace_json.html#a7d654b75c16a57007925868e38212b4ea14c30dbf4da86f7b809be299f671f7fd',1,'Json']]],
+  ['booltovisconverter',['BoolToVisConverter',['../class_peer_connection_client_1_1_utilities_1_1_bool_to_vis_converter.html',1,'PeerConnectionClient::Utilities']]],
+  ['bottom',['bottom',['../struct_c_u_v_i_d_e_o_f_o_r_m_a_t.html#ade4dab94c56469a0358216ecb19df82f',1,'CUVIDEOFORMAT::bottom()'],['../struct___n_v_e_n_c___r_e_c_t.html#af69565ace508719854e6d06538ccf7c2',1,'_NVENC_RECT::bottom()']]],
+  ['bottom_5ffield_5fflag',['bottom_field_flag',['../struct___c_u_v_i_d_p_i_c_p_a_r_a_m_s.html#a5ae682564c3b039bc31568d06c19becb',1,'_CUVIDPICPARAMS']]],
+  ['brefbaselayer',['bRefBaseLayer',['../struct___c_u_v_i_d_h264_s_v_c_e_x_t.html#a658d6be246d56e664f65d6ffc330a790',1,'_CUVIDH264SVCEXT']]],
+  ['bstereoenable',['bStereoEnable',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264___m_e_o_n_l_y.html#a6a70f630f1ef06ec83b27eecd22d3013',1,'_NV_ENC_CONFIG_H264_MEONLY']]],
+  ['bufferdataptr',['bufferDataPtr',['../struct___n_v___e_n_c___l_o_c_k___i_n_p_u_t___b_u_f_f_e_r.html#a72311b9ffdad9a889cad3293b4ebb33b',1,'_NV_ENC_LOCK_INPUT_BUFFER']]],
+  ['bufferfmt',['bufferFmt',['../struct___n_v___e_n_c___c_r_e_a_t_e___i_n_p_u_t___b_u_f_f_e_r.html#a682e10db384f456b4e3a6d1c68bfa636',1,'_NV_ENC_CREATE_INPUT_BUFFER::bufferFmt()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#a85cce2d94d4f14e03109cd71cb4ed0bb',1,'_NV_ENC_PIC_PARAMS::bufferFmt()'],['../struct___n_v___e_n_c___m_e_o_n_l_y___p_a_r_a_m_s.html#ab4fad76746c6965b060902b93743a4ac',1,'_NV_ENC_MEONLY_PARAMS::bufferFmt()']]],
+  ['bufferformat',['bufferFormat',['../struct___n_v___e_n_c___r_e_g_i_s_t_e_r___r_e_s_o_u_r_c_e.html#a572b6301f0af1bd83b68503c291e0fe7',1,'_NV_ENC_REGISTER_RESOURCE']]]
+];

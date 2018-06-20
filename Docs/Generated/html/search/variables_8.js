@@ -1,0 +1,17 @@
+var searchData=
+[
+  ['idrperiod',['idrPeriod',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#aced3a5dc1f4adde79366a02fd9b9130e',1,'_NV_ENC_CONFIG_H264::idrPeriod()'],['../struct___n_v___e_n_c___c_o_n_f_i_g___h_e_v_c.html#a23b2f206a669b0a081e3186e4e0619c2',1,'_NV_ENC_CONFIG_HEVC::idrPeriod()']]],
+  ['inbuffersize',['inBufferSize',['../struct___n_v___e_n_c___s_e_q_u_e_n_c_e___p_a_r_a_m___p_a_y_l_o_a_d.html#a94bda8e3e4dbcccad52e4b3fcb068873',1,'_NV_ENC_SEQUENCE_PARAM_PAYLOAD']]],
+  ['initialrcqp',['initialRCQP',['../struct___n_v___e_n_c___r_c___p_a_r_a_m_s.html#a89e732cc5f560f8d684c5a990c5d499f',1,'_NV_ENC_RC_PARAMS']]],
+  ['inputbuffer',['inputBuffer',['../struct___n_v___e_n_c___c_r_e_a_t_e___i_n_p_u_t___b_u_f_f_e_r.html#a69065d0e6af950e119e7cd19ca60f867',1,'_NV_ENC_CREATE_INPUT_BUFFER::inputBuffer()'],['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#a86358ca24dda2afc3149a26d337c1fe5',1,'_NV_ENC_PIC_PARAMS::inputBuffer()'],['../struct___n_v___e_n_c___m_e_o_n_l_y___p_a_r_a_m_s.html#a68013ce82262f9bbe72ad8bdb7f634f1',1,'_NV_ENC_MEONLY_PARAMS::inputBuffer()'],['../struct___n_v___e_n_c___l_o_c_k___i_n_p_u_t___b_u_f_f_e_r.html#a463df4d96c7eb6ddbd12ca032ce71305',1,'_NV_ENC_LOCK_INPUT_BUFFER::inputBuffer()']]],
+  ['inputduration',['inputDuration',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#ada3d88821cd02c5b529f95b82b3bc256',1,'_NV_ENC_PIC_PARAMS']]],
+  ['inputheight',['inputHeight',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#a5743f143e4c5d359beaefa42d4b95536',1,'_NV_ENC_PIC_PARAMS::inputHeight()'],['../struct___n_v___e_n_c___m_e_o_n_l_y___p_a_r_a_m_s.html#ada6d90ad24d929b7151ea23bf00babf5',1,'_NV_ENC_MEONLY_PARAMS::inputHeight()']]],
+  ['inputpitch',['inputPitch',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#a49fbf4e101f41b230d33d5f6583413a8',1,'_NV_ENC_PIC_PARAMS']]],
+  ['inputresource',['inputResource',['../struct___n_v___e_n_c___m_a_p___i_n_p_u_t___r_e_s_o_u_r_c_e.html#ad9e8ef5debf1c96cd93a66ece892406e',1,'_NV_ENC_MAP_INPUT_RESOURCE']]],
+  ['inputtimestamp',['inputTimeStamp',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#a8f0d334b7460ceb7a1407f966fa022d4',1,'_NV_ENC_PIC_PARAMS']]],
+  ['inputwidth',['inputWidth',['../struct___n_v___e_n_c___p_i_c___p_a_r_a_m_s.html#ab0c87cfb7d172e137ca1148ab364b76f',1,'_NV_ENC_PIC_PARAMS::inputWidth()'],['../struct___n_v___e_n_c___m_e_o_n_l_y___p_a_r_a_m_s.html#a46036b6c6ee0abd7c17b81856fc7df96',1,'_NV_ENC_MEONLY_PARAMS::inputWidth()']]],
+  ['intra_5fpic_5fflag',['intra_pic_flag',['../struct___c_u_v_i_d_v_c1_p_i_c_p_a_r_a_m_s.html#a5444e0f73afac8a2394bd3bad8a8887e',1,'_CUVIDVC1PICPARAMS::intra_pic_flag()'],['../struct___c_u_v_i_d_p_i_c_p_a_r_a_m_s.html#aa88e8a2b6964254e1e68a69975f0690d',1,'_CUVIDPICPARAMS::intra_pic_flag()']]],
+  ['intrarefreshcnt',['intraRefreshCnt',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#a1191935a4256eee66ca7801349f7f418',1,'_NV_ENC_CONFIG_H264::intraRefreshCnt()'],['../struct___n_v___e_n_c___c_o_n_f_i_g___h_e_v_c.html#af4a2d712ba7ab2fc7c057f07913512d0',1,'_NV_ENC_CONFIG_HEVC::intraRefreshCnt()']]],
+  ['intrarefreshperiod',['intraRefreshPeriod',['../struct___n_v___e_n_c___c_o_n_f_i_g___h264.html#ab8cb870eab7163c6c99d9fc0318720aa',1,'_NV_ENC_CONFIG_H264::intraRefreshPeriod()'],['../struct___n_v___e_n_c___c_o_n_f_i_g___h_e_v_c.html#a132a5d222fd416d9a2303e68b25ee955',1,'_NV_ENC_CONFIG_HEVC::intraRefreshPeriod()']]],
+  ['is_5flong_5fterm',['is_long_term',['../struct___c_u_v_i_d_h264_d_p_b_e_n_t_r_y.html#a2c8c6cde6464571cb4d12d3e761680f1',1,'_CUVIDH264DPBENTRY']]]
+];
