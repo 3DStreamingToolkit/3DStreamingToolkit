@@ -151,6 +151,8 @@ void MultiPeerConductor::OnMessageFromPeer(int peer_id, const string& message)
 
 void MultiPeerConductor::OnMessageSent(int err) {}
 
+void MultiPeerConductor::OnHeartbeat(int heartbeat_status) {}
+
 void MultiPeerConductor::OnServerConnectionFailure() {}
 
 void MultiPeerConductor::OnMessage(Message* msg)

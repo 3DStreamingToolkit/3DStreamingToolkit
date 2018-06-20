@@ -50,6 +50,8 @@ public:
 
 	virtual void OnMessageSent(int err) override;
 
+	virtual void OnHeartbeat(int heartbeat_status) override;
+
 	virtual void OnServerConnectionFailure() override;
 
 	virtual void OnMessage(Message* msg) override;
