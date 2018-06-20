@@ -34,7 +34,7 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)gtest_main.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
