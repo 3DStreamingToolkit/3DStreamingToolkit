@@ -116,8 +116,11 @@
     <ClCompile Include="src\turn_credential_provider.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="exports.props" />
+    <None Include="exports.props">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)..\AbstractionFrameworks\exports.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

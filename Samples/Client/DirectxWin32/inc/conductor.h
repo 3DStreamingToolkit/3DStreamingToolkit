@@ -120,6 +120,8 @@ protected:
 
 	void OnMessageSent(int err) override;
 
+	void OnHeartbeat(int heartbeat_status) override;
+
 	void OnServerConnectionFailure() override;
 
 	//-------------------------------------------------------------------------

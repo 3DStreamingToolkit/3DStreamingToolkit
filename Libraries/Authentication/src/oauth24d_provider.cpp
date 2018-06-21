@@ -1,4 +1,9 @@
 #include "oauth24d_provider.h"
+namespace
+{
+	// null deleter to conform rtc::Thread* to std::shared_ptr interface safely
+	struct NullDeleter { template<typename T> void operator()(T*) {} };
+}
 
 OAuth24DProvider::OAuth24DProvider(const std::string& codeUri, const std::string& pollUri) :
 	code_uri_(codeUri), poll_uri_(pollUri), state_(State::NOT_ACTIVE)
@@ -18,7 +23,7 @@ OAuth24DProvider::OAuth24DProvider(const std::string& codeUri, const std::string
 	auto socketThread = rtc::Thread::Current();
 	socketThread = socketThread == nullptr ? rtc::ThreadManager::Instance()->WrapCurrentThread() : socketThread;
 
-	signaling_thread_ = socketThread;
+	signaling_thread_ = std::shared_ptr<rtc::Thread>(socketThread, NullDeleter());
 }
 
 OAuth24DProvider::~OAuth24DProvider()

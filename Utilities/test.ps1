@@ -15,15 +15,16 @@ Get-ChildItem -Path "$PSScriptRoot\.." -Filter *.Tests.exe -Recurse | %{
   $p = New-Object System.Diagnostics.Process
   $p.StartInfo = $pinfo
   $p.Start() | Out-Null
-  $p.WaitForExit()
   $stdout = $p.StandardOutput.ReadToEnd()
   $stderr = $p.StandardError.ReadToEnd()
+  $p.WaitForExit()
   Write-Host $stdout
   Write-Host $stderr
   Write-Host "Exit Code: $($p.ExitCode)"
   if ($p.ExitCode -ne 0) {
     $errFail = $LASTEXITCODE
   }
+  $p.Dispose()
 }
 Write-Host "Exiting test run with code: $errFail"
 exit $errFail

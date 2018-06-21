@@ -42,7 +42,7 @@ TEST(EncoderTests, CanInitializeWithDefaultParameters)
 }
 
 // --------------------------------------------------------------
-// see https://github.com/google/googletest/blob/master/googletest/docs/AdvancedGuide.md#temporarily-enabling-disabled-tests
+// see https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#temporarily-enabling-disabled-tests
 // for how to run this test (disabled by default, as this fails without nvidia gpu support)
 // --------------------------------------------------------------
 // Tests out retrieving the compatible NVIDIA driver version.
@@ -187,7 +187,7 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 }
 
 // --------------------------------------------------------------
-// see https://github.com/google/googletest/blob/master/googletest/docs/AdvancedGuide.md#temporarily-enabling-disabled-tests
+// see https://github.com/google/googletest/blob/master/googletest/docs/advanced.md#temporarily-enabling-disabled-tests
 // for how to run this test (disabled by default, as this fails without nvidia gpu support)
 // --------------------------------------------------------------
 // Tests out hardware encoder initialization.
