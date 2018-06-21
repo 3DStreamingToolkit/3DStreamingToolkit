@@ -450,48 +450,62 @@ TEST(RtpHeaderFramePredictionTest, CanPredictCorrectly) {
 	// Test implementation initializes decoder implicitly
 	auto h264TestImpl = new H264TestImpl();
 	h264TestImpl->SetEncoderHWEnabled(true);
-	rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(
-		h264TestImpl->input_frame_.get()->video_frame_buffer());
+	int defaultCodecWidth = 1280;
+	int defaultCodecHeight= 720;
+
+	//Generate a frame using a framegenerator class
+	auto frameGen = test::FrameGenerator::CreateSquareGenerator(defaultCodecWidth, defaultCodecHeight);
+	
+	EncodedImage encodedFrame;
+	VideoFrame* newFrame = frameGen->NextFrame();
+	rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer(newFrame->video_frame_buffer());
 
 	size_t bufferSize = buffer->width() * buffer->height() * 4;
 	size_t RowBytes = buffer->width() * 4;
 	uint8_t* rgbBuffer = new uint8_t[bufferSize];
 
-	// Convert input frame to RGB
-	libyuv::I420ToARGB(buffer->GetI420()->DataY(), buffer->GetI420()->StrideY(),
-		buffer->GetI420()->DataU(), buffer->GetI420()->StrideU(),
-		buffer->GetI420()->DataV(), buffer->GetI420()->StrideV(),
-		rgbBuffer,
-		RowBytes,
-		buffer->width(), buffer->height());
-
-	// Set RGB frame 
-	h264TestImpl->input_frame_.get()->set_frame_buffer(rgbBuffer);
-
-	// Encode frame
-	h264TestImpl->encoder_->Encode(*h264TestImpl->input_frame_, nullptr, nullptr);
-	EncodedImage encodedFrame;
-
-	// Set frame prediction timestamp to 1 (arbitrary value)
-	encodedFrame.prediction_timestamp_ = 1;
-
-	// Extract encoded_frame from the encoder
-	h264TestImpl->WaitForEncodedFrame(&encodedFrame);
-
-	// Check if we have a complete frame with lengh > 0
-	ASSERT_TRUE(encodedFrame._completeFrame);
-	ASSERT_TRUE(encodedFrame._length > 0);
-
-	// The first frame needs to be a keyframe for decoding
-	encodedFrame._frameType = kVideoFrameKey;
-
 	// NvPipe does not always have the first frame in the correct format
-	// If any of the first ten are decoded correctly, we are succesful
+	// If any of the first ten encoded frames are decoded correctly, we are succesful
 	bool DecodedCorrectly = false;
 	for (int i = 0; i < 10; i++) {
+		// Convert input frame to RGB
+		libyuv::I420ToARGB(buffer->GetI420()->DataY(), buffer->GetI420()->StrideY(),
+			buffer->GetI420()->DataU(), buffer->GetI420()->StrideU(),
+			buffer->GetI420()->DataV(), buffer->GetI420()->StrideV(),
+			rgbBuffer,
+			RowBytes,
+			buffer->width(), buffer->height());
+		
+		// Set RGB frame 
+		newFrame->set_frame_buffer(rgbBuffer);
+
+		// Encode frame
+		h264TestImpl->encoder_->Encode(*newFrame, nullptr, nullptr);
+
+		// Extract encoded_frame from the encoder
+		h264TestImpl->WaitForEncodedFrame(&encodedFrame);
+
+		// Set frame prediction timestamp to 1 (arbitrary value)
+		encodedFrame.prediction_timestamp_ = 1;
+
+		// Check if we have a complete frame with lengh > 0
+		ASSERT_TRUE(encodedFrame._completeFrame);
+		ASSERT_TRUE(encodedFrame._length > 0);
+
+		// The first frame needs to be a keyframe for decoding
+		encodedFrame._frameType = kVideoFrameKey;
 		if (WEBRTC_VIDEO_CODEC_OK == h264TestImpl->decoder_->Decode(encodedFrame, false, nullptr)) {
 			DecodedCorrectly = true;
 			break;
+		}
+		else {
+			encodedFrame;
+			newFrame = frameGen->NextFrame();
+			buffer = newFrame->video_frame_buffer();
+
+			bufferSize = buffer->width() * buffer->height() * 4;
+			RowBytes = buffer->width() * 4;
+			rgbBuffer = new uint8_t[bufferSize];
 		}
 	}
 	ASSERT_TRUE(DecodedCorrectly);
