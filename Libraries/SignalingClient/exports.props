@@ -6,7 +6,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_TURN_OFF_PLATFORM_STRING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\headers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\inc;$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\headers;$(MSBuildThisFileDirectory)..\..\Libraries\WebRTC\headers\third_party\jsoncpp\source\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -14,4 +14,5 @@
       <Project>{88348d78-a949-4ff8-8a0a-2934744d89d2}</Project>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)..\AbstractionFrameworks\exports.props" />
 </Project>

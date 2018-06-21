@@ -78,7 +78,7 @@ protected:
 	rtc::SocketAddress poll_host_;
 	State state_;
 	CodeData data_;
-	rtc::Thread* signaling_thread_;
+	std::shared_ptr<rtc::Thread> signaling_thread_;
 	std::unique_ptr<SslCapableSocket> socket_;
 	std::unique_ptr<AsyncResolver> resolver_;
 

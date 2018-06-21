@@ -24,20 +24,25 @@ namespace
 	}
 }
 
-SslCapableSocket::SslCapableSocket(const int& family, const bool& useSsl, Thread* signalingThread) :
-	socket_(CreateClientSocket(family)),
-	ssl_adapter_(nullptr),
-	signaling_thread_(signalingThread)
+SslCapableSocket::SslCapableSocket(const int& family, const bool& use_ssl, std::weak_ptr<Thread> signaling_thread) :
+	SslCapableSocket(std::unique_ptr<AsyncSocket>(CreateClientSocket(family)), use_ssl, signaling_thread)
 {
-	MapUnderlyingEvents(socket_);
-	SetUseSsl(useSsl);
+}
+
+SslCapableSocket::SslCapableSocket(std::unique_ptr<AsyncSocket> wrapped_socket, const bool& use_ssl, std::weak_ptr<Thread> signaling_thread) :
+	socket_(std::move(wrapped_socket)),
+	ssl_adapter_(nullptr),
+	signaling_thread_(signaling_thread)
+{
+	MapUnderlyingEvents(socket_.get());
+	SetUseSsl(use_ssl);
 }
 
 SslCapableSocket::~SslCapableSocket()
 {
 	if (ssl_adapter_.get() == nullptr)
 	{
-		delete socket_;
+		delete socket_.release();
 	}
 }
 
@@ -45,14 +50,14 @@ void SslCapableSocket::SetUseSsl(const bool& useSsl)
 {
 	if (useSsl && ssl_adapter_.get() == nullptr)
 	{
-		ssl_adapter_.reset(SSLAdapter::Create(socket_));
+		ssl_adapter_.reset(SSLAdapter::Create(socket_.get()));
 		ssl_adapter_->SetMode(rtc::SSL_MODE_TLS);
-		MapUnderlyingEvents(ssl_adapter_.get(), socket_);
+		MapUnderlyingEvents(ssl_adapter_.get(), socket_.get());
 	}
 	else if (!useSsl && ssl_adapter_.get() != nullptr)
 	{
 		ssl_adapter_.reset(nullptr);
-		MapUnderlyingEvents(socket_);
+		MapUnderlyingEvents(socket_.get());
 	}
 }
 
@@ -188,40 +193,52 @@ void SslCapableSocket::MapUnderlyingEvents(AsyncSocket* provider, AsyncSocket* o
 
 void SslCapableSocket::RefireReadEvent(AsyncSocket* socket)
 {
-	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	if (auto marshaled_thread = signaling_thread_.lock())
 	{
-		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		marshaled_thread->Invoke<void>(RTC_FROM_HERE, [&]
+		{
+			LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-		this->SignalReadEvent.emit(socket);
-	});
+			this->SignalReadEvent.emit(socket);
+		});
+	}
 }
 
 void SslCapableSocket::RefireWriteEvent(AsyncSocket* socket)
 {
-	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	if (auto marshaled_thread = signaling_thread_.lock())
 	{
-		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		marshaled_thread->Invoke<void>(RTC_FROM_HERE, [&]
+		{
+			LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-		this->SignalWriteEvent.emit(socket);
-	});
+			this->SignalWriteEvent.emit(socket);
+		});
+	}
 }
 
 void SslCapableSocket::RefireConnectEvent(AsyncSocket* socket)
 {
-	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	if (auto marshaled_thread = signaling_thread_.lock())
 	{
-		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		marshaled_thread->Invoke<void>(RTC_FROM_HERE, [&]
+		{
+			LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-		this->SignalConnectEvent.emit(socket);
-	});
+			this->SignalConnectEvent.emit(socket);
+		});
+	}
 }
 
 void SslCapableSocket::RefireCloseEvent(AsyncSocket* socket, int err)
 {
-	signaling_thread_->Invoke<void>(RTC_FROM_HERE, [&]
+	if (auto marshaled_thread = signaling_thread_.lock())
 	{
-		LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		marshaled_thread->Invoke<void>(RTC_FROM_HERE, [&]
+		{
+			LOG(INFO) << __FUNCTION__ << "@" << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-		this->SignalCloseEvent.emit(socket, err);
-	});
+			this->SignalCloseEvent.emit(socket, err);
+		});
+	}
 }
