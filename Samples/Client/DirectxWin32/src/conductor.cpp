@@ -412,11 +412,6 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 		}
 		else if (type == "offer")
 		{
-			/*
-			This assumes that the list of servers is EMPTY.
-			TODO: check for servers? update existing turn server?
-			*/
-
 			// Parse Turn server credentials from offer.
 			std::string turn_username, turn_password, turn_uri;
 
