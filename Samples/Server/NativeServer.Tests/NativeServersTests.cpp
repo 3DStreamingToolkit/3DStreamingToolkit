@@ -162,7 +162,7 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 		// Find the nvidia card
 		if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) 
 		{
-			//Set the Nvidia card flag to true
+			// Set the Nvidia card flag to true
 			NvidiaPresent = true;
 
 			hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
