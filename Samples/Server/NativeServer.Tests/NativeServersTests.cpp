@@ -446,14 +446,14 @@ TEST(BufferCapturerTests, CaptureFrameStereoUsingDirectXBufferCapturer)
 // --------------------------------------------------------------
 // Decoder tests
 // --------------------------------------------------------------
-TEST(RtpHeaderFramePredictionTest, CanPredictCorrectly) {
+TEST(RtpHeaderFramePredictionTest, SendReceiveFramePredictionTimestamps) {
 	// Test implementation initializes decoder implicitly
 	auto h264TestImpl = new H264TestImpl();
 	h264TestImpl->SetEncoderHWEnabled(true);
 	int defaultCodecWidth = 1280;
 	int defaultCodecHeight= 720;
 
-	//Generate a frame using a framegenerator class
+	// Generate a frame using a framegenerator class
 	auto frameGen = test::FrameGenerator::CreateSquareGenerator(defaultCodecWidth, defaultCodecHeight);
 	
 	EncodedImage encodedFrame;
