@@ -34,6 +34,11 @@ const char kCandidateSdpName[] = "candidate";
 const char kSessionDescriptionTypeName[] = "type";
 const char kSessionDescriptionSdpName[] = "sdp";
 
+// Names used for Turn Server credentials.
+const char kTurnServerUri[] = "uri";
+const char kTurnServerUsername[] = "username";
+const char kTurnServerPassword[] = "password";
+
 // Names used for data channels
 const char kInputDataChannelName[] = "inputDataChannel";
 
@@ -404,6 +409,37 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message)
 			}
 
 			return;
+		}
+		else if (type == "offer")
+		{
+			/*
+			This assumes that the list of servers is EMPTY.
+			TODO: check for servers? update existing turn server?
+			*/
+
+			// Parse Turn server credentials from offer.
+			std::string turn_username, turn_password, turn_uri;
+
+			rtc::GetStringFromJsonObject(jmessage, kTurnServerUri, &turn_uri);
+			rtc::GetStringFromJsonObject(jmessage, kTurnServerUsername, &turn_username);
+			rtc::GetStringFromJsonObject(jmessage, kTurnServerPassword, &turn_password);
+		
+			// Assign the credentials to a Turn server.
+			webrtc::PeerConnectionInterface::IceServer turnServer;
+
+			turnServer.uri = turn_uri;
+			turnServer.username = turn_username;
+			turnServer.password = turn_password;
+
+			turnServer.tls_cert_policy = webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
+
+			// Push the Turn server to the list.
+			webrtc::PeerConnectionInterface::RTCConfiguration config;
+			config = peer_connection_->GetConfiguration();
+			config.servers.push_back(turnServer);
+			
+			// Set the configuration for the connection.
+			peer_connection_->SetConfiguration(config);
 		}
 
 		std::string sdp;
