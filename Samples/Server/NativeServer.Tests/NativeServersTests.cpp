@@ -28,6 +28,7 @@ using namespace webrtc;
 // --------------------------------------------------------------
 
 // Tests out initializing the H264 encoder.
+// This test may fail incorrectly with an incompatible nvidia GPU
 TEST(EncoderTests, CanInitializeWithDefaultParameters)
 {
 	auto encoder = new H264EncoderImpl(cricket::VideoCodec("H264"));
@@ -141,8 +142,8 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 	IWbemClassObject *pclsObj = NULL;
 	ULONG uReturn = 0;
 
-	VARIANT driverNumber; //Store the driver version installed
-	bool NvidiaPresent = false; //Flag for Nvidia card being present
+	VARIANT driverNumber; // Store the driver version installed
+	bool NvidiaPresent = false; // Flag for Nvidia card being present
 
 	while (pEnumerator)
 	{
@@ -155,13 +156,13 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 		}
 
 		VARIANT vtProp;
-		//Finds the manufacturer of the card
+		// Finds the manufacturer of the card
 		hr = pclsObj->Get(L"AdapterCompatibility", 0, &vtProp, 0, 0);
 
-		//Find the nvidia card
+		// Find the nvidia card
 		if (!wcscmp(vtProp.bstrVal, L"NVIDIA")) 
 		{
-			//Set the Nvidia card flag to true
+			// Set the Nvidia card flag to true
 			NvidiaPresent = true;
 
 			hr = pclsObj->Get(L"DriverVersion", 0, &driverNumber, 0, 0);
@@ -179,11 +180,18 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 		pclsObj->Release();
 	}
 	
-	//Make sure that we entered the loop
+	// Make sure that we entered the loop
 	ASSERT_TRUE(NvidiaPresent);
 
-	//Clean Up
+	// Clean Up
 	VariantClear(&driverNumber);
+
+	// Using autos from here on for simplicity
+	// Test to see if nvpipe library loads correctly 
+	auto hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
+
+	auto create_nvpipe_encoder = (nvpipe_create_encoder)GetProcAddress(hGetProcIDDLL, "nvpipe_create_encoder");
+	ASSERT_TRUE(create_nvpipe_encoder);
 }
 
 // --------------------------------------------------------------
@@ -193,13 +201,13 @@ TEST(EncoderTests, DISABLED_HasCompatibleGPUAndDriver)
 // Tests out hardware encoder initialization.
 TEST(EncoderTests, DISABLED_HardwareEncodingIsEnabled)
 {
-	//Using default settings from webrtc documentation
+	// Using default settings from webrtc documentation
 	const nvpipe_codec codec = NVPIPE_H264_NV;
 	const uint32_t width = 1280;
 	const uint32_t height = 720;
 	const uint64_t bitrate = width * height * 30 * 4 * 0.07;
 
-	//Using autos from here on for simplicity
+	// Using autos from here on for simplicity
 	auto hGetProcIDDLL = LoadLibrary(L"Nvpipe.dll");
 
 	auto create_nvpipe_encoder = (nvpipe_create_encoder)GetProcAddress(hGetProcIDDLL, "nvpipe_create_encoder");
@@ -207,23 +215,24 @@ TEST(EncoderTests, DISABLED_HardwareEncodingIsEnabled)
 	auto encode_nvpipe = (nvpipe_encode)GetProcAddress(hGetProcIDDLL, "nvpipe_encode");
 	auto reconfigure_nvpipe = (nvpipe_bitrate)GetProcAddress(hGetProcIDDLL, "nvpipe_bitrate");
 
-	//Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
+	// Check to ensure that each of the functions loaded correctly (DLL exists, is functional)
 	ASSERT_TRUE(create_nvpipe_encoder);
 	ASSERT_TRUE(destroy_nvpipe_encoder);
 	ASSERT_TRUE(encode_nvpipe);
 	ASSERT_TRUE(reconfigure_nvpipe);
 
-	//Check to ensure that the encoder can be created correctly
+	// Check to ensure that the encoder can be created correctly
 	auto encoder = create_nvpipe_encoder(codec, bitrate, 90, NVENC_INFINITE_GOPLENGTH, 1, false);
 	ASSERT_TRUE(encoder);
 
-	//Ensure that the encoder can be destroyed correctly
+	// Ensure that the encoder can be destroyed correctly
 	destroy_nvpipe_encoder(encoder);
 
 	FreeLibrary((HMODULE)hGetProcIDDLL);
 }
 
 // Tests out encoding a video frame using hardware encoder.
+// This test may fail incorrectly with an incompatible nvidia GPU
 TEST(EncoderTests, CanEncodeCorrectly)
 {
 	auto h264TestImpl = new H264TestImpl();
