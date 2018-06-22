@@ -13,33 +13,39 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Observers">
+      <UniqueIdentifier>{0bfdbc80-eb9c-4b4b-865a-0c34a2c2649e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="webrtcH264.h">
+    <ClInclude Include="RtcEventLoop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="webrtc.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Observers\NoFailureObserver.hpp">
+      <Filter>Observers</Filter>
+    </ClInclude>
+    <ClInclude Include="Observers\ConnectionObserver.hpp">
+      <Filter>Observers</Filter>
+    </ClInclude>
+    <ClInclude Include="Observers\DisconnectionObserver.hpp">
+      <Filter>Observers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)gtest_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NativeServersTests.cpp">
+    <ClCompile Include="SignalingClientTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="frame_utils.cc">
+    <ClCompile Include="RtcEventLoop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="tests.runsettings" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

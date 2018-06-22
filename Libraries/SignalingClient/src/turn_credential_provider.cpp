@@ -1,12 +1,29 @@
 #include "turn_credential_provider.h"
 
+namespace
+{
+	// null deleter to conform rtc::Thread* to std::shared_ptr interface safely
+	struct NullDeleter { template<typename T> void operator()(T*) {} };
+}
+
 TurnCredentialProvider::TurnCredentialProvider(const std::string& uri) :
-	state_(State::NOT_ACTIVE)
+	TurnCredentialProvider(uri, std::make_shared<SslCapableSocket::Factory>())
+{
+}
+
+TurnCredentialProvider::TurnCredentialProvider(const std::string& uri, std::shared_ptr<SslCapableSocket::Factory> async_socket_factory) :
+	state_(State::NOT_ACTIVE),
+	async_socket_factory_(async_socket_factory)
 {
 	// take the hostname, <protocol>://<hostname>[:port]/ 
 	auto tempAuthHost = uri.substr(uri.find_first_of("://") + 3);
 	auto firstSlash = tempAuthHost.find_first_of("/");
-	auto tempFragment = tempAuthHost.substr(firstSlash);
+	std::string tempFragment;
+	if (firstSlash != tempAuthHost.npos)
+	{
+		tempFragment = tempAuthHost.substr(firstSlash);
+	}
+
 	tempAuthHost = tempAuthHost.substr(0, firstSlash);
 	tempAuthHost = tempAuthHost.substr(0, tempAuthHost.find_first_of(":"));
 
@@ -20,7 +37,9 @@ TurnCredentialProvider::TurnCredentialProvider(const std::string& uri) :
 	// the current thread (wrapped or existing)
 	auto socketThread = rtc::Thread::Current();
 	socketThread = socketThread == nullptr ? rtc::ThreadManager::Instance()->WrapCurrentThread() : socketThread;
-	socket_.reset(new SslCapableSocket(host_.family(), authorityPort == 443, socketThread));
+	signaling_thread_ = std::shared_ptr<rtc::Thread>(socketThread, NullDeleter());
+	
+	socket_ = async_socket_factory_->Allocate(host_.family(), authorityPort == 443, signaling_thread_);
 
 	socket_->SignalConnectEvent.connect(this, &TurnCredentialProvider::SocketOpen);
 	socket_->SignalReadEvent.connect(this, &TurnCredentialProvider::SocketRead);

@@ -33,20 +33,32 @@ namespace
 
 	// The default value for the tick heartbeat, used to disable the heartbeat
 	const int kHeartbeatDefault = -1;
+
+	// null deleter to conform rtc::Thread* to std::shared_ptr interface safely
+	struct NullDeleter { template<typename T> void operator()(T*) {} };
 }
 
 PeerConnectionClient::PeerConnectionClient() :
+	PeerConnectionClient(std::make_shared<SslCapableSocket::Factory>())
+{
+}
+
+PeerConnectionClient::PeerConnectionClient(std::shared_ptr<SslCapableSocket::Factory> async_socket_factory) :
 	resolver_(NULL),
 	state_(NOT_CONNECTED),
 	my_id_(-1),
 	heartbeat_tick_ms_(kHeartbeatDefault),
-	server_address_ssl_(false)
+	server_address_ssl_(false),
+	async_socket_factory_(async_socket_factory)
 {
 	// use the current thread or wrap a thread for signaling_thread_
 	auto thread = rtc::Thread::Current();
 
-	signaling_thread_ = thread == nullptr ?
-		rtc::ThreadManager::Instance()->WrapCurrentThread() : thread;
+	// wrap the thread into a shared_ptr to conform to the CppFactory::Factory::Allocate interface
+	// however, since we don't own the lifetime of the thread, we must use a NullDeleter to ensure
+	// when we destruct we don't accidently delete the thread
+	signaling_thread_ = std::shared_ptr<rtc::Thread>(thread == nullptr ?
+		rtc::ThreadManager::Instance()->WrapCurrentThread() : thread, NullDeleter());
 }
 
 PeerConnectionClient::~PeerConnectionClient()
@@ -192,10 +204,10 @@ std::string PeerConnectionClient::PrepareRequest(const std::string& method, cons
 
 void PeerConnectionClient::DoConnect()
 {
-	control_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
-	hanging_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
-	heartbeat_get_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
-	capacity_socket_.reset(new SslCapableSocket(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_));
+	control_socket_ = async_socket_factory_->Allocate(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_);
+	hanging_get_ = async_socket_factory_->Allocate(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_);
+	heartbeat_get_ = async_socket_factory_->Allocate(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_);
+	capacity_socket_ = async_socket_factory_->Allocate(server_address_.ipaddr().family(), server_address_ssl_, signaling_thread_);
 
 	InitSocketSignals();
 	std::string clientName = client_name_;
@@ -576,7 +588,7 @@ void PeerConnectionClient::OnRead(rtc::AsyncSocket* socket)
 			LOG(LS_ERROR) << "Received error from server: " << std::to_string(status);
 
 			// TODO(bengreenier): special case for azure 500 issue
-			// see https://github.com/CatalystCode/3dtoolkit/issues/45
+			// see https://github.com/CatalystCode/3DStreamingToolkit/issues/45
 			if (status == 500)
 			{
 				control_socket_->Close();
@@ -651,7 +663,7 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 			LOG(LS_ERROR) << "Received error from server: " << std::to_string(status);
 
 			// TODO(bengreenier): special case for azure 500 issue
-			// see https://github.com/CatalystCode/3dtoolkit/issues/45
+			// see https://github.com/CatalystCode/3DStreamingToolkit/issues/45
 			if (status == 500)
 			{
 				hanging_get_->Close();
@@ -864,6 +876,8 @@ void PeerConnectionClient::OnHeartbeatGetRead(rtc::AsyncSocket* socket)
 		{
 			LOG(INFO) << "heartbeat failed (" << status << ")" << (heartbeat_tick_ms_ != kHeartbeatDefault ? ", will retry" : "");
 		}
+
+		std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnHeartbeat(status); });
 	}
 
 	if (heartbeat_tick_ms_ != kHeartbeatDefault)

@@ -14,7 +14,12 @@
 #include <wrl\client.h>
 #include <wrl\wrappers\corewrappers.h>
 
+#include "macros.h"
 #include "buffer_capturer.h"
+
+// For unit tests.
+FOWARD_DECLARE(BufferCapturerTests, CaptureFrameUsingDirectXBufferCapturer);
+FOWARD_DECLARE(BufferCapturerTests, CaptureFrameStereoUsingDirectXBufferCapturer);
 
 namespace StreamingToolkit
 {
@@ -39,5 +44,9 @@ namespace StreamingToolkit
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> d3d_context_;
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> staging_frame_buffer_;
 		D3D11_TEXTURE2D_DESC staging_frame_buffer_desc_;
+
+		// For unit tests.
+		FRIEND_TEST(BufferCapturerTests, CaptureFrameUsingDirectXBufferCapturer);
+		FRIEND_TEST(BufferCapturerTests, CaptureFrameStereoUsingDirectXBufferCapturer);
 	};
 }

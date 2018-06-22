@@ -47,6 +47,7 @@ protected:
 	ServerAuthInfo auth_info_;
 	rtc::SocketAddress authority_host_;
 	State state_;
+	std::shared_ptr<rtc::Thread> signaling_thread_;
 	std::unique_ptr<SslCapableSocket> socket_;
 	std::unique_ptr<AsyncResolver> resolver_;
 };

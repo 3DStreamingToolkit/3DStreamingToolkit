@@ -2436,6 +2436,13 @@ HRESULT DXUTCreate3DEnvironment11()
 	assert(pNewDeviceSettings);
 	_Analysis_assume_(pNewDeviceSettings);
 
+	// IDXGIAdapter::EnumOutputs method returns DXGI_ERROR_NOT_CURRENTLY_AVAILABLE 
+	// in Session 0 processes so we need to force creating D3D_DRIVER_TYPE_HARDWARE
+	if (GetDXUTState().GetHeadlessMode())
+	{
+		pNewDeviceSettings->d3d11.DriverType = D3D_DRIVER_TYPE_HARDWARE;
+	}
+
 	auto pDXGIFactory = DXUTGetDXGIFactory();
 	assert(pDXGIFactory);
 	_Analysis_assume_(pDXGIFactory);

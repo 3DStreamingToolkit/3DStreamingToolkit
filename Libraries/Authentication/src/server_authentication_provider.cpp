@@ -1,4 +1,9 @@
 #include "server_authentication_provider.h"
+namespace
+{
+	// null deleter to conform rtc::Thread* to std::shared_ptr interface safely
+	struct NullDeleter { template<typename T> void operator()(T*) {} };
+}
 
 ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo& authInfo) :
 	AuthenticationProvider(), auth_info_(authInfo), state_(State::NOT_ACTIVE)
@@ -24,7 +29,9 @@ ServerAuthenticationProvider::ServerAuthenticationProvider(const ServerAuthInfo&
 	// the current thread (wrapped or existing)
 	auto socketThread = rtc::Thread::Current();
 	socketThread = socketThread == nullptr ? rtc::ThreadManager::Instance()->WrapCurrentThread() : socketThread;
-	socket_.reset(new SslCapableSocket(authority_host_.family(), authorityPort == 443, socketThread));
+	signaling_thread_ = std::shared_ptr<rtc::Thread>(socketThread, NullDeleter());
+
+	socket_.reset(new SslCapableSocket(authority_host_.family(), authorityPort == 443, std::weak_ptr<rtc::Thread>(signaling_thread_)));
 
 	socket_->SignalConnectEvent.connect(this, &ServerAuthenticationProvider::SocketOpen);
 	socket_->SignalReadEvent.connect(this, &ServerAuthenticationProvider::SocketRead);

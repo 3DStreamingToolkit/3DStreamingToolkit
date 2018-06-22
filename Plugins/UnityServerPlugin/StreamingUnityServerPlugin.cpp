@@ -155,6 +155,11 @@ struct UnityServerPeerObserver : public PeerConnectionClientObserver,
 		}
 	}
 
+	virtual void OnHeartbeat(int heartbeat_status) override
+	{
+		// TODO(bengreenier): wire up to unity
+	}
+
 	virtual void OnServerConnectionFailure() override
 	{
 		if (s_callbackMap.onServerConnectionFailure)
