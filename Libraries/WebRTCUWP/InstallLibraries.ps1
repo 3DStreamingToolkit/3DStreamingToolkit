@@ -1,139 +1,61 @@
-Import-Module BitsTransfer
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-function Get-ScriptDirectory
-{
-  $Invocation = (Get-Variable MyInvocation -Scope 1).Value
-  Split-Path $Invocation.MyCommand.Path
-}
+. ../../Utilities/InstallLibraries.ps1
+
 function DecompressZip {
     param( [string] $filename, [string] $path, [string] $blobUri = "https://3dtoolkitstorage.blob.core.windows.net/libs/" )
+
+    # Get ETag header for current blob
     $uri = ($blobUri + $filename + ".zip")
-    $request = [System.Net.HttpWebRequest]::Create($uri)
-    $request.Timeout = 10000
-    $response = $request.GetResponse()
-    $etag = $response.Headers["ETag"] 
-    $request.Abort()
-    $localFileName = ($filename + $etag + ".zip")
-    $localFullPath = ($PSScriptRoot +  $path + $localFileName)
-    $libRemoved = $false
+    $etag = Get-ETag -Uri $uri
+    $localFullPath = ($PSScriptRoot + $path + $filename + ".zip")
     
-    if($filename -like "*libyuv*") {
-        $extractDir = "\libs"
-    } 
+    # Compare ETag against the currently installed version
+    $versionMatch = Compare-Version -Path $localFullPath -Version $etag
+    if (!$versionMatch) {
 
-    if($filename -like "*Org.*") {
-        $extractDir = "\x86"
-    } 
+        $extractDir = ""
 
-    if((Test-Path ($PSScriptRoot +  $path)) -eq $false) {
-        New-Item -Path ($PSScriptRoot +  $path) -ItemType Directory -Force 
-    }
-
-    Get-ChildItem -File -Path ($PSScriptRoot + $path) -Filter ("*" + $filename + "*") | ForEach-Object { #
-        if($_.Name -notmatch (".*" + $etag + ".*")) {
-                Write-Host "Removing outdated lib"
-                Remove-Item * -Include $_.Name
-                $libRemoved = $true
-        }
-    }
-        
-    if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true -and $libRemoved -eq $false) {
-        return
-    }
-
-    if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true) {
-        Write-Host "Clearing existing $path" 
-        Remove-Item -Recurse -Force ($PSScriptRoot + $path + $extractDir)   
-    }
-    
-    Write-Host "Downloading $localFileName from $uri"
-    Copy-File -SourcePath $uri -DestinationPath $localFullPath    
-    Write-Host ("Downloaded " + $filename + " lib archive")
-
-    Write-Host "Extracting..."
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, ($PSScriptRoot + $path))
-    Write-Host "Finished"
-}
-
-function
-Copy-File
-{
-    [CmdletBinding()]
-    param(
-        [string]
-        $SourcePath,
-        
-        [string]
-        $DestinationPath
-    )
-    
-    if ($SourcePath -eq $DestinationPath)
-    {
-        return
-    }
-          
-    if (Test-Path $SourcePath)
-    {
-        Copy-Item -Path $SourcePath -Destination $DestinationPath
-    }
-    elseif (($SourcePath -as [System.URI]).AbsoluteURI -ne $null)
-    {
-        if (Test-Nano)
-        {
-            $handler = New-Object System.Net.Http.HttpClientHandler
-            $client = New-Object System.Net.Http.HttpClient($handler)
-            $client.Timeout = New-Object System.TimeSpan(0, 30, 0)
-            $cancelTokenSource = [System.Threading.CancellationTokenSource]::new() 
-            $responseMsg = $client.GetAsync([System.Uri]::new($SourcePath), $cancelTokenSource.Token)
-            $responseMsg.Wait()
-
-            if (!$responseMsg.IsCanceled)
-            {
-                $response = $responseMsg.Result
-                if ($response.IsSuccessStatusCode)
-                {
-                    $downloadedFileStream = [System.IO.FileStream]::new($DestinationPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write)
-                    $copyStreamOp = $response.Content.CopyToAsync($downloadedFileStream)
-                    $copyStreamOp.Wait()
-                    $downloadedFileStream.Close()
-                    if ($copyStreamOp.Exception -ne $null)
-                    {
-                        throw $copyStreamOp.Exception
-                    }      
-                }
-            }  
-        }
-        elseif ($PSVersionTable.PSVersion.Major -ge 5)
-        {
-            #
-            # We disable progress display because it kills performance for large downloads (at least on 64-bit PowerShell)
-            #
-            $ProgressPreference = 'SilentlyContinue'
-            wget -Uri $SourcePath -OutFile $DestinationPath -UseBasicParsing
-            $ProgressPreference = 'Continue'
-        }
-        else
-        {
-            $webClient = New-Object System.Net.WebClient
-            $webClient.DownloadFile($SourcePath, $DestinationPath)
+        if($filename -like "*libyuv*") {
+            $extractDir = "libs"
         } 
-    }
-    else
-    {
-        throw "Cannot copy from $SourcePath"
-    }
-}
+        if($filename -like "*Org.*") {
+            $extractDir = "x*"
+        } 
 
-function 
-Test-Nano()
-{
-    $EditionId = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name 'EditionID').EditionId
+        # Remove library archive if it already exists
+        if ((Test-Path ($localFullPath))) {
+            Remove-Item -Recurse -Force $localFullPath
+        }
 
-    return (($EditionId -eq "ServerStandardNano") -or 
-            ($EditionId -eq "ServerDataCenterNano") -or 
-            ($EditionId -eq "NanoServer") -or 
-            ($EditionId -eq "ServerTuva"))
+        # Download the library
+        Write-Host "Downloading $filename from $uri"
+        Copy-File -SourcePath $uri -DestinationPath $localFullPath
+        Write-Host ("Downloaded " + $filename + " lib archive")
+
+        # Create the lib sub-directory if it does not already exist
+        if((Test-Path ($PSScriptRoot +  $path)) -eq $false) {
+            New-Item -Path ($PSScriptRoot +  $path) -ItemType Directory -Force 
+        }
+
+        # Clear the files from the previous library version
+        if((Test-Path ($PSScriptRoot + $path + $extractDir)) -eq $true) {
+            Write-Host "Clearing existing $path" 
+            Remove-Item -Recurse -Force ($PSScriptRoot + $path + $extractDir)   
+        }
+
+        # Extract the latest library
+        Write-Host "Extracting..."
+        # ExtractToDirectory is at least 3x faster than Expand-Archive
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($localFullPath, $PSScriptRoot + $path)
+        Write-Host "Finished"
+
+        # Clean up .zip file
+        Remove-Item $localFullPath
+
+        # Write the current version using the ETag
+        Write-Version -Path $localFullPath -Version $etag
+    }
 }
 
 DecompressZip -filename "Org.WebRtc_m62_timestamp_v1" -path "\Org.WebRTC\"
