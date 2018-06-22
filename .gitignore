@@ -262,6 +262,7 @@ Libraries/glext
 *.log
 *.cso
 *.zip
+*.zip.version
 js-3dtoolkit.*
 sdputils.*
 
