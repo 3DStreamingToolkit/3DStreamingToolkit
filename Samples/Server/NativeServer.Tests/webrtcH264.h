@@ -16,6 +16,7 @@
 #include "webrtc/rtc_base/thread_annotations.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/test/frame_utils.h"
+#include "webrtc/test/frame_generator.h"
 #include "webrtc/test/testsupport/fileutils.h"
 #include "webrtc/modules/desktop_capture/win/d3d_device.h"
 
@@ -145,7 +146,7 @@ namespace webrtc {
 
 		void SetUp() {
 			VideoCodec codec_inst_;
-			SetDefaultCodecSettings(&codec_inst_);
+			SetDefaultCodecSettings(&codec_inst_);	
 
 			char cCurrentPath[FILENAME_MAX];
 
@@ -160,8 +161,8 @@ namespace webrtc {
 				fopen(path.c_str(), "rb");
 			rtc::scoped_refptr<VideoFrameBuffer> video_frame_buffer(
 				test::ReadI420Buffer(codec_inst_.width, codec_inst_.height, source_file_));
-
-			input_frame_.reset(new VideoFrame(video_frame_buffer, kVideoRotation_0, 0));
+			auto originalFrame = new VideoFrame(video_frame_buffer, kVideoRotation_0, 0);
+			input_frame_.reset(originalFrame);
 			fclose(source_file_);
 
 			encoder_.reset(H264Encoder::Create(defaultCodec));
