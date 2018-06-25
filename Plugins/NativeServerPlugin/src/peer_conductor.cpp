@@ -46,7 +46,6 @@ PeerConductor::~PeerConductor()
 {
 	LOG(INFO) << "dtor";
 
-	peer_connection_->Close();
 	peer_connection_ = NULL;
 	peer_streams_.clear();
 	peer_factory_ = NULL;

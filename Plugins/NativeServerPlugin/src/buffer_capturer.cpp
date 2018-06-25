@@ -53,6 +53,13 @@ namespace StreamingToolkit
 		}
 	}
 
+	void BufferCapturer::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink)
+	{
+		rtc::CritScope cs(&lock_);
+		RTC_CHECK(sink_ == sink);
+		sink_ = nullptr;
+	}
+
 	bool BufferCapturer::IsRunning() 
 	{
 		return running_;

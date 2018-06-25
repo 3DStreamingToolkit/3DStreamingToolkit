@@ -71,8 +71,6 @@ void MultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterf
 	// peer disconnected
 	else if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
 	{
-		connected_peers_.erase(peer_id);
-
 		if (cur_capacity_ > -1)
 		{
 			cur_capacity_ += cur_capacity_ < max_capacity_ ? 1 : 0;
