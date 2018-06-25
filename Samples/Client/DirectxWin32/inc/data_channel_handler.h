@@ -11,6 +11,8 @@ using namespace DirectX::SimpleMath;
 // For unit tests.
 FOWARD_DECLARE(EndToEndTests, SingleClientToServer);
 FOWARD_DECLARE(EndToEndTests, DISABLED_SingleClientToServer);
+FOWARD_DECLARE(EndToEndTests, ServerToClientLatency);
+FOWARD_DECLARE(EndToEndTests, DISABLED_ServerToClientLatency);
 
 class DataChannelCallback
 {
@@ -44,4 +46,6 @@ private:
 	// For unit tests.
 	FRIEND_TEST(EndToEndTests, SingleClientToServer);
 	FRIEND_TEST(EndToEndTests, DISABLED_SingleClientToServer);
+	FRIEND_TEST(EndToEndTests, ServerToClientLatency);
+	FRIEND_TEST(EndToEndTests, DISABLED_ServerToClientLatency);
 };

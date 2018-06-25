@@ -41,6 +41,8 @@
 // For unit tests.
 FOWARD_DECLARE(EndToEndTests, SingleClientToServer);
 FOWARD_DECLARE(EndToEndTests, DISABLED_SingleClientToServer);
+FOWARD_DECLARE(EndToEndTests, ServerToClientLatency);
+FOWARD_DECLARE(EndToEndTests, DISABLED_ServerToClientLatency);
 
 class ClientMainWindow : public MainWindow, public sigslot::has_slots<>
 {
@@ -118,6 +120,11 @@ public:
 			return fps_;
 		}
 
+		const int latency() const
+		{
+			return latency_;
+		}
+
 	protected:
 		void SetSize(int width, int height);
 
@@ -135,6 +142,8 @@ public:
 		ULONGLONG time_tick_;
 		int frame_counter_;
 		int fps_;
+		int latency_total_;
+		int latency_;
 	};
 
 	// A little helper class to make sure we always to proper locking and
@@ -208,6 +217,8 @@ private:
 	// For unit tests.
 	FRIEND_TEST(EndToEndTests, SingleClientToServer);
 	FRIEND_TEST(EndToEndTests, DISABLED_SingleClientToServer);
+	FRIEND_TEST(EndToEndTests, ServerToClientLatency);
+	FRIEND_TEST(EndToEndTests, DISABLED_ServerToClientLatency);
 };
 
 #endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_
