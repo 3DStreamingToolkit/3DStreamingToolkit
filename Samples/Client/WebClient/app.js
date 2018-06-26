@@ -2,9 +2,20 @@ $(function(){
 
   URL = window.webkitURL || window.URL;
 
+  // Use this switch to determing whether Turn
+  // server credentials are parsed from sever
+  // connection offer, or declared here in config.
+  var parseTurnFromOffer = true;
+
+  // This config is used when parsing Turn credentials
+  var pcConfigNone = {
+    'iceServers': [],
+    'iceTransportPolicy': 'relay'
+  }
+
   // Using this config if you require a TURN server for VPN/Proxy networks. 
   // See https://github.com/CatalystCode/3dtoolkit/wiki/TURN-Service  
-  var pcConfigTURNStatic = {
+  var pcConfigStatic = {
     'iceServers': [{
         'urls': 'turn server goes here',
         'username': 'username goes here',
@@ -72,8 +83,8 @@ $(function(){
   };
   var accessToken;
 
-  // use pcConfigTURNStatic for VPN/Proxy networks. 
-  var pcConfig = pcConfigSTUNStatic;
+  // use pcConfigStatic if not parsing, otherwise empty 
+  var pcConfig = parseTurnFromOffer ? pcConfigNone : pcConfigStatic;
 
   RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection;
   RTCSessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription || RTCSessionDescription;
@@ -256,7 +267,7 @@ $(function(){
 
         streamingClient = new ThreeDToolkit.ThreeDStreamingClient({
           'serverUrl': server,
-          'peerConnectionConfig': pcConfigStatic
+          'peerConnectionConfig': pcConfig
         }, {
           RTCPeerConnection: window.mozRTCPeerConnection || window.webkitRTCPeerConnection,
           RTCSessionDescription: window.mozRTCSessionDescription || window.RTCSessionDescription,
