@@ -568,7 +568,7 @@ TEST(RtpHeaderFramePredictionTest, SendReceiveFramePredictionTimestamps)
 // --------------------------------------------------------------
 
 // Tests out connecting the spinning cube server to the signaling server.
-TEST(EndToEndTests, ServerConnectToSignalingServer)
+TEST(EndToEndTests, DISABLED_ServerConnectToSignalingServer)
 {
 	// Constants.
 	const int timeOutMs = 5000;
@@ -617,7 +617,7 @@ TEST(EndToEndTests, ServerConnectToSignalingServer)
 }
 
 // Tests out connecting the DirectX Win32 client to the signaling server.
-TEST(EndToEndTests, ClientConnectToSignalingServer)
+TEST(EndToEndTests, DISABLED_ClientConnectToSignalingServer)
 {
 	// Constants.
 	const int timeOutMs = 5000;
@@ -669,7 +669,7 @@ TEST(EndToEndTests, ClientConnectToSignalingServer)
 
 // Tests out connecting the spinning cube server and DirectX Win32 client
 // to the signaling server.
-TEST(EndToEndTests, ServerClientConnectToSignalingServer)
+TEST(EndToEndTests, DISABLED_ServerClientConnectToSignalingServer)
 {
 	// Constants.
 	const int timeOutMs = 5000;
