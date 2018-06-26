@@ -127,7 +127,7 @@ xcopy /y /d  "$(ProjectDir)..\..\..\Libraries\Nvpipe\$(Platform)\nvToolsExt64_1.
     <ClCompile Include="..\..\Client\DirectxWin32\src\data_channel_handler.cpp" />
     <ClCompile Include="..\..\Client\DirectxWin32\src\win32_data_channel_handler.cpp" />
     <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp" />
-    <ClCompile Include="frame_generator.cc" />
+    <ClCompile Include="frame_generator.cpp" />
     <ClCompile Include="frame_utils.cpp" />
     <ClCompile Include="NativeServersTests.cpp" />
     <ClCompile Include="pch.cpp">

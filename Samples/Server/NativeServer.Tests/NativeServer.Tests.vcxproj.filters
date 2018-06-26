@@ -30,10 +30,12 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
-	<ClCompile Include="frame_generator.cc">
     <ClCompile Include="frame_utils.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="frame_generator.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>	
     <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp">
       <Filter>Source</Filter>
     </ClCompile>
