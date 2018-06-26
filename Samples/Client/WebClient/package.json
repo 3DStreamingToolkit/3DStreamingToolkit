@@ -5,7 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "http-server": "^0.11.1",
-    "js-3dstk": "^1.2.0"
+    "js-3dstk": "^1.2.1"
   },
   "devDependencies": {},
   "author": "",

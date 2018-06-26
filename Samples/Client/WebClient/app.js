@@ -14,7 +14,7 @@ $(function(){
   }
 
   // Using this config if you require a TURN server for VPN/Proxy networks. 
-  // See https://github.com/CatalystCode/3dtoolkit/wiki/TURN-Service  
+  // See https://github.com/CatalystCode/3DStreamingToolkit/wiki/TURN-Service  
   var pcConfigStatic = {
     'iceServers': [{
         'urls': 'turn server goes here',
@@ -265,7 +265,7 @@ $(function(){
         document.getElementById('disconnect').style.display = 'block';
         document.getElementById('renderers').style.display = 'block';
 
-        streamingClient = new ThreeDSToolkit.ThreeDStreamingClient({
+        streamingClient = new ThreeDSTK.ThreeDStreamingClient({
           'serverUrl': server,
           'peerConnectionConfig': pcConfig
         }, {
