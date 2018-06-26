@@ -58,7 +58,6 @@ int WINAPI wWinMain(
 		webrtcConfig->port,
 		FLAG_autoconnect,
 		FLAG_autocall,
-		false,
 		1280,
 		720);
 

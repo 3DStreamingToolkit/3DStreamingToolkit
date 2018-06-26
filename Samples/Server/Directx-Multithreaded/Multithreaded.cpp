@@ -578,7 +578,6 @@ bool AppMain(BOOL stopping)
 		fullServerConfig->webrtc_config->port,
 		fullServerConfig->server_config->server_config.auto_connect,
 		fullServerConfig->server_config->server_config.auto_call,
-		false,
 		fullServerConfig->server_config->server_config.width,
 		fullServerConfig->server_config->server_config.height);
 

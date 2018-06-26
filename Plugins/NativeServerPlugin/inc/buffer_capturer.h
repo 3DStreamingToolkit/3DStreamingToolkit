@@ -66,6 +66,8 @@ namespace StreamingToolkit
 		void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
 			const rtc::VideoSinkWants& wants) override;
 
+		void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
+
 		sigslot::signal1<BufferCapturer*> SignalDestroyed;
 
 	protected:

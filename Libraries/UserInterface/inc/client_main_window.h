@@ -11,12 +11,24 @@
 #ifndef WEBRTC_DEFAULT_MAIN_WINDOW_H_
 #define WEBRTC_DEFAULT_MAIN_WINDOW_H_
 
+#ifndef ENABLE_TEST
+#define FOWARD_DECLARE(test_case_name, test_name)
+#define FRIEND_TEST(test_case_name, test_name)
+#else // ENABLE_TEST
+#define FOWARD_DECLARE(test_case_name, test_name) class test_case_name##_##test_name##_Test
+#define FRIEND_TEST(test_case_name, test_name) friend class test_case_name##_##test_name##_Test
+#endif // ENABLE_TEST
+
 //#define UNITY_UV_STARTS_AT_TOP
 
 #include <map>
 #include <memory>
 #include <string>
+
 #include <d2d1.h>
+#include <d2d1helper.h>
+#include <dwrite.h>
+#include <wincodec.h>
 
 #include "main_window.h"
 
@@ -25,6 +37,12 @@
 #include "webrtc/rtc_base/win32.h"
 #include "webrtc/media/base/mediachannel.h"
 #include "webrtc/media/base/videocommon.h"
+
+// For unit tests.
+FOWARD_DECLARE(EndToEndTests, SingleClientToServer);
+FOWARD_DECLARE(EndToEndTests, DISABLED_SingleClientToServer);
+FOWARD_DECLARE(EndToEndTests, ServerToClientLatency);
+FOWARD_DECLARE(EndToEndTests, DISABLED_ServerToClientLatency);
 
 class ClientMainWindow : public MainWindow, public sigslot::has_slots<>
 {
@@ -39,7 +57,6 @@ public:
 		int port,
 		bool auto_connect,
 		bool auto_call,
-		bool has_no_UI = false,
 		int width = CW_USEDEFAULT,
 		int height = CW_USEDEFAULT);
 
@@ -103,6 +120,11 @@ public:
 			return fps_;
 		}
 
+		const int latency() const
+		{
+			return latency_;
+		}
+
 	protected:
 		void SetSize(int width, int height);
 
@@ -120,6 +142,8 @@ public:
 		ULONGLONG time_tick_;
 		int frame_counter_;
 		int fps_;
+		int latency_total_;
+		int latency_;
 	};
 
 	// A little helper class to make sure we always to proper locking and
@@ -189,6 +213,12 @@ private:
 
 	int width_;
 	int height_;
+
+	// For unit tests.
+	FRIEND_TEST(EndToEndTests, SingleClientToServer);
+	FRIEND_TEST(EndToEndTests, DISABLED_SingleClientToServer);
+	FRIEND_TEST(EndToEndTests, ServerToClientLatency);
+	FRIEND_TEST(EndToEndTests, DISABLED_ServerToClientLatency);
 };
 
 #endif  // WEBRTC_DEFAULT_MAIN_WINDOW_H_

@@ -45,4 +45,3 @@ private:
 	float zoom_;
 	float distance_;
 };
-

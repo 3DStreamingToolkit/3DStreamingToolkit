@@ -24,13 +24,10 @@ MultiPeerConductor::MultiPeerConductor(shared_ptr<FullServerConfig> config) :
 	}
 
 	peer_factory_ = webrtc::CreatePeerConnectionFactory();
-	process_thread_ = rtc::Thread::Create();
-	process_thread_->Start(this);
 }
 
 MultiPeerConductor::~MultiPeerConductor()
 {
-	process_thread_->Quit();
 }
 
 const map<int, scoped_refptr<PeerConductor>>& MultiPeerConductor::Peers() const
@@ -74,8 +71,6 @@ void MultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterf
 	// peer disconnected
 	else if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
 	{
-		connected_peers_.erase(peer_id);
-
 		if (cur_capacity_ > -1)
 		{
 			cur_capacity_ += cur_capacity_ < max_capacity_ ? 1 : 0;
@@ -204,4 +199,8 @@ void MultiPeerConductor::DisconnectFromCurrentPeer() {}
 
 void MultiPeerConductor::UIThreadCallback(int msg_id, void* data) {}
 
-void MultiPeerConductor::Close() {}
+void MultiPeerConductor::Close()
+{
+	peer_factory_ = NULL;
+	connected_peers_.clear();
+}

@@ -79,7 +79,6 @@ ClientMainWindow::ClientMainWindow(
 	int port,
 	bool auto_connect,
 	bool auto_call,
-	bool has_no_UI,
 	int width,
 	int height) : 
 		MainWindow([&](HWND a, int b, int c, webrtc::VideoTrackInterface* d) { return AllocateVideoRenderer(a, b, c, d); }),
@@ -768,7 +767,8 @@ ClientMainWindow::ClientVideoRenderer::ClientVideoRenderer(HWND wnd, int width, 
 		wnd_(wnd),
 		rendered_track_(track_to_render),
 		time_tick_(0),
-		frame_counter_(0)
+		frame_counter_(0),
+		latency_total_(0)
 {
 	::InitializeCriticalSection(&buffer_lock_);
 	ZeroMemory(&bmi_, sizeof(bmi_));
@@ -828,12 +828,16 @@ void ClientMainWindow::ClientVideoRenderer::OnFrame(const webrtc::VideoFrame& vi
 
 	InvalidateRect(wnd_, NULL, TRUE);
 
-	// Updates FPS.
+	// Updates FPS and latency. We use the prediction timestamp here to
+	// calculate the latency between server and client.
 	frame_counter_++;
+	latency_total_ += GetTickCount64() - video_frame.prediction_timestamp();
 	if (GetTickCount64() - time_tick_ >= 1000)
 	{
 		fps_ = frame_counter_;
+		latency_ = latency_total_ / frame_counter_;
 		frame_counter_ = 0;
+		latency_total_ = 0;
 		time_tick_ = GetTickCount64();
 	}
 }

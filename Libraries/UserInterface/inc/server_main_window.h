@@ -24,9 +24,9 @@ public:
 		int port,
 		bool auto_connect,
 		bool auto_call,
-		bool has_no_UI = false,
 		int width = CW_USEDEFAULT,
-		int height = CW_USEDEFAULT);
+		int height = CW_USEDEFAULT,
+		bool hidden = false);
 
 	~ServerMainWindow();
 
@@ -139,7 +139,6 @@ protected:
 	void HandleTabbing();
 
 private:
-	bool has_no_UI_;
 	HWND edit1_;
 	HWND edit2_;
 	HWND label1_;
@@ -156,4 +155,5 @@ private:
 	bool auto_call_;
 	int width_;
 	int height_;
+	bool hidden_;
 };

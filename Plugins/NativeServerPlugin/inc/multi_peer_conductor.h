@@ -105,7 +105,6 @@ protected:
 	map<int, scoped_refptr<PeerConductor>> connected_peers_;
 	queue<MessageEntry> message_queue_;
 	atomic_bool should_process_queue_;
-	unique_ptr<Thread> process_thread_;
 	function<void(int, const string&)> data_channel_handler_;
 	MainWindow* main_window_;
 };

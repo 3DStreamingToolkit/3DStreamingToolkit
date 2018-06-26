@@ -63,9 +63,9 @@ ServerMainWindow::ServerMainWindow(
 	int port,
 	bool auto_connect,
 	bool auto_call,
-	bool has_no_UI,
 	int width,
-	int height) :
+	int height,
+	bool hidden) :
 	MainWindow([&](HWND a, int b, int c, webrtc::VideoTrackInterface* d) { return AllocateVideoRenderer(a, b, c, d); }),
 	edit1_(NULL),
 	edit2_(NULL),
@@ -80,9 +80,9 @@ ServerMainWindow::ServerMainWindow(
 	server_(server),
 	auto_connect_(auto_connect),
 	auto_call_(auto_call),
-	has_no_UI_(has_no_UI),
 	width_(width),
-	height_(height)
+	height_(height),
+	hidden_(hidden)
 {
 	SignalWindowMessage.connect(this, &ServerMainWindow::OnMessage);
 
@@ -105,10 +105,10 @@ bool ServerMainWindow::Create()
 	}
 
 	ui_thread_id_ = ::GetCurrentThreadId();
-	int visibleFlag = (has_no_UI_) ? 0 : WS_VISIBLE;
+	int visible_flag = (hidden_) ? 0 : WS_VISIBLE;
 	wnd_ = ::CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, kClassName,
 		L"Server",
-		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | visibleFlag,
+		WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | visible_flag,
 		CW_USEDEFAULT, CW_USEDEFAULT, width_, height_,
 		NULL, NULL, GetModuleHandle(NULL), this);
 
