@@ -7,7 +7,7 @@
 		"test": "jest"
 	},
 	"dependencies": {
-		"js-3dtoolkit": "^1.1.0",
+		"js-3dstk": "^1.2.1",
 		"react": "16.0.0",
 		"react-native": "0.49.3",
 		"react-native-gesture-handler": "^1.0.0-alpha.25",

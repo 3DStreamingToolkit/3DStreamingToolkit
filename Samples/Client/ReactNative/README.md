@@ -12,7 +12,7 @@ $ npm install
 
 ## 3DStreamingToolkit JavaScript Library
 
-The React Native sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/CatalystCode/js-3dtoolkit). 
+The React Native sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/3DStreamingToolkit/js-3dstk). 
 
 This library is responsible for connecting to the signaling server, exposing the data channel, connecting/disconnection to peers and handling the SDP offer between peers. By default, the library will request H264 video encoding when connecting to a peer. This is required for the low latency scenarios enabled by this toolkit.
 
@@ -29,8 +29,8 @@ export default Config = {
   } 
 }
 ```
-
-In case your scenario requires VPN/Proxy networks, you need to uncomment and specify a signaling and turn server inside `config.js`:
+In case your scenario requires VPN/Proxy networks, you have two options to setup the configuration file:
+1. Uncomment and specify a signaling and turn server inside `config.js`:
 ```  
 export default Config = {
     'serverUrl': 'http://localhost:3001',
@@ -44,6 +44,16 @@ export default Config = {
       {
           'urls': 'stun:stun.l.google.com:19302'
       }],
+      'iceTransportPolicy': 'relay'
+  }
+}
+```
+2. You can also set the TURN settings dynamically, the js-3dstk library is capable of retriving the TURN credentials automatically from the server. Uncomment and leave the iceServers array empty inside `config.js`:
+```
+export default Config = {
+    'serverUrl': 'http://localhost:3001',
+    'peerConnectionConfig': {
+      'iceServers': [],
       'iceTransportPolicy': 'relay'
   }
 }
