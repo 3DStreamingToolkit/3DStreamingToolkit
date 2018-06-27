@@ -69,6 +69,9 @@ void PeerConductor::OnSuccess(SessionDescriptionInterface* desc)
 		Json::Value jmessage;
 		jmessage[kSessionDescriptionTypeName] = desc->type();
 		jmessage[kSessionDescriptionSdpName] = sdp;
+		jmessage[kTurnServerUri] = webrtc_config_->turn_server.uri;
+		jmessage[kTurnServerUsername] = webrtc_config_->turn_server.username;
+		jmessage[kTurnServerPassword] = webrtc_config_->turn_server.password;
 
 		string message = writer.write(jmessage);
 

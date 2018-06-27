@@ -125,4 +125,9 @@ private:
 	// Names used for a SessionDescription JSON object.
 	const char* kSessionDescriptionTypeName = "type";
 	const char* kSessionDescriptionSdpName = "sdp";
+
+	// Credentials for Turn Server.
+	const char* kTurnServerUri = "uri";
+	const char* kTurnServerUsername = "username";
+	const char* kTurnServerPassword = "password";
 };

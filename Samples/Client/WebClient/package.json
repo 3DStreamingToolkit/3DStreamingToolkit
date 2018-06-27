@@ -4,8 +4,8 @@
   "description": "Web client sample for 3D Streaming Toolkit",
   "main": "app.js",
   "dependencies": {
-    "js-3dtoolkit": "^1.1.0",
-    "http-server": "^0.11.1"
+    "http-server": "^0.11.1",
+    "js-3dstk": "^1.2.1"
   },
   "devDependencies": {},
   "author": "",
