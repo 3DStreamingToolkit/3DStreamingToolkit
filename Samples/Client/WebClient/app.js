@@ -265,7 +265,7 @@ $(function(){
         document.getElementById('disconnect').style.display = 'block';
         document.getElementById('renderers').style.display = 'block';
 
-        streamingClient = new ThreeDToolkit.ThreeDStreamingClient({
+        streamingClient = new ThreeDSToolkit.ThreeDStreamingClient({
           'serverUrl': server,
           'peerConnectionConfig': pcConfig
         }, {
