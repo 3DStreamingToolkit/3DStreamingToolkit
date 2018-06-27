@@ -293,15 +293,8 @@ void ServerMainWindow::OnDefaultAction()
 	}
 	else if (current_ui_ == LIST_PEERS)
 	{
-		LRESULT sel = ::SendMessage(listbox_, LB_GETCURSEL, 0, 0);
-		if (sel != LB_ERR)
-		{
-			LRESULT peer_id = ::SendMessage(listbox_, LB_GETITEMDATA, sel, 0);
-			if (peer_id != -1 && !callbacks_.empty())
-			{
-				std::for_each(callbacks_.begin(), callbacks_.end(), [&](MainWindowCallback* callback) { callback->ConnectToPeer(peer_id); });
-			}
-		}
+		// no work for us to do in this case, but do not fall through
+		return;
 	}
 	else
 	{

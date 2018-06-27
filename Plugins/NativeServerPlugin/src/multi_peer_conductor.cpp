@@ -59,9 +59,17 @@ void MultiPeerConductor::SetDataChannelMessageHandler(const function<void(int, c
 
 void MultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterface::IceConnectionState new_state)
 {
+	// if we already know what state you're in, and it hasn't changed, don't do anything
+	if (connected_peer_states_.find(peer_id) != connected_peer_states_.end() &&
+		connected_peer_states_[peer_id] == new_state)
+	{
+		return;
+	}
+
 	// peer connected
 	if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionConnected)
 	{
+		connected_peer_states_[peer_id] = new_state;
 		if (cur_capacity_ > -1)
 		{
 			cur_capacity_ -= cur_capacity_ >= 1 ? 1 : 0;
@@ -71,6 +79,10 @@ void MultiPeerConductor::OnIceConnectionChange(int peer_id, PeerConnectionInterf
 	// peer disconnected
 	else if (new_state == PeerConnectionInterface::IceConnectionState::kIceConnectionDisconnected)
 	{
+		// note: we do not delete the peer at this time, as it introduces a race condition during cleanup
+		// see https://github.com/CatalystCode/3DStreamingToolkit/commit/fddb1ddebbdc82900e404fc5736b1b4944a6db1c
+		connected_peer_states_.erase(peer_id);
+
 		if (cur_capacity_ > -1)
 		{
 			cur_capacity_ += cur_capacity_ < max_capacity_ ? 1 : 0;
@@ -188,10 +200,18 @@ void MultiPeerConductor::DisconnectFromServer() {}
 
 void MultiPeerConductor::ConnectToPeer(int peer_id)
 {
-	auto peer = SafeAllocatePeerMapEntry(peer_id);
-	if (!peer->IsConnected())
+	// don't connect to self
+	// don't connect if there is no capacity
+	// (note: != 0 will allow -1, which is intentional since -1 is indicates we aren't using capacity)
+	if (peer_id != signalling_client_.id() &&
+		cur_capacity_ != 0)
 	{
-		peer->AllocatePeerConnection(true);
+		// actually connect
+		auto peer = SafeAllocatePeerMapEntry(peer_id);
+		if (!peer->IsConnected())
+		{
+			peer->AllocatePeerConnection(true);
+		}
 	}
 }
 
