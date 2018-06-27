@@ -641,15 +641,18 @@ void PeerConnectionClient::OnHangingGetRead(rtc::AsyncSocket* socket)
 				bool connected = false;
 				if (ParseEntry(notification_data_.substr(pos), &name, &id, &connected))
 				{
-					if (connected)
+					if (id != my_id_)
 					{
-						peers_[id] = name;
-						std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerConnected(id, name); });
-					}
-					else
-					{
-						peers_.erase(id);
-						std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerDisconnected(id); });
+						if (connected)
+						{
+							peers_[id] = name;
+							std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerConnected(id, name); });
+						}
+						else
+						{
+							peers_.erase(id);
+							std::for_each(callbacks_.rbegin(), callbacks_.rend(), [&](PeerConnectionClientObserver* o) { o->OnPeerDisconnected(id); });
+						}
 					}
 				}
 			}
