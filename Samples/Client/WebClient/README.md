@@ -10,7 +10,7 @@ $ npm install
 
 ## 3DStreamingToolkit JavaScript Library
 
-The WebClient sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/CatalystCode/js-3dtoolkit). 
+The WebClient sample consumes a universal JavaScript plugin that is downloaded using npm. The source code can be found [here](https://github.com/3DStreamingToolkit/js-3dstk). 
 
 This library is responsible for connecting to the signaling server, exposing the data channel, connecting/disconnection to peers and handling the SDP offer between peers. By default, the library will request H264 video encoding when connecting to a peer. This is required for the low latency scenarios enabled by this toolkit.
 
@@ -21,8 +21,18 @@ To connect to a specific signaling server, you need to modify the value inside `
  var defaultSignalingServerUrl = 'http://localhost:3001'
 ```
 
-In case your scenario requires VPN/Proxy networks, you need to specify a turn server inside `app.js`:
-```  
+In case your scenario requires VPN/Proxy networks, you have two options to setup the configuration file:
+1. The js-3dstk library is capable of retriving the TURN credentials automatically from the server. In order to enable this feature, simply enable the following flag inside `app.js`:
+```
+  // Use this switch to determing whether Turn
+  // server credentials are parsed from sever
+  // connection offer, or declared here in config.
+  var parseTurnFromOffer = true;
+```
+2. You can also manually include the TURN server url and credentials inside `app.js`:
+<pre>
+  var parseTurnFromOffer = <b>false</b>;
+
   var pcConfigTURNStatic = {
     'iceServers': [{
         'urls': 'turn server goes here',
@@ -35,6 +45,11 @@ In case your scenario requires VPN/Proxy networks, you need to specify a turn se
     }],
     'iceTransportPolicy': 'relay'
   };
+</pre>
+
+If no VPN/Proxy networks are required, simply change the line 87 inside `app.js` with the code below:
+```
+   var pcConfig = pcConfigSTUNStatic;
 ```
 
 For more information read the [TURN-Service wiki](https://github.com/CatalystCode/3DStreamingToolkit/wiki/TURN-Service) and [sample implementation configuration files](https://github.com/CatalystCode/3DStreamingToolkit/wiki/JSON-Config-Files).
@@ -51,9 +66,9 @@ $ http-server
 Once the config settings are changed, the client will require a server to connect to. In this toolkit, we have a few [Sample Servers](https://github.com/CatalystCode/3DStreamingToolkit/tree/master/Samples/Server). 
 
 When both the client and server are connected to the same signaling server, they will appear in the peer list. 
-![capture2](https://user-images.githubusercontent.com/10086264/33888334-64db4d18-df55-11e7-830a-174b9049cceb.PNG)
+![image](https://user-images.githubusercontent.com/10086264/41976434-229ea2e8-79eb-11e8-9d89-82e7d374702f.png)
 
 You can initiate the connection using the client or server, simply select the peer from the list and press join. That will start the video streaming and you can use Click+Drag to rotate the camera or CTRL+Drag to move the camera. 
-![webclient](https://user-images.githubusercontent.com/10086264/33888182-fcf9e236-df54-11e7-9eac-0ba8f50cf0a4.PNG)
+![image2](https://user-images.githubusercontent.com/10086264/41976864-0830f1bc-79ec-11e8-884f-456ce0edee36.png)
 
 

@@ -83,7 +83,8 @@ $(function(){
   };
   var accessToken;
 
-  // use pcConfigStatic if not parsing, otherwise empty 
+  // use pcConfigStatic if not parsing, otherwise empty
+  // use pcConfigSTUNStatic if no VPN/Proxy networks are required
   var pcConfig = parseTurnFromOffer ? pcConfigNone : pcConfigStatic;
 
   RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection || RTCPeerConnection;
