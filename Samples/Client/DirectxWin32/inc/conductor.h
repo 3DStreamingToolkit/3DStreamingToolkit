@@ -29,6 +29,8 @@ FOWARD_DECLARE(EndToEndTests, SingleClientToServer);
 FOWARD_DECLARE(EndToEndTests, DISABLED_SingleClientToServer);
 FOWARD_DECLARE(EndToEndTests, ServerToClientLatency);
 FOWARD_DECLARE(EndToEndTests, DISABLED_ServerToClientLatency);
+FOWARD_DECLARE(EndToEndTests, MultiClientsToServer);
+FOWARD_DECLARE(EndToEndTests, DISABLED_MultiClientsToServer);
 
 namespace webrtc
 {
@@ -181,6 +183,8 @@ protected:
 	FRIEND_TEST(EndToEndTests, DISABLED_SingleClientToServer);
 	FRIEND_TEST(EndToEndTests, ServerToClientLatency);
 	FRIEND_TEST(EndToEndTests, DISABLED_ServerToClientLatency);
+	FRIEND_TEST(EndToEndTests, MultiClientsToServer);
+	FRIEND_TEST(EndToEndTests, DISABLED_MultiClientsToServer);
 };
 
 #endif // WEBRTC_CONDUCTOR_H_
