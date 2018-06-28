@@ -4,6 +4,7 @@
 #include <comdef.h>
 #include <comutil.h>
 #include <gtest\gtest.h>
+#include <map>
 #include <thread>
 #include <Wbemidl.h>
 #include <wchar.h>
@@ -1168,95 +1169,95 @@ TEST(EndToEndTests, DISABLED_ServerToClientLatency)
 			{
 				switch (testState)
 				{
-				case WAIT_FOR_SERVER:
-					if (serverCond && serverCond->PeerConnection().is_connected())
-					{
-						tick = GetTickCount64();
-						clientCond->StartLogin(webrtcConfig->server_uri, webrtcConfig->port);
-						testState = CONNECT_TO_SIGNALING_SERVER;
-					}
-					else if (GetTickCount64() - tick >= SignalingServerTimeOut)
-					{
-						failed = true;
-					}
+					case WAIT_FOR_SERVER:
+						if (serverCond && serverCond->PeerConnection().is_connected())
+						{
+							tick = GetTickCount64();
+							clientCond->StartLogin(webrtcConfig->server_uri, webrtcConfig->port);
+							testState = CONNECT_TO_SIGNALING_SERVER;
+						}
+						else if (GetTickCount64() - tick >= SignalingServerTimeOut)
+						{
+							failed = true;
+						}
 
-					break;
+						break;
 
-				case CONNECT_TO_SIGNALING_SERVER:
-					if (client.is_connected())
-					{
-						tick = GetTickCount64();
-						clientCond->ConnectToPeer(serverCond->PeerConnection().id());
-						testState = INIT_PEER_CONNECTION;
-					}
-					else if (GetTickCount64() - tick >= SignalingServerTimeOut)
-					{
-						failed = true;
-					}
+					case CONNECT_TO_SIGNALING_SERVER:
+						if (client.is_connected())
+						{
+							tick = GetTickCount64();
+							clientCond->ConnectToPeer(serverCond->PeerConnection().id());
+							testState = INIT_PEER_CONNECTION;
+						}
+						else if (GetTickCount64() - tick >= SignalingServerTimeOut)
+						{
+							failed = true;
+						}
 
-					break;
+						break;
 
-				case INIT_PEER_CONNECTION:
-					if (clientCond->ice_state_ == PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted)
-					{
-						tick = GetTickCount64();
-						testState = STREAM_VIDEO;
-					}
-					else if (GetTickCount64() - tick >= PeerConnectionTimeOut)
-					{
-						failed = true;
-					}
+					case INIT_PEER_CONNECTION:
+						if (clientCond->ice_state_ == PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted)
+						{
+							tick = GetTickCount64();
+							testState = STREAM_VIDEO;
+						}
+						else if (GetTickCount64() - tick >= PeerConnectionTimeOut)
+						{
+							failed = true;
+						}
 
-					break;
+						break;
 
-				case STREAM_VIDEO:
-					if (((ClientMainWindow::ClientVideoRenderer*)wnd.remote_video_renderer_.get())->fps())
-					{
-						tick = GetTickCount64();
-						std::string msg = "{  \"type\":\"end-to-end-test\",  \"body\":\"1\"}";
-						dcHandler.data_channel_callback_->SendInputData(msg);
-						testState = OPEN_DATA_CHANNEL;
-					}
-					else if (GetTickCount64() - tick >= VideoFrameTimeOut)
-					{
-						failed = true;
-					}
+					case STREAM_VIDEO:
+						if (((ClientMainWindow::ClientVideoRenderer*)wnd.remote_video_renderer_.get())->fps())
+						{
+							tick = GetTickCount64();
+							std::string msg = "{  \"type\":\"end-to-end-test\",  \"body\":\"1\"}";
+							dcHandler.data_channel_callback_->SendInputData(msg);
+							testState = OPEN_DATA_CHANNEL;
+						}
+						else if (GetTickCount64() - tick >= VideoFrameTimeOut)
+						{
+							failed = true;
+						}
 
-					break;
+						break;
 
-				case OPEN_DATA_CHANNEL:
-					if (receivedInput)
-					{
-						tick = GetTickCount64();
-						testState = LATENCY_TESTING;
-					}
-					else if (GetTickCount64() - tick >= DataChannelTimeOut)
-					{
-						failed = true;
-					}
+					case OPEN_DATA_CHANNEL:
+						if (receivedInput)
+						{
+							tick = GetTickCount64();
+							testState = LATENCY_TESTING;
+						}
+						else if (GetTickCount64() - tick >= DataChannelTimeOut)
+						{
+							failed = true;
+						}
 
-					break;
+						break;
 
-				case LATENCY_TESTING:
-					if (GetTickCount64() - tick >= LatencyTestingTime)
-					{
-						std::string msg = "[ LATENCY  ] " + std::to_string(((ClientMainWindow::ClientVideoRenderer*)wnd.remote_video_renderer_.get())->latency()) + "\n";
-						std::cout << msg.c_str();
-						tick = GetTickCount64();
-						stoppingServer = true;
-						clientCond->Close();
-						testState = CLEANUP;
-					}
+					case LATENCY_TESTING:
+						if (GetTickCount64() - tick >= LatencyTestingTime)
+						{
+							std::string msg = "[ LATENCY  ] " + std::to_string(((ClientMainWindow::ClientVideoRenderer*)wnd.remote_video_renderer_.get())->latency()) + "\n";
+							std::cout << msg.c_str();
+							tick = GetTickCount64();
+							stoppingServer = true;
+							clientCond->Close();
+							testState = CLEANUP;
+						}
 
-					break;
+						break;
 
-				case CLEANUP:
-					if (GetTickCount64() - tick >= CleanupTime)
-					{
-						stoppingClient = true;
-					}
+					case CLEANUP:
+						if (GetTickCount64() - tick >= CleanupTime)
+						{
+							stoppingClient = true;
+						}
 
-					break;
+						break;
 				}
 			}
 		}
@@ -1275,4 +1276,289 @@ TEST(EndToEndTests, DISABLED_ServerToClientLatency)
 	// Waits for threads to finish.
 	clientThread.join();
 	serverThread.join();
+}
+
+// Tests out streaming from spinning cube server to multiple DirectX clients.
+TEST(EndToEndTests, DISABLED_MultiClientsToServer)
+{
+	// Constants.
+	const int MaxClients				= 2;
+	const int SignalingServerTimeOut	= 5000;
+	const int PeerConnectionTimeOut		= 10000;
+	const int VideoFrameTimeOut			= 10000;
+	const int LatencyTestingTime		= 10000;
+	const int CleanupTime				= 5000;
+	const int MinFPS					= 15;
+	const int MaxLatency				= 300;
+
+	const enum TestState
+	{
+		WAIT_FOR_SERVER = 0,
+		CONNECT_TO_SIGNALING_SERVER,
+		INIT_PEER_CONNECTION,
+		STREAM_VIDEO,
+		LATENCY_TESTING,
+		CLEANUP
+	};
+
+	const char* TestStateStrings[]
+	{
+		"WAIT_FOR_SERVER",
+		"CONNECT_TO_SIGNALING_SERVER",
+		"INIT_PEER_CONNECTION",
+		"STREAM_VIDEO",
+		"LATENCY_TESTING",
+		"CLEANUP"
+	};
+
+	// Setup the config parsers.
+	ConfigParser::ConfigureConfigFactories();
+	auto fullServerConfig = GlobalObject<FullServerConfig>::Get();
+	auto webrtcConfig = GlobalObject<WebRTCConfig>::Get();
+	auto nvEncConfig = GlobalObject<NvEncConfig>::Get();
+
+	// Global vars.
+	bool stoppingServer = false;
+	std::map<int, std::thread> clientThreads;
+	std::map<int, TestState> clientTestState;
+	std::map<int, int> clientFPS;
+	std::map<int, int> clientLatency;
+
+	// Starts server.
+	std::shared_ptr<DirectXMultiPeerConductor> serverCond;
+	std::thread serverThread([&]()
+	{
+		// Init WebRTC.
+		rtc::EnsureWinsockInit();
+		rtc::Win32SocketServer w32_ss;
+		rtc::Win32Thread w32_thread(&w32_ss);
+		rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
+
+		// Init DirectX resources.
+		std::shared_ptr<DeviceResources> deviceResources(new DeviceResources());
+		serverCond.reset(new DirectXMultiPeerConductor(
+			fullServerConfig, deviceResources->GetD3DDevice()));
+
+		ComPtr<ID3D11Texture2D>	renderTexture;
+		D3D11_TEXTURE2D_DESC texDesc = { 0 };
+		texDesc.ArraySize = 1;
+		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		texDesc.Width = fullServerConfig->server_config->server_config.width;
+		texDesc.Height = fullServerConfig->server_config->server_config.height;
+		texDesc.MipLevels = 1;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.Usage = D3D11_USAGE_DEFAULT;
+		texDesc.BindFlags = D3D11_BIND_RENDER_TARGET;
+		deviceResources->GetD3DDevice()->CreateTexture2D(
+			&texDesc, nullptr, &renderTexture);
+
+		// Connects to signaling server.
+		serverCond->StartLogin(fullServerConfig->webrtc_config->server_uri,
+			fullServerConfig->webrtc_config->port);
+
+		// Main loop.
+		MSG msg = { 0 };
+		int64_t tick = GetTickCount64();
+		while (!stoppingServer)
+		{
+			if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			else
+			{
+				// FPS limiter.
+				const int interval = 1000 / nvEncConfig->capture_fps;
+				ULONGLONG timeElapsed = GetTickCount64() - tick;
+				if (timeElapsed >= interval)
+				{
+					auto peers = serverCond->Peers();
+					for each (auto pair in peers)
+					{
+						auto peer = (DirectXPeerConductor*)pair.second.get();
+						tick = GetTickCount64() - timeElapsed + interval;
+						peer->SendFrame(renderTexture.Get(), GetTickCount64());
+					}
+				}
+			}
+		}
+
+		// Cleanup.
+		serverCond->Close();
+		tick = GetTickCount64();
+		while (GetTickCount64() - tick < CleanupTime)
+		{
+			Sleep(1000);
+		}
+	});
+
+	// Start clients.
+	for (int i = 0; i < MaxClients; i++)
+	{
+		clientThreads[i] = std::thread([&]()
+		{
+			// Stores id.
+			const int id = i;
+
+			// Init WebRTC.
+			rtc::EnsureWinsockInit();
+			rtc::Win32SocketServer w32_ss;
+			rtc::Win32Thread w32_thread(&w32_ss);
+			rtc::ThreadManager::Instance()->SetCurrentThread(&w32_thread);
+
+			rtc::scoped_refptr<Conductor> clientCond;
+			ClientMainWindow wnd("", 0, 0, 0, 0, 0);
+			PeerConnectionClient client;
+			clientCond = new rtc::RefCountedObject<Conductor>(
+				&client, &wnd, webrtcConfig.get());
+
+			// Main loop.
+			MSG msg = { 0 };
+			int64_t tick = GetTickCount64();
+			bool stoppingClient = false;
+			bool failed = false;
+			clientTestState[id] = WAIT_FOR_SERVER;
+			clientFPS[id] = MinFPS - 1;
+			clientLatency[id] = MaxLatency + 1;
+			while (!stoppingClient && !failed)
+			{
+				if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+				{
+					if (!wnd.PreTranslateMessage(&msg))
+					{
+						TranslateMessage(&msg);
+						DispatchMessage(&msg);
+					}
+				}
+				else
+				{
+					switch (clientTestState[id])
+					{
+						case WAIT_FOR_SERVER:
+							if (serverCond && serverCond->PeerConnection().is_connected())
+							{
+								tick = GetTickCount64();
+								clientCond->StartLogin(webrtcConfig->server_uri, webrtcConfig->port);
+								clientTestState[id] = CONNECT_TO_SIGNALING_SERVER;
+							}
+							else if (GetTickCount64() - tick >= SignalingServerTimeOut)
+							{
+								failed = true;
+							}
+
+							break;
+
+						case CONNECT_TO_SIGNALING_SERVER:
+							if (client.is_connected())
+							{
+								tick = GetTickCount64();
+								clientCond->ConnectToPeer(serverCond->PeerConnection().id());
+								clientTestState[id] = INIT_PEER_CONNECTION;
+							}
+							else if (GetTickCount64() - tick >= SignalingServerTimeOut)
+							{
+								failed = true;
+							}
+
+							break;
+
+						case INIT_PEER_CONNECTION:
+							if (clientCond->ice_state_ == PeerConnectionInterface::IceConnectionState::kIceConnectionCompleted)
+							{
+								tick = GetTickCount64();
+								clientTestState[id] = STREAM_VIDEO;
+							}
+							else if (GetTickCount64() - tick >= PeerConnectionTimeOut)
+							{
+								failed = true;
+							}
+
+							break;
+
+						case STREAM_VIDEO:
+							if (((ClientMainWindow::ClientVideoRenderer*)wnd.remote_video_renderer_.get())->fps())
+							{
+								tick = GetTickCount64();
+								clientTestState[id] = LATENCY_TESTING;
+							}
+							else if (GetTickCount64() - tick >= VideoFrameTimeOut)
+							{
+								failed = true;
+							}
+
+							break;
+
+						case LATENCY_TESTING:
+							if (GetTickCount64() - tick >= LatencyTestingTime)
+							{
+								auto renderer = (ClientMainWindow::ClientVideoRenderer*)wnd.remote_video_renderer_.get();
+								clientLatency[id] = renderer->latency();
+								clientFPS[id] = renderer->fps();
+								tick = GetTickCount64();
+								clientCond->Close();
+								clientTestState[id] = CLEANUP;
+							}
+
+							break;
+
+						case CLEANUP:
+							if (GetTickCount64() - tick >= CleanupTime)
+							{
+								stoppingClient = true;
+							}
+
+							break;
+					}
+				}
+			}
+		});
+	}
+
+	// Waits for client threads to finish.
+	auto clientThreadsIt = clientThreads.begin();
+	while (clientThreadsIt != clientThreads.end())
+	{
+		clientThreadsIt->second.join();
+		clientThreadsIt++;
+	}
+
+	// Stops server.
+	stoppingServer = true;
+	serverThread.join();
+
+	// Checks for failure.
+	auto clientTestStateIt = clientTestState.begin();
+	bool failed = false;
+	while (clientTestStateIt != clientTestState.end())
+	{
+		int id = clientTestStateIt->first;
+		std::string peerInfo = "[   PEER" + std::to_string(id + 1) + "  ] ";
+		TestState state = clientTestStateIt->second;
+		if (state != CLEANUP)
+		{
+			std::string msg = peerInfo + "Error: " + std::string(TestStateStrings[state]) + "\n";
+			std::cerr << msg.c_str();
+			failed = true;
+		}
+		else
+		{
+			int latency = clientLatency[id];
+			int fps = clientFPS[id];
+			std::string latencyMsg = peerInfo + "Latency: " + std::to_string(latency) + "\n";
+			std::cout << latencyMsg.c_str();
+			std::string fpsMsg = peerInfo + "FPS: " + std::to_string(fps) + "\n";
+			std::cout << fpsMsg.c_str();
+			if (fps < MinFPS || latency > MaxLatency)
+			{
+				std::string failMsg = "[   ERROR  ] There is some performance issue!\n";
+				std::cerr << failMsg.c_str();
+				failed = true;
+			}
+		}
+
+		clientTestStateIt++;
+	}
+
+	ASSERT_FALSE(failed);
 }
