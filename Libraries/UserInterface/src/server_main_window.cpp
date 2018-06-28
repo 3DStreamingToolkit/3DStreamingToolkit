@@ -293,8 +293,15 @@ void ServerMainWindow::OnDefaultAction()
 	}
 	else if (current_ui_ == LIST_PEERS)
 	{
-		// no work for us to do in this case, but do not fall through
-		return;
+		LRESULT sel = ::SendMessage(listbox_, LB_GETCURSEL, 0, 0);
+		if (sel != LB_ERR)
+		{
+			LRESULT peer_id = ::SendMessage(listbox_, LB_GETITEMDATA, sel, 0);
+			if (peer_id != -1 && !callbacks_.empty())
+			{
+				std::for_each(callbacks_.begin(), callbacks_.end(), [&](MainWindowCallback* callback) { callback->ConnectToPeer(peer_id); });
+			}
+		}
 	}
 	else
 	{
@@ -514,25 +521,6 @@ void ServerMainWindow::LayoutPeerListUI(const std::map<int, std::string>& peers,
 		::GetClientRect(wnd_, &rc);
 		::MoveWindow(listbox_, 0, 0, rc.right, rc.bottom, TRUE);
 		::ShowWindow(listbox_, SW_SHOWNA);
-
-		if (auto_call_ && peers.begin() != peers.end())
-		{
-			// Get the number of items in the list
-			LRESULT count = ::SendMessage(listbox_, LB_GETCOUNT, 0, 0);
-			if (count != LB_ERR)
-			{
-				// Select the last item in the list
-				LRESULT selection = ::SendMessage(listbox_, LB_SETCURSEL, count - 1, 0);
-				if (selection != LB_ERR)
-				{
-					::PostMessage(
-						wnd_,
-						WM_COMMAND,
-						MAKEWPARAM(GetDlgCtrlID(listbox_), LBN_DBLCLK),
-						reinterpret_cast<LPARAM>(listbox_));
-				}
-			}
-		}
 	}
 	else
 	{
