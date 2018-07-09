@@ -59,7 +59,7 @@ export default Config = {
 }
 ```
 
-For more information read the [TURN-Service wiki](https://github.com/CatalystCode/3DStreamingToolkit/wiki/TURN-Service) and [sample implementation configuration files](https://github.com/CatalystCode/3DStreamingToolkit/wiki/JSON-Config-Files).
+For more information read the [TURN-Service wiki](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/TURN-Service) and [sample implementation configuration files](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/JSON-Config-Files).
 
 ## Deploying the app
 
@@ -67,7 +67,7 @@ For deploying the app to iOS or Android, refer to the official [React Native doc
 
 ## How it works
 
-Once the config settings are changed, the client will require a server to connect to. In this toolkit, we have a few [Sample Servers](https://github.com/CatalystCode/3DStreamingToolkit/tree/master/Samples/Server). 
+Once the config settings are changed, the client will require a server to connect to. In this toolkit, we have a few [Sample Servers](https://github.com/3DStreamingToolkit/3DStreamingToolkit/tree/master/Samples/Server). 
 
 When both the client and server are connected to the same signaling server, they will appear in the peer list. 
 

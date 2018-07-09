@@ -25,13 +25,13 @@ The 3DStreamingToolkit project's purpose is to provide an approach for developin
 ![WebRTC applied to 3D Streaming](./Docs/Images/webrtc3d.jpg)
 <!---  (![high level architecture](./readme_data/hl-arch.png))--->
 
-Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/CatalystCode/3DStreamingToolkit/wiki/What-is-3DStreamingToolkit#webrtc-httpwebrtcorg). 
+Here's a high-level diagram of the components we've built (in green), and how they interact with the underlying WebRTC and NVEncode technologies we've leveraged. For a full description, check out [our wiki page on WebRTC](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/What-is-3DStreamingToolkit#webrtc-httpwebrtcorg). 
 
 ## Getting Started
 
 ### How to build
 
-> If you don't wish to build the toolkit yourself, you can download our latest build [here](https://github.com/CatalystCode/3DStreamingToolkit/releases/latest).
+> If you don't wish to build the toolkit yourself, you can download our latest build [here](https://github.com/3DStreamingToolkit/3DStreamingToolkit/releases/latest).
 
 These steps will ensure your development environment is configured properly, and then they'll walk you through the process of building our code.
 
@@ -51,8 +51,8 @@ These steps will ensure your development environment is configured properly, and
 Run `.\setup.cmd` from the command line. This will install and configure the following:
 
 + 32bit and 64bit Debug, Release, Exes, Dlls and PDBs from this commit [Chromium m62 release](https://chromium.googlesource.com/chromium/src/+/0971c880c3f82e5fdbc6d65d1fc4d8ae9aa47ddc)
-+ [M62 WebRTC native and UWP extensions](https://github.com/anderm/ortclib-sdk/tree/3DStreamingToolkit-M62-release), which add nvencode support, frame prediction (for HoloLens), video frame updates and native buffers to webrtc. These will be applied to the above
-+ Pre-built [NvPipe library](https://github.com/anderm/NvPipe/tree/low-latency-optimization) used in our WebRTC extension to enable NVIDIA-accelerated zero latency video compression
++ [M62 WebRTC native and UWP extensions](https://github.com/3DStreamingToolkit/webrtc-extensions-3dstk), which add nvencode support, frame prediction (for HoloLens), video frame updates and native buffers to webrtc. These will be applied to the above
++ Pre-built [NvPipe library](https://github.com/3DStreamingToolkit/NvPipe/tree/low-latency-optimization) used in our WebRTC extension to enable NVIDIA-accelerated zero latency video compression
 + [CUDA Toolkit 9.1](https://developer.nvidia.com/cuda-downloads) pre-built Release libraries used by NvPipe - cudart64_91 and nvToolsExt64_1
 + 32bit and 64bit Debug and Release libraries for DirectX Toolkit 
 + Release libraries for OpenGL - Freeglut, Glew and glext
@@ -66,7 +66,7 @@ Once you see `Libraries retrieved and up to date` you may proceed.
 + Done!
 > Note: We no longer support x86 server builds that are using nvencode. This is due to 32-bit support gradually being deprecated/removed from CUDA. 
 
-If you're seeing errors, check out the [troubleshooting guide](https://github.com/CatalystCode/3DStreamingToolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3DStreamingToolkit/issues/new).
+If you're seeing errors, check out the [troubleshooting guide](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/FAQ) and then [file an issue](https://github.com/3DStreamingToolkit/3DStreamingToolkit/issues/new).
 
 ### Build output
 
@@ -76,20 +76,20 @@ After you've built the solution, you'll likely want to start one sample server i
 
 To run one server and one client, navigate to the location under `Build\<Platform>\<Configuration>\` and start the `exe`.To identify what `<Platform>` and `<Configuration>` are, see your desired configuration from [section: the actual build](#the-actual-build). Recall the note encourages using  `Release` and `x64`.
 
-Once you start both a server and client implementation, you will need to give it a signaling server. If you need to set one up, please see our [wiki on Signaling Service](https://github.com/CatalystCode/3DStreamingToolkit/wiki/Signaling-Service) for an easy local or cloud-based implementation. After connecting, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/CatalystCode/3DStreamingToolkit/wiki/FAQ) and then [file an issue](https://github.com/catalystcode/3DStreamingToolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/CatalystCode/3DStreamingToolkit/wiki/Feature-matrices).
+Once you start both a server and client implementation, you will need to give it a signaling server. If you need to set one up, please see our [wiki on Signaling Service](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/Signaling-Service) for an easy local or cloud-based implementation. After connecting, you should be seeing success! If you're instead seeing errors, check out the [Troubleshooting guide](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/FAQ) and then [file an issue](https://github.com/3DStreamingToolkit/3DStreamingToolkit/issues/new). Additionally, you can see more information about our other sample implementations [here](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/Feature-matrices).
 
 ### Next Steps
 
 These resources will be critical to your success in configuring and scaling applications.
 
-+ [Sample implementation configuration files](https://github.com/CatalystCode/3DStreamingToolkit/wiki/JSON-Config-Files)
-+ [Configuring and deploying services](https://github.com/CatalystCode/3DStreamingToolkit/wiki#services-setup)
-+ [Configuring authentication](https://github.com/CatalystCode/3DStreamingToolkit/wiki/Configuring-authentication)
++ [Sample implementation configuration files](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/JSON-Config-Files)
++ [Configuring and deploying services](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki#services-setup)
++ [Configuring authentication](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/Configuring-authentication)
 
 ### Learn More
 
-+ [General Wiki](https://github.com/CatalystCode/3DStreamingToolkit/wiki)
-+ [Building WebRTC from source](https://github.com/CatalystCode/3DStreamingToolkit/wiki/Building-WebRTC-from-source)
++ [General Wiki](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki)
++ [Building WebRTC from source](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/Building-WebRTC-from-source)
 + [WebRTC Homepage](https://webrtc.org/)
 + [NVEncode Homepage](https://developer.nvidia.com/nvidia-video-codec-sdk)
 + [NvPipe original source](https://github.com/NVIDIA/NvPipe)

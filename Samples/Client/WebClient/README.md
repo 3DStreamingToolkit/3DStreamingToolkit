@@ -52,7 +52,7 @@ If no VPN/Proxy networks are required, simply change the line 87 inside `app.js`
    var pcConfig = pcConfigSTUNStatic;
 ```
 
-For more information read the [TURN-Service wiki](https://github.com/CatalystCode/3DStreamingToolkit/wiki/TURN-Service) and [sample implementation configuration files](https://github.com/CatalystCode/3DStreamingToolkit/wiki/JSON-Config-Files).
+For more information read the [TURN-Service wiki](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/TURN-Service) and [sample implementation configuration files](https://github.com/3DStreamingToolkit/3DStreamingToolkit/wiki/JSON-Config-Files).
 
 ## Running the client
 
@@ -63,7 +63,7 @@ $ http-server
 
 ## How it works
 
-Once the config settings are changed, the client will require a server to connect to. In this toolkit, we have a few [Sample Servers](https://github.com/CatalystCode/3DStreamingToolkit/tree/master/Samples/Server). 
+Once the config settings are changed, the client will require a server to connect to. In this toolkit, we have a few [Sample Servers](https://github.com/3DStreamingToolkit/3DStreamingToolkit/tree/master/Samples/Server). 
 
 When both the client and server are connected to the same signaling server, they will appear in the peer list. 
 ![image](https://user-images.githubusercontent.com/10086264/41976434-229ea2e8-79eb-11e8-9d89-82e7d374702f.png)

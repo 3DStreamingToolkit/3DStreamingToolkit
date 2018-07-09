@@ -20,13 +20,13 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Help Wanted
 
-We have a [list of issues](https://github.com/CatalystCode/3DStreamingToolkit/labels/help%20wanted) that are ripe for community contributions. This is a great place to get started.
+We have a [list of issues](https://github.com/3DStreamingToolkit/3DStreamingToolkit/labels/help%20wanted) that are ripe for community contributions. This is a great place to get started.
 
 ## Filing Issues
 
-You can find all of the issues that have been filed in the [Issues](https://github.com/CatalystCode/3DStreamingToolkit/issues) section of the repository.
+You can find all of the issues that have been filed in the [Issues](https://github.com/3DStreamingToolkit/3DStreamingToolkit/issues) section of the repository.
 
-If you encounter any bugs, please file an issue [here](https://github.com/CatalystCode/3DStreamingToolkit/issues/new) and make sure to fill out the provided template with the requested information.
+If you encounter any bugs, please file an issue [here](https://github.com/3DStreamingToolkit/3DStreamingToolkit/issues/new) and make sure to fill out the provided template with the requested information.
 
 To suggest a new feature or changes that could be made, file an issue the same way you would for a bug, but remove the provided template and replace it with information about your suggestion.
 
@@ -34,9 +34,9 @@ To suggest a new feature or changes that could be made, file an issue the same w
 
 If you are thinking about making a large change to this library, **break up the change into small, logical, testable chunks, and organize your pull requests accordingly**.
 
-You can find all of the pull requests that have been opened in the [Pull Request](https://github.com/CatalystCode/3DStreamingToolkit/pulls) section of the repository.
+You can find all of the pull requests that have been opened in the [Pull Request](https://github.com/3DStreamingToolkit/3DStreamingToolkit/pulls) section of the repository.
 
-To open your own pull request, click [here](https://github.comCatalystCode/3DStreamingToolkit/compare). When creating a pull request, keep the following in mind:
+To open your own pull request, click [here](https://github.com/3DStreamingToolkit/3DStreamingToolkit/compare). When creating a pull request, keep the following in mind:
 - Make sure you are pointing to the fork and branch that your changes were made in
 - The pull request template that is provided **should be filled out**; this is not something that should just be deleted or ignored when the pull request is created
     - Deleting or ignoring this template will elongate the time it takes for your pull request to be reviewed
@@ -72,7 +72,7 @@ To run the tests in the commandline:
 Simply run `test` or `.\test.cmd` from the project directory:
 
 ```
-C:\git\3dtoolkit>test
+C:\git\3DStreamingToolkit>test
 <test output>
 ```
 
@@ -90,4 +90,4 @@ Copy and paste the following copyright header to any new source code files:
 
 ### Contributor License Agreement (CLA)
 
-In order to accept your pull request, we need you to submit a CLA. You only need to do this once for this repository. If you are submitting a pull request for the first time, the Microsoft CLA Bot will reply with a link to the CLA form. You may also complete your CLA [here](https://cla.opensource.microsoft.com/CatalystCode/3dtoolkit).
+In order to accept your pull request, we need you to submit a CLA. You only need to do this once for this repository. If you are submitting a pull request for the first time, the Microsoft CLA Bot will reply with a link to the CLA form. You may also complete your CLA [here](https://cla.opensource.microsoft.com/3DStreamingToolkit/3DStreamingToolkit).
