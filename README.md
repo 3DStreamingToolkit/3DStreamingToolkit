@@ -2,7 +2,7 @@
 
 A toolkit for creating powerful cloud-based 3D experiences that stream to traditionally out of reach low-powered devices. 
 
-![example](./Docs/Images/3dstreamclientserver.gif)
+![3dstk header](./.github/header.png)
 
 ## Quick Links
 
