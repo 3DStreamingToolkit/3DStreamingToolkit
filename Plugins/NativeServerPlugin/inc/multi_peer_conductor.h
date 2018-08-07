@@ -54,7 +54,7 @@ public:
 
 	virtual void OnServerConnectionFailure() override;
 
-	virtual void OnMessage(Message* msg) override;
+	virtual void OnMessage(rtc::Message* msg) override;
 
 	virtual void Run(Thread* thread) override;
 
@@ -84,7 +84,8 @@ public:
 	void HandleSignalConnect();
 
 protected:
-	MultiPeerConductor(shared_ptr<FullServerConfig> config);
+	MultiPeerConductor(shared_ptr<FullServerConfig> config,
+		scoped_refptr<PeerConnectionFactoryInterface> peer_factory = webrtc::CreatePeerConnectionFactory());
 	~MultiPeerConductor();
 
 	struct MessageEntry
