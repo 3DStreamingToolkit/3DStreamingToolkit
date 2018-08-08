@@ -3,7 +3,8 @@
 #include "defaults.h"
 #include "multi_peer_conductor.h"
 
-MultiPeerConductor::MultiPeerConductor(shared_ptr<FullServerConfig> config) :
+MultiPeerConductor::MultiPeerConductor(shared_ptr<FullServerConfig> config,
+	scoped_refptr<PeerConnectionFactoryInterface> peer_factory) :
 	config_(config),
 	main_window_(nullptr),
 	max_capacity_(-1),
@@ -23,7 +24,7 @@ MultiPeerConductor::MultiPeerConductor(shared_ptr<FullServerConfig> config) :
 		cur_capacity_ = max_capacity_;
 	}
 
-	peer_factory_ = webrtc::CreatePeerConnectionFactory();
+	peer_factory_ = peer_factory;
 }
 
 MultiPeerConductor::~MultiPeerConductor()

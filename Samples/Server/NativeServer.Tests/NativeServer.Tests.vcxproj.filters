@@ -35,7 +35,7 @@
     </ClCompile>
     <ClCompile Include="frame_generator.cpp">
       <Filter>Source</Filter>
-    </ClCompile>	
+    </ClCompile>
     <ClCompile Include="..\Directx-SpinningCube\Common\DeviceResources.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -49,6 +49,9 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Client\DirectxWin32\src\data_channel_handler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="PeerConductorTests.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>

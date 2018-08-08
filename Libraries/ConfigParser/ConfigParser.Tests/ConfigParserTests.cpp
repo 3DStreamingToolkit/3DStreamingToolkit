@@ -1,7 +1,6 @@
 #include <string>
 #include <gtest\gtest.h>
 #include <windows.h>
-
 #include "config_parser.h"
 
 #pragma comment(lib, "webrtc.lib")

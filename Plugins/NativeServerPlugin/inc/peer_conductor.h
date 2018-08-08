@@ -89,9 +89,9 @@ public:
 
 	void AllocatePeerConnection(bool create_offer = false);
 
-	void HandlePeerMessage(const string& message);
+	bool HandlePeerMessage(const string& message);
 
-	const bool IsConnected() const;
+	virtual const bool IsConnected() const;
 
 	const int Id() const;
 
@@ -103,13 +103,14 @@ protected:
 	// Allocates a buffer capturer for a single video track
 	virtual unique_ptr<cricket::VideoCapturer> AllocateVideoCapturer() = 0;
 
+	scoped_refptr<PeerConnectionInterface> peer_connection_;
+
 private:
 	int id_;
 	string name_;
 	shared_ptr<WebRTCConfig> webrtc_config_;
 	scoped_refptr<PeerConnectionFactoryInterface> peer_factory_;
 	function<void(const string&)> send_func_;
-	scoped_refptr<PeerConnectionInterface> peer_connection_;
 	vector<scoped_refptr<webrtc::MediaStreamInterface>> peer_streams_;
 
 	// Names used for a IceCandidate JSON object.

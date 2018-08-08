@@ -230,7 +230,7 @@ void PeerConductor::AllocatePeerConnection(bool create_offer)
 	}
 }
 
-void PeerConductor::HandlePeerMessage(const string& message)
+bool PeerConductor::HandlePeerMessage(const string& message)
 {
 	// if we don't know this peer, add it
 	if (peer_connection_.get() == nullptr)
@@ -244,7 +244,7 @@ void PeerConductor::HandlePeerMessage(const string& message)
 	if (!reader.parse(message, jmessage))
 	{
 		LOG(WARNING) << "Received unknown message. " << message;
-		return;
+		return false;
 	}
 
 	string type;
@@ -256,14 +256,14 @@ void PeerConductor::HandlePeerMessage(const string& message)
 		if (type == "offer-loopback")
 		{
 			//TODO(bengreenier): reimplement
-			return;
+			return false;
 		}
 
 		std::string sdp;
 		if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName, &sdp))
 		{
 			LOG(WARNING) << "Can't parse received session description message.";
-			return;
+			return false;
 		}
 
 		webrtc::SdpParseError error;
@@ -275,7 +275,7 @@ void PeerConductor::HandlePeerMessage(const string& message)
 			LOG(WARNING) << "Can't parse received session description message. "
 				<< "SdpParseError was: " << error.description;
 
-			return;
+			return false;
 		}
 
 		LOG(INFO) << " Received session description :" << message;
@@ -287,8 +287,6 @@ void PeerConductor::HandlePeerMessage(const string& message)
 		{
 			peer_connection_->CreateAnswer(this, NULL);
 		}
-
-		return;
 	}
 	else
 	{
@@ -300,7 +298,7 @@ void PeerConductor::HandlePeerMessage(const string& message)
 			!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp))
 		{
 			LOG(WARNING) << "Can't parse received message.";
-			return;
+			return false;
 		}
 
 		webrtc::SdpParseError error;
@@ -312,17 +310,19 @@ void PeerConductor::HandlePeerMessage(const string& message)
 			LOG(WARNING) << "Can't parse received candidate message. "
 				<< "SdpParseError was: " << error.description;
 
-			return;
+			return false;
 		}
 
 		if (!peer_connection_->AddIceCandidate(candidate.get()))
 		{
 			LOG(WARNING) << "Failed to apply the received candidate";
-			return;
+			return false;
 		}
 
 		LOG(INFO) << " Received candidate :" << message;
 	}
+
+	return true;
 }
 
 const bool PeerConductor::IsConnected() const
