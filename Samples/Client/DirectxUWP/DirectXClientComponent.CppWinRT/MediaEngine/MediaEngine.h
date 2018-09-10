@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "targetver.h"
+//#include "targetver.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -35,21 +35,21 @@
 #include <mferror.h>
 #pragma comment(lib, "mfplat")
 #pragma comment(lib, "mfuuid")
-#include <concrt.h>
-#include <concurrent_queue.h>
-#include <ppltasks.h>
+//#include <concrt.h>
+//#include <concurrent_queue.h>
+//#include <ppltasks.h>
 
 // wrl
-#include <wrl.h>
+//#include <wrl.h>
 #include <windows.foundation.h>
-#include <windows.foundation.collections.h>
-#include <windows.media.h>
-#include <windows.media.core.h>
-#include <windows.media.core.interop.h>
-#include <windows.media.playback.h>
-#include <windows.media.mediaproperties.h>
-#include <windows.storage.h>
-#include <windows.system.threading.h>
+//#include <windows.foundation.collections.h>
+//#include <windows.media.h>
+//#include <windows.media.core.h>
+//#include <windows.media.core.interop.h>
+//#include <windows.media.playback.h>
+//#include <windows.media.mediaproperties.h>
+//#include <windows.storage.h>
+//#include <windows.system.threading.h>
 
 #include "d3dmanagerlock.hxx"
 
@@ -189,8 +189,8 @@ inline void __stdcall LogResult(
 class SafeString
 {
 public:
-    SafeString()  throw();
-    ~SafeString()  throw();
+    SafeString()  /*throw()*/;
+    ~SafeString()  /*throw()*/;
     operator const HSTRING&() const;
     HSTRING* GetAddressOf();
     const wchar_t* c_str() const;

@@ -13,6 +13,16 @@
     <ClCompile Include="Content\VideoRenderer.cpp">
       <Filter>Content</Filter>
     </ClCompile>
+    <ClCompile Include="AppCallbacks.cpp" />
+    <ClCompile Include="MediaEngine\MediaEngine.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaEngine\MediaEnginePlayer.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaEngine\MediaHelpers.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -35,9 +45,23 @@
     <ClInclude Include="Content\VideoRenderer.h">
       <Filter>Content</Filter>
     </ClInclude>
+    <ClInclude Include="AppCallbacks.h" />
+    <ClInclude Include="MediaEngine\MediaEngine.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\MediaEnginePlayer.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\MediaHelpers.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\d3dmanagerlock.hxx">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Class.idl" />
+    <Midl Include="AppCallbacks.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectXClientComponent_CppWinRT.def" />
@@ -51,6 +75,9 @@
     </Filter>
     <Filter Include="Content">
       <UniqueIdentifier>{e4544387-17d0-4eba-857f-78a7404f41ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MediaEngine">
+      <UniqueIdentifier>{4887947b-d9eb-40a4-8d95-13887509e414}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
