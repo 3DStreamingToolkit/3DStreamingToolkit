@@ -5,6 +5,7 @@
 #include <d2d1_2.h>
 #include <dwrite_2.h>
 #include <wincodec.h>
+#include <winrt\Windows.Foundation.h>
 
 namespace DX
 {
@@ -60,6 +61,9 @@ namespace DX
         ID2D1Factory2*          GetD2DFactory()                 const { return m_d2dFactory.Get();      }
         IDWriteFactory2*        GetDWriteFactory()              const { return m_dwriteFactory.Get();   }
         IWICImagingFactory2*    GetWicImagingFactory()          const { return m_wicFactory.Get();      }
+
+		// Render target properties.
+		winrt::Windows::Foundation::Size	GetRenderTargetSize() const { return m_d3dRenderTargetSize; }
 
     private:
         // Private methods related to the Direct3D device, and resources based on that device.
