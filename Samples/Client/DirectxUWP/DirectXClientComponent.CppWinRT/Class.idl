@@ -1,0 +1,9 @@
+namespace DirectXClientComponent_CppWinRT
+{
+    [default_interface]
+    runtimeclass Class
+    {
+        Class();
+        Int32 MyProperty;
+    }
+}
