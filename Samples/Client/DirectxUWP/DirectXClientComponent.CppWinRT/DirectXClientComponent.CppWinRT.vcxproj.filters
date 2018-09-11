@@ -20,6 +20,12 @@
     <ClCompile Include="MediaEngine\MediaHelpers.cpp">
       <Filter>MediaEngine</Filter>
     </ClCompile>
+    <ClCompile Include="MediaEngine\MediaEnginePlayer.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaEngine\CppMediaEnginePlayer.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -50,6 +56,12 @@
       <Filter>MediaEngine</Filter>
     </ClInclude>
     <ClInclude Include="MediaEngine\d3dmanagerlock.hxx">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\MediaEnginePlayer.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\CppMediaEnginePlayer.h">
       <Filter>MediaEngine</Filter>
     </ClInclude>
   </ItemGroup>

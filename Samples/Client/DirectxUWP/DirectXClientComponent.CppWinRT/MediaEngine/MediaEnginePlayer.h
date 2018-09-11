@@ -8,6 +8,7 @@
 //
 #pragma once
 
+#include <winrt\base.h>
 #include <wrl.h>
 #include <mfmediaengine.h>
 #include <d3d11_2.h>
@@ -27,17 +28,17 @@ using namespace std::chrono;
 
 #define ME_CAN_SEEK 0x00000002
 
-namespace MEDIA
-{
-    inline void ThrowIfFailed(HRESULT hr)
-    {
-        if (FAILED(hr))
-        {
-            // Set a breakpoint on this line to catch DirectX API errors
-            throw Platform::Exception::CreateException(hr);
-        }
-    }
-}
+//namespace MEDIA
+//{
+//    inline void ThrowIfFailed(HRESULT hr)
+//    {
+//        if (FAILED(hr))
+//        {
+//            // Set a breakpoint on this line to catch DirectX API errors
+//            throw Platform::Exception::CreateException(hr);
+//        }
+//    }
+//}
 
 //-----------------------------------------------------------------------------
 // MediaEngineNotifyCallback
