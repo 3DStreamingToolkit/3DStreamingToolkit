@@ -106,6 +106,7 @@ public:
 		return m_fPlaying;
 	}
 
+	//this doesn't seem to be referenced from anywhere. delete it?
 	//void CloseFilePicker()
 	//{
 	//	m_tcs.cancel();

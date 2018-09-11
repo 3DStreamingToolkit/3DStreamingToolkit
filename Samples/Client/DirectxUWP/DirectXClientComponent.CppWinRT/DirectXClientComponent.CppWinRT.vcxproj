@@ -105,6 +105,7 @@
     <ClInclude Include="Common\StepTimer.h" />
     <ClInclude Include="Content\ShaderStructures.h" />
     <ClInclude Include="Content\VideoRenderer.h" />
+    <ClInclude Include="HolographicAppMain.h" />
     <ClInclude Include="MediaEngine\CppMediaEnginePlayer.h" />
     <ClInclude Include="MediaEngine\d3dmanagerlock.hxx" />
     <ClInclude Include="MediaEngine\MediaEngine.h" />
@@ -130,6 +131,7 @@
     <ClCompile Include="Common\CameraResources.cpp" />
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Content\VideoRenderer.cpp" />
+    <ClCompile Include="HolographicAppMain.cpp" />
     <ClCompile Include="MediaEngine\CppMediaEnginePlayer.cpp" />
     <ClCompile Include="MediaEngine\MediaEngine.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

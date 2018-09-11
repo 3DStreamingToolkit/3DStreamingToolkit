@@ -26,6 +26,7 @@
     <ClCompile Include="MediaEngine\CppMediaEnginePlayer.cpp">
       <Filter>MediaEngine</Filter>
     </ClCompile>
+    <ClCompile Include="HolographicAppMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,6 +65,7 @@
     <ClInclude Include="MediaEngine\CppMediaEnginePlayer.h">
       <Filter>MediaEngine</Filter>
     </ClInclude>
+    <ClInclude Include="HolographicAppMain.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Class.idl" />
