@@ -8,14 +8,12 @@
 //
 #pragma once
 
-#include <winrt\base.h>
-#include <winrt\Windows.Storage.Streams.h>
-#include <wrl\client.h>
+#include <wrl.h>
 #include <mfmediaengine.h>
 #include <d3d11_2.h>
 #include <dxgi1_3.h>
-//#include <ppltasks.h>
-//#include <agile.h>
+#include <ppltasks.h>
+#include <agile.h>
 
 #include <iostream>
 #include <ctime>
@@ -29,19 +27,32 @@ using namespace std::chrono;
 
 #define ME_CAN_SEEK 0x00000002
 
+namespace MEDIA
+{
+    inline void ThrowIfFailed(HRESULT hr)
+    {
+        if (FAILED(hr))
+        {
+            // Set a breakpoint on this line to catch DirectX API errors
+            throw Platform::Exception::CreateException(hr);
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // MediaEngineNotifyCallback
 //
 // Defines the callback method to process media engine events.
 //-----------------------------------------------------------------------------
-struct MediaEngineNotifyCallback
+ref struct MediaEngineNotifyCallback abstract
 {
+internal:
     virtual void OnMediaEngineEvent(DWORD meEvent) = 0;
 };
 
 // MEPlayer: Manages the Media Engine.
 
-class MEPlayer: public MediaEngineNotifyCallback
+ref class MEPlayer: public MediaEngineNotifyCallback
 {
     // DX11 related
     Microsoft::WRL::ComPtr<ID3D11Device>                m_spDX11Device;
@@ -75,7 +86,8 @@ class MEPlayer: public MediaEngineNotifyCallback
     BOOL                                                m_fUseDX;
 	BOOL                                                m_fUseVSyncTimer;
 
-	//TODO: port this to C++/WinRT delegate
+internal:
+
 	delegate void VideoFrameTransferred(
 		MEPlayer^ sender, 
 		int width, 
@@ -111,7 +123,6 @@ class MEPlayer: public MediaEngineNotifyCallback
     // Media Engine related
     virtual void OnMediaEngineEvent(DWORD meEvent) override;
 
-	//TODO: port this to C++/WinRT event
 	event VideoFrameTransferred^ FrameTransferred;
 
     // Media Engine related Options
@@ -139,13 +150,12 @@ class MEPlayer: public MediaEngineNotifyCallback
 
     void CloseFilePicker()
     {
-		//TODO: implement without PPL
         m_tcs.cancel();
     }
 
     // Loading
-    void SetURL(winrt::hstring szURL);  
-    void SetBytestream(winrt::Windows::Storage::Streams::IRandomAccessStream streamHandle);
+    void SetURL(Platform::String^ szURL);  
+    void SetBytestream(Windows::Storage::Streams::IRandomAccessStream^ streamHandle);
 
     // Transport state
     void Play();

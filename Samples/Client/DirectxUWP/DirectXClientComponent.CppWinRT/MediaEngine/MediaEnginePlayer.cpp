@@ -10,19 +10,19 @@
 #include "MediaEngine.h"
 #include "MediaEnginePlayer.h"
 #include "MediaHelpers.h"
-#include <windows.media.core.h>
 
 using namespace std;
 using namespace Microsoft::WRL;
-//using namespace Windows::System::Threading;
-//using namespace Windows::Foundation;
-//using namespace Windows::ApplicationModel::Core;
-//using namespace Windows::UI::Core;
-//using namespace Windows::Storage;
-//using namespace Windows::Storage::Pickers;
-//using namespace Windows::Storage::Streams;
-//using namespace concurrency;
+using namespace Windows::System::Threading;
+using namespace Windows::Foundation;
+using namespace Windows::ApplicationModel::Core;
+using namespace Windows::UI::Core;
+using namespace Windows::Storage;
+using namespace Windows::Storage::Pickers;
+using namespace Windows::Storage::Streams;
+using namespace concurrency;
 
+using namespace Microsoft::WRL;
 using namespace ABI::Windows::Graphics::DirectX::Direct3D11;
 using namespace ABI::Windows::Media;
 using namespace ABI::Windows::Media::Core;
@@ -176,7 +176,7 @@ void MEPlayer::CreateDX11Device()
 
 	if (!m_fUseDX)
 	{
-		winrt::check_hresult(D3D11CreateDevice(
+		MEDIA::ThrowIfFailed(D3D11CreateDevice(
 			nullptr,
 			D3D_DRIVER_TYPE_WARP,
 			nullptr,
@@ -193,7 +193,7 @@ void MEPlayer::CreateDX11Device()
 	if (m_fUseDX)
 	{
 		ComPtr<ID3D10Multithread> spMultithread;
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spDX11Device.Get()->QueryInterface(IID_PPV_ARGS(&spMultithread))
 		);
 		spMultithread->SetMultithreadProtected(TRUE);
@@ -220,20 +220,20 @@ void MEPlayer::CreateBackBuffers()
 		CAutoDXGILock DXGILock(m_spDXGIManager);
 
 		ComPtr<ID3D11Device> spDevice;
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			DXGILock.LockDevice(/*out*/spDevice)
 		);
 
 		// long QI chain to get DXGIFactory from the device
 		ComPtr<IDXGIDevice2> spDXGIDevice;
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			spDevice.Get()->QueryInterface(IID_PPV_ARGS(&spDXGIDevice))
 		);
 
 		// Ensure that DXGI does not queue more than one frame at a time. This both reduces 
 		// latency and ensures that the application will only render after each VSync, minimizing 
 		// power consumption.
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			spDXGIDevice->SetMaximumFrameLatency(1)
 		);
 
@@ -246,15 +246,15 @@ void MEPlayer::CreateBackBuffers()
 
 		// Create the render texture.
 		ComPtr<ID3D11Texture2D> spTexture;
-		winrt::check_hresult(m_spDX11ExternalD3DDevice->CreateTexture2D(&m_textureDesc, nullptr, &spTexture));
+		MEDIA::ThrowIfFailed(m_spDX11ExternalD3DDevice->CreateTexture2D(&m_textureDesc, nullptr, &spTexture));
 
 		auto srvDesc = CD3D11_SHADER_RESOURCE_VIEW_DESC(spTexture.Get(), D3D11_SRV_DIMENSION_TEXTURE2D);
 		ComPtr<ID3D11ShaderResourceView> spSRV;
-		winrt::check_hresult(m_spDX11ExternalD3DDevice->CreateShaderResourceView(spTexture.Get(), &srvDesc, &spSRV));
+		MEDIA::ThrowIfFailed(m_spDX11ExternalD3DDevice->CreateShaderResourceView(spTexture.Get(), &srvDesc, &spSRV));
 
 		// Create the shared resource.
 		ComPtr<IDXGIResource1> spDXGIResource;
-		winrt::check_hresult(spTexture.As(&spDXGIResource));
+		MEDIA::ThrowIfFailed(spTexture.As(&spDXGIResource));
 
 		HANDLE sharedHandle;
 		ComPtr<ID3D11Texture2D> spMediaTexture;
@@ -309,7 +309,7 @@ void MEPlayer::Initialize(float width, float height)
 	m_rcTarget.right = width;
 	m_rcTarget.bottom = height;
 
-	winrt::check_hresult(MFStartup(MF_VERSION));
+	MEDIA::ThrowIfFailed(MFStartup(MF_VERSION));
 
 	EnterCriticalSection(&m_critSec);
 
@@ -323,19 +323,19 @@ void MEPlayer::Initialize(float width, float height)
 		}
 
 		UINT resetToken;
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			MFCreateDXGIDeviceManager(&resetToken, &m_spDXGIManager)
 		);
 
 		if (m_spDX11ExternalD3DDevice)
 		{
-			winrt::check_hresult(
+			MEDIA::ThrowIfFailed(
 				m_spDXGIManager->ResetDevice(m_spDX11ExternalD3DDevice.Get(), resetToken)
 			);
 		}
 		else
 		{
-			winrt::check_hresult(
+			MEDIA::ThrowIfFailed(
 				m_spDXGIManager->ResetDevice(m_spDX11Device.Get(), resetToken)
 			);
 		}
@@ -344,40 +344,40 @@ void MEPlayer::Initialize(float width, float height)
 		spNotify = new MediaEngineNotify(nullptr);
 		if (spNotify == nullptr)
 		{
-			winrt::check_hresult(E_OUTOFMEMORY);
+			MEDIA::ThrowIfFailed(E_OUTOFMEMORY);
 		}
 
 		spNotify->MediaEngineNotifyCallback(this);
 
 		// Create the class factory for the Media Engine.
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			CoCreateInstance(CLSID_MFMediaEngineClassFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&spFactory))
 		);
 
 		// Set configuration attribiutes.
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			MFCreateAttributes(&spAttributes, 1)
 		);
 
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			spAttributes->SetUnknown(MF_MEDIA_ENGINE_DXGI_MANAGER, (IUnknown*)m_spDXGIManager.Get())
 		);
 
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			spAttributes->SetUnknown(MF_MEDIA_ENGINE_CALLBACK, (IUnknown*)spNotify.Get())
 		);
 
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			spAttributes->SetUINT32(MF_MEDIA_ENGINE_VIDEO_OUTPUT_FORMAT, m_d3dFormat)
 		);
 
 		// Create the Media Engine.
 		const DWORD flags = MF_MEDIA_ENGINE_WAITFORSTABLE_STATE;
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			spFactory->CreateInstance(flags, spAttributes.Get(), &m_spMediaEngine)
 		);
 
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spMediaEngine.Get()->QueryInterface(__uuidof(IMFMediaEngine), (void**)&m_spEngineEx)
 		);
 
@@ -421,7 +421,7 @@ void MEPlayer::Shutdown()
 }
 
 // Set a URL
-void MEPlayer::SetURL(winrt::hstring szURL)
+void MEPlayer::SetURL(Platform::String^ szURL)
 {
 	if (nullptr != m_bstrURL)
 	{
@@ -429,30 +429,30 @@ void MEPlayer::SetURL(winrt::hstring szURL)
 		m_bstrURL = nullptr;
 	}
 
-	size_t cchAllocationSize = 1 + ::wcslen(szURL.c_str());
+	size_t cchAllocationSize = 1 + ::wcslen(szURL->Data());
 	m_bstrURL = (LPWSTR)::CoTaskMemAlloc(sizeof(WCHAR)*(cchAllocationSize));
 
 	if (m_bstrURL == 0)
 	{
-		winrt::check_hresult(E_OUTOFMEMORY);
+		MEDIA::ThrowIfFailed(E_OUTOFMEMORY);
 	}
 
-	StringCchCopyW(m_bstrURL, cchAllocationSize, szURL.c_str());
+	StringCchCopyW(m_bstrURL, cchAllocationSize, szURL->Data());
 
 	return;
 }
 
 // Set Bytestream
-void MEPlayer::SetBytestream(winrt::Windows::Storage::Streams::IRandomAccessStream streamHandle)
+void MEPlayer::SetBytestream(IRandomAccessStream^ streamHandle)
 {
 	HRESULT hr = S_OK;
 	ComPtr<IMFByteStream> spMFByteStream = nullptr;
 
-	winrt::check_hresult(
-		MFCreateMFByteStreamOnStreamEx(streamHandle.as<::IUnknown>().get(), &spMFByteStream)
+	MEDIA::ThrowIfFailed(
+		MFCreateMFByteStreamOnStreamEx((IUnknown*)streamHandle, &spMFByteStream)
 	);
 
-	winrt::check_hresult(
+	MEDIA::ThrowIfFailed(
 		m_spEngineEx->SetSourceFromByteStream(spMFByteStream.Get(), m_bstrURL)
 	);
 
@@ -616,7 +616,7 @@ void MEPlayer::Play()
 		}
 		else
 		{
-			winrt::check_hresult(
+			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->Play()
 			);
 		}
@@ -631,7 +631,7 @@ void MEPlayer::Pause()
 {
 	if (m_spMediaEngine)
 	{
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spMediaEngine->Pause()
 		);
 	}
@@ -643,7 +643,7 @@ void MEPlayer::SetVolume(float fVol)
 {
 	if (m_spMediaEngine)
 	{
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spMediaEngine->SetVolume(fVol)
 		);
 	}
@@ -655,7 +655,7 @@ void MEPlayer::SetBalance(float fBal)
 {
 	if (m_spEngineEx)
 	{
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spEngineEx->SetBalance(fBal)
 		);
 	}
@@ -667,7 +667,7 @@ void MEPlayer::Mute(BOOL mute)
 {
 	if (m_spMediaEngine)
 	{
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spMediaEngine->SetMuted(mute)
 		);
 	}
@@ -679,7 +679,7 @@ void MEPlayer::FrameStep()
 {
 	if (m_spEngineEx)
 	{
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spEngineEx->FrameStep(TRUE)
 		);
 	}
@@ -713,7 +713,7 @@ void MEPlayer::GetDuration(double *pDuration, BOOL *pbCanSeek)
 	}
 	else
 	{
-		winrt::check_hresult(E_FAIL);
+		MEDIA::ThrowIfFailed(E_FAIL);
 	}
 
 	return;
@@ -737,7 +737,7 @@ void MEPlayer::SetPlaybackPosition(float pos)
 {
 	if (m_spMediaEngine)
 	{
-		winrt::check_hresult(
+		MEDIA::ThrowIfFailed(
 			m_spMediaEngine->SetCurrentTime(pos)
 		);
 	}
@@ -762,15 +762,15 @@ void MEPlayer::EnableVideoEffect(BOOL enable)
 
 	if (m_spEngineEx)
 	{
-		winrt::check_hresult(m_spEngineEx->RemoveAllEffects());
+		MEDIA::ThrowIfFailed(m_spEngineEx->RemoveAllEffects());
 		if (enable)
 		{
 			ComPtr<IMFActivate> spActivate;
 			LPCWSTR szActivatableClassId = WindowsGetStringRawBuffer((HSTRING)Windows::Media::VideoEffects::VideoStabilization->Data(), nullptr);
 
-			winrt::check_hresult(MFCreateMediaExtensionActivate(szActivatableClassId, nullptr, IID_PPV_ARGS(&spActivate)));
+			MEDIA::ThrowIfFailed(MFCreateMediaExtensionActivate(szActivatableClassId, nullptr, IID_PPV_ARGS(&spActivate)));
 
-			winrt::check_hresult(m_spEngineEx->InsertVideoEffect(spActivate.Get(), FALSE));
+			MEDIA::ThrowIfFailed(m_spEngineEx->InsertVideoEffect(spActivate.Get(), FALSE));
 		}
 	}
 
@@ -832,17 +832,17 @@ int MEPlayer::GetFrameRate()
 void MEPlayer::StartTimer()
 {
 	ComPtr<IDXGIFactory1> spFactory;
-	winrt::check_hresult(
+	MEDIA::ThrowIfFailed(
 		CreateDXGIFactory1(IID_PPV_ARGS(&spFactory))
 	);
 
 	ComPtr<IDXGIAdapter> spAdapter;
-	winrt::check_hresult(
+	MEDIA::ThrowIfFailed(
 		spFactory->EnumAdapters(0, &spAdapter)
 	);
 
 	ComPtr<IDXGIOutput> spOutput;
-	winrt::check_hresult(
+	MEDIA::ThrowIfFailed(
 		spAdapter->EnumOutputs(0, &m_spDXGIOutput)
 	);
 
@@ -923,7 +923,7 @@ void MEPlayer::OnTimer()
 		{
 			UpdateFrameRate();
 
-			winrt::check_hresult(
+			MEDIA::ThrowIfFailed(
 				m_spMediaEngine->TransferVideoFrame(m_primaryMediaTexture.Get(), &m_nRect, &m_rcTarget, &m_bkgColor)
 			);
 

@@ -107,7 +107,6 @@
     <ClInclude Include="Content\VideoRenderer.h" />
     <ClInclude Include="MediaEngine\d3dmanagerlock.hxx" />
     <ClInclude Include="MediaEngine\MediaEngine.h" />
-    <ClInclude Include="MediaEngine\MediaEnginePlayer.h" />
     <ClInclude Include="MediaEngine\MediaHelpers.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Class.h">
@@ -123,14 +122,6 @@
     <ClCompile Include="Common\DeviceResources.cpp" />
     <ClCompile Include="Content\VideoRenderer.cpp" />
     <ClCompile Include="MediaEngine\MediaEngine.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="MediaEngine\MediaEnginePlayer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>

@@ -15,7 +15,10 @@
 #include "MediaHelpers.h"
 
 #include <windows.graphics.holographic.h>
+#include <windows.foundation.h>
 #include <wrl\client.h>
+#include <wrl\wrappers\corewrappers.h>
+#include <wrl\event.h>
 
 using namespace ABI::Windows::Graphics::DirectX::Direct3D11;
 using namespace ABI::Windows::Media::Core;

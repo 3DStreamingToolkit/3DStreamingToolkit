@@ -17,9 +17,6 @@
     <ClCompile Include="MediaEngine\MediaEngine.cpp">
       <Filter>MediaEngine</Filter>
     </ClCompile>
-    <ClCompile Include="MediaEngine\MediaEnginePlayer.cpp">
-      <Filter>MediaEngine</Filter>
-    </ClCompile>
     <ClCompile Include="MediaEngine\MediaHelpers.cpp">
       <Filter>MediaEngine</Filter>
     </ClCompile>
@@ -47,9 +44,6 @@
     </ClInclude>
     <ClInclude Include="AppCallbacks.h" />
     <ClInclude Include="MediaEngine\MediaEngine.h">
-      <Filter>MediaEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="MediaEngine\MediaEnginePlayer.h">
       <Filter>MediaEngine</Filter>
     </ClInclude>
     <ClInclude Include="MediaEngine\MediaHelpers.h">
