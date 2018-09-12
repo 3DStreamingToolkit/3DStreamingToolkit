@@ -119,9 +119,6 @@
     </ClInclude>
     <ClInclude Include="MediaEngine\MediaHelpers.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Class.h">
-      <DependentUpon>Class.idl</DependentUpon>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppCallbacks.cpp">
@@ -166,16 +163,12 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Class.cpp">
-      <DependentUpon>Class.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppCallbacks.idl">
       <SubType>Designer</SubType>
     </Midl>
-    <Midl Include="Class.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectXClientComponent_CppWinRT.def" />

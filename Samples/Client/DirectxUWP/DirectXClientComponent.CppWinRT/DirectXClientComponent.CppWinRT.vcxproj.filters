@@ -68,7 +68,6 @@
     <ClInclude Include="HolographicAppMain.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Class.idl" />
     <Midl Include="AppCallbacks.idl" />
   </ItemGroup>
   <ItemGroup>

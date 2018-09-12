@@ -1,12 +1,16 @@
 ﻿#include "pch.h"
 #include "AppCallbacks.h"
+#include <DirectXMath.h>
+#include <sstream>
 
 using namespace ::DirectXClientComponent_CppWinRT;
+using namespace DirectX;
 using namespace winrt;
 using namespace winrt::Windows::ApplicationModel::Core;
 using namespace winrt::Windows::Graphics::Holographic;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::Media::Core;
+using namespace winrt::Windows::Perception::Spatial;
 
 namespace winrt::DirectXClientComponent_CppWinRT::implementation
 {
@@ -147,98 +151,100 @@ namespace winrt::DirectXClientComponent_CppWinRT::implementation
 
 	void AppCallbacks::SendInputData()
 	{
-//		// Attempts to set server to stereo mode.
-//		if (!m_sentStereoMode)
-//		{
-//			String^ msg =
-//				"{" +
-//				"  \"type\":\"stereo-rendering\"," +
-//				"  \"body\":\"1\"" +
-//				"}";
-//
-//			if (!m_sendInputDataHandler(msg))
-//			{
-//				return;
-//			}
-//
-//			m_sentStereoMode = true;
-//		}
-//
-//		// Creates a new frame for input data.
-//		HolographicFrame^ newFrame = m_main->Update();
-//		m_holographicFrames.push_back(newFrame);
-//
-//		// Gets the current camera transformation.
-//		XMFLOAT4X4 leftProjectionMatrix;
-//		XMFLOAT4X4 leftViewMatrix;
-//		XMFLOAT4X4 rightProjectionMatrix;
-//		XMFLOAT4X4 rightViewMatrix;
-//		SpatialCoordinateSystem^ currentCoordinateSystem = m_main->GetReferenceFrame()->CoordinateSystem;
-//		for (auto cameraPose : newFrame->CurrentPrediction->CameraPoses)
-//		{
-//			HolographicStereoTransform cameraProjectionTransform =
-//				cameraPose->ProjectionTransform;
-//
-//			Platform::IBox<HolographicStereoTransform>^ viewTransformContainer =
-//				cameraPose->TryGetViewTransform(currentCoordinateSystem);
-//
-//			if (viewTransformContainer != nullptr)
-//			{
-//				HolographicStereoTransform viewCoordinateSystemTransform =
-//					viewTransformContainer->Value;
-//
-//				XMStoreFloat4x4(
-//					&leftProjectionMatrix,
-//					XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Left))
-//				);
-//
-//				XMStoreFloat4x4(
-//					&leftViewMatrix,
-//					XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left))
-//				);
-//
-//				XMStoreFloat4x4(
-//					&rightProjectionMatrix,
-//					XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Right))
-//				);
-//
-//				XMStoreFloat4x4(
-//					&rightViewMatrix,
-//					XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right))
-//				);
-//			}
-//		}
-//
-//		// Builds the camera transform message to send.
-//		String^ leftProjection = "";
-//		String^ leftView = "";
-//		String^ rightProjection = "";
-//		String^ rightView = "";
-//		for (int i = 0; i < 4; i++)
-//		{
-//			for (int j = 0; j < 4; j++)
-//			{
-//				leftProjection += leftProjectionMatrix.m[i][j] + ",";
-//				leftView += leftViewMatrix.m[i][j] + ",";
-//				rightProjection += rightProjectionMatrix.m[i][j] + ",";
-//				rightView += rightViewMatrix.m[i][j] + ",";
-//			}
-//		}
-//
-//		String^ cameraTransformBody = leftProjection + leftView + rightProjection + rightView;
-//
-//		// Adds the current prediction timestamp.
-//		cameraTransformBody += newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
-//		String^ msg =
-//			"{" +
-//			"  \"type\":\"camera-transform-stereo-prediction\"," +
-//			"  \"body\":\"" + cameraTransformBody + "\"" +
-//			"}";
-//
-//#ifdef SHOW_DEBUG_INFO
-//		g_currentTimestamp = newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
-//#endif // SHOW_DEBUG_INFO
-//
-//		m_sendInputDataHandler(msg);
+		// Attempts to set server to stereo mode.
+		if (!m_sentStereoMode)
+		{
+			std::wstring msg =
+				L"{\n"
+				L"  \"type\":\"stereo-rendering\",\n"
+				L"  \"body\":\"1\"\n"
+				L"}\n";
+
+			if (!m_sendInputDataHandler(msg))
+			{
+				return;
+			}
+
+			m_sentStereoMode = true;
+		}
+
+		// Creates a new frame for input data.
+		HolographicFrame newFrame = m_main->Update();
+		m_holographicFrames.push_back(newFrame);
+
+		// Gets the current camera transformation.
+		XMFLOAT4X4 leftProjectionMatrix;
+		XMFLOAT4X4 leftViewMatrix;
+		XMFLOAT4X4 rightProjectionMatrix;
+		XMFLOAT4X4 rightViewMatrix;
+		SpatialCoordinateSystem currentCoordinateSystem = m_main->GetReferenceFrame().CoordinateSystem();
+		for (auto cameraPose : newFrame.CurrentPrediction().CameraPoses())
+		{
+			HolographicStereoTransform cameraProjectionTransform =
+				cameraPose.ProjectionTransform();
+
+			auto viewTransformContainer =
+				cameraPose.TryGetViewTransform(currentCoordinateSystem);
+
+			if (viewTransformContainer != nullptr)
+			{
+				HolographicStereoTransform viewCoordinateSystemTransform =
+					viewTransformContainer.Value();
+
+				XMStoreFloat4x4(
+					&leftProjectionMatrix,
+					XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Left))
+				);
+
+				XMStoreFloat4x4(
+					&leftViewMatrix,
+					XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Left))
+				);
+
+				XMStoreFloat4x4(
+					&rightProjectionMatrix,
+					XMMatrixTranspose(XMLoadFloat4x4(&cameraProjectionTransform.Right))
+				);
+
+				XMStoreFloat4x4(
+					&rightViewMatrix,
+					XMMatrixTranspose(XMLoadFloat4x4(&viewCoordinateSystemTransform.Right))
+				);
+			}
+		}
+
+		// Builds the camera transform message to send.
+		std::wstringstream leftProjection;
+		std::wstringstream leftView;
+		std::wstringstream rightProjection;
+		std::wstringstream rightView;
+
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				leftProjection << leftProjectionMatrix.m[i][j] << L",";
+				leftView << leftViewMatrix.m[i][j] << L",";
+				rightProjection << rightProjectionMatrix.m[i][j] << L",";
+				rightView << rightViewMatrix.m[i][j] << L",";
+			}
+		}
+
+		std::wstringstream cameraTransformBody;
+		cameraTransformBody << leftProjection.str() << leftView.str() << rightProjection.str() << rightView.str();
+
+		// Adds the current prediction timestamp.
+		cameraTransformBody << newFrame.CurrentPrediction().Timestamp().TargetTime().time_since_epoch().count();
+		std::wstringstream msg;
+			msg << L"{" <<
+			L"  \"type\":\"camera-transform-stereo-prediction\"," <<
+			L"  \"body\":\"" << cameraTransformBody.str() << L"\"" <<
+			"}";
+
+#ifdef SHOW_DEBUG_INFO
+		g_currentTimestamp = newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
+#endif // SHOW_DEBUG_INFO
+
+		m_sendInputDataHandler(msg.str());
 	}
 }
