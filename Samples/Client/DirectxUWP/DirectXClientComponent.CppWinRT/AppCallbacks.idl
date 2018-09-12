@@ -3,7 +3,7 @@ namespace DirectXClientComponent_CppWinRT
 	delegate Boolean SendInputDataHandler(String msg);
 
     [default_interface]
-    runtimeclass AppCallbacks 
+    runtimeclass AppCallbacks : Windows.Foundation.IClosable
     {
         AppCallbacks(SendInputDataHandler sendInputDataHandler);
 		void Initialize(Windows.ApplicationModel.Core.CoreApplicationView appView);
