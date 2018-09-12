@@ -4,8 +4,10 @@
 #include <windows.graphics.directx.direct3d11.interop.h>
 #include <winrt\Windows.UI.Input.Spatial.h>
 #include <DirectXColors.h>
+#include <ppltasks.h>
 
 using namespace DirectXClientComponent_CppWinRT;
+using namespace concurrency;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Windows::Graphics::Holographic;
@@ -121,7 +123,7 @@ HolographicFrame HolographicAppMain::Update()
 
 	// Get a prediction of where holographic cameras will be when this frame
 	// is presented.
-	HolographicFramePrediction prediction = holographicFrame.CurrentPrediction;
+	HolographicFramePrediction prediction = holographicFrame.CurrentPrediction();
 
 	// Back buffers can change from frame to frame. Validate each buffer, and recreate
 	// resource views and depth buffers as needed.
@@ -232,14 +234,14 @@ bool HolographicAppMain::Render(
 			// The projection matrice for each holographic camera will
 			// change every frame. This function refreshes the data in the constant
 			// buffer for the holographic camera indicated by cameraPose.
-			pCameraResources->UpdateProjectionBuffer(
+			pCameraResources->UpdateViewProjectionBuffer(
 				m_deviceResources,
 				cameraPose,
-				m_referenceFrame->CoordinateSystem);
+				m_referenceFrame.CoordinateSystem());
 
 			// Attach the projection constant buffer for this camera to the
 			// graphics pipeline.
-			bool cameraActive = pCameraResources->AttachProjectionBuffer(
+			bool cameraActive = pCameraResources->AttachViewProjectionBuffer(
 				m_deviceResources);
 
 			// Only render world-locked content when positional tracking is active.
@@ -321,7 +323,7 @@ void HolographicAppMain::OnCameraAdded(
 
 		// Holographic frame predictions will not include any information about this camera until
 		// the deferral is completed.
-		deferral->Complete();
+		deferral.Complete();
 	});
 }
 

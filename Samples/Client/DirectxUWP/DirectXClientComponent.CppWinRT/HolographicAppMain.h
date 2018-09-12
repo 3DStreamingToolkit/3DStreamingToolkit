@@ -1,7 +1,7 @@
 #pragma once
 #include "Common\DeviceResources.h"
 #include "Common\StepTimer.h"
-#include "VideoRenderer.h"
+#include "Content\VideoRenderer.h"
 #include <winrt\Windows.Graphics.Holographic.h>
 #include <winrt\Windows.Perception.Spatial.h>
 
@@ -65,13 +65,13 @@ namespace DirectXClientComponent_CppWinRT
 		DX::StepTimer                                                   m_timer;
 
 		// Represents the holographic space around the user.
-		winrt::Windows::Graphics::Holographic::HolographicSpace               m_holographicSpace;
+		winrt::Windows::Graphics::Holographic::HolographicSpace               m_holographicSpace = nullptr;
 
 		// SpatialLocator that is attached to the primary camera.
-		winrt::Windows::Perception::Spatial::SpatialLocator                   m_locator;
+		winrt::Windows::Perception::Spatial::SpatialLocator                   m_locator = nullptr;
 
 		// A reference frame attached to the holographic camera.
-		winrt::Windows::Perception::Spatial::SpatialStationaryFrameOfReference m_referenceFrame;
+		winrt::Windows::Perception::Spatial::SpatialStationaryFrameOfReference m_referenceFrame = nullptr;
 
 		// Event registration tokens.
 		winrt::event_token                     m_cameraAddedToken;
