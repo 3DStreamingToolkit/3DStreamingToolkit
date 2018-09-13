@@ -3,7 +3,6 @@
 #include "CameraResources.h"
 #include "Common\DirectXHelper.h"
 #include "DeviceResources.h"
-#include <winrt\Windows.UI.Xaml.h>
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
@@ -11,7 +10,6 @@ using namespace winrt::Windows::Foundation::Numerics;
 using namespace winrt::Windows::Graphics::DirectX::Direct3D11;
 using namespace winrt::Windows::Graphics::Holographic;
 using namespace winrt::Windows::Perception::Spatial;
-using namespace winrt::Windows::UI::Xaml;
 
 DX::CameraResources::CameraResources(HolographicCamera const& camera) :
 	m_holographicCamera(camera),
@@ -42,9 +40,6 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
 	// Holographic cameras do not provide the DXGI swap chain, which is owned
 	// by the system. The Direct3D back buffer resource is provided using WinRT
 	// interop APIs.
-	ComPtr<ID3D11Resource> resource;
-	auto ptr = surface.as<ID3D11Resource>();
-	ptr.copy_to(resource.GetAddressOf());
 	
 	// this function doesn't exist without cx support.
 	//winrt::check_hresult(
@@ -53,9 +48,10 @@ void DX::CameraResources::CreateResourcesForBackBuffer(
 
 	// Get a Direct3D interface for the holographic camera's back buffer.
 	ComPtr<ID3D11Texture2D> cameraBackBuffer;
-	winrt::check_hresult(
-		resource.As(&cameraBackBuffer)
-	);
+	//winrt::check_hresult(
+	//	resource.As(&cameraBackBuffer)
+	//);
+	winrt::check_hresult(surface.as<::Windows::Graphics::DirectX::Direct3D11::IDirect3DDxgiInterfaceAccess>()->GetInterface(IID_PPV_ARGS(&cameraBackBuffer)));
 
 	// Determine if the back buffer has changed. If so, ensure that the
 	// render target view is for the current back buffer.
@@ -183,8 +179,8 @@ void DX::CameraResources::UpdateProjectionBuffer(
 {
 	// The system changes the viewport on a per-frame basis for system optimizations.
 	m_d3dViewport = CD3D11_VIEWPORT(
-		RectHelper::GetLeft(cameraPose.Viewport()),
-		RectHelper::GetTop(cameraPose.Viewport()),
+		cameraPose.Viewport().X,
+		cameraPose.Viewport().Y,
 		cameraPose.Viewport().Width,
 		cameraPose.Viewport().Height
 	);

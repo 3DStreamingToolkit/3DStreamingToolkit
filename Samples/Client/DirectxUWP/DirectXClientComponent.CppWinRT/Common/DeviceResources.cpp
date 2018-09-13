@@ -81,8 +81,9 @@ void DX::DeviceResources::CreateDeviceResources()
 	);
 
 	// Wrap the native device using a WinRT interop object.
-	winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.Get(), m_d3dInteropDevice.as<IInspectable>().put()));
-	//m_d3dInteropDevice = CreateDirect3DDevice(dxgiDevice.Get());
+	winrt::com_ptr<IInspectable> inspectable;
+	winrt::check_hresult(CreateDirect3D11DeviceFromDXGIDevice(dxgiDevice.Get(), inspectable.put()));
+	m_d3dInteropDevice = inspectable.as<IDirect3DDevice>();
 	
 
 	// Cache the DXGI adapter.
