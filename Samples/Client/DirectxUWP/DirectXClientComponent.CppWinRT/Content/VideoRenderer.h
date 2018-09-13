@@ -4,6 +4,9 @@
 #include <winrt\Windows.Foundation.Numerics.h>
 #include <wrl\client.h>
 
+//#define SHOW_DEBUG_INFO
+//#define UNITY_UV_STARTS_AT_TOP
+
 namespace DirectXClientComponent_CppWinRT
 {
 	class VideoRenderer
