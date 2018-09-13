@@ -28,6 +28,7 @@ namespace DX
             DX::DeviceResources* pDeviceResources,
             winrt::Windows::Graphics::Holographic::HolographicCameraRenderingParameters const& cameraParameters
         );
+
         void ReleaseResourcesForBackBuffer(
             DX::DeviceResources* pDeviceResources
         );

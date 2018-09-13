@@ -50,6 +50,21 @@ namespace winrt::DirectXClientComponent_CppWinRT::implementation
 		m_main->SetHolographicSpace(m_holographicSpace);
 	}
 
+	void AppCallbacks::Run()
+	{
+		while (true)
+		{
+			CoreWindow::GetForCurrentThread().Dispatcher().ProcessEvents(
+				CoreProcessEventsOption::ProcessAllIfPresent);
+
+			SendInputData();
+			if (m_player)
+			{
+				m_player->OnVSyncTimer();
+			}
+		}
+	}
+
 	void AppCallbacks::SetMediaStreamSource(IMediaStreamSource const& mediaSourceHandle, int32_t width, int32_t height)
 	{
 		auto lock = m_lock.Lock();
@@ -120,21 +135,6 @@ namespace winrt::DirectXClientComponent_CppWinRT::implementation
 
 			m_player->SetMediaStreamSource(m_mediaSource.get());
 			m_player->Play();
-		}
-	}
-
-	void AppCallbacks::Run()
-	{
-		while (true)
-		{
-			CoreWindow::GetForCurrentThread().Dispatcher().ProcessEvents(
-				CoreProcessEventsOption::ProcessAllIfPresent);
-
-			SendInputData();
-			if (m_player)
-			{
-				m_player->OnVSyncTimer();
-			}
 		}
 	}
 
