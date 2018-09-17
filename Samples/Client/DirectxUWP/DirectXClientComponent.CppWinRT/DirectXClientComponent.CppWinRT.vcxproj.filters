@@ -2,7 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Class.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Common\CameraResources.cpp">
       <Filter>Common</Filter>
@@ -20,9 +19,6 @@
     <ClCompile Include="MediaEngine\MediaHelpers.cpp">
       <Filter>MediaEngine</Filter>
     </ClCompile>
-    <ClCompile Include="MediaEngine\MediaEnginePlayer.cpp">
-      <Filter>MediaEngine</Filter>
-    </ClCompile>
     <ClCompile Include="MediaEngine\CppMediaEnginePlayer.cpp">
       <Filter>MediaEngine</Filter>
     </ClCompile>
@@ -30,7 +26,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Class.h" />
     <ClInclude Include="Common\CameraResources.h">
       <Filter>Common</Filter>
     </ClInclude>
@@ -57,9 +52,6 @@
       <Filter>MediaEngine</Filter>
     </ClInclude>
     <ClInclude Include="MediaEngine\d3dmanagerlock.hxx">
-      <Filter>MediaEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="MediaEngine\MediaEnginePlayer.h">
       <Filter>MediaEngine</Filter>
     </ClInclude>
     <ClInclude Include="MediaEngine\CppMediaEnginePlayer.h">
