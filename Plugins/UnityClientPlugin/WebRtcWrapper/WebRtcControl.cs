@@ -50,217 +50,223 @@ namespace WebRtcWrapper
         #region SETUP ROUTINES
         public void Initialize()
         {
-            WebRTC.Initialize(_uiDispatcher);
-            Conductor.Instance.ETWStatsEnabled = false;
-
-            Cameras = new ObservableCollection<MediaDevice>();
-            Microphones = new ObservableCollection<MediaDevice>();
-            AudioPlayoutDevices = new ObservableCollection<MediaDevice>();
-
-            // WebRTCUWP M58 library does not support audio capture/playout devices
-            //foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
-            //{
-            //    Microphones.Add(audioCaptureDevice);
-            //}
-
-            //foreach (MediaDevice audioPlayoutDevice in Conductor.Instance.Media.GetAudioPlayoutDevices())
-            //{
-            //    AudioPlayoutDevices.Add(audioPlayoutDevice);
-            //}
-
-            // HACK Remove Automatic Device Assignment
-            if (SelectedCamera == null && Cameras.Count > 0)
+            WebRTC.RequestAccessForMediaCapture().Completed += (asyncInfo, status) =>
             {
-                SelectedCamera = Cameras.First();
-            }
-
-            if (SelectedMicrophone == null && Microphones.Count > 0)
-            {
-                SelectedMicrophone = Microphones.First();
-            }
-
-            Debug.WriteLine("Device Status: SelectedCamera: {0} - SelectedMic: {1}", SelectedCamera == null ? "NULL" : "OK", SelectedMicrophone == null ? "NULL" : "OK");
-            if (SelectedAudioPlayoutDevice == null && AudioPlayoutDevices.Count > 0)
-            {
-                SelectedAudioPlayoutDevice = AudioPlayoutDevices.First();
-            }
-
-            Conductor.Instance.Media.OnMediaDevicesChanged += OnMediaDevicesChanged;
-            Conductor.Instance.Signaller.OnPeerConnected += (peerId, peerName) =>
-            {
-                RunOnUiThread(() =>
+                if (status == Windows.Foundation.AsyncStatus.Completed && asyncInfo.GetResults() == true)
                 {
-                    if (Peers == null)
+                    WebRTC.Initialize(_uiDispatcher);
+                    Conductor.Instance.ETWStatsEnabled = false;
+
+                    Cameras = new ObservableCollection<MediaDevice>();
+                    Microphones = new ObservableCollection<MediaDevice>();
+                    AudioPlayoutDevices = new ObservableCollection<MediaDevice>();
+
+                    // WebRTCUWP M58 library does not support audio capture/playout devices
+                    //foreach (MediaDevice audioCaptureDevice in Conductor.Instance.Media.GetAudioCaptureDevices())
+                    //{
+                    //    Microphones.Add(audioCaptureDevice);
+                    //}
+
+                    //foreach (MediaDevice audioPlayoutDevice in Conductor.Instance.Media.GetAudioPlayoutDevices())
+                    //{
+                    //    AudioPlayoutDevices.Add(audioPlayoutDevice);
+                    //}
+
+                    // HACK Remove Automatic Device Assignment
+                    if (SelectedCamera == null && Cameras.Count > 0)
                     {
-                        Peers = new ObservableCollection<Peer>();
-                        Conductor.Instance.Peers = Peers;
+                        SelectedCamera = Cameras.First();
                     }
 
-                    Peers.Add(new Peer { Id = peerId, Name = peerName });
-                });
-            };
-
-            Conductor.Instance.Signaller.OnPeerDisconnected += peerId =>
-            {
-                RunOnUiThread(() =>
-                {
-                    var peerToRemove = Peers?.FirstOrDefault(p => p.Id == peerId);
-                    if (peerToRemove != null)
-                        Peers.Remove(peerToRemove);
-                });
-            };
-
-            Conductor.Instance.Signaller.OnSignedIn += () =>
-            {
-                RunOnUiThread(() =>
-                {
-                    IsConnected = true;
-                    IsMicrophoneEnabled = false;
-                    IsCameraEnabled = false;
-                    IsConnecting = false;
-
-                    OnStatusMessageUpdate?.Invoke("Signed-In");
-                });
-            };
-
-            Conductor.Instance.Signaller.OnServerConnectionFailure += (Exception ex) =>
-            {
-                RunOnUiThread(() =>
-                {
-                    IsConnecting = false;
-                    OnStatusMessageUpdate?.Invoke("Server Connection Failure: " + ex.Message + "\n" + ex.StackTrace);
-                });
-            };
-
-            Conductor.Instance.Signaller.OnDisconnected += () =>
-            {
-                RunOnUiThread(() =>
-                {
-                    IsConnected = false;
-                    IsMicrophoneEnabled = false;
-                    IsCameraEnabled = false;
-                    IsDisconnecting = false;
-                    Peers?.Clear();
-                    OnStatusMessageUpdate?.Invoke("Disconnected");
-                });
-            };
-
-            Conductor.Instance.Signaller.OnMessageFromPeer += (id, message) =>
-            {
-                RunOnUiThread(() =>
-                {
-                    // TODO: Handles All Peer Messages (Signal Channel)
-                });
-            };
-
-            Conductor.Instance.Signaller.OnPeerConnected += (id, name) =>
-            {
-                RunOnUiThread(() =>
-                {
-                    SelectedPeer = Peers.First(x => x.Id == id);
-                    OnStatusMessageUpdate?.Invoke(string.Format("Connected Peer: {0}-{1}", SelectedPeer.Id, SelectedPeer.Name));
-                });
-            };
-
-            // TODO: Restore Event Handler in Utility Wrapper
-            // Implemented in Unity Consumer due to Event Handling Issue
-            // Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream does not propagate
-          
-            Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
-            Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
-            Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
-            Conductor.Instance.OnPeerConnectionCreated += () =>
-            {
-                RunOnUiThread(() =>
-                {
-                    IsReadyToConnect = false;
-                    IsConnectedToPeer = true;
-                    IsReadyToDisconnect = false;
-                    IsMicrophoneEnabled = false;
-                    OnStatusMessageUpdate?.Invoke("Peer Connection Created");                    
-                });
-            };
-
-            Conductor.Instance.OnPeerConnectionClosed += () =>
-            {
-                RunOnUiThread(() =>
-                {
-                    IsConnectedToPeer = false;
-                    _peerVideoTrack = null;
-                    _selfVideoTrack = null;
-                    IsMicrophoneEnabled = false;
-                    IsCameraEnabled = false;
-
-                    // TODO: Clean-up References
-                    //GC.Collect(); // Ensure all references are truly dropped.
-
-                    OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
-                });
-            };
-
-            Conductor.Instance.OnPeerMessageDataReceived += (peerId, message) =>
-            {
-                OnPeerMessageDataReceived?.Invoke(peerId, message);
-            };
-
-            // DATA Channel Setup
-            Conductor.Instance.OnPeerMessageDataReceived += (i, s) =>
-            {
-                
-            };
-            
-            Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
-			
-			IceServers = new ObservableCollection<IceServer>();
-            NewIceServer = new IceServer();
-            AudioCodecs = new ObservableCollection<CodecInfo>();
-            var audioCodecList = WebRTC.GetAudioCodecs();
-
-            string[] incompatibleAudioCodecs = new string[] { "CN32000", "CN16000", "CN8000", "red8000", "telephone-event8000" };
-            VideoCodecs = new ObservableCollection<CodecInfo>();
-
-            // TODO: REMOVE DISPLAY LIST SUPPORT
-            var videoCodecList = WebRTC.GetVideoCodecs().OrderBy(codec =>
-            {
-                switch (codec.Name)
-                {
-                    case "VP8": return 1;
-                    case "VP9": return 2;
-                    case "H264": return 3;
-                    default: return 99;
-                }
-            });
-
-            RunOnUiThread(() =>
-            {
-                foreach (var audioCodec in audioCodecList)
-                {
-                    if (!incompatibleAudioCodecs.Contains(audioCodec.Name + audioCodec.ClockRate))
+                    if (SelectedMicrophone == null && Microphones.Count > 0)
                     {
-                        AudioCodecs.Add(audioCodec);
+                        SelectedMicrophone = Microphones.First();
                     }
-                }
 
-                if (AudioCodecs.Count > 0)
-                {
-                    SelectedAudioCodec = AudioCodecs.FirstOrDefault(x => x.Name.Contains("PCMU"));
-                }
+                    Debug.WriteLine("Device Status: SelectedCamera: {0} - SelectedMic: {1}", SelectedCamera == null ? "NULL" : "OK", SelectedMicrophone == null ? "NULL" : "OK");
+                    if (SelectedAudioPlayoutDevice == null && AudioPlayoutDevices.Count > 0)
+                    {
+                        SelectedAudioPlayoutDevice = AudioPlayoutDevices.First();
+                    }
 
-                foreach (var videoCodec in videoCodecList)
-                {
-                    VideoCodecs.Add(videoCodec);
-                }
+                    Conductor.Instance.Media.OnMediaDevicesChanged += OnMediaDevicesChanged;
+                    Conductor.Instance.Signaller.OnPeerConnected += (peerId, peerName) =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            if (Peers == null)
+                            {
+                                Peers = new ObservableCollection<Peer>();
+                                Conductor.Instance.Peers = Peers;
+                            }
 
-                if (VideoCodecs.Count > 0)
-                {
-                    SelectedVideoCodec = VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
-                }
-            });
+                            Peers.Add(new Peer { Id = peerId, Name = peerName });
+                        });
+                    };
 
-            RunOnUiThread(() =>
-            {
-                OnInitialized?.Invoke();
-            });
+                    Conductor.Instance.Signaller.OnPeerDisconnected += peerId =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            var peerToRemove = Peers?.FirstOrDefault(p => p.Id == peerId);
+                            if (peerToRemove != null)
+                                Peers.Remove(peerToRemove);
+                        });
+                    };
+
+                    Conductor.Instance.Signaller.OnSignedIn += () =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            IsConnected = true;
+                            IsMicrophoneEnabled = false;
+                            IsCameraEnabled = false;
+                            IsConnecting = false;
+
+                            OnStatusMessageUpdate?.Invoke("Signed-In");
+                        });
+                    };
+
+                    Conductor.Instance.Signaller.OnServerConnectionFailure += (Exception ex) =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            IsConnecting = false;
+                            OnStatusMessageUpdate?.Invoke("Server Connection Failure: " + ex.Message + "\n" + ex.StackTrace);
+                        });
+                    };
+
+                    Conductor.Instance.Signaller.OnDisconnected += () =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            IsConnected = false;
+                            IsMicrophoneEnabled = false;
+                            IsCameraEnabled = false;
+                            IsDisconnecting = false;
+                            Peers?.Clear();
+                            OnStatusMessageUpdate?.Invoke("Disconnected");
+                        });
+                    };
+
+                    Conductor.Instance.Signaller.OnMessageFromPeer += (id, message) =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            // TODO: Handles All Peer Messages (Signal Channel)
+                        });
+                    };
+
+                    Conductor.Instance.Signaller.OnPeerConnected += (id, name) =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            SelectedPeer = Peers.First(x => x.Id == id);
+                            OnStatusMessageUpdate?.Invoke(string.Format("Connected Peer: {0}-{1}", SelectedPeer.Id, SelectedPeer.Name));
+                        });
+                    };
+
+                    // TODO: Restore Event Handler in Utility Wrapper
+                    // Implemented in Unity Consumer due to Event Handling Issue
+                    // Conductor.Instance.OnAddRemoteStream += Conductor_OnAddRemoteStream does not propagate
+
+                    Conductor.Instance.OnRemoveRemoteStream += Conductor_OnRemoveRemoteStream;
+                    Conductor.Instance.OnAddLocalStream += Conductor_OnAddLocalStream;
+                    Conductor.Instance.OnConnectionHealthStats += Conductor_OnPeerConnectionHealthStats;
+                    Conductor.Instance.OnPeerConnectionCreated += () =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            IsReadyToConnect = false;
+                            IsConnectedToPeer = true;
+                            IsReadyToDisconnect = false;
+                            IsMicrophoneEnabled = false;
+                            OnStatusMessageUpdate?.Invoke("Peer Connection Created");
+                        });
+                    };
+
+                    Conductor.Instance.OnPeerConnectionClosed += () =>
+                    {
+                        RunOnUiThread(() =>
+                        {
+                            IsConnectedToPeer = false;
+                            _peerVideoTrack = null;
+                            _selfVideoTrack = null;
+                            IsMicrophoneEnabled = false;
+                            IsCameraEnabled = false;
+
+                            // TODO: Clean-up References
+                            //GC.Collect(); // Ensure all references are truly dropped.
+
+                            OnStatusMessageUpdate?.Invoke("Peer Connection Closed");
+                        });
+                    };
+
+                    Conductor.Instance.OnPeerMessageDataReceived += (peerId, message) =>
+                    {
+                        OnPeerMessageDataReceived?.Invoke(peerId, message);
+                    };
+
+                    // DATA Channel Setup
+                    Conductor.Instance.OnPeerMessageDataReceived += (i, s) =>
+                    {
+
+                    };
+
+                    Conductor.Instance.OnReadyToConnect += () => { RunOnUiThread(() => { IsReadyToConnect = true; }); };
+
+                    IceServers = new ObservableCollection<IceServer>();
+                    NewIceServer = new IceServer();
+                    AudioCodecs = new ObservableCollection<CodecInfo>();
+                    var audioCodecList = WebRTC.GetAudioCodecs();
+
+                    string[] incompatibleAudioCodecs = new string[] { "CN32000", "CN16000", "CN8000", "red8000", "telephone-event8000" };
+                    VideoCodecs = new ObservableCollection<CodecInfo>();
+
+                    // TODO: REMOVE DISPLAY LIST SUPPORT
+                    var videoCodecList = WebRTC.GetVideoCodecs().OrderBy(codec =>
+                    {
+                        switch (codec.Name)
+                        {
+                            case "VP8": return 1;
+                            case "VP9": return 2;
+                            case "H264": return 3;
+                            default: return 99;
+                        }
+                    });
+
+                    RunOnUiThread(() =>
+                    {
+                        foreach (var audioCodec in audioCodecList)
+                        {
+                            if (!incompatibleAudioCodecs.Contains(audioCodec.Name + audioCodec.ClockRate))
+                            {
+                                AudioCodecs.Add(audioCodec);
+                            }
+                        }
+
+                        if (AudioCodecs.Count > 0)
+                        {
+                            SelectedAudioCodec = AudioCodecs.FirstOrDefault(x => x.Name.Contains("PCMU"));
+                        }
+
+                        foreach (var videoCodec in videoCodecList)
+                        {
+                            VideoCodecs.Add(videoCodec);
+                        }
+
+                        if (VideoCodecs.Count > 0)
+                        {
+                            SelectedVideoCodec = VideoCodecs.FirstOrDefault(x => x.Name.Contains("H264"));
+                        }
+                    });
+
+                    RunOnUiThread(() =>
+                    {
+                        OnInitialized?.Invoke();
+                    });
+                }
+            };
         }
 
         async Task LoadSettings()
