@@ -12,6 +12,13 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::Media::Core;
 using namespace winrt::Windows::Perception::Spatial;
 
+#ifdef SHOW_DEBUG_INFO
+int64_t g_totalDelayTime = 0;
+int64_t g_currentTimestamp = 0;
+int g_latencyCounter = 0;
+int g_latency = 0;
+#endif // SHOW_DEBUG_INFO
+
 namespace winrt::DirectXClientComponent_CppWinRT::implementation
 {
 	AppCallbacks::AppCallbacks(SendInputDataHandler const& sendInputDataHandler) :
@@ -242,7 +249,7 @@ namespace winrt::DirectXClientComponent_CppWinRT::implementation
 			"}";
 
 #ifdef SHOW_DEBUG_INFO
-		g_currentTimestamp = newFrame->CurrentPrediction->Timestamp->TargetTime.UniversalTime;
+		g_currentTimestamp = newFrame.CurrentPrediction().Timestamp().TargetTime().time_since_epoch().count();
 #endif // SHOW_DEBUG_INFO
 
 		m_sendInputDataHandler(msg.str());

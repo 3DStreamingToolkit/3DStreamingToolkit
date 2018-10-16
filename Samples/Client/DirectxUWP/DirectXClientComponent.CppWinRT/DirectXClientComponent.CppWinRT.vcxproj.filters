@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectXClientComponent_CppWinRT.def" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="readme.txt" />

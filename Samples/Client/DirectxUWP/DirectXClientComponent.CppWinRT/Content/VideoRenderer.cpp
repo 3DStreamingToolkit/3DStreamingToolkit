@@ -231,7 +231,7 @@ winrt::Windows::Foundation::IAsyncAction VideoRenderer::CreateDeviceDependentRes
 
 #ifdef SHOW_DEBUG_INFO
 	// Obtains a DXGI surface.
-	ComPtr<IDXGISurface> dxgiSurface;
+	Microsoft::WRL::ComPtr<IDXGISurface> dxgiSurface;
 	winrt::check_hresult(m_videoFrame->QueryInterface(dxgiSurface.GetAddressOf()));
 
 	// Creates a D2D render target.
@@ -268,7 +268,7 @@ void VideoRenderer::ReleaseDeviceDependentResources()
 void VideoRenderer::Render(int fps, int latency)
 {
 #ifdef SHOW_DEBUG_INFO
-	String^ debugInfo = L"FPS: " + fps + L" Latency: " + latency;
+	std::wstring debugInfo = L"FPS: " + std::to_wstring(fps) + L" Latency: " + std::to_wstring(latency);
 	int halfWidth = m_width >> 1;
 
 	D2D1_RECT_F leftTextRect =
@@ -299,8 +299,8 @@ void VideoRenderer::Render(int fps, int latency)
 #endif // UNITY_UV_STARTS_AT_TOP
 
 	m_d2dRenderTarget->DrawText(
-		debugInfo->Data(),
-		debugInfo->Length(),
+		debugInfo.c_str(),
+		debugInfo.length(),
 		m_textFormat.Get(),
 		leftTextRect,
 		m_brush.Get());
@@ -315,8 +315,8 @@ void VideoRenderer::Render(int fps, int latency)
 #endif // UNITY_UV_STARTS_AT_TOP
 
 	m_d2dRenderTarget->DrawText(
-		debugInfo->Data(),
-		debugInfo->Length(),
+		debugInfo.c_str(),
+		debugInfo.length(),
 		m_textFormat.Get(),
 		rightTextRect,
 		m_brush.Get());
