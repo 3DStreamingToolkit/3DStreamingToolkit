@@ -138,12 +138,18 @@ $(function(){
   }
 
   function onRemoteStreamAdded(event) {
-    console.log('Remote stream added:', URL.createObjectURL(event.stream));
     document.getElementById('renderers').style.display = 'none';
-    remoteVideoElement = document.getElementById('remote-video');
-    remoteVideoElement.src = URL.createObjectURL(event.stream);
-    remoteVideoElement.play();
-  }
+    remoteVideoElement = document.getElementById('remote-video');    
+    try{
+      remoteVideoElement.src = URL.createObjectURL(event.stream);
+    } 
+    catch (error) {
+      remoteVideoElement.srcObject = event.stream;
+    }
+    finally{
+      remoteVideoElement.play();
+    }
+   }
 
   function joinPeer() {
     try {
