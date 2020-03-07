@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Common\CameraResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Common\DeviceResources.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Content\VideoRenderer.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="AppCallbacks.cpp" />
+    <ClCompile Include="MediaEngine\MediaEngine.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaEngine\MediaHelpers.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaEngine\CppMediaEnginePlayer.cpp">
+      <Filter>MediaEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="HolographicAppMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="Common\CameraResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DeviceResources.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\DirectXHelper.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\StepTimer.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\ShaderStructures.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Content\VideoRenderer.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="AppCallbacks.h" />
+    <ClInclude Include="MediaEngine\MediaEngine.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\MediaHelpers.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\d3dmanagerlock.hxx">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaEngine\CppMediaEnginePlayer.h">
+      <Filter>MediaEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="HolographicAppMain.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="AppCallbacks.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="DirectXClientComponent_CppWinRT.def" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{dafdaec9-3557-4dc1-bf93-047061000e1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{e4544387-17d0-4eba-857f-78a7404f41ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MediaEngine">
+      <UniqueIdentifier>{4887947b-d9eb-40a4-8d95-13887509e414}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

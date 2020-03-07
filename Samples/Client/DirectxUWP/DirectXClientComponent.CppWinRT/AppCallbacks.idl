@@ -1,0 +1,16 @@
+namespace DirectXClientComponent_CppWinRT
+{
+	delegate Boolean SendInputDataHandler(String msg);
+
+    [default_interface]
+    runtimeclass AppCallbacks : Windows.Foundation.IClosable
+    {
+        AppCallbacks(SendInputDataHandler sendInputDataHandler);
+		void Initialize(Windows.ApplicationModel.Core.CoreApplicationView appView);
+		void SetWindow(Windows.UI.Core.CoreWindow window);
+		void Run();
+		void SetMediaStreamSource(Windows.Media.Core.MediaStreamSource mediaSourceHandle, Int32 width, Int32 height);
+		void OnPredictionTimestamp(Int32 id, Int64 timestamp);
+		UInt32 FpsReport();
+    }
+}
